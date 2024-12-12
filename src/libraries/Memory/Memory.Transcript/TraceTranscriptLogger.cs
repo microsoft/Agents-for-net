@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
@@ -12,29 +11,12 @@ namespace Microsoft.Agents.Memory.Transcript
     /// <summary>
     /// Represents a transcript logger that writes activities to a Trace object.
     /// </summary>
-    public class TraceTranscriptLogger : ITranscriptLogger
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="TraceTranscriptLogger"/> class.
+    /// </remarks>
+    /// <param name="traceActivity">Indicates if trace information should be logged.</param>
+    public class TraceTranscriptLogger(bool traceActivity = true) : ITranscriptLogger
     {
-        private static readonly JsonSerializerOptions _serializationSettings = ProtocolJsonSerializer.SerializationOptions;
-
-        private readonly bool _traceActivity;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TraceTranscriptLogger"/> class.
-        /// </summary>
-        public TraceTranscriptLogger()
-            : this(true)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TraceTranscriptLogger"/> class.
-        /// </summary>
-        /// <param name="traceActivity">Indicates if trace information should be logged.</param>
-        public TraceTranscriptLogger(bool traceActivity)
-        {
-            this._traceActivity = traceActivity;
-        }
-
         /// <summary>
         /// Log an activity to the transcript.
         /// </summary>
@@ -44,7 +26,7 @@ namespace Microsoft.Agents.Memory.Transcript
         {
             ArgumentNullException.ThrowIfNull(activity);
 
-            if (_traceActivity)
+            if (traceActivity)
             {
                 System.Diagnostics.Trace.TraceInformation(ProtocolJsonSerializer.ToJson(activity));
             }

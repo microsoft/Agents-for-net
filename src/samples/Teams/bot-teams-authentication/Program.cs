@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
-builder.AddBotWithMsalAuth<IBot, TeamsBot<MainDialog>>();
+builder.AddBot<IBot, TeamsBot<MainDialog>>();
 
 var app = builder.Build();
 

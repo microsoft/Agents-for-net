@@ -17,7 +17,7 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBotWithMsalAuth<IBot, AdaptiveCardActionsBot>();
+builder.AddBot<IBot, AdaptiveCardActionsBot>();
 
 var app = builder.Build();
 

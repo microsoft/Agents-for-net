@@ -277,10 +277,10 @@ namespace Microsoft.Agents.Protocols.Adapter
                 outgoingAudience, 
                 cancellationToken, 
                 scopes: scopes,
-                UseAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+                useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
-            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, UseAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a turn context and run the pipeline.
             using var context = CreateTurnContext(activity, claimsIdentity, outgoingAudience, connectorClient, userTokenClient, callback);

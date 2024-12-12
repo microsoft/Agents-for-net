@@ -9,7 +9,6 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Client.Tests.Logger;
 using Microsoft.Agents.Protocols.Adapter;
@@ -376,12 +375,7 @@ namespace Microsoft.Agents.Client.Tests
                 var httpClient = new HttpClient(new MockClientHandler(sendRequest));
                 //httpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
 
-                var options = new ConnectorClientOptions()
-                {
-                    Transport = new HttpClientTransport(httpClient)
-                };
-
-                var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), null, null, null, options, useAnonymousConnection: true);
+                var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), httpClient, null, null, null, useAnonymousConnection: true);
 
                 return client;
             }

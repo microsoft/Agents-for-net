@@ -4,115 +4,86 @@
 #nullable disable
 
 using System;
-using System.IO;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
-using Azure.Core;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
 
 namespace Microsoft.Agents.Protocols.Connector
 {
-    internal class BotSignInRestClient(HttpPipeline pipeline, Uri endpoint = null) : IBotSignIn
+    internal class BotSignInRestClient(HttpClient client, Uri endpoint) : IBotSignIn
     {
-        private readonly HttpPipeline _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-        private readonly Uri _endpoint = endpoint ?? new Uri("");
+        private readonly HttpClient _httpClient = client ?? throw new ArgumentNullException(nameof(client));
+        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
-        internal HttpMessage CreateGetSignInUrlRequest(string state, string codeChallenge, string emulatorUrl, string finalRedirect)
+        internal HttpRequestMessage CreateGetSignInUrlRequest(string state, string codeChallenge, string emulatorUrl, string finalRedirect)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/api/botsignin/GetSignInUrl", false);
-            uri.AppendQuery("state", state, true);
-            if (codeChallenge != null)
+            var request = new HttpRequestMessage
             {
-                uri.AppendQuery("code_challenge", codeChallenge, true);
-            }
-            if (emulatorUrl != null)
-            {
-                uri.AppendQuery("emulatorUrl", emulatorUrl, true);
-            }
-            if (finalRedirect != null)
-            {
-                uri.AppendQuery("finalRedirect", finalRedirect, true);
-            }
-            request.Uri = uri;
+                Method = HttpMethod.Get,
+
+                RequestUri = new Uri(endpoint, $"api/botsignin/GetSignInUrl")
+                    .AppendQuery("state", state)
+                    .AppendQuery("code_challenge", codeChallenge)
+                    .AppendQuery("emulatorUrl", emulatorUrl)
+                    .AppendQuery("finalRedirect", finalRedirect)
+            };
+
             request.Headers.Add("Accept", "text/plain");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<string> GetSignInUrlAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(state))
-            {
-                throw new ArgumentNullException(nameof(state));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(state);
 
             using var message = CreateGetSignInUrlRequest(state, codeChallenge, emulatorUrl, finalRedirect);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        StreamReader streamReader = new StreamReader(message.Response.ContentStream);
-                        return await streamReader.ReadToEndAsync().ConfigureAwait(false);
+                        return await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                     }
                 default:
-                    throw new RequestFailedException(message.Response);
+                    throw new HttpRequestException($"GetSignInUrlAsync {httpResponse.StatusCode}");
             }
         }
 
-        internal HttpMessage CreateGetSignInResourceRequest(string state, string codeChallenge, string emulatorUrl, string finalRedirect)
+        internal HttpRequestMessage CreateGetSignInResourceRequest(string state, string codeChallenge, string emulatorUrl, string finalRedirect)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/api/botsignin/GetSignInResource", false);
-            uri.AppendQuery("state", state, true);
-            if (codeChallenge != null)
+            var request = new HttpRequestMessage
             {
-                uri.AppendQuery("code_challenge", codeChallenge, true);
-            }
-            if (emulatorUrl != null)
-            {
-                uri.AppendQuery("emulatorUrl", emulatorUrl, true);
-            }
-            if (finalRedirect != null)
-            {
-                uri.AppendQuery("finalRedirect", finalRedirect, true);
-            }
-            request.Uri = uri;
+                Method = HttpMethod.Get,
+
+                RequestUri = new Uri(endpoint, $"api/botsignin/GetSignInResource")
+                    .AppendQuery("state", state)
+                    .AppendQuery("code_challenge", codeChallenge)
+                    .AppendQuery("emulatorUrl", emulatorUrl)
+                    .AppendQuery("finalRedirect", finalRedirect)
+            };
+
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<SignInResource> GetSignInResourceAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(state))
-            {
-                throw new ArgumentNullException(nameof(state));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(state);
 
             using var message = CreateGetSignInResourceRequest(state, codeChallenge, emulatorUrl, finalRedirect);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        SignInResource value = ProtocolJsonSerializer.ToObject<SignInResource>(message.Response.ContentStream);
-                        return Response.FromValue(value, message.Response);
+                        return ProtocolJsonSerializer.ToObject<SignInResource>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
-                    throw new RequestFailedException(message.Response);
+                    throw new HttpRequestException($"GetSignInResourceAsync {httpResponse.StatusCode}");
             }
         }
     }

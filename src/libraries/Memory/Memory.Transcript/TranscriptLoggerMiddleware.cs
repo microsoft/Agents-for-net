@@ -6,25 +6,19 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
 
 namespace Microsoft.Agents.Memory.Transcript
 {
     /// <summary>
     /// Middleware for logging incoming and outgoing activities to an <see cref="ITranscriptStore"/>.
     /// </summary>
-    public class TranscriptLoggerMiddleware : IMiddleware
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="TranscriptLoggerMiddleware"/> class.
+    /// </remarks>
+    /// <param name="transcriptLogger">The conversation store to use.</param>
+    public class TranscriptLoggerMiddleware(ITranscriptLogger transcriptLogger) : IMiddleware
     {
-        private readonly ITranscriptLogger _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TranscriptLoggerMiddleware"/> class.
-        /// </summary>
-        /// <param name="transcriptLogger">The conversation store to use.</param>
-        public TranscriptLoggerMiddleware(ITranscriptLogger transcriptLogger)
-        {
-            _logger = transcriptLogger ?? throw new ArgumentNullException(nameof(transcriptLogger), "TranscriptLoggerMiddleware requires a ITranscriptLogger implementation.  ");
-        }
+        private readonly ITranscriptLogger _logger = transcriptLogger ?? throw new ArgumentNullException(nameof(transcriptLogger), "TranscriptLoggerMiddleware requires a ITranscriptLogger implementation.");
 
         /// <summary>
         /// Records incoming and outgoing activities to the conversation store.

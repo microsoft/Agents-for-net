@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Memory;
 using Microsoft.Agents.Protocols.Connector;
 using Microsoft.Agents.Protocols.Primitives;

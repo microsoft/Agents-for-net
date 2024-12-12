@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Authentication
 
             foreach (var connection in _connections)
             {
-                connection.Value.Constructor = assemblyLoader.GetProviderConstructor(connection.Value.Assembly, connection.Value.Type);
+                connection.Value.Constructor = assemblyLoader.GetProviderConstructor(connection.Key, connection.Value.Assembly, connection.Value.Type);
             }
         }
 
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Authentication
             // Return the wildcard map item instance.
             foreach (var mapItem in _map)
             {
-                if (mapItem.ServiceUrl == "*")
+                if (mapItem.ServiceUrl == "*" && string.IsNullOrEmpty(mapItem.Audience))
                 {
                     return GetConnectionInstance(mapItem.Connection);
                 }
@@ -93,6 +93,7 @@ namespace Microsoft.Agents.Authentication
         /// [
         ///    {
         ///       "ServiceUrl": "http://*..botframework.com/*.",
+        ///       "Audience": optional,
         ///       "Connection": "BotServiceConnection"
         ///    }
         /// ]
@@ -113,18 +114,29 @@ namespace Microsoft.Agents.Authentication
                 return GetDefaultConnection();
             }
 
+            var audience = BotClaims.GetAppId(claimsIdentity);
+
             // Find a match, in document order.
             foreach (var mapItem in _map)
             {
-                if (mapItem.ServiceUrl == "*")
+                var audienceMatch = true;
+                if (!string.IsNullOrEmpty(mapItem.Audience))
                 {
-                    return GetConnectionInstance(mapItem.Connection);
+                    audienceMatch = mapItem.Audience.Equals(audience, StringComparison.OrdinalIgnoreCase);
                 }
 
-                var match = Regex.Match(serviceUrl, mapItem.ServiceUrl, RegexOptions.IgnoreCase);
-                if (match.Success)
+                if (audienceMatch)
                 {
-                    return GetConnectionInstance(mapItem.Connection);
+                    if (mapItem.ServiceUrl == "*" || string.IsNullOrEmpty(mapItem.ServiceUrl))
+                    {
+                        return GetConnectionInstance(mapItem.Connection);
+                    }
+                    
+                    var match = Regex.Match(serviceUrl, mapItem.ServiceUrl, RegexOptions.IgnoreCase);
+                    if (match.Success)
+                    {
+                        return GetConnectionInstance(mapItem.Connection);
+                    }
                 }
             }
 
@@ -167,6 +179,7 @@ namespace Microsoft.Agents.Authentication
     class ConnectionMapItem
     {
         public string ServiceUrl { get; set; }
+        public string Audience { get; set; }
         public string Connection { get; set; }
     }
 
@@ -174,9 +187,14 @@ namespace Microsoft.Agents.Authentication
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
 
-        public ConstructorInfo GetProviderConstructor(string assemblyName, string typeName)
+        public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(assemblyName);
+            ArgumentNullException.ThrowIfNullOrEmpty(name);
+
+            if (string.IsNullOrEmpty(assemblyName))
+            {
+                throw new ArgumentNullException(nameof(assemblyName), $"Assembly for '{name}' is missing or empty");
+            }
             
             if (string.IsNullOrEmpty(typeName))
             {
@@ -185,6 +203,7 @@ namespace Microsoft.Agents.Authentication
                 return GetProviderConstructors(assemblyName).First();
             }
 
+            // This throws for invalid assembly name.
             Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
 
             Type type = assembly.GetType(typeName);
@@ -194,7 +213,7 @@ namespace Microsoft.Agents.Authentication
                 type = assembly.GetType($"{assemblyName}.{typeName}");
                 if (!IsValidProviderType(type))
                 {
-                    throw new InvalidOperationException($"Type '{typeName}' not found in Assembly '{assemblyName}' or is the wrong type.");
+                    throw new InvalidOperationException($"Type '{typeName}' not found in Assembly '{assemblyName}' or is the wrong type for '{name}'");
                 }
             }
 

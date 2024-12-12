@@ -6,8 +6,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots

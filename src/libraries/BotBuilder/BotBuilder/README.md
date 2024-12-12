@@ -1,3 +1,0 @@
-# Microsoft.Agents.BotBuilder
-
-TBD

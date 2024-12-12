@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Telemetry;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;

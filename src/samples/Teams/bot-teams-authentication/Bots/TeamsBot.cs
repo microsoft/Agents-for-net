@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 
 namespace Microsoft.Agents.Samples.Bots
 {

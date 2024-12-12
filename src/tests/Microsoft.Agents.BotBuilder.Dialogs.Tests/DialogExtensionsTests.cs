@@ -7,7 +7,6 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Protocols.Adapter;
 using Microsoft.Agents.Authentication;
@@ -16,6 +15,9 @@ using Moq;
 using Xunit;
 using Microsoft.Agents.Memory;
 using Microsoft.Agents.Memory.Transcript;
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

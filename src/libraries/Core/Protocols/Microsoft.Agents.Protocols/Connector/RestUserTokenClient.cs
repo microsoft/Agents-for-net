@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure.Core.Pipeline;
-using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Protocols.Primitives;
 using System;
 using System.Collections.Generic;
@@ -12,6 +10,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Protocols.Serializer;
+using System.Net.Http;
 
 namespace Microsoft.Agents.Protocols.Connector
 {
@@ -21,27 +20,28 @@ namespace Microsoft.Agents.Protocols.Connector
     internal class RestUserTokenClient : IUserTokenClient, IDisposable
     {
         private readonly string _appId;
+        private readonly Uri _endpoint;
         private readonly UserTokenRestClient _userTokenClient;
         private readonly BotSignInRestClient _botSignInClient;
         private readonly ILogger _logger;
         private bool _disposed;
 
-        public RestUserTokenClient(string appId, Uri endpoint, IAccessTokenProvider tokenAccess, string audience, List<string> scopes, ILogger logger)
-            : this(appId, endpoint, tokenAccess, audience, scopes, new ConnectorClientOptions(), logger)
+        public Uri BaseUri => _endpoint;
+
+        public RestUserTokenClient(string appId, Uri endpoint, HttpClient httpClient, ILogger logger)
+            : this(appId, endpoint, httpClient, new ConnectorClientOptions(), logger)
         {
         }
 
-        public RestUserTokenClient(string appId, Uri endpoint, IAccessTokenProvider tokenAccess, string audience, List<string> scopes, ConnectorClientOptions options, ILogger logger)
+        public RestUserTokenClient(string appId, Uri endpoint, HttpClient httpClient, ConnectorClientOptions options, ILogger logger)
         {
             ArgumentNullException.ThrowIfNullOrEmpty(appId);
 
             _appId = appId;
+            _endpoint = endpoint;
 
-            // Manually create a pipeline using bearer tokens shared between Attachments and Conversations clients.
-            var pipeline = HttpPipelineBuilder.Build(options, new BearerTokenPolicy(tokenAccess, audience, scopes));
-
-            _userTokenClient = new UserTokenRestClient(pipeline, endpoint);
-            _botSignInClient = new BotSignInRestClient(pipeline, endpoint);
+            _userTokenClient = new UserTokenRestClient(httpClient, endpoint);
+            _botSignInClient = new BotSignInRestClient(httpClient, endpoint);
             _logger = logger;
         }
 

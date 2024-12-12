@@ -18,7 +18,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AspNet Authentication suitable for token validation
-builder.AddBotWithMsalAuth<IBot, Bot2>();
+builder.AddBot<IBot, Bot2>();
 
 var app = builder.Build();
 

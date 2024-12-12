@@ -5,62 +5,52 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Core;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
 
 namespace Microsoft.Agents.Protocols.Connector
 {
-    internal class ConversationsRestClient : IConversations
+    internal class ConversationsRestClient(HttpClient client, Uri endpoint) : IConversations
     {
-        private readonly HttpPipeline _pipeline;
-        private readonly Uri _endpoint;
+        private readonly HttpClient _httpClient = client ?? throw new ArgumentNullException(nameof(client));
+        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
-        public ConversationsRestClient(HttpPipeline pipeline, Uri endpoint = null)
+        internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
         {
-            _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-            _endpoint = endpoint ?? new Uri("");
-        }
-
-        internal HttpMessage CreateGetConversationsRequest(string continuationToken)
-        {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations", false);
-            if (continuationToken != null)
+            var request = new HttpRequestMessage
             {
-                uri.AppendQuery("continuationToken", continuationToken, true);
-            }
-            request.Uri = uri;
+                Method = HttpMethod.Get,
+
+                RequestUri = new Uri(endpoint, $"v3/conversations")
+                    .AppendQuery("continuationToken", continuationToken)
+            };
+
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ConversationsResult> GetConversationsAsync(string continuationToken = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateGetConversationsRequest(continuationToken);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<ConversationsResult>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ConversationsResult>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversations operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetConversations operation returned an invalid status code '{httpResponse.StatusCode}'");
 
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -76,45 +66,40 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateCreateConversationRequest(ConversationParameters body)
+        internal HttpRequestMessage CreateCreateConversationRequest(ConversationParameters body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Post;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(endpoint, $"v3/conversations")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ConversationResourceResponse> CreateConversationAsync(ConversationParameters body = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateCreateConversationRequest(body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
-                        return ProtocolJsonSerializer.ToObject<ConversationResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ConversationResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"CreateConversation operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"CreateConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -129,26 +114,19 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateSendToConversationRequest(string conversationId, IActivity body)
+        internal HttpRequestMessage CreateSendToConversationRequest(string conversationId, IActivity body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Post;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         public async Task<ResourceResponse> SendToConversationAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
@@ -159,27 +137,24 @@ namespace Microsoft.Agents.Protocols.Connector
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendToConversationAsync(string conversationId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendToConversationRequest(conversationId, body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendToConversation operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"SendToConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -194,52 +169,42 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateSendConversationHistoryRequest(string conversationId, Transcript body)
+        internal HttpRequestMessage CreateSendConversationHistoryRequest(string conversationId, Transcript body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Post;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities/history", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/history")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendConversationHistoryAsync(string conversationId, Transcript body = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendConversationHistoryRequest(conversationId, body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendConversationHistory operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"SendConversationHistory operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -254,27 +219,19 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateUpdateActivityRequest(string conversationId, string activityId, IActivity body)
+        internal HttpRequestMessage CreateUpdateActivityRequest(string conversationId, string activityId, IActivity body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Put;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities/", false);
-            uri.AppendPath(activityId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Put,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
@@ -285,31 +242,25 @@ namespace Microsoft.Agents.Protocols.Connector
         /// <inheritdoc/>
         public async Task<ResourceResponse> UpdateActivityAsync(string conversationId, string activityId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (activityId == null)
-            {
-                throw new ArgumentNullException(nameof(activityId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateUpdateActivityRequest(conversationId, activityId, body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UpdateActivity operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"UpdateActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -324,27 +275,19 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
+        internal HttpRequestMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Post;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities/", false);
-            uri.AppendPath(activityId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         public async Task<ResourceResponse> ReplyToActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
@@ -357,36 +300,30 @@ namespace Microsoft.Agents.Protocols.Connector
         /// <inheritdoc/>
         public async Task<ResourceResponse> ReplyToActivityAsync(string conversationId, string activityId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (activityId == null)
-            {
-                throw new ArgumentNullException(nameof(activityId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateReplyToActivityRequest(conversationId, activityId, body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
                         // Teams is famous for not returning a response body for these.
-                        if (message.Response.ContentStream.Length == 0)
+                        if (httpResponse.Content.ReadAsStream(cancellationToken).Length == 0)
                         {
                             return new ResourceResponse() { Id = string.Empty };
                         }
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"ReplyToActivity operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"ReplyToActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -401,47 +338,36 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateDeleteActivityRequest(string conversationId, string activityId)
+        internal HttpRequestMessage CreateDeleteActivityRequest(string conversationId, string activityId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Delete;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities/", false);
-            uri.AppendPath(activityId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+            };
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task DeleteActivityAsync(string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (activityId == null)
-            {
-                throw new ArgumentNullException(nameof(activityId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateDeleteActivityRequest(conversationId, activityId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 202:
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteActivity operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"DeleteActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -456,43 +382,36 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateGetConversationMembersRequest(string conversationId)
+        internal HttpRequestMessage CreateGetConversationMembersRequest(string conversationId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/members", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members")
+            };
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<IReadOnlyList<ChannelAccount>> GetConversationMembersAsync(string conversationId, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationMembersRequest(conversationId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMembers operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetConversationMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -507,48 +426,37 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateGetConversationMemberRequest(string conversationId, string userId)
+        internal HttpRequestMessage CreateGetConversationMemberRequest(string conversationId, string userId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/members/", false);
-            uri.AppendPath(userId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members/{userId}")
+            };
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ChannelAccount> GetConversationMemberAsync(string userId, string conversationId, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (userId == null)
-            {
-                throw new ArgumentNullException(nameof(userId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(userId);
 
             using var message = CreateGetConversationMemberRequest(conversationId, userId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<ChannelAccount>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ChannelAccount>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMember operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -563,47 +471,36 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateDeleteConversationMemberRequest(string conversationId, string memberId)
+        internal HttpRequestMessage CreateDeleteConversationMemberRequest(string conversationId, string memberId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Delete;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/members/", false);
-            uri.AppendPath(memberId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members/{memberId}")
+            };
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task DeleteConversationMemberAsync(string conversationId, string memberId, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (memberId == null)
-            {
-                throw new ArgumentNullException(nameof(memberId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(memberId);
 
             using var message = CreateDeleteConversationMemberRequest(conversationId, memberId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 204:
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteConversationMember operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"DeleteConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -617,51 +514,38 @@ namespace Microsoft.Agents.Protocols.Connector
                     }
             }
         }
-        internal HttpMessage CreateGetConversationPagedMembersRequest(string conversationId, int? pageSize, string continuationToken)
+        internal HttpRequestMessage CreateGetConversationPagedMembersRequest(string conversationId, int? pageSize, string continuationToken)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/pagedmembers", false);
-            if (pageSize != null)
-            {
-                uri.AppendQuery("pageSize", pageSize.Value.ToString(), true);
-            }
-            if (continuationToken != null)
-            {
-                uri.AppendQuery("continuationToken", continuationToken, true);
-            }
-            request.Uri = uri;
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+
+            request.RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/pagedmembers")
+                .AppendQuery("pageSize", pageSize.Value.ToString())
+                .AppendQuery("continuationToken", continuationToken);
+
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = null, string continuationToken = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationPagedMembersRequest(conversationId, pageSize, continuationToken);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<PagedMembersResult>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<PagedMembersResult>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationPagedMembers operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetConversationPagedMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -676,49 +560,37 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateGetActivityMembersRequest(string conversationId, string activityId)
+        internal HttpRequestMessage CreateGetActivityMembersRequest(string conversationId, string activityId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/activities/", false);
-            uri.AppendPath(activityId, true);
-            uri.AppendPath("/members", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}/members")
+            };
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<IReadOnlyList<ChannelAccount>> GetActivityMembersAsync(string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
-            if (activityId == null)
-            {
-                throw new ArgumentNullException(nameof(activityId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
+            ArgumentNullException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateGetActivityMembersRequest(conversationId, activityId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetActivityMembers operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetActivityMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -733,52 +605,42 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateUploadAttachmentRequest(string conversationId, AttachmentData body)
+        internal HttpRequestMessage CreateUploadAttachmentRequest(string conversationId, AttachmentData body)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Post;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/conversations/", false);
-            uri.AppendPath(conversationId, true);
-            uri.AppendPath("/attachments", false);
-            request.Uri = uri;
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/attachments")
+            };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
-            return message;
+            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ResourceResponse> UploadAttachmentAsync(string conversationId, AttachmentData body = null, CancellationToken cancellationToken = default)
         {
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateUploadAttachmentRequest(conversationId, body);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
                     {
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UploadAttachment operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"UploadAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;

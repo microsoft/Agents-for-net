@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Protocols.Serializer;
-using Microsoft.Recognizers.Text.Number.Chinese;
 using System;
 using System.Collections;
 using System.Collections.Generic;

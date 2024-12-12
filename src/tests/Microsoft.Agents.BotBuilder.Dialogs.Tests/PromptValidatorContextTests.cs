@@ -2,10 +2,11 @@
 // Licensed under the MIT License.
 
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Xunit;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Memory;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.BotBuilder.Testing;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

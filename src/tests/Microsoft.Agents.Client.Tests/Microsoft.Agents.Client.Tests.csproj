@@ -30,9 +30,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\libraries\BotBuilder\BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\libraries\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Protocols\Microsoft.Agents.Protocols.csproj" />
+	  <ProjectReference Include="..\..\libraries\Memory\Memory\Microsoft.Agents.Memory.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>

@@ -3,6 +3,7 @@
 
 using System;
 using System.Text.Json.Serialization;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Client;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs

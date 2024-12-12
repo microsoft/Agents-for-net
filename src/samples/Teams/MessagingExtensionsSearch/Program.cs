@@ -21,7 +21,7 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBotWithMsalAuth<IBot, TeamsMessagingExtensionsSearchBot>();
+builder.AddBot<IBot, TeamsMessagingExtensionsSearchBot>();
 
 var app = builder.Build();
 

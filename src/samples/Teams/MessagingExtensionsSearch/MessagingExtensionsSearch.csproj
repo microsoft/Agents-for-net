@@ -5,7 +5,11 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="AdaptiveCards" />
     <PackageReference Include="AdaptiveCards.Templating" />
 	<PackageReference Include="Azure.Identity" />

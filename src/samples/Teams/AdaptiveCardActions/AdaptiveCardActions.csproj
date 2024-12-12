@@ -22,6 +22,10 @@
   </ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="AdaptiveCards.Rendering.Html" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
 		<PackageReference Include="AdaptiveCards.Templating" />
@@ -30,7 +34,6 @@
 	</ItemGroup>
 
   <ItemGroup>
-   <ProjectReference Include="..\..\..\libraries\BotBuilder\BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
    <ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
    <ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
   </ItemGroup>

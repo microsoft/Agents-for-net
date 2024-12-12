@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
@@ -65,12 +64,9 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
             {
                 using (var client = new HttpClient(handler))
                 {
-                    var options = new ConnectorClientOptions()
-                    {
-                        Transport = new HttpClientTransport(client)
-                    };
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Token}");
 
-                    var connectorClient = new RestConnectorClient(new Uri(ServiceUrl), new MockTokenAccess(), Audience, null, options);
+                    var connectorClient = new RestConnectorClient(new Uri(ServiceUrl), client, Audience, null);
 
                     var result = await connectorClient.Conversations.SendToConversationAsync(activity);
 
@@ -121,12 +117,9 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
             {
                 using (var client = new HttpClient(handler))
                 {
-                    var options = new ConnectorClientOptions()
-                    {
-                        Transport = new HttpClientTransport(client)
-                    };
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Token}");
 
-                    var connectorClient = new RestConnectorClient(new Uri(ServiceUrl), new MockTokenAccess(), Audience, null, options);
+                    var connectorClient = new RestConnectorClient(new Uri(ServiceUrl), client, Audience, null);
 
                     var result = await connectorClient.Conversations.ReplyToActivityAsync(activity);
 

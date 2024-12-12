@@ -4,12 +4,13 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Moq;
 using Xunit;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Adapter;
 using System.Text.Json.Nodes;
+using Microsoft.Agents.Telemetry;
+using Microsoft.Agents.BotBuilder.Testing;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

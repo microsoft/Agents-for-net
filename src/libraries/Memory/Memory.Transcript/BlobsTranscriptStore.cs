@@ -152,7 +152,6 @@ namespace Microsoft.Agents.Memory.Transcript
         internal BlobsTranscriptStore(BlobContainerClient containerClient, JsonSerializerOptions jsonSerializer = null)
         {
             _containerClient = new Lazy<BlobContainerClient>(() => containerClient);
-
             _serializerOptions = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
         }
 
@@ -246,11 +245,12 @@ namespace Microsoft.Agents.Memory.Transcript
             var pagedResult = new PagedResult<IActivity>();
 
             string token = null;
-            List<BlobItem> blobs = new List<BlobItem>();
+            List<BlobItem> blobs = [];
             do
             {
-                var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
-                                    .AsPages(token).ConfigureAwait(false);
+                var resultSegment = _containerClient.Value
+                    .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
+                    .AsPages(token).ConfigureAwait(false);
                 
                 token = null;
                 await foreach (var blobPage in resultSegment)
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Memory.Transcript
                 .Select(t => t.Result)
                 .ToArray();
 
-            if (pagedResult.Items.Length == PageSize)
+            if (pagedResult.Items.Count == PageSize)
             {
                 pagedResult.ContinuationToken = blobs.Last().Name;
             }
@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Memory.Transcript
         /// List conversations in the channelId.
         /// </summary>
         /// <param name="channelId">Channel Id.</param>
-        /// <param name="continuationToken">Continuatuation token to page through results.</param>
+        /// <param name="continuationToken">Continuation token to page through results.</param>
         /// <returns>A <see cref="Task"/> A task that represents the work queued to execute.</returns>
         public async Task<PagedResult<TranscriptInfo>> ListTranscriptsAsync(string channelId, string continuationToken = null)
         {
@@ -355,7 +355,7 @@ namespace Microsoft.Agents.Memory.Transcript
 
             var pagedResult = new PagedResult<TranscriptInfo>() { Items = conversations.ToArray() };
 
-            if (pagedResult.Items.Length == PageSize)
+            if (pagedResult.Items.Count == PageSize)
             {
                 pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
             }
@@ -384,8 +384,10 @@ namespace Microsoft.Agents.Memory.Transcript
             string token = null;
             do
             {
-                var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
-                                                            .AsPages(token).ConfigureAwait(false);
+                var resultSegment = _containerClient.Value
+                    .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
+                    .AsPages(token).ConfigureAwait(false);
+
                 token = null;
 
                 await foreach (var blobPage in resultSegment)
@@ -413,8 +415,10 @@ namespace Microsoft.Agents.Memory.Transcript
                     string token = null;
                     do
                     {
-                        var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/")
-                                                            .AsPages(token).ConfigureAwait(false);
+                        var resultSegment = _containerClient.Value
+                            .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/")
+                            .AsPages(token).ConfigureAwait(false);
+
                         token = null;
 
                         await foreach (var blobPage in resultSegment)
@@ -434,6 +438,7 @@ namespace Microsoft.Agents.Memory.Transcript
                         }
                     } 
                     while (!string.IsNullOrEmpty(token));
+
                     return default;
                 }
                 catch (RequestFailedException ex)
@@ -512,13 +517,13 @@ namespace Microsoft.Agents.Memory.Transcript
             }
         }
 
-        private string GetBlobName(IActivity activity)
+        private static string GetBlobName(IActivity activity)
         {
             var blobName = $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/{activity.Timestamp.Value.Ticks.ToString("x", CultureInfo.InvariantCulture)}-{SanitizeKey(activity.Id)}.json";
             return blobName;
         }
 
-        private string SanitizeKey(string key)
+        private static string SanitizeKey(string key)
         {
             // Blob Name rules: case-sensitive any url char
             return Uri.EscapeDataString(key);

@@ -18,10 +18,10 @@ namespace Microsoft.Agents.Memory.Tests
             Assert.Throws<ArgumentNullException>(() => CosmosDbKeyEscape.EscapeKey(null));
 
             // Empty string should throw
-            Assert.Throws<ArgumentNullException>(() => CosmosDbKeyEscape.EscapeKey(string.Empty));
+            Assert.Throws<ArgumentException>(() => CosmosDbKeyEscape.EscapeKey(string.Empty));
 
             // Whitespace key should throw
-            Assert.Throws<ArgumentNullException>(() => CosmosDbKeyEscape.EscapeKey("     "));
+            Assert.Throws<ArgumentException>(() => CosmosDbKeyEscape.EscapeKey("     "));
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Memory.Tests
 
             // The resulting key should be:
             var hash = tooLongKey.GetHashCode().ToString("x");
-            var correctKey = sanitizedKey.Substring(0, CosmosDbKeyEscape.MaxKeyLength - hash.Length) + hash;
+            var correctKey = string.Concat(sanitizedKey.AsSpan(0, CosmosDbKeyEscape.MaxKeyLength - hash.Length), hash);
 
             Assert.Equal(correctKey, sanitizedKey);
         }

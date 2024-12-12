@@ -18,7 +18,11 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="AdaptiveCards" />
     <PackageReference Include="Azure.Core" />
     <PackageReference Include="Microsoft.Identity.Client" />

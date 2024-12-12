@@ -17,7 +17,7 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBotWithMsalAuth<IBot, CopilotStudioEchoSkill>();
+builder.AddBot<IBot, CopilotStudioEchoSkill>();
 
 var app = builder.Build();
 

@@ -26,12 +26,12 @@ namespace Microsoft.Agents.Memory.CosmosDb
         // the CosmostDB docs: https://docs.microsoft.com/dotnet/api/microsoft.azure.documents.resource.id?view=azure-dotnet#remarks
         // Note: We are also escapting the "*" character, as that what we're using
         // as our escape character.
-        private static char[] _illegalKeys = new[] { '\\', '?', '/', '#', '*' };
+        private static char[] _illegalKeys = ['\\', '?', '/', '#', '*'];
 
         // We are escaping illegal characters using a "*{AsciiCodeInHex}" pattern. This
         // means a key of "?test?" would be escaped as "*3ftest*3f".
         private static readonly Dictionary<char, string> _illegalKeyCharacterReplacementMap =
-                new Dictionary<char, string>(_illegalKeys.ToDictionary(c => c, c => '*' + ((int)c).ToString("x2", CultureInfo.InvariantCulture)));
+                new(_illegalKeys.ToDictionary(c => c, c => '*' + ((int)c).ToString("x2", CultureInfo.InvariantCulture)));
 
         /// <summary>
         /// Converts the key into a DocumentID that can be used safely with Cosmos DB.
@@ -52,17 +52,14 @@ namespace Microsoft.Agents.Memory.CosmosDb
         /// </summary>
         /// <param name="key">The key to escape.</param>
         /// <param name="suffix">The string to add at the end of all row keys.</param>
-        /// <param name="compatibilityMode">True if running in compatability mode and keys should
+        /// <param name="compatibilityMode">True if running in compatibility mode and keys should
         /// be truncated in order to support previous CosmosDb max key length of 255. 
         /// This behavior can be overridden by setting
         /// <see cref="CosmosDbPartitionedStorageOptions.CompatibilityMode"/> to false.</param>
         /// <returns>An escaped key that can be used safely with CosmosDB.</returns>
         public static string EscapeKey(string key, string suffix, bool compatibilityMode)
         {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
             var firstIllegalCharIndex = key.IndexOfAny(_illegalKeys);
 
@@ -118,7 +115,7 @@ namespace Microsoft.Agents.Memory.CosmosDb
             if (key.Length > MaxKeyLength)
             {
                 var hash = key.GetHashCode().ToString("x", CultureInfo.InvariantCulture);
-                key = key.Substring(0, MaxKeyLength - hash.Length) + hash;
+                key = string.Concat(key.AsSpan(0, MaxKeyLength - hash.Length), hash);
             }
 
             return key;

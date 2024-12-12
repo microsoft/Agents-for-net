@@ -5,10 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Memory;
 using Microsoft.Agents.Protocols.Adapter;
 using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Telemetry;
 using Microsoft.Recognizers.Text;
 using Xunit;
 

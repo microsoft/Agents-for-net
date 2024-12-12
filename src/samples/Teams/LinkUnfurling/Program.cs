@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
-builder.AddBotWithMsalAuth<IBot, LinkUnfurlingBot>();
+builder.AddBot<IBot, LinkUnfurlingBot>();
 
 var app = builder.Build();
 

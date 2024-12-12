@@ -21,11 +21,9 @@ namespace Microsoft.Agents.Memory.Transcript
     /// </remarks>
     public class FileTranscriptLogger : ITranscriptStore
     {
-        private static readonly JsonSerializerOptions _jsonSettings = ProtocolJsonSerializer.SerializationOptions;
-
         private readonly string _folder;
         private readonly bool _unitTestMode;
-        private readonly HashSet<string> _started = new HashSet<string>();
+        private readonly HashSet<string> _started = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileTranscriptLogger"/> class.
@@ -34,10 +32,7 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <param name="unitTestMode">unitTestMode will overwrite transcript files.</param>
         public FileTranscriptLogger(string folder = null, bool unitTestMode = true)
         {
-            if (folder == null)
-            {
-                folder = Environment.CurrentDirectory;
-            }
+            folder ??= Environment.CurrentDirectory;
 
             folder = PathUtils.NormalizePath(folder);
 
@@ -46,8 +41,8 @@ namespace Microsoft.Agents.Memory.Transcript
                 Directory.CreateDirectory(folder);
             }
 
-            this._folder = folder;
-            this._unitTestMode = unitTestMode;
+            _folder = folder;
+            _unitTestMode = unitTestMode;
         }
 
         /// <summary>
@@ -57,10 +52,7 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task LogActivityAsync(IActivity activity)
         {
-            if (activity == null)
-            {
-                throw new ArgumentNullException(nameof(activity));
-            }
+            ArgumentNullException.ThrowIfNull(activity);
 
             var transcriptFile = GetTranscriptFile(activity.ChannelId, activity.Conversation.Id);
 
@@ -78,19 +70,15 @@ namespace Microsoft.Agents.Memory.Transcript
             {
                 try
                 {
-                    if ((this._unitTestMode == true && !_started.Contains(transcriptFile)) || !File.Exists(transcriptFile))
+                    if ((_unitTestMode == true && !_started.Contains(transcriptFile)) || !File.Exists(transcriptFile))
                     {
                         System.Diagnostics.Trace.TraceInformation($"file://{transcriptFile.Replace("\\", "/")}");
                         _started.Add(transcriptFile);
 
-                        using (var stream = File.OpenWrite(transcriptFile))
-                        {
-                            using (var writer = new StreamWriter(stream) as TextWriter)
-                            {
-                                await writer.WriteAsync($"[{ProtocolJsonSerializer.ToJson(activity)}]").ConfigureAwait(false);
-                                return;
-                            }
-                        }
+                        using var stream = File.OpenWrite(transcriptFile);
+                        using var writer = new StreamWriter(stream);
+                        await writer.WriteAsync($"[{ProtocolJsonSerializer.ToJson(activity)}]").ConfigureAwait(false);
+                        return;
                     }
 
                     switch (activity.Type)
@@ -131,12 +119,13 @@ namespace Microsoft.Agents.Memory.Transcript
         public async Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default(DateTimeOffset))
         {
             var transcriptFile = GetTranscriptFile(channelId, conversationId);
-
             var transcript = await LoadTranscriptAsync(transcriptFile).ConfigureAwait(false);
-            var result = new PagedResult<IActivity>();
-            result.ContinuationToken = null;
-            result.Items = transcript.Where(activity => activity.Timestamp >= startDate).Cast<IActivity>().ToArray();
-            return result;
+
+            return new PagedResult<IActivity>
+            {
+                ContinuationToken = null,
+                Items = transcript.Where(activity => activity.Timestamp >= startDate).Cast<IActivity>().ToArray()
+            };
         }
 
         /// <summary>
@@ -148,7 +137,7 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <remarks>List all transcripts for given ChannelID.</remarks>
         public Task<PagedResult<TranscriptInfo>> ListTranscriptsAsync(string channelId, string continuationToken = null)
         {
-            List<TranscriptInfo> transcripts = new List<TranscriptInfo>();
+            List<TranscriptInfo> transcripts = [];
             var channelFolder = GetChannelFolder(channelId);
 
             foreach (var file in Directory.EnumerateFiles(channelFolder, "*.transcript"))
@@ -185,35 +174,27 @@ namespace Microsoft.Agents.Memory.Transcript
         {
             if (File.Exists(transcriptFile))
             {
-                using (var stream = File.OpenRead(transcriptFile))
-                {
-                    using (var reader = new StreamReader(stream) as TextReader)
-                    {
-                        var json = await reader.ReadToEndAsync().ConfigureAwait(false);
-                        return ProtocolJsonSerializer.ToObject<Activity[]>(json);
-                    }
-                }
+                using var stream = File.OpenRead(transcriptFile);
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync().ConfigureAwait(false);
+                return ProtocolJsonSerializer.ToObject<Activity[]>(json);
             }
 
-            return Array.Empty<Activity>();
+            return [];
         }
 
         private static async Task LogActivityAsync(IActivity activity, string transcriptFile)
         {
             var json = $",\n{ProtocolJsonSerializer.ToJson(activity)}]";
 
-            using (var stream = File.Open(transcriptFile, FileMode.OpenOrCreate))
+            using var stream = File.Open(transcriptFile, FileMode.OpenOrCreate);
+            if (stream.Length > 0)
             {
-                if (stream.Length > 0)
-                {
-                    stream.Seek(-1, SeekOrigin.End);
-                }
-
-                using (TextWriter writer = new StreamWriter(stream))
-                {
-                    await writer.WriteAsync(json).ConfigureAwait(false);
-                }
+                stream.Seek(-1, SeekOrigin.End);
             }
+
+            using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(json).ConfigureAwait(false);
         }
 
         private static async Task MessageUpdateAsync(IActivity activity, string transcriptFile)
@@ -231,15 +212,12 @@ namespace Microsoft.Agents.Memory.Transcript
                     updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
                     updatedActivity.Timestamp = originalActivity.Timestamp;
                     transcript[i] = updatedActivity;
+
                     var json = JsonSerializer.Serialize(transcript, ProtocolJsonSerializer.SerializationOptions);
-                    using (var stream = File.OpenWrite(transcriptFile))
-                    {
-                        using (var writer = new StreamWriter(stream) as TextWriter)
-                        {
-                            await writer.WriteAsync(json).ConfigureAwait(false);
-                            return;
-                        }
-                    }
+                    using var stream = File.OpenWrite(transcriptFile);
+                    using var writer = new StreamWriter(stream);
+                    await writer.WriteAsync(json).ConfigureAwait(false);
+                    return;
                 }
             }
         }
@@ -270,15 +248,12 @@ namespace Microsoft.Agents.Memory.Transcript
                         ServiceUrl = originalActivity.ServiceUrl,
                         ReplyToId = originalActivity.ReplyToId,
                     };
+
                     var json = JsonSerializer.Serialize(transcript, ProtocolJsonSerializer.SerializationOptions);
-                    using (var stream = File.OpenWrite(transcriptFile))
-                    {
-                        using (var writer = new StreamWriter(stream) as TextWriter)
-                        {
-                            await writer.WriteAsync(json).ConfigureAwait(false);
-                            return;
-                        }
-                    }
+                    using var stream = File.OpenWrite(transcriptFile);
+                    using var writer = new StreamWriter(stream);
+                    await writer.WriteAsync(json).ConfigureAwait(false);
+                    return;
                 }
             }
         }
@@ -297,18 +272,10 @@ namespace Microsoft.Agents.Memory.Transcript
 
         private string GetTranscriptFile(string channelId, string conversationId)
         {
-            if (channelId == null)
-            {
-                throw new ArgumentNullException(channelId);
-            }
-
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
 
             var channelFolder = GetChannelFolder(channelId);
-
             var fileName = SanitizeString(conversationId, Path.GetInvalidFileNameChars());
 
             return Path.Combine(channelFolder, fileName + ".transcript");
@@ -316,14 +283,11 @@ namespace Microsoft.Agents.Memory.Transcript
 
         private string GetChannelFolder(string channelId)
         {
-            if (channelId == null)
-            {
-                throw new ArgumentNullException(channelId);
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
 
             var folderName = SanitizeString(channelId, Path.GetInvalidPathChars());
-
             var channelFolder = Path.Combine(_folder, folderName);
+
             if (!Directory.Exists(channelFolder))
             {
                 Directory.CreateDirectory(channelFolder);

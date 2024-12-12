@@ -24,6 +24,12 @@ namespace Microsoft.Agents.Memory.Tests
         }
 
         [Fact]
+        public async Task MemoryStorage_ReadValidation()
+        {
+            await ReadValidation(storage);
+        }
+
+        [Fact]
         public async Task MemoryStorage_CreateObjectTest()
         {
             await CreateObjectTest(storage);

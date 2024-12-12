@@ -16,7 +16,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddMvc();
 builder.Services.AddRazorPages();
 
-builder.AddBotWithMsalAuth<IBot, TeamsTaskModuleBot>();
+builder.AddBot<IBot, TeamsTaskModuleBot>();
 
 var app = builder.Build();
 

@@ -24,6 +24,10 @@ This sample shows the feature where user can send different types of cards using
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ],
+
       "Connections": {
           "BotServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -41,9 +45,12 @@ This sample shows the feature where user can send different types of cards using
       }
       ```
 
-      1. Set the **ClientId** to the AppId of your identity
+      1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Set the **Audience** to the AppId of the bot identity.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Run the `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
    > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).
@@ -52,7 +59,7 @@ This sample shows the feature where user can send different types of cards using
    devtunnel host -p 3978 --allow-anonymous
    ```
 
-1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messageing endpoint** to `{tunnel-url}/api/messages`
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
 - **This step is specific to Teams.**
 

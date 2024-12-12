@@ -3,8 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Memory;
 using Microsoft.Agents.Memory.Transcript;
 using Microsoft.Agents.Protocols.Primitives;

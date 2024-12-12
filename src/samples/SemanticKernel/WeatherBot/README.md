@@ -1,6 +1,6 @@
 ﻿# WeatherBot Sample with Semantic Kernel
 
-This is a sample of a simple Weather Forecast Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request asking for information about a weather forecast and respond to the caller with an Adaptive Card.
+This is a sample of a simple Weather Forecast Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request asking for information about a wheather forecast and respond to the caller with an Adaptive Card.
 
 This Agent Sample is intended to introduce you the basics of integrating Semantic Kernel with the Microsoft 365 Agents SDK in order to build powerful Agents. It can also be used as a the base for a custom Agent that you choose to develop.
 
@@ -85,9 +85,9 @@ If you type a message and hit enter, or the send arrow, you should receive a mes
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audience": "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-      },
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ]
 
       "Connections": {
           "BotServiceConnection": {

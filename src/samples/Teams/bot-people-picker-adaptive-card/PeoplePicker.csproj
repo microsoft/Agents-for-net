@@ -5,22 +5,25 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AdaptiveCards"/>
-    <PackageReference Include="AdaptiveCards.Templating"/>
-    <PackageReference Include="Azure.Core"/>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson"/>
-    <PackageReference Include="Microsoft.Identity.Client"/>
-    <PackageReference Include="Microsoft.IdentityModel.Abstractions"/>
-    <PackageReference Include="Microsoft.IdentityModel.LoggingExtensions"/>
-    <PackageReference Include="System.Configuration.ConfigurationManager"/>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <PackageReference Include="AdaptiveCards" />
+    <PackageReference Include="AdaptiveCards.Templating" />
+    <PackageReference Include="Azure.Core" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+    <PackageReference Include="Microsoft.Identity.Client" />
+    <PackageReference Include="Microsoft.IdentityModel.Abstractions" />
+    <PackageReference Include="Microsoft.IdentityModel.LoggingExtensions" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" />
   </ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
-		<ProjectReference Include="..\..\..\libraries\BotBuilder\BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 		<ProjectReference Include="..\..\..\libraries\BotBuilder\BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Memory\Memory\Microsoft.Agents.Memory.csproj" />

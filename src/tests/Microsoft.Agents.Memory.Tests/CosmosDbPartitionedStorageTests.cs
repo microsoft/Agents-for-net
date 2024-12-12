@@ -99,12 +99,7 @@ namespace Microsoft.Agents.Memory.Tests
         {
             InitStorage();
 
-            // No keys. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.ReadAsync(null));
-
-            // Empty keys. Should return empty.
-            var empty = await _storage.ReadAsync(new string[] { });
-            Assert.Empty(empty);
+            await StorageBaseTests.ReadValidation(_storage);
         }
 
         [Fact]

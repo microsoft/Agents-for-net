@@ -10,7 +10,7 @@ using System.Text.Json;
 using AdaptiveCards.Templating;
 using AdaptiveCards;
 using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 
 namespace Microsoft.Agents.Samples.Bots
 {

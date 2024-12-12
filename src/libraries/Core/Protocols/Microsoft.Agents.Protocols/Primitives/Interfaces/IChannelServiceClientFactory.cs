@@ -21,20 +21,20 @@ namespace Microsoft.Agents.Protocols.Primitives
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="scopes">The scopes to request.</param>
         /// <param name="serviceUrl">The service URL.</param>
-        /// <param name="UseAnonymous">Whether to use anonymous credentials.</param>
+        /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
         /// <remarks>
         /// This is called at the beginning of each turn.
         /// </remarks>
         /// <returns>A <see cref="IConnectorClient"/>.</returns>
-        Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool UseAnonymous = false);
+        Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false);
 
         /// <summary>
         /// Creates the appropriate <see cref="IUserTokenClient" /> instance.
         /// </summary>
         /// <param name="claimsIdentity">The inbound <see cref="Activity"/>'s <see cref="ClaimsIdentity"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="UseAnonymous">Whether to use anonymous credentials.</param>
+        /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
         /// <returns>Asynchronous Task with <see cref="IUserTokenClient" /> instance.</returns>
-        Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool UseAnonymous = false);
+        Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false);
     }
 }

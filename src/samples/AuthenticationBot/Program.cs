@@ -18,7 +18,7 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBotWithMsalAuth<IBot, AuthBot>();
+builder.AddBot<IBot, AuthBot>();
 
 // Add IStorage for turn state persistence
 builder.Services.AddSingleton<IStorage, MemoryStorage>();

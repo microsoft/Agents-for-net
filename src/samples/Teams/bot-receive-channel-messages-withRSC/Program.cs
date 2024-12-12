@@ -17,7 +17,7 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBotWithMsalAuth<IBot, ActivityBot>();
+builder.AddBot<IBot, ActivityBot>();
 
 var app = builder.Build();
 

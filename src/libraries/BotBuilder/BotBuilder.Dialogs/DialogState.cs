@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 

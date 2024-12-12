@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 
 using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Telemetry;
 using System;
 using System.Collections.Generic;
 using System.Linq;

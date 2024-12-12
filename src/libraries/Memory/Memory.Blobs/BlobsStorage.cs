@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Memory.Blobs
     /// </remarks>
     public class BlobsStorage : IStorage
     {
-        private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.CreateConnectorOptions();
+        private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
 
         // If a JsonSerializer is not provided during construction, this will be the default JsonSerializer.
@@ -61,15 +61,8 @@ namespace Microsoft.Agents.Memory.Blobs
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public BlobsStorage(string dataConnectionString, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            if (string.IsNullOrEmpty(dataConnectionString))
-            {
-                throw new ArgumentNullException(nameof(dataConnectionString));
-            }
-
-            if (string.IsNullOrEmpty(containerName))
-            {
-                throw new ArgumentNullException(nameof(containerName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataConnectionString);
+            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
 
             _storageTransferOptions = storageTransferOptions;
 
@@ -122,10 +115,7 @@ namespace Microsoft.Agents.Memory.Blobs
         /// <inheritdoc/>
         public async Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default)
         {
-            if (keys == null)
-            {
-                throw new ArgumentNullException(nameof(keys));
-            }
+            ArgumentNullException.ThrowIfNull(keys);
 
             foreach (var key in keys)
             {
@@ -275,38 +265,36 @@ namespace Microsoft.Agents.Memory.Blobs
             {
                 try
                 {
-                    using (BlobDownloadInfo download = await blobReference.DownloadAsync(cancellationToken).ConfigureAwait(false))
+                    using BlobDownloadInfo download = await blobReference.DownloadAsync(cancellationToken).ConfigureAwait(false);
+                    object item = null;
+
+                    using (var sr = new StreamReader(download.Content))
                     {
-                        object item = null;
+                        var json = sr.ReadToEnd();
+                        var jsonObject = (JsonObject)JsonObject.Parse(json);
 
-                        using (var sr = new StreamReader(download.Content))
+                        if (jsonObject.GetTypeInfo(out var type))
                         {
-                            var json = sr.ReadToEnd();
-                            var jsonObject = (JsonObject) JsonObject.Parse(json);
-
-                            if (jsonObject.GetTypeInfo(out var type))
-                            {
-                                item = jsonObject.Deserialize(type, _serializerOptions);
-                            }
-                            else
-                            {
-                                item = jsonObject.Deserialize<object>(_serializerOptions);
-                            }
+                            item = jsonObject.Deserialize(type, _serializerOptions);
                         }
-
-                        // if item == null at this point, we received unexpected content
-                        if (item == null)
+                        else
                         {
-                            throw new InvalidDataException("Unexpected response content.  Unable to deserialize.");
+                            item = jsonObject.Deserialize<object>(_serializerOptions);
                         }
-
-                        if (item is IStoreItem storeItem)
-                        {
-                            storeItem.ETag = (await blobReference.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false))?.Value?.ETag.ToString();
-                        }
-
-                        return item;
                     }
+
+                    // if item == null at this point, we received unexpected content
+                    if (item == null)
+                    {
+                        throw new InvalidDataException("Unexpected response content.  Unable to deserialize.");
+                    }
+
+                    if (item is IStoreItem storeItem)
+                    {
+                        storeItem.ETag = (await blobReference.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false))?.Value?.ETag.ToString();
+                    }
+
+                    return item;
                 }
                 catch (RequestFailedException ex)
                     when ((HttpStatusCode)ex.Status == HttpStatusCode.PreconditionFailed)

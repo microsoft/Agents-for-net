@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Dialogs.Memory;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Protocols.Primitives;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -103,14 +103,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         public DialogSet Dialogs { get; set; } = new DialogSet();
 
         /// <summary>
-        /// Gets or sets the DialogStateManagerConfiguration.
-        /// </summary>
-        /// <value>
-        /// The DialogStateManagerConfiguration.
-        /// </value>
-        public DialogStateManagerConfiguration StateConfiguration { get; set; }
-
-        /// <summary>
         /// Gets or sets (optional) number of milliseconds to expire the bot's state after.
         /// </summary>
         /// <value>
@@ -184,7 +176,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             var dc = new DialogContext(Dialogs, context, dialogState);
 
             // Call the common dialog "continue/begin" execution pattern shared with the classic RunAsync extension method
-            var turnResult = await DialogExtensions.InternalRunAsync(context, _rootDialogId, dc, StateConfiguration, cancellationToken).ConfigureAwait(false);
+            var turnResult = await DialogExtensions.InternalRunAsync(context, _rootDialogId, dc, cancellationToken).ConfigureAwait(false);
 
             // save BotState changes
             await botStateSet.SaveAllChangesAsync(dc.Context, false, cancellationToken).ConfigureAwait(false);

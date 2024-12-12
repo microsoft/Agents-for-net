@@ -16,24 +16,18 @@ namespace Microsoft.Agents.Memory
     /// <summary>
     /// A storage layer that uses an in-memory dictionary.
     /// </summary>
-    public class MemoryStorage : IStorage
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="MemoryStorage"/> class.
+    /// </remarks>
+    /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
+    /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
+    public class MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null) : IStorage
     {
         // If a JsonSerializer is not provided during construction, this will be the default static JsonSerializer.
-        private readonly JsonSerializerOptions _stateJsonSerializer;
-        private readonly Dictionary<string, JsonObject> _memory;
-        private readonly object _syncroot = new object();
+        private readonly JsonSerializerOptions _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
+        private readonly Dictionary<string, JsonObject> _memory = dictionary ?? [];
+        private readonly object _syncroot = new();
         private int _eTag = 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MemoryStorage"/> class.
-        /// </summary>
-        /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
-        /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
-        public MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null)
-        {
-            _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.CreateConnectorOptions();
-            _memory = dictionary ?? [];
-        }
 
         /// <summary>
         /// Deletes storage items from storage.
@@ -157,10 +151,7 @@ namespace Microsoft.Agents.Memory
                         newState["ETag"] = (_eTag++).ToString(CultureInfo.InvariantCulture);
                     }
 
-                    if (newState != null)
-                    {
-                        newState.AddTypeInfo(change.Value);
-                    }
+                    newState?.AddTypeInfo(change.Value);
                     _memory[change.Key] = newState;
                 }
             }
@@ -171,7 +162,9 @@ namespace Microsoft.Agents.Memory
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
-            Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
+            ArgumentNullException.ThrowIfNull(changes);
+
+            Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)
             {
                 changesAsObject.Add(change.Key, change.Value);

@@ -5,10 +5,9 @@
 
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Core;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
 
@@ -16,26 +15,20 @@ namespace Microsoft.Agents.Protocols.Connector
 {
     /// <summary> The ClientDiagnostics is used to provide tracing support for the client library. </summary>
     /// <summary> Initializes a new instance of AttachmentsRestClient. </summary>
-    /// <param name="clientDiagnostics"> The handler for diagnostic messaging in the client. </param>
-    /// <param name="pipeline"> The HTTP pipeline for sending and receiving REST requests and responses. </param>
+    /// <param name="client">The HttpClient</param>
     /// <param name="endpoint"> server parameter. </param>
-    internal class AttachmentsRestClient(HttpPipeline pipeline, Uri endpoint = null) : IAttachments
+    internal class AttachmentsRestClient(HttpClient client, Uri endpoint) : IAttachments
     {
-        private readonly HttpPipeline _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-        private readonly Uri _endpoint = endpoint ?? new Uri("");
+        private readonly HttpClient _httpClient = client ?? throw new ArgumentNullException(nameof(client));
+        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
-        internal HttpMessage CreateGetAttachmentInfoRequest(string attachmentId)
+        internal HttpRequestMessage CreateGetAttachmentInfoRequest(string attachmentId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/attachments/", false);
-            uri.AppendPath(attachmentId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}");
             request.Headers.Add("Accept", "application/json");
-            return message;
+            return request;
         }
 
         /// <summary> GetAttachmentInfo. </summary>
@@ -51,19 +44,19 @@ namespace Microsoft.Agents.Protocols.Connector
             }
 
             using var message = CreateGetAttachmentInfoRequest(attachmentId);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int) httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return ProtocolJsonSerializer.ToObject<AttachmentInfo>(message.Response.ContentStream);
+                        return ProtocolJsonSerializer.ToObject<AttachmentInfo>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachmentInfo operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetAttachmentInfo operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;
@@ -78,20 +71,13 @@ namespace Microsoft.Agents.Protocols.Connector
             }
         }
 
-        internal HttpMessage CreateGetAttachmentRequest(string attachmentId, string viewId)
+        internal HttpRequestMessage CreateGetAttachmentRequest(string attachmentId, string viewId)
         {
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = RequestMethod.Get;
-            var uri = new RequestUriBuilder();
-            uri.Reset(_endpoint);
-            uri.AppendPath("/v3/attachments/", false);
-            uri.AppendPath(attachmentId, true);
-            uri.AppendPath("/views/", false);
-            uri.AppendPath(viewId, true);
-            request.Uri = uri;
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
             request.Headers.Add("Accept", "application/octet-stream, application/json");
-            return message;
+            return request;
         }
 
         /// <summary> GetAttachment. </summary>
@@ -112,23 +98,26 @@ namespace Microsoft.Agents.Protocols.Connector
             }
 
             using var message = CreateGetAttachmentRequest(attachmentId, viewId);
-            RedirectPolicy.SetAllowAutoRedirect(message, true);
-            await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch (message.Response.Status)
+            using var httpResponse = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
-                        return message.ExtractResponseContent();
+                        var memoryStream = new MemoryStream();
+                        httpResponse.Content.ReadAsStream(cancellationToken).CopyTo(memoryStream);
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+
+                        return memoryStream;
                     }
                 case 301:
                 case 302:
                     return null;
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachment operation returned an invalid status code '{message.Response.Status}'");
+                        var ex = new ErrorResponseException($"GetAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
                         try
                         {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                             if (errorBody != null)
                             {
                                 ex.Body = errorBody;

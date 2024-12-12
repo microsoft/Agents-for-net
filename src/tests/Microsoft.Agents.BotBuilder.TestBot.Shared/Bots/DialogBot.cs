@@ -3,8 +3,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Protocols.Adapter;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Extensions.Logging;

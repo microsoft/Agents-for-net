@@ -41,10 +41,7 @@ namespace Microsoft.Agents.Memory.CosmosDb
         /// <param name="cosmosDbStorageOptions">Cosmos DB partitioned storage configuration options.</param>
         public CosmosDbPartitionedStorage(CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            if (cosmosDbStorageOptions == null)
-            {
-                throw new ArgumentNullException(nameof(cosmosDbStorageOptions));
-            }
+            ArgumentNullException.ThrowIfNull(cosmosDbStorageOptions);
 
             if (cosmosDbStorageOptions.CosmosDbEndpoint == null)
             {
@@ -255,6 +252,8 @@ namespace Microsoft.Agents.Memory.CosmosDb
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
+            ArgumentNullException.ThrowIfNull(changes);
+
             Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
             foreach (var change in changes)
             {

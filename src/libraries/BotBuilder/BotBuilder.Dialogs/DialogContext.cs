@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.BotBuilder.Dialogs.Memory;
 using Microsoft.Agents.Protocols.Primitives;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -32,10 +31,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             Dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
             Context = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             Stack = state.DialogStack;
-            State = new DialogStateManager(this);
             Services = new TurnContextStateCollection();
-
-            ObjectPath.SetPathValue(turnContext.TurnState, TurnPath.Activity, Context.Activity);
         }
 
         /// <summary>
@@ -138,16 +134,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 return null;
             }
         }
-
-        /// <summary>
-        /// Gets or sets the DialogStateManager which manages view of all memory scopes.
-        /// </summary>
-        /// <value>
-        /// DialogStateManager with unified memory view of all memory scopes.
-        /// </value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
-        public DialogStateManager State { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets the services collection which is contextual to this dialog context.
@@ -666,17 +652,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <exception cref="CultureNotFoundException">Thrown when no locale is resolved and no default value factory is provided.</exception>
         public string GetLocale()
         {
-            const string TurnLocaleProperty = "turn.locale";
             string locale;
 
             try
             {
-                // turn.locale is the highest precedence.
-                if (State.TryGetValue<string>(TurnLocaleProperty, out locale) && !string.IsNullOrEmpty(locale))
-                {
-                    return new CultureInfo(locale).Name;
-                }
-
                 // If turn.locale was not populated, fall back to activity locale
                 locale = Context.Activity?.Locale;
 
@@ -714,9 +693,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                 // Pop dialog off stack
                 Stack.RemoveAt(0);
-
-                // set Turn.LastResult to result
-                ObjectPath.SetPathValue(this.Context.TurnState, TurnPath.LastResult, result);
             }
         }
 
@@ -747,7 +723,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                     { nameof(ActiveDialog), this.ActiveDialog?.Id },
                     { nameof(Parent), this.Parent?.ActiveDialog?.Id },
                     { nameof(Stack), stack },
-                    { nameof(State), this.State.GetMemorySnapshot() }
                 });
             }
         }

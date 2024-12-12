@@ -16,7 +16,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 
 - Access to an Azure Subscription with access to preform the following tasks:
     - Create and configure Entra ID Application Identities
-    - Create and configure an [Azure Bot Service](https://aka.ms/azuredeployment) for your bot
+    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your bot
     - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
@@ -51,6 +51,10 @@ If you type a message and hit enter, or the send arrow, your messages should be 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ],
+
       "Connections": {
           "BotServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -68,9 +72,12 @@ If you type a message and hit enter, or the send arrow, your messages should be 
       }
       ```
 
-      1. Set the **ClientId** to the AppId of your identity
+      1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Set the **Audience** to the AppId of the bot identity.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
    > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).
@@ -79,7 +86,7 @@ If you type a message and hit enter, or the send arrow, your messages should be 
    devtunnel host -p 3978 --allow-anonymous
    ```
 
-1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messageing endpoint** to `{tunnel-url}/api/messages`
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
 1. Start the Agent in Visual Studio
 

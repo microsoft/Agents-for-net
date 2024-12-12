@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {

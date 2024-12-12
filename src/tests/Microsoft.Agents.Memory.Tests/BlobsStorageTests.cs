@@ -39,11 +39,11 @@ namespace Microsoft.Agents.Memory.Tests
 
             // No dataConnectionString. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsStorage(null, "containerName"));
-            Assert.Throws<ArgumentNullException>(() => new BlobsStorage(string.Empty, "containerName"));
+            Assert.Throws<ArgumentException>(() => new BlobsStorage(string.Empty, "containerName"));
 
             // No containerName. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsStorage(ConnectionString, null));
-            Assert.Throws<ArgumentNullException>(() => new BlobsStorage(ConnectionString, string.Empty));
+            Assert.Throws<ArgumentException>(() => new BlobsStorage(ConnectionString, string.Empty));
         }
 
         [Fact]
@@ -268,8 +268,7 @@ namespace Microsoft.Agents.Memory.Tests
         {
             InitStorage();
 
-            // No keys. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.ReadAsync(null));
+            await StorageBaseTests.ReadValidation(_storage);
         }
 
         [Fact]

@@ -11,7 +11,11 @@
 	<PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" />
   </ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+
+	<ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
     <ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
   </ItemGroup>

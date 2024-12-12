@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Memory;
 using Microsoft.Agents.Protocols.Primitives;
 using System.Collections.Generic;

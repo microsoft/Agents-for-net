@@ -4,13 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Protocols.Microsoft.Agents.Protocols.Connector;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Teams.Connector;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -26,72 +28,88 @@ namespace Microsoft.Agents.Protocols.Connector
     /// <remarks>
     /// A factory to create REST clients to interact with a Channel Service.
     /// </remarks>
-    /// <param name="connections"></param>
-    /// <param name="tokenServiceEndpoint"></param>
-    /// <param name="tokenServiceAudience"></param>
-    /// <param name="logger"></param>
-    /// <param name="customClient">For testing purposes only.</param>
-    public class RestChannelServiceClientFactory(
-        IConnections connections,
-        string tokenServiceEndpoint = AuthenticationConstants.BotFrameworkOAuthUrl,
-        string tokenServiceAudience = AuthenticationConstants.BotFrameworkScope,
-        ILogger logger = null,
-        HttpClient? customClient = null) : IChannelServiceClientFactory
+    public class RestChannelServiceClientFactory : IChannelServiceClientFactory
     {
-        private readonly string _tokenServiceEndpoint = tokenServiceEndpoint ?? throw new ArgumentNullException(nameof(tokenServiceEndpoint));
-        private readonly string _tokenServiceAudience = tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience));
-        private readonly HttpClient _httpClient = customClient;
-        private readonly ILogger _logger = logger ?? NullLogger.Instance;
-        private readonly IConnections _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+        private readonly string _tokenServiceEndpoint;
+        private readonly string _tokenServiceAudience;
+        private readonly ILogger _logger;
+        private readonly IConnections _connections;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        /// <inheritdoc />
-        public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool UseAnonymous = false)
+        /// <param name="configuration"></param>
+        /// <param name="httpClientFactory">Used to create an HttpClient with the fullname of this class</param>
+        /// <param name="connections"></param>
+        /// <param name="tokenServiceEndpoint"></param>
+        /// <param name="tokenServiceAudience"></param>
+        /// <param name="logger"></param>
+        /// <param name="customClient">For testing purposes only.</param>
+        public RestChannelServiceClientFactory(
+            IConfiguration configuration,
+            IHttpClientFactory httpClientFactory,
+            IConnections connections,
+            string tokenServiceEndpoint = AuthenticationConstants.BotFrameworkOAuthUrl,
+            string tokenServiceAudience = AuthenticationConstants.BotFrameworkScope,
+            ILogger logger = null)
         {
-            if (string.IsNullOrEmpty(serviceUrl))
-            {
-                throw new ArgumentNullException(nameof(serviceUrl));
-            }
+            ArgumentNullException.ThrowIfNull(configuration);
 
-            IAccessTokenProvider tokenAccess = null;
-            if (!UseAnonymous)
-            {
-                tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl)
-                    ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {serviceUrl}");
-            }
+            _logger = logger ?? NullLogger.Instance;
+            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
-            // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
-            if (_httpClient == null)
-            {
-                return Task.FromResult<IConnectorClient>(new RestTeamsConnectorClient(new Uri(serviceUrl), tokenAccess, audience, scopes));
-            }
-            else
-            {
-                var options = new ConnectorClientOptions()
-                {
-                    Transport = new HttpClientTransport(_httpClient)
-                };
-                return Task.FromResult<IConnectorClient>(new RestTeamsConnectorClient(new Uri(serviceUrl), tokenAccess, audience, scopes, options));
-            }
+            var tokenEndpoint = configuration?.GetValue<string>($"{nameof(RestChannelServiceClientFactory)}:TokenServiceEndpoint");
+            _tokenServiceEndpoint = string.IsNullOrWhiteSpace(tokenEndpoint)
+                ? tokenServiceEndpoint ?? throw new ArgumentNullException(nameof(tokenServiceEndpoint))
+                : tokenEndpoint;
+
+            var tokenAudience = configuration?.GetValue<string>($"{nameof(RestChannelServiceClientFactory)}:TokenServiceAudience");
+            _tokenServiceAudience = string.IsNullOrWhiteSpace(tokenAudience)
+                ? tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience))
+                : tokenAudience;
         }
 
         /// <inheritdoc />
-        public Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool UseAnonymous = false)
+        public async Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceUrl);
+
+            IAccessTokenProvider tokenAccess = null;
+            if (!useAnonymous)
+            {
+                tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl)
+                    ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+            }
+
+            // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
+            var httpClient = await GetHttpClientAsync(claimsIdentity, audience, scopes, useAnonymous).ConfigureAwait(false);
+            return new RestTeamsConnectorClient(new Uri(serviceUrl), httpClient, audience, scopes);
+        }
+
+        /// <inheritdoc />
+        public async Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
 
-            IAccessTokenProvider tokenAccess = null;
-            if (!UseAnonymous)
+            var httpClient = await GetHttpClientAsync(claimsIdentity, _tokenServiceAudience, null, useAnonymous);
+            var appId = BotClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
+            return new RestUserTokenClient(appId, new Uri(_tokenServiceEndpoint), httpClient, _logger);
+        }
+
+        private async Task<HttpClient> GetHttpClientAsync(ClaimsIdentity claimsIdentity, string audience, IList<string> scopes, bool useAnonymous)
+        {
+            var httpClient = _httpClientFactory.CreateClient(typeof(RestChannelServiceClientFactory).FullName);
+
+            if (!useAnonymous)
             {
-                tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint)
-                     ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {_tokenServiceEndpoint}");
+                IAccessTokenProvider tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint)
+                        ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {_tokenServiceEndpoint}");
+
+                var token = await tokenAccess.GetAccessTokenAsync(audience, scopes).ConfigureAwait(false);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            //if (tokenAccess == null)
-            //{
-            //    throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {_tokenServiceEndpoint}");
-            //}
-            var appId = BotClaims.GetAppId(claimsIdentity)?? Guid.Empty.ToString();
-            return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(appId, new Uri(_tokenServiceEndpoint), tokenAccess, _tokenServiceAudience, null, _logger));
+            httpClient.AddDefaultUserAgent();
+            return httpClient;
         }
     }
 }

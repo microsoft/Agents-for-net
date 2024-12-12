@@ -2,14 +2,14 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.TestBot.Shared.Bots;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.BotBuilderSamples.Tests.Framework;
 using Xunit;
 using Microsoft.Agents.Memory;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.BotBuilder.Testing;
 
 namespace Microsoft.BotBuilderSamples.Tests.Bots
 {

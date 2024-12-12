@@ -24,6 +24,10 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ],
+
       "Connections": {
           "BotServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -41,9 +45,12 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
       }
       ```
 
-      1. Set the **ClientId** to the AppId of your identity
+      1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Set the **Audience** to the AppId of the bot identity.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
@@ -62,7 +69,7 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
    devtunnel host -p 3978 --allow-anonymous
    ```
 
-1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messageing endpoint** to `{tunnel-url}/api/messages`
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
 1. Start the Agent, and select **Preview in Teams** in the upper right corner
 

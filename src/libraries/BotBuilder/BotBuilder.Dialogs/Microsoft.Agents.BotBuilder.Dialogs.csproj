@@ -24,12 +24,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
+    <ProjectReference Include="..\..\Core\Telemetry\Microsoft.Agents.Telemetry.csproj" />
     <ProjectReference Include="..\..\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
+    <ProjectReference Include="..\..\Memory\Memory\Microsoft.Agents.Memory.csproj" />
   </ItemGroup>
 
 	<ItemGroup>
-	  <None Include="README.md" Pack="true" PackagePath="\"/>
+	  <None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 </Project>

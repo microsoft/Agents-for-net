@@ -41,6 +41,10 @@ This offers a practical guide for developers looking to enhance user experiences
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ],
+
       "Connections": {
           "BotServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -58,15 +62,18 @@ This offers a practical guide for developers looking to enhance user experiences
       }
       ```
 
-      1. Set the **ClientId** to the AppId of your identity
+      1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Set the **Audience** to the AppId of the bot identity.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Set "ConnectionName" in the `appsettings.json`. The Microsoft Entra ID ConnectionName from the OAuth Connection Settings on the Azure Bot.
 
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
-     -  Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
+     - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
      - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
    - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
 1. Upload the `manifest.zip` to Teams
@@ -81,7 +88,7 @@ This offers a practical guide for developers looking to enhance user experiences
    devtunnel host -p 3978 --allow-anonymous
    ```
 
-1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messageing endpoint** to `{tunnel-url}/api/messages`
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
 1. Start the Agent, and select **Preview in Teams** in the upper right corner
     

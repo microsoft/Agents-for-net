@@ -3,23 +3,12 @@
 
 
 using Microsoft.Bot.Builder.Tests;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Protocols.Adapter;
 using Microsoft.Agents.Protocols.Adapter.Tests;
 using Microsoft.Agents.Protocols.Adapter.Tests.Teams;
-using Microsoft.Agents.Protocols.Connector;
 using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Adapter;
 using Microsoft.Agents.Teams.Primitives;
-using Moq;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Reflection;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 

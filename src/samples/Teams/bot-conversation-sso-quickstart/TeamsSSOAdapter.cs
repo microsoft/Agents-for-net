@@ -3,7 +3,7 @@
 // </copyright>
 
 using System;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Protocols.Primitives;

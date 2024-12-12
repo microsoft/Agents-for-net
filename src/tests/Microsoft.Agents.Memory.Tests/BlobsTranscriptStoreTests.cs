@@ -232,7 +232,7 @@ namespace Microsoft.Agents.Memory.Tests
             var pageResult = await _storage.GetTranscriptActivitiesAsync("channelId", "conversationId");
 
             Assert.NotNull(pageResult);
-            Assert.Equal(pageSize, pageResult.Items.Length);
+            Assert.Equal(pageSize, pageResult.Items.Count);
             Assert.Equal(pageSize.ToString(), pageResult.ContinuationToken);
             _client.Verify(e => e.DownloadAsync(), Times.Exactly(20));
         }
@@ -280,7 +280,7 @@ namespace Microsoft.Agents.Memory.Tests
             var pageResult = await _storage.ListTranscriptsAsync("channelId");
 
             Assert.NotNull(pageResult);
-            Assert.Equal(pageSize, pageResult.Items.Length);
+            Assert.Equal(pageSize, pageResult.Items.Count);
             Assert.Equal(pageSize.ToString(), pageResult.ContinuationToken);
         }
 

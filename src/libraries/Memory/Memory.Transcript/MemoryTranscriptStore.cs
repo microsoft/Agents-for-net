@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
 
 namespace Microsoft.Agents.Memory.Transcript
 {
@@ -18,7 +17,7 @@ namespace Microsoft.Agents.Memory.Transcript
     /// </remarks>
     public class MemoryTranscriptStore : ITranscriptStore
     {
-        private Dictionary<string, Dictionary<string, List<IActivity>>> _channels = new Dictionary<string, Dictionary<string, List<IActivity>>>();
+        private readonly Dictionary<string, Dictionary<string, List<IActivity>>> _channels = [];
 
         /// <summary>
         /// Logs an activity to the transcript.
@@ -113,24 +112,15 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <remarks>If the task completes successfully, the result contains a page of matching activities.</remarks>
         public Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default(DateTimeOffset))
         {
-            if (channelId == null)
-            {
-                throw new ArgumentNullException(nameof(channelId));
-            }
-
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
 
             var pagedResult = new PagedResult<IActivity>();
             lock (_channels)
             {
-                Dictionary<string, List<IActivity>> channel;
-                if (_channels.TryGetValue(channelId, out channel))
+                if (_channels.TryGetValue(channelId, out Dictionary<string, List<IActivity>> channel))
                 {
-                    List<IActivity> transcript;
-                    if (channel.TryGetValue(conversationId, out transcript))
+                    if (channel.TryGetValue(conversationId, out List<IActivity> transcript))
                     {
                         if (continuationToken != null)
                         {
@@ -142,7 +132,7 @@ namespace Microsoft.Agents.Memory.Transcript
                                 .Take(20)
                                 .ToArray();
 
-                            if (pagedResult.Items.Length == 20)
+                            if (pagedResult.Items.Count == 20)
                             {
                                 pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                             }
@@ -155,7 +145,7 @@ namespace Microsoft.Agents.Memory.Transcript
                                 .Take(20)
                                 .ToArray();
 
-                            if (pagedResult.Items.Length == 20)
+                            if (pagedResult.Items.Count == 20)
                             {
                                 pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                             }
@@ -175,24 +165,14 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <returns>A task that represents the work queued to execute.</returns>
         public Task DeleteTranscriptAsync(string channelId, string conversationId)
         {
-            if (channelId == null)
-            {
-                throw new ArgumentNullException(nameof(channelId));
-            }
-
-            if (conversationId == null)
-            {
-                throw new ArgumentNullException(nameof(conversationId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
 
             lock (_channels)
             {
                 if (_channels.TryGetValue(channelId, out var channel))
                 {
-                    if (channel.ContainsKey(conversationId))
-                    {
-                        channel.Remove(conversationId);
-                    }
+                    channel.Remove(conversationId);
                 }
             }
 
@@ -208,10 +188,7 @@ namespace Microsoft.Agents.Memory.Transcript
         /// <remarks>If the task is successful, the result contains a page of conversations.</remarks>
         public Task<PagedResult<TranscriptInfo>> ListTranscriptsAsync(string channelId, string continuationToken = null)
         {
-            if (channelId == null)
-            {
-                throw new ArgumentNullException(nameof(channelId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
 
             var pagedResult = new PagedResult<TranscriptInfo>();
             lock (_channels)
@@ -232,7 +209,7 @@ namespace Microsoft.Agents.Memory.Transcript
                         .Take(20)
                         .ToArray();
 
-                        if (pagedResult.Items.Length == 20)
+                        if (pagedResult.Items.Count == 20)
                         {
                             pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                         }
@@ -250,7 +227,7 @@ namespace Microsoft.Agents.Memory.Transcript
                             .Take(20)
                             .ToArray();
 
-                        if (pagedResult.Items.Length == 20)
+                        if (pagedResult.Items.Count == 20)
                         {
                             pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                         }

@@ -27,7 +27,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\libraries\BotBuilder\BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Protocols\Microsoft.Agents.Protocols.csproj" />
 	</ItemGroup>
 	

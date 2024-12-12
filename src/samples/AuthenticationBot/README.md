@@ -25,6 +25,10 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "Audiences": [
+        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+      ],
+
       "Connections": {
           "BotServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -42,9 +46,12 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       }
       ```
 
-      1. Set the **ClientId** to the AppId of your identity
+      1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Set the **Audience** to the AppId of the bot identity.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Update `appsettings.json` 
 
@@ -68,7 +75,9 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 ## Running this Agent in Teams
 
 1. Manually update the manifest.json
-   - Edit the `manifest.json` contained in the  `/appManifest` folder to replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
+   - Edit the `manifest.json` contained in the `/appManifest` folder
+     - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
+     - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
    - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
 1. Upload the `manifest.zip` to Teams
    - Select **Developer Portal** in the Teams left sidebar

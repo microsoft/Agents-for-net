@@ -12,6 +12,16 @@ namespace Microsoft.Agents.Memory.Tests
 {
     public class StorageBaseTests 
     {
+        public static async Task ReadValidation(IStorage storage)
+        {
+            // No keys. Should throw.
+            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.ReadAsync(null));
+
+            // Empty keys. Should return empty.
+            var empty = await storage.ReadAsync([]);
+            Assert.Empty(empty);
+        }
+
         protected async Task ReadUnknownTest(IStorage storage)
         {
             var result = await storage.ReadAsync(new[] { "unknown" });

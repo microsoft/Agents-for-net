@@ -8,7 +8,6 @@ using System.Globalization;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.BotBuilder.Testing;
 using Moq;
 using Xunit;
@@ -17,6 +16,7 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Memory;
 using System.Text.Json;
 using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.BotBuilder.Dialogs.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

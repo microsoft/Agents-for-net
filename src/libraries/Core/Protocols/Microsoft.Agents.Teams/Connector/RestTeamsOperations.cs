@@ -1,14 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure.Core;
-using Azure.Core.Pipeline;
 using Microsoft.Agents.Protocols.Connector;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Agents.Protocols.Serializer;
 using Microsoft.Agents.Teams.Primitives;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mail;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,25 +22,24 @@ namespace Microsoft.Agents.Teams.Connector
     internal class RestTeamsOperations : ITeamsOperations
     {
         private static volatile RetryParams currentRetryPolicy;
-        private readonly HttpPipeline _pipeline;
+        private readonly HttpClient _httpClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RestTeamsOperations"/> class.
         /// </summary>
         /// <param name='client'>
-        /// <param name="pipeline"/>
+        /// <param name="httpClient"/>
         /// Reference to the service client.
         /// </param>
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null.
         /// </exception>
-        public RestTeamsOperations(RestTeamsConnectorClient client, HttpPipeline pipeline)
+        public RestTeamsOperations(RestTeamsConnectorClient client, HttpClient httpClient)
         {
             ArgumentNullException.ThrowIfNull(client);
 
-            _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-
             Client = client;
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Teams.Connector
             var url = "v3/teams/{teamId}/conversations";
             url = url.Replace("{teamId}", Uri.EscapeDataString(teamId));
 
-            return await GetResponseAsync<ConversationList>("FetchChannelList", url, RequestMethod.Get, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await GetResponseAsync<ConversationList>("FetchChannelList", url, HttpMethod.Get, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Teams.Connector
             var url = "v3/teams/{teamId}";
             url = url.Replace("{teamId}", Uri.EscapeDataString(teamId));
 
-            return await GetResponseAsync<TeamDetails>("FetchTeamDetails", url, RequestMethod.Get, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await GetResponseAsync<TeamDetails>("FetchTeamDetails", url, HttpMethod.Get, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Teams.Connector
             var url = "v1/meetings/{meetingId}";
             url = url.Replace("{meetingId}", System.Uri.EscapeDataString(meetingId));
 
-            return await GetResponseAsync<MeetingInfo>("FetchMeetingInfo", url, RequestMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await GetResponseAsync<MeetingInfo>("FetchMeetingInfo", url, HttpMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Teams.Connector
             url = url.Replace("{participantId}", System.Uri.EscapeDataString(participantId));
             url = url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
 
-            return await GetResponseAsync<TeamsMeetingParticipant>("FetchParticipant", url, RequestMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false); 
+            return await GetResponseAsync<TeamsMeetingParticipant>("FetchParticipant", url, HttpMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false); 
         }
 
         /// <inheritdoc/>
@@ -118,22 +118,18 @@ namespace Microsoft.Agents.Teams.Connector
             var url = "v1/meetings/{meetingId}/notification";
             url = url.Replace("{meetingId}", Uri.EscapeDataString(meetingId));
 
-            return await GetResponseAsync<MeetingNotificationResponse>("SendMeetingNotification", url, RequestMethod.Post, body: notification, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await GetResponseAsync<MeetingNotificationResponse>("SendMeetingNotification", url, HttpMethod.Post, body: notification, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<string> SendMessageToListOfUsersAsync(IActivity activity, List<TeamMember> teamsMembers, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             ArgumentNullException.ThrowIfNull(activity);
+            ArgumentNullException.ThrowIfNullOrEmpty(tenantId);
 
             if (teamsMembers.Count == 0)
             {
                 throw new ArgumentNullException(nameof(teamsMembers));
-            }
-
-            if (string.IsNullOrEmpty(tenantId))
-            {
-                throw new ArgumentNullException(nameof(tenantId));
             }
 
             var content = new
@@ -147,7 +143,7 @@ namespace Microsoft.Agents.Teams.Connector
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<string>("SendMessageToListOfUsers", apiUrl, RequestMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<string>("SendMessageToListOfUsers", apiUrl, HttpMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -157,11 +153,7 @@ namespace Microsoft.Agents.Teams.Connector
         public async Task<string> SendMessageToAllUsersInTenantAsync(IActivity activity, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             ArgumentNullException.ThrowIfNull(activity);
-
-            if (string.IsNullOrEmpty(tenantId))
-            {
-                throw new ArgumentNullException(nameof(tenantId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(tenantId);
 
             var content = new
             {
@@ -173,7 +165,7 @@ namespace Microsoft.Agents.Teams.Connector
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<string>("SendMessageToAllUsersInTenant", apiUrl, RequestMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<string>("SendMessageToAllUsersInTenant", apiUrl, HttpMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -183,16 +175,8 @@ namespace Microsoft.Agents.Teams.Connector
         public async Task<string> SendMessageToAllUsersInTeamAsync(IActivity activity, string teamId, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             ArgumentNullException.ThrowIfNull(activity);
-
-            if (string.IsNullOrEmpty(teamId))
-            {
-                throw new ArgumentNullException(nameof(teamId));
-            }
-
-            if (string.IsNullOrEmpty(tenantId))
-            {
-                throw new ArgumentNullException(nameof(tenantId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(teamId);
+            ArgumentNullException.ThrowIfNullOrEmpty(tenantId);
 
             var content = new
             {
@@ -205,7 +189,7 @@ namespace Microsoft.Agents.Teams.Connector
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<string>("SendMessageToAllUsersInTeam", apiUrl, RequestMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<string>("SendMessageToAllUsersInTeam", apiUrl, HttpMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -237,7 +221,7 @@ namespace Microsoft.Agents.Teams.Connector
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<string>("SendMessageToListOfChannels", apiUrl, RequestMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<string>("SendMessageToListOfChannels", apiUrl, HttpMethod.Post, body: content, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -246,17 +230,14 @@ namespace Microsoft.Agents.Teams.Connector
         /// <inheritdoc/>
         public async Task<BatchOperationState> GetOperationStateAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (string.IsNullOrEmpty(operationId))
-            {
-                throw new ArgumentNullException(nameof(operationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(operationId);
 
             var apiUrl = "v3/batch/conversation/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<BatchOperationState>("GetOperationState", apiUrl, RequestMethod.Post, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<BatchOperationState>("GetOperationState", apiUrl, HttpMethod.Post, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -265,17 +246,14 @@ namespace Microsoft.Agents.Teams.Connector
         /// <inheritdoc/>
         public async Task<BatchFailedEntriesResponse> GetPagedFailedEntriesAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, string continuationToken = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (string.IsNullOrEmpty(operationId))
-            {
-                throw new ArgumentNullException(nameof(operationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(operationId);
 
             var apiUrl = "v3/batch/conversation/failedentries/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<BatchFailedEntriesResponse>("GetPagedFailedEntries", apiUrl, RequestMethod.Get, continuationToken: continuationToken, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<BatchFailedEntriesResponse>("GetPagedFailedEntries", apiUrl, HttpMethod.Get, continuationToken: continuationToken, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -284,17 +262,14 @@ namespace Microsoft.Agents.Teams.Connector
         /// <inheritdoc/>
         public async Task CancelOperationAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (string.IsNullOrEmpty(operationId))
-            {
-                throw new ArgumentNullException(nameof(operationId));
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(operationId);
 
             var apiUrl = "v3/batch/conversation/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 miliseconds).
             await RetryAction.RunAsync(
-                task: () => GetResponseAsync<BatchOperationState>("CancelOperation", apiUrl, RequestMethod.Delete, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<BatchOperationState>("CancelOperation", apiUrl, HttpMethod.Delete, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
         }
 
@@ -310,28 +285,19 @@ namespace Microsoft.Agents.Teams.Connector
             }
         }
 
-        private async Task<T> GetResponseAsync<T>(string operationName, string apiUrl, RequestMethod httpMethod, object body = null, string continuationToken = null, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<T> GetResponseAsync<T>(string operationName, string apiUrl, HttpMethod httpMethod, object body = null, string continuationToken = null, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Construct URL
-            var message = _pipeline.CreateMessage();
-            var request = message.Request;
-            request.Method = httpMethod;
-            var uri = new RequestUriBuilder();
-            uri.Reset(new Uri(Client.BaseUri.AbsoluteUri));
-            uri.AppendPath(apiUrl, false);
-            if (continuationToken != null)
+            var request = new HttpRequestMessage
             {
-                uri.AppendQuery("continuationToken", continuationToken, true);
-            }
-            request.Uri = uri;
+                Method = httpMethod,
+                RequestUri = new Uri(Client.BaseUri, apiUrl)
+                    .AppendQuery("continuationToken", continuationToken)
+            };
             request.Headers.Add("Accept", "application/json");
 
             if (body != null)
             {
-                request.Headers.Add("Content-Type", "application/json");
-                var content = new JsonRequestContent();
-                content.WriteObjectValue(body);
-                request.Content = content;
+                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
 
             if (customHeaders != null)
@@ -349,13 +315,13 @@ namespace Microsoft.Agents.Teams.Connector
 
             try
             {
-                await _pipeline.SendAsync(message, cancellationToken).ConfigureAwait(false);
-                switch (message.Response.Status)
+                using var httpResponse = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                switch ((int)httpResponse.StatusCode)
                 {
                     case 200:
                     case 201:
                         {
-                            return ProtocolJsonSerializer.ToObject<T>(message.Response.ContentStream);
+                            return ProtocolJsonSerializer.ToObject<T>(httpResponse.Content.ReadAsStream(cancellationToken));
                         }
                     case 429:
                         {
@@ -363,10 +329,10 @@ namespace Microsoft.Agents.Teams.Connector
                         }
                     default:
                         {
-                            var ex = new ErrorResponseException($"{operationName} operation returned an invalid status code '{message.Response.Status}'");
+                            var ex = new ErrorResponseException($"{operationName} operation returned an invalid status code '{httpResponse.StatusCode}'");
                             try
                             {
-                                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(message.Response.ContentStream);
+                                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                                 if (errorBody != null)
                                 {
                                     ex.Body = errorBody;
