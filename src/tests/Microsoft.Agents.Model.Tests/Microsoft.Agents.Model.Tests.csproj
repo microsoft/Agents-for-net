@@ -25,10 +25,11 @@
       </PackageReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\libraries\core\Protocols\Microsoft.Agents.Protocols.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="../../libraries/Core/Protocols/Microsoft.Agents.Protocols.csproj" />
+	</ItemGroup>
 
+   
 	<ItemGroup>
 		<None Update="Resources\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
