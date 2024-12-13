@@ -26,7 +26,5 @@ jobs:
       with:
         azure-devops-project-url: 'https://dev.azure.com/dynamicscrm/OneCRM'
         azure-pipeline-name: 'Agents-dotnet-pr' # name of the Azure pipeline to be triggered
-        azure-devops-token: $AZURE_DEVOPS_ACCESS_TOKEN
+        azure-devops-token: '${{ steps.getToken.outputs.token }}'
         azure-pipeline-variables:  '{"ProjectBranch": "main"}'
-      env:
-       AZURE_DEVOPS_ACCESS_TOKEN: ${{ steps.getToken.outputs.token }} 
