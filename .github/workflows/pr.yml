@@ -23,11 +23,45 @@ jobs:
        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
        organization: ${{ secrets.ADO_ORGANIZATION }}
 
-    - uses: Azure/pipelines@v1
-      with:
-        azure-devops-project-url: 'https://dev.azure.com/dynamicscrm/OneCRM'
-        azure-pipeline-name: 'Agents-dotnet-pr' # name of the Azure pipeline to be triggered
-        azure-devops-token: $AZURE_DEVOPS_ACCESS_TOKEN
-        azure-pipeline-variables:  '{"ProjectBranch": "main"}'
-      env:
-       AZURE_DEVOPS_ACCESS_TOKEN: ${{ steps.getToken.outputs.token }} 
+    - name: Trigger Azure DevOps Pipeline
+      id: trigger
+      run: |
+        response=$(curl -X POST \
+          -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
+          -H "Content-Type: application/json" \
+          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \
+          https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs?api-version=6.0-preview.1)
+        echo "::set-output name=run_id::$(echo $response | jq -r .id)"
+
+    - name: Monitor Pipeline Run
+      run: |
+        run_id=${{ steps.trigger.outputs.run_id }}
+        status="inProgress"
+        while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ]; do
+          response=$(curl -X GET \
+            -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
+            https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs/$run_id?api-version=6.0-preview.1)
+          status=$(echo $response | jq -r .status)
+          echo "Pipeline status: $status"
+          if [ "$status" == "completed" ]; then
+            result=$(echo $response | jq -r .result)
+            if [ "$result" == "succeeded" ]; then
+              echo "Pipeline succeeded"
+              exit 0
+            else
+              echo "Pipeline failed with result: $result"
+              exit 1
+            fi
+          fi
+          sleep 10
+        done
+
+
+#    - uses: Azure/pipelines@v1
+#      with:
+#        azure-devops-project-url: 'https://dev.azure.com/dynamicscrm/OneCRM'
+#        azure-pipeline-name: 'Agents-dotnet-pr' # name of the Azure pipeline to be triggered
+#        azure-devops-token: $AZURE_DEVOPS_ACCESS_TOKEN
+#        azure-pipeline-variables:  '{"ProjectBranch": "main"}'
+#      env:
+#       AZURE_DEVOPS_ACCESS_TOKEN: ${{ steps.getToken.outputs.token }} 
