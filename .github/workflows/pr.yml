@@ -32,33 +32,34 @@ jobs:
           -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/users/mbarbour/pipelineUpdate"}},"variables": {"ProjectBranch": {"value": "users-mbarbour-AddBuildsAndResync"}}}}' \
           https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs?api-version=7.1)
         echo $response
+        echo $BRANCH_NAME
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
-
+      env:
+        BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 #          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \       
 
-#    - name: Monitor Pipeline Run
-#      run: |
-#        run_id=${{ steps.trigger.outputs.run_id }}
-#        status="inProgress"
-#        while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ]; do
-#          response=$(curl -X GET \
-#            -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
-#            https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
-#          status=$(echo $response | jq -r .status)
-#          echo "Pipeline status: $status"
-#          if [ "$status" == "completed" ]; then
-#            result=$(echo $response | jq -r .result)
-#            if [ "$result" == "succeeded" ]; then
-#              echo "Pipeline succeeded"
-#              exit 0
-#            else
-#              echo "Pipeline failed with result: $result"
-#              exit 1
-#            fi
-#          fi
-#          sleep 10
-#        done
-
+    - name: Monitor Pipeline Run
+      run: |
+        run_id=${{ steps.trigger.outputs.run_id }}
+        status="inProgress"
+        while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ]; do
+          response=$(curl -X GET \
+            -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
+            https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
+          status=$(echo $response | jq -r .status)
+          echo "Pipeline status: $status"
+          if [ "$status" == "completed" ]; then
+            result=$(echo $response | jq -r .result)
+            if [ "$result" == "succeeded" ]; then
+              echo "Pipeline succeeded"
+              exit 0
+            else
+              echo "Pipeline failed with result: $result"
+              exit 1
+            fi
+          fi
+          sleep 10
+        done
 
 #    - uses: Azure/pipelines@v1
 #      with:
