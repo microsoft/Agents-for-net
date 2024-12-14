@@ -29,10 +29,12 @@ jobs:
         response=$(curl -v -X POST \
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
-          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \
+          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}, "variables": {"ProjectBranch": {"value": "users-mbarbour-AddBuildsAndResync"}}}' \
           https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs?api-version=7.1)
         echo $response
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
+
+#          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \       
 
 #    - name: Monitor Pipeline Run
 #      run: |
