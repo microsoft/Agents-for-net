@@ -47,7 +47,7 @@ jobs:
           response=$(curl -X GET \
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
             https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
-          status=$(echo $response | jq -r .status)
+          status=$(echo $response | jq -r .state)
           echo "Pipeline status: $status"
           if [ "$status" == "completed" ]; then
             result=$(echo $response | jq -r .result)
