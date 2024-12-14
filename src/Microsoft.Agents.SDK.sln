@@ -94,7 +94,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Client.Tes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinkUnfurling", "samples\Teams\LinkUnfurling\LinkUnfurling.csproj", "{2D9F4AAB-B0F7-4E07-9690-BB38AF9BB711}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamsAuth", "samples\teams\bot-teams-authentication\TeamsAuth.csproj", "{A059A557-AC73-4CC0-8909-E458BEF05AB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamsAuth", "samples\Teams\bot-teams-authentication\TeamsAuth.csproj", "{A059A557-AC73-4CC0-8909-E458BEF05AB5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BotAllCards", "samples\Teams\bot-all-cards\BotAllCards.csproj", "{5AEA2118-784B-4177-B37A-4C748D0BA176}"
 EndProject
