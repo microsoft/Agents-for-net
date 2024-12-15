@@ -42,7 +42,7 @@ jobs:
       run: |
         run_id=${{ steps.trigger.outputs.run_id }}
         status="inProgress"
-        while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ]; do
+        while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ] || [ "$status" == "canceling" ]  ; do
           response=$(curl -X GET \
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
             ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
