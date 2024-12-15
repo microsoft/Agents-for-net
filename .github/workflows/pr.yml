@@ -48,10 +48,10 @@ jobs:
             ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
           r1=$(echo $response | jq -r .result)
-          webLink=$(echo $response | jq -r .links.web.href)
+          weblink=$(echo $response | jq -r ._links.web.href)
           echo "Pipeline status: $status"
           echo "Result response: $r1"
-          echo "WebLink: $webLink"
+          echo "WebLink: $weblink"
           if [ "$status" == "completed" ]; then
             result=$(echo $response | jq -r .result)
             if [ "$result" == "succeeded" ]; then
