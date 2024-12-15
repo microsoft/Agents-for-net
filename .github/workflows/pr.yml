@@ -47,7 +47,9 @@ jobs:
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
             ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
+          r1=$(echo $response | jq -r .result)
           echo "Pipeline status: $status"
+          echo "Result response: $r1"
           if [ "$status" == "completed" ]; then
             result=$(echo $response | jq -r .result)
             if [ "$result" == "succeeded" ]; then
