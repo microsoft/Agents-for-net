@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Pull Request Build and Vaildation
 
 on:
   pull_request:
@@ -48,15 +48,17 @@ jobs:
             ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
           r1=$(echo $response | jq -r .result)
+          webLink=$(echo $repsonse | jq -r ._links.web.href)
           echo "Pipeline status: $status"
           echo "Result response: $r1"
+          echo "Job Link: $webLink"
           if [ "$status" == "completed" ]; then
             result=$(echo $response | jq -r .result)
             if [ "$result" == "succeeded" ]; then
               echo "Pipeline succeeded"
               exit 0
             else
-              echo "::error file={name},line={line},endLine={endLine},title={title}::Pipeline failed with result: $result"
+              echo "::error Pipeline failed with result: $result"
               echo "Pipeline failed with result: $result"
               exit 1
             fi
