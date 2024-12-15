@@ -30,10 +30,9 @@ jobs:
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
           -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/users/mbarbour/pipelineUpdate"}},"variables": {"ProjectBranch": {"value": "main"}}}}' \
-          https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs?api-version=7.1)
-        echo $response
+          ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs?api-version=7.1)
         echo $BRANCH_NAME
-        echo $response | jq -r .id
+        echo $response
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
       env:
         BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
@@ -46,7 +45,7 @@ jobs:
         while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ]; do
           response=$(curl -X GET \
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
-            https://dev.azure.com/dynamicscrm/OneCRM/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
+            ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
           echo "Pipeline status: $status"
           if [ "$status" == "completed" ]; then
@@ -61,12 +60,3 @@ jobs:
           fi
           sleep 10
         done
-
-#    - uses: Azure/pipelines@v1
-#      with:
-#        azure-devops-project-url: 'https://dev.azure.com/dynamicscrm/OneCRM'
-#        azure-pipeline-name: 'Agents-dotnet-pr' # name of the Azure pipeline to be triggered
-#        azure-devops-token: $AZURE_DEVOPS_ACCESS_TOKEN
-#        azure-pipeline-variables:  '{"ProjectBranch": "main"}'
-#      env:
-#       AZURE_DEVOPS_ACCESS_TOKEN: ${{ steps.getToken.outputs.token }} 
