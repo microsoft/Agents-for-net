@@ -57,9 +57,3 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 
 - [agents Repository](https://github.com/Microsoft/Agents)
 - agents-for-net Repository: **You are here.**
-- [agents-for-js Repository](https://github.com/Microsoft/Agents-for-js)
-- [agents-for-python Repository]( https://github.com/Microsoft/Agents-for-python)
-- [Official Agents Documentation](https://aka.ms/AgentsFramework)
-- [.NET Documentation](https://aka.ms/Agents-net-docs)
-- [JavaScript Documentation](https://aka.ms/agents-js-docs)
-- [Python Documentation](https://aka.ms/agents-python-docs)
