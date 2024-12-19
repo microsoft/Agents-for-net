@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Azure.AI.OpenAI" />
+      <PackageReference Include="Azure.Identity" />
+      <PackageReference Include="CsvHelper" />
+      <PackageReference Include="Microsoft.Agents.Authentication" />
+      <PackageReference Include="Microsoft.Agents.Client" />
+      <PackageReference Include="Microsoft.Agents.CopilotStudio.Client" />
+      <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" />
+      <PackageReference Include="Microsoft.Identity.Client" />
+      <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Data\Evaluation Dataset.csv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
