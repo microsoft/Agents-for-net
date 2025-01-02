@@ -1,0 +1,23 @@
+name: ci - Local build and test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build
+      run: dotnet build
+
+    - name: Test
+      run: dotnet test ./src/
