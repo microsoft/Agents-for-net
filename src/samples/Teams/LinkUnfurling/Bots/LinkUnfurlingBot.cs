@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Agents.Teams.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Primitives;
-using Newtonsoft.Json;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Teams.Models;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace LinkUnfurling.Bots
 {
     public class LinkUnfurlingBot : TeamsActivityHandler
     {

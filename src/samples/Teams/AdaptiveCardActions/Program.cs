@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Samples.Bots;
+using AdaptiveCardActions.Bots;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +17,11 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBot<IBot, AdaptiveCardActionsBot>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<AdaptiveCardActionsBot>();
 
 var app = builder.Build();
 

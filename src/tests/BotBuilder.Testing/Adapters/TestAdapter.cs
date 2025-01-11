@@ -8,8 +8,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.BotBuilder.Testing
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
     /// A mock adapter that can be used for unit testing of bot logic.
     /// </summary>
     /// <seealso cref="TestFlow"/>
-    public class TestAdapter : BotAdapter, IUserTokenClient
+    public class TestAdapter : ChannelAdapter, IUserTokenClient
     {
         private const string ExceptionExpected = "ExceptionExpected";
 

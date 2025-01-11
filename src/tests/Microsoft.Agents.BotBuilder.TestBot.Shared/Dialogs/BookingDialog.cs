@@ -6,7 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.TestBot.Shared.Services;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.DataTypes.TimexExpression;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs

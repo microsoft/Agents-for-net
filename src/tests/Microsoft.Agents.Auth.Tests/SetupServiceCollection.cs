@@ -15,7 +15,7 @@ namespace Microsoft.CopilotStudio.Connector.Tests
         {
             IConfiguration config = new ConfigurationBuilder()
                .AddJsonFile(
-                   System.IO.Path.Combine("Resources", settingsFile),
+                   System.IO.Path.Combine("resources", settingsFile),
                    optional: false,
                    reloadOnChange: true)
                .Build();

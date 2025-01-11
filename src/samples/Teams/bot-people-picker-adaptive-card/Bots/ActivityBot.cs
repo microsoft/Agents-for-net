@@ -7,11 +7,12 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Adapter;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Interfaces;
 
 
-namespace Microsoft.Agents.Samples.Bots
+namespace PeoplePicker.Bots
 {
     /// <summary>
     /// Bot Activity handler class.

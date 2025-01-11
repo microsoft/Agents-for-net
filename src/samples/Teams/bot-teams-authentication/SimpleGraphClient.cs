@@ -8,7 +8,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TeamsAuth
 {
     // This class is a wrapper for the Microsoft Graph API
     // See: https://developer.microsoft.com/en-us/graph

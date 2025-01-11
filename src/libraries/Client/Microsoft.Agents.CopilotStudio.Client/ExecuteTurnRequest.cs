@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Text.Json.Serialization;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.CopilotStudio.Client
 {

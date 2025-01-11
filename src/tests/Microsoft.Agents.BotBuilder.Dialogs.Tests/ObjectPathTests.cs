@@ -1,7 +1,6 @@
 ﻿#pragma warning disable SA1402
 
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

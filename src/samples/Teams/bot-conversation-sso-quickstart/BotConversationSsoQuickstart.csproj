@@ -6,27 +6,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.IdentityModel.Validators" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Include="AdaptiveCards" />
-	  <PackageReference Include="Microsoft.Graph" />
-	  <PackageReference Include="Microsoft.Graph.Core" />
-
-	  
-	  <!--<PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI"  Version="7.0.0"/>-->
-	  <!--<PackageReference Include="Microsoft.Graph" />-->
-	  <!--<PackageReference Include="Microsoft.Graph.Core" />-->
-	  <!--<PackageReference Include="Microsoft.Graph" />-->
-	  <!--<PackageReference Include="Microsoft.Graph.Core" />-->
-	  <!--<PackageReference Include="Microsoft.Identity.Web" />-->
+		<PackageReference Include="AdaptiveCards" />
+		<PackageReference Include="Microsoft.Graph" />
+		<PackageReference Include="Microsoft.Graph.Core" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+		<ProjectReference Include="..\..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
-		<ProjectReference Include="..\..\..\libraries\BotBuilder\BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

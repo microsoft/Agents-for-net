@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
-using Microsoft.Agents.Protocols.Primitives;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests

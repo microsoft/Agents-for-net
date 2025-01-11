@@ -3,8 +3,8 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Samples.Bots
     [Authorize]
     [ApiController]
     [Route("api/botresponse")]
-    public class Bot2ResponseController(IChannelResponseHandler handler) : ChannelServiceController(handler)
+    public class Bot2ResponseController(IChannelApiHandler handler) : ChannelApiController(handler)
     {
     }
 }

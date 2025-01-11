@@ -10,7 +10,7 @@
 
 	<PropertyGroup>
 		<PackageId>Microsoft.Agents.Authentication.Msal</PackageId>
-		<Description>Library for creating authentication tokens for agents using Microsoft Agent SDK</Description>
+		<Description>Library for creating authentication tokens for agents using MSAL in Microsoft Agent SDK</Description>
 		<Summary>Library for building agents using Microsoft Agents SDK</Summary>
 	</PropertyGroup>
 
@@ -27,11 +27,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Core\Authentication\Microsoft.Agents.Authentication.csproj" />
+	  <None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="README.md" Pack="true" PackagePath="\"/>
+	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Authentication\Microsoft.Agents.Authentication.csproj" />
 	</ItemGroup>
 
 </Project>

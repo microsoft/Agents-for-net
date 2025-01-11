@@ -51,9 +51,11 @@ If you type a message and hit enter, or the send arrow, your messages should be 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "Audiences": [
-        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-      ],
+      "TokenValidation": {
+        "Audiences": [
+          "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+        ]
+      },
 
       "Connections": {
           "BotServiceConnection": {

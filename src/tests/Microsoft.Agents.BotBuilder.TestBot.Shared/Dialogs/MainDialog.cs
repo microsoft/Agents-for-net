@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs

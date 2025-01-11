@@ -3,23 +3,18 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Connector;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TeamsAuth.Dialogs
 {
     // LogoutDialog class provides a custom dialog that supports user logout functionality.
     // It allows users to trigger a logout action by sending a "logout" command at any time during a conversation.
-    public class LogoutDialog : ComponentDialog
+    public class LogoutDialog(string id, string connectionName) : ComponentDialog(id)
     {
-        public LogoutDialog(string id, string connectionName)
-            : base(id)
-        {
-            ConnectionName = connectionName;
-        }
-
         // Holds the OAuth connection name used for authentication.
-        protected string ConnectionName { get; }
+        protected string ConnectionName { get; } = connectionName;
 
         // This method starts the dialog, checking if a logout interruption is triggered.
         // If the logout command is detected, it processes the logout and cancels any active dialogs.

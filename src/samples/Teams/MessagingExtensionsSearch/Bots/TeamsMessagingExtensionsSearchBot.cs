@@ -6,16 +6,17 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Teams.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Interfaces;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace MessagingExtensionsSearch.Bots
 {
     public class TeamsMessagingExtensionsSearchBot : TeamsActivityHandler
     {

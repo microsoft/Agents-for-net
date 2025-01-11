@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 

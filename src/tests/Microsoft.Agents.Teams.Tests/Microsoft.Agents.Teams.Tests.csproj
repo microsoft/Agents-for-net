@@ -26,6 +26,6 @@
     </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\libraries\Core\Protocols\Microsoft.Agents.Protocols.csproj" />
+	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	</ItemGroup>
 </Project>

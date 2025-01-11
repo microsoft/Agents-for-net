@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Protocols.Primitives;
 using System.Threading;
+using Microsoft.Agents.BotBuilder;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace ConversationBot.Controllers
 {
     // ASP.Net Controller that receives incoming HTTP requests from the Azure Bot Service or other configured event activity protocol sources.
     // When called, the request has already been authorized and credentials and tokens validated.

@@ -10,11 +10,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Client.Tests.Logger;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -229,7 +231,7 @@ namespace Microsoft.Agents.Client.Tests
 
             public IConversationIdFactory ConversationIdFactory { get; }
 
-            public Mock<BotAdapter> Adapter { get; }
+            public Mock<ChannelAdapter> Adapter { get; }
 
             public Mock<IChannelServiceClientFactory> Auth { get;  }
 
@@ -296,9 +298,9 @@ namespace Microsoft.Agents.Client.Tests
                 return claimsIdentity;
             }
 
-            private Mock<BotAdapter> CreateMockAdapter(ILogger logger)
+            private Mock<ChannelAdapter> CreateMockAdapter(ILogger logger)
             {
-                var adapter = new Mock<BotAdapter>(logger);
+                var adapter = new Mock<ChannelAdapter>(logger);
 
                 // Mock the adapter ContinueConversationAsync method
                 // This code block catches and executes the custom bot callback created by the service handler.
@@ -373,9 +375,12 @@ namespace Microsoft.Agents.Client.Tests
                 };
 
                 var httpClient = new HttpClient(new MockClientHandler(sendRequest));
-                //httpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
 
-                var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), httpClient, null, null, null, useAnonymousConnection: true);
+                var httpFactory = new Mock<IHttpClientFactory>();
+                httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
+                    .Returns(httpClient);
+                
+                var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), httpFactory.Object, () => Task.FromResult<string>("test"));
 
                 return client;
             }

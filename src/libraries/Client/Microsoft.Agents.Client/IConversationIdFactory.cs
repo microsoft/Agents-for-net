@@ -3,7 +3,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Primitives;
 
 namespace Microsoft.Agents.Client
 {

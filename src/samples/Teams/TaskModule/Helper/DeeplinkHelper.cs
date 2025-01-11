@@ -3,7 +3,7 @@
 
 using System.Web;
 
-namespace Microsoft.Teams.Samples.TaskModule.Web.Helper
+namespace TaskModule.Helper
 {
     public  class DeeplinkHelper
     {

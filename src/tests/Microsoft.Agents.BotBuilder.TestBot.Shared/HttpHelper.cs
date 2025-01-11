@@ -5,9 +5,9 @@ using System;
 using System.IO;
 using System.Net;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using System.Text;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared
 {

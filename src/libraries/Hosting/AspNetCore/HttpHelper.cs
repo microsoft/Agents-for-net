@@ -7,9 +7,9 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

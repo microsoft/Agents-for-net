@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests

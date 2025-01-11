@@ -16,14 +16,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.IdentityModel.Validators" />
-	</ItemGroup>
-	<ItemGroup>
-	  <PackageReference Include="AdaptiveCards" />
-	  <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
-	  <PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI" />
-	  <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" />
-	  <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
+		<PackageReference Include="AdaptiveCards" />
+		<PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
+		<PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
 	</ItemGroup>
 
 	<ItemGroup>

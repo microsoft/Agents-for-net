@@ -6,28 +6,18 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" />
-		<PackageReference Include="Azure.Security.KeyVault.Certificates" />
-		<PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" />
+		<ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
+		<ProjectReference Include="..\..\..\libraries\Storage\Microsoft.Agents.Storage\Microsoft.Agents.Storage.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+		<Content Update="appsettings.Development.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
-	  <ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
-	  <ProjectReference Include="..\..\..\libraries\Memory\Memory\Microsoft.Agents.Memory.csproj" />
-	</ItemGroup>
-
-  <ItemGroup>
-    <Content Update="appsettings.Development.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
 </Project>

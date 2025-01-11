@@ -6,8 +6,8 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,12 +25,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new ConcurrentDictionary<ActivityWithClaims, Task>();
         private IActivityTaskQueue _activityQueue;
-        private readonly IBotAdapter _adapter;
+        private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
         private readonly int _shutdownTimeoutSeconds;
 
         /// <summary>
-        /// Create a <see cref="HostedActivityService"/> instance for processing Activities\
+        /// Create a <see cref="HostedActivityService"/> instance for processing Activities
         /// on background threads.
         /// </summary>
         /// <remarks>
@@ -38,11 +38,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </remarks>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
         /// <param name="bot">IBot which will be used to process Activities.</param>
-        /// <param name="adapter"><see cref="IBotAdapter"/> used to process Activities. </param>
+        /// <param name="adapter"><see cref="IChannelAdapter"/> used to process Activities. </param>
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        public HostedActivityService(IConfiguration config, IBot bot, IBotAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedTaskService> logger)
+        public HostedActivityService(IConfiguration config, IBot bot, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedTaskService> logger)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(bot);

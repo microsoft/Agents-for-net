@@ -4,11 +4,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.TestBot.Shared.Bots;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.BotBuilderSamples.Tests.Framework;
 using Xunit;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
 
 namespace Microsoft.BotBuilderSamples.Tests.Bots

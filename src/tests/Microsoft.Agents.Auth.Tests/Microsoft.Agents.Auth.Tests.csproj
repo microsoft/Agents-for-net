@@ -33,7 +33,7 @@
 
 	<ItemGroup>
 		<None Update="Resources\*">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 

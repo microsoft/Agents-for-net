@@ -8,11 +8,11 @@ using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.BotBuilder.Testing.XUnit;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.BotBuilderSamples.Tests.Framework;
 using Xunit;
 using Xunit.Abstractions;
-using Microsoft.Agents.Protocols.Adapter;
 
 namespace Microsoft.BotBuilderSamples.Tests.Dialogs
 {

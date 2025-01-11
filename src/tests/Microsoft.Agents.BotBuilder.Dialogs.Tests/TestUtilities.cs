@@ -5,9 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Memory.Transcript;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Storage.Transcript;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
