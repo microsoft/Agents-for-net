@@ -66,8 +66,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        public static IHostApplicationBuilder AddChannelHost<TService>(this IHostApplicationBuilder builder, Func<IServiceProvider, TService> responseHandlerFactory = null, string httpBotClientName = "HttpBotClient")
-            where TService : class, IChannelResponseHandler
+        public static IHostApplicationBuilder AddChannelHost<TService>(this IHostApplicationBuilder builder, Func<IServiceProvider, TService> responseHandlerFactory = null, string httpBotClientName = "HttpBotChannelFactory")
+            where TService : class, IChannelApiHandler
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
 
@@ -77,6 +77,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // Add bot client factory for HTTP
             // Use the same auth connection as the ChannelServiceFactory for now.
             builder.Services.AddKeyedSingleton<IChannelFactory>(httpBotClientName, (sp, key) => new HttpBotChannelFactory(
+                sp.GetService<IConnections>(),
                 sp.GetService<IHttpClientFactory>(),
                 (ILogger<HttpBotChannelFactory>)sp.GetService(typeof(ILogger<HttpBotChannelFactory>))));
 
@@ -91,11 +92,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // This is the object that handles callback endpoints for bot responses.
             if (responseHandlerFactory != null)
             {
-                builder.Services.AddTransient(typeof(IChannelResponseHandler), responseHandlerFactory);
+                builder.Services.AddTransient(typeof(IChannelApiHandler), responseHandlerFactory);
             }
             else
             {
-                builder.Services.AddTransient<IChannelResponseHandler, TService>();
+                builder.Services.AddTransient<IChannelApiHandler, TService>();
             }
 
             return builder;

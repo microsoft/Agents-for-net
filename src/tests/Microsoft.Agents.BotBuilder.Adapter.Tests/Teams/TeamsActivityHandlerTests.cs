@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Agents.BotBuilder;
 using System;
 using System.Globalization;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Bot.Builder.Teams.Tests
 {

@@ -181,7 +181,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _skillBotId));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _parentBotId));
-                    turnContext.TurnState.Add(ChannelAdapter.BotIdentityKey, claimsIdentity);
+                    turnContext.TurnState.Add(TurnStateKeys.BotIdentityKey, claimsIdentity);
 
                     if (testCase == FlowTestCase.RootBotConsumingSkill)
                     {

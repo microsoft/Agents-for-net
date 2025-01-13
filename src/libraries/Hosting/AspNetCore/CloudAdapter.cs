@@ -13,6 +13,9 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -37,6 +40,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly bool _async;
+        private readonly ILogger _logger;
+        private readonly SynchronousRequestHandler _synchronousRequestHandler = new();
 
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -46,6 +51,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;
+            _logger = NullLogger.Instance;
 
             OnTurnError = async (turnContext, exception) =>
             {
@@ -58,7 +64,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
+                _logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
 
                 await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
 
@@ -105,7 +111,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     return;
                 }
 
-                if (!_async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                if (activity.DeliveryMode == DeliveryModes.Stream)
+                {
+                    InvokeResponse invokeResponse = null;
+
+                    // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                    // turn is done.
+                    _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity)httpRequest.HttpContext.User.Identity, activity, (response) =>
+                    {
+                        _synchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                        invokeResponse = response;
+                    });
+
+                    // block until turn is complete
+                    await _synchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                    {
+                        try
+                        {
+                            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: activity\r\ndata: {ProtocolJsonSerializer.ToJson(activity)}\r\n"), cancellationToken);
+                            await httpResponse.Body.FlushAsync(cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                    }, cancellationToken).ConfigureAwait(false);
+
+                    if (invokeResponse?.Body != null)
+                    {
+                        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: invokeResponse\r\ndata: {ProtocolJsonSerializer.ToJson(invokeResponse)}\r\n"), cancellationToken);
+                        await httpResponse.Body.FlushAsync(cancellationToken);
+                    }
+                }
+                else if (!_async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                 {
                     // NOTE: Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                     // Process the inbound activity with the bot
@@ -202,6 +240,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 Logger.LogWarning("BadRequest: Missing Conversation.Id");
                 return false;
             }
+
+            return true;
+        }
+
+        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            {
+                return false;
+            }
+
+            await _synchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

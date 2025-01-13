@@ -62,36 +62,63 @@ To configure authentication into the Bot1 Sample Project you will need the follo
 1. Client ID of the Application identity you wish to use.
 1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
 
-Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
+1. Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
 
-Find the section labeled `Connections`,  it should appear similar to this:
+1. Find the section labeled `Connections`, it should appear similar to this:
 
-```json
-"TokenValidation": {
-    "Audience": "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-},
+     ```json
+     "TokenValidation": {
+       "Audiences": [
+         "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+       ],
+       "TenantId": "00000000-0000-0000-0000-000000000000"
+     },
 
-"Connections": {
-    "BotServiceConnection": {
-    "Assembly": "Microsoft.Agents.Authentication.Msal",
-    "Type":  "MsalAuth",
-    "Settings": {
-        "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-        "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-        "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
-        "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-        "Scopes": [
-        "https://api.botframework.com/.default"
-        ],
-        "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
-    }
-}
-```
+     "Connections": {
+       "BotServiceConnection": {
+         "Assembly": "Microsoft.Agents.Authentication.Msal",
+         "Type":  "MsalAuth",
+         "Settings": {
+           "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+           "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
+           "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+           "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
+           "Scopes": [
+             "https://api.botframework.com/.default"
+          ],
+          "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+       }
+     }
+     ```
     
 1. Set the **ClientId** to the AppId of the bot identity.
 1. Set the **ClientSecret** to the Secret that was created for your identity.
-1. Set the **TenantId** to the Tenant Id where your application is registered.
-1. Set the **Audience** to the AppId of the bot identity.
+1. Set the **TokenValidation:TenantId** to the Tenant Id where your application is registered.
+1. Set the **TokenValidation:Audiences** to the AppId of the bot identity.
+
+1. Find the section labeled `ChannelHost`, it should appear similar to this:
+
+   ```json
+   "ChannelHost": {
+     "HostAppId": "00000000-0000-0000-0000-000000000000", // This is the Client ID used for the remote bot to call you back with.,
+     "Channels": [
+       {
+         "Id": "EchoBot",
+         "ChannelFactory": "HttpBotChannelFactory", // The name of the keyed IChannelFactory registered in DI
+         "Settings": {
+           "ClientId": "00000000-0000-0000-0000-000000000000", // This is the Client ID of the other agent.
+           "TokenProvider": "BotServiceConnection", // Name of the connection to use to get the token from the connections array.
+           "Endpoint": "http://localhost:39783/api/messages",
+           "ServiceUrl": "http://localhost:3978/api/botresponse", // ServiceUrl for response (non-streamed responses)
+           "ResourceUrl": null, // This is the Resource URL when creating the token, defaults to "api://{clientId}}
+           "NamedClient": null // optional named HttpClient
+         }
+       }
+     ]
+   }
+ 
+1. Set the **HostAppId** to the AppId of the Bot1.
+1. Set the **ClientId** to the AppId of the of Bot2
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
     
@@ -107,10 +134,4 @@ To run the Bot1 Sample for the first time:
     1. In the bot URL field input the URL you noted down from the web page and add /api/messages to it. It should appear similar to `https://localhost:65349/api/messages`
     1. Click **Connect**
 
-if all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Say “agent” and I’ll patch you through"**
-
-
-**ADD MORE HERE for BOT 2 BOT**
-
-## Further reading
-To learn more about building Bots and Agent, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+If all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Say “agent” and I’ll patch you through"**

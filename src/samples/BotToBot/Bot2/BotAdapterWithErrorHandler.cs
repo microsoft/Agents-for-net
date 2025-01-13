@@ -4,20 +4,20 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace Bot2
 {
     public class BotAdapterWithErrorHandler : CloudAdapter
     {
         private readonly ILogger _logger;
 
         public BotAdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, ILogger<IBotHttpAdapter> logger)
-            : base(channelServiceClientFactory, activityTaskQueue, logger)
+            : base(channelServiceClientFactory, activityTaskQueue)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             OnTurnError = HandleTurnError;

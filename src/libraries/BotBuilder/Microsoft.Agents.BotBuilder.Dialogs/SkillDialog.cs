@@ -242,12 +242,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             await DialogOptions.ConversationState.SaveChangesAsync(context, true, cancellationToken).ConfigureAwait(false);
 
             var skillInfo = DialogOptions.Skill;
-            var response = await DialogOptions.SkillClient.PostActivityAsync<ExpectedReplies>(skillInfo.AppId, skillInfo.ResourceUrl, skillInfo.Endpoint, DialogOptions.SkillHostEndpoint, skillConversationId, (Activity)activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, cancellationToken, context.Activity).ConfigureAwait(false);
 
             // Inspect the skill response status
             if (!response.IsSuccessStatusCode())
             {
-                throw new HttpRequestException($"Error invoking the skill id: \"{skillInfo.Id}\" at \"{skillInfo.Endpoint}\" (status is {response.Status}). \r\n {response.Body}");
+                throw new HttpRequestException($"Error invoking the skill id: \"{skillInfo.Alias}\" (status is {response.Status}). \r\n {response.Body}");
             }
 
             IActivity eocActivity = null;
@@ -366,7 +366,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
             // route the activity to the skill
             var skillInfo = DialogOptions.Skill;
-            var response = await DialogOptions.SkillClient.PostActivityAsync<ExpectedReplies>(skillInfo.AppId, skillInfo.ResourceUrl, skillInfo.Endpoint, DialogOptions.SkillHostEndpoint, incomingActivity.Conversation.Id, activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken, incomingActivity).ConfigureAwait(false);
 
             // Check response status: true if success, false if failure
             return response.IsSuccessStatusCode();
@@ -377,10 +377,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Create a conversationId to interact with the skill and send the activity
             var conversationIdFactoryOptions = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = context.TurnState.Get<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = context.TurnState.Get<string>(TurnStateKeys.OAuthScopeKey),
                 FromBotId = DialogOptions.BotId,
                 Activity = activity,
-                Bot = DialogOptions.Skill
             };
             var skillConversationId = await DialogOptions.ConversationIdFactory.CreateConversationIdAsync(conversationIdFactoryOptions, cancellationToken).ConfigureAwait(false);
             return skillConversationId;

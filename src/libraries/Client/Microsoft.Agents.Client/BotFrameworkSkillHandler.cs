@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Client;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,18 +14,12 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Connector;
 
-namespace Microsoft.Agents.BotBuilder
+namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// This is the Bot Framework SDK implementation of IChannelApiHandler for handling Skill requests.
+    /// This is the Bot Framework SDK implementation of a Skill handler.
     /// </summary>
-    /// <remarks>
-    /// This is for backward compatibility for Bot Framework Skills.
-    /// </remarks>
     public class BotFrameworkSkillHandler : IChannelApiHandler
     {
         public static readonly string SkillConversationReferenceKey = "Microsoft.Agents.BotBuilder.Skills.SkillConversationReference";
@@ -48,20 +44,6 @@ namespace Microsoft.Agents.BotBuilder
             _conversationIdFactory = conversationIdFactory; 
             _logger = logger ?? NullLogger.Instance;
         }
-
-        //
-        // IChannelResponseHandler
-        //
-
-        public async Task<ResourceResponse> OnSendActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
-        {
-            return await ProcessActivityAsync(claimsIdentity, conversationId, null, activity, cancellationToken).ConfigureAwait(false);
-        }
-
-
-        //
-        // IChannelApiHandler
-        //
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {

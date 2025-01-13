@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +29,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly int _shutdownTimeoutSeconds;
 
         /// <summary>
-        /// Create a <see cref="HostedActivityService"/> instance for processing Activities
+        /// Create a <see cref="HostedActivityService"/> instance for processing Activities\
         /// on background threads.
         /// </summary>
         /// <remarks>
@@ -38,7 +37,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </remarks>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
         /// <param name="bot">IBot which will be used to process Activities.</param>
-        /// <param name="adapter"><see cref="IChannelAdapter"/> used to process Activities. </param>
+        /// <param name="adapter"><see cref="IBotAdapter"/> used to process Activities. </param>
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
@@ -129,7 +128,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 try
                 {
-                    await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, _bot.OnTurnAsync, stoppingToken);
+                    var response = await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, _bot.OnTurnAsync, stoppingToken).ConfigureAwait(false);
+
+                    activityWithClaims.OnComplete?.Invoke(response);
                 }
                 catch (Exception ex)
                 {

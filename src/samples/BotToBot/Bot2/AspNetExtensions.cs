@@ -34,22 +34,21 @@ namespace Microsoft.Agents.Samples
         /// <param name="authenticationSection">Name of the config section to read.</param>
         /// <param name="logger">Optional logger to use for authentication event logging.</param>
         /// <remarks>
-        /// Configuration:
+        /// Example config:
         /// <code>
-        ///   "TokenValidation": {
-        ///     "Audiences": [
-        ///       "{required:bot-appid}"
-        ///     ],
-        ///     "TenantId": "{recommended:tenant-id}",
-        ///     "ValidIssuers": [
-        ///       "{default:Public-AzureBotService}"
-        ///     ],
-        ///     "IsGov": {optional:false},
-        ///     "AzureBotServiceOpenIdMetadataUrl": optional,
-        ///     "OpenIdMetadataUrl": optional,
-        ///     "AzureBotServiceTokenHandling": "{optional:true}"
-        ///     "OpenIdMetadataRefresh": "optional-12:00:00"
-        ///   }
+        ///     {
+        ///        "TokenValidation": {
+        ///           "Audience": "{required:bot-appid},
+        ///           "TenantId": "{recommended:tenant-id}",
+        ///           "ValidIssuers": [
+        ///              "{default:Public-AzureBotService}"
+        ///           ],
+        ///           "IsGov": {optional:false},
+        ///           "AzureBotServiceOpenIdMetadataUrl": optional,
+        ///           "OpenIdMetadataUrl": optional,
+        ///           "AzureBotServiceTokenHandling": "{optional:true}"
+        ///        }
+        ///     }
         /// </code>
         /// 
         /// `IsGov` can be omitted, in which case public Azure Bot Service and Azure Cloud metadata urls are used.
@@ -108,8 +107,6 @@ namespace Microsoft.Agents.Samples
                 openIdMetadataUrl = isGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
             }
 
-            var openIdRefreshInterval = tokenValidationSection.GetValue<TimeSpan>("OpenIdMetadataRefresh", BaseConfigurationManager.DefaultAutomaticRefreshInterval);
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -165,20 +162,14 @@ namespace Microsoft.Agents.Samples
                             // Use the Bot Framework authority for this configuration manager
                             context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(azureBotServiceOpenIdMetadataUrl, key =>
                             {
-                                return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
-                                {
-                                    AutomaticRefreshInterval = openIdRefreshInterval
-                                };
+                                return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient());
                             });
                         }
                         else
                         {
                             context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(openIdMetadataUrl, key =>
                             {
-                                return new ConfigurationManager<OpenIdConnectConfiguration>(openIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
-                                {
-                                    AutomaticRefreshInterval = openIdRefreshInterval
-                                };
+                                return new ConfigurationManager<OpenIdConnectConfiguration>(openIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient());
                             });
                         }
 

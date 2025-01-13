@@ -28,12 +28,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
         /// activity.</param>
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity)
+        /// <param name="onComplete">Optional Action to perform on completion handling</param>
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity, Action<InvokeResponse> onComplete = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _activities.Enqueue(new ActivityWithClaims { ClaimsIdentity = claimsIdentity, Activity = activity});
+            _activities.Enqueue(new ActivityWithClaims { ClaimsIdentity = claimsIdentity, Activity = activity, OnComplete = onComplete});
             _signal.Release();
         }
 

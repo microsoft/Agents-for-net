@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Security.Claims;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
@@ -20,5 +21,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <see cref="Activity"/> to be processed.
         /// </summary>
         public Activity Activity { get; set; }
+
+        public Action<InvokeResponse> OnComplete { get; set; }
     }
 }

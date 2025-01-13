@@ -11,7 +11,7 @@
   "profiles": {
     ".NET Core": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "applicationUrl": "http://localhost:3978",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -19,7 +19,7 @@
     },
     ".NET Core (Production)": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "applicationUrl": "http://localhost:3978",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"

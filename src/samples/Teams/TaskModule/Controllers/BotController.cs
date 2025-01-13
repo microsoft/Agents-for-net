@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using System.Threading;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace TaskModule.Controllers
 {

@@ -4,23 +4,26 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Client;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace Bot1
 {
-    public class BotHostAdapterWithErrorHandler : CloudAdapter
+    /// <summary>
+    /// 
+    /// </summary>
+    public class HostBotAdapterWithErrorHandler : CloudAdapter
     {
         private readonly ILogger _logger;
         private readonly IChannelHost _botsConfig;
 
-        public BotHostAdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, IChannelHost botsConfig, ILogger<IBotHttpAdapter> logger)
-            : base(channelServiceClientFactory, activityTaskQueue, logger)
+        public HostBotAdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, IChannelHost botsConfig, ILogger<IBotHttpAdapter> logger)
+            : base(channelServiceClientFactory, activityTaskQueue)
         {
             _botsConfig = botsConfig ?? throw new ArgumentNullException(nameof(botsConfig));
             _logger = logger ?? NullLogger<IBotHttpAdapter>.Instance;
@@ -71,7 +74,7 @@ namespace Microsoft.Agents.Samples.Bots
 
             return Task.CompletedTask;
 
-            // Bot Framework only has the notion of a single active Skill.  In MCS SDK there could be multiple.
+            // TODO: Need to send EOC to any active bot-to-bot conversation.
             /*
             try
             {

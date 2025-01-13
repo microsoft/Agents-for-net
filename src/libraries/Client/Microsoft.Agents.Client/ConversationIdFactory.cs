@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Storage;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,12 +27,13 @@ namespace Microsoft.Agents.Client
     {
         private readonly IStorage _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
-        /// <summary>
-        /// Creates a new <see cref="BotConversationReference"/>.
-        /// </summary>
-        /// <param name="options">Creation options to use when creating the <see cref="BotConversationReference"/>.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>ID of the created <see cref="BotConversationReference"/>.</returns>
+        /// <inheritdoc/>
+        public Task<string> CreateConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+        {
+            return CreateConversationIdAsync(GetConversationFactoryOptions(turnContext, hostAppId, botAlias), cancellationToken);
+        }
+
+        /// <inheritdoc/>
         public async Task<string> CreateConversationIdAsync(
             ConversationIdFactoryOptions options,
             CancellationToken cancellationToken)
@@ -45,7 +49,10 @@ namespace Microsoft.Agents.Client
             var botConversationReference = new BotConversationReference
             {
                 ConversationReference = conversationReference,
-                OAuthScope = options.FromBotOAuthScope
+                OAuthScope = options.FromBotOAuthScope,
+                BotConversationId = botConversationId,
+                FromAppId = options.FromBotId,
+                ToBotName = options.ToBotName,
             };
 
             // Store the BotConversationReference using the conversationId as a key.
@@ -53,6 +60,9 @@ namespace Microsoft.Agents.Client
             {
                 {
                     botConversationId, botConversationReference
+                },
+                {
+                    GetParentKey(options, conversationReference), botConversationReference
                 }
             };
 
@@ -62,21 +72,16 @@ namespace Microsoft.Agents.Client
             return botConversationId;
         }
 
-        /// <summary>
-        /// Retrieve a <see cref="BotConversationReference"/> with the specified ID.
-        /// </summary>
-        /// <param name="botConversationId">The ID of the <see cref="BotConversationReference"/> to retrieve.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns><see cref="BotConversationReference"/> for the specified ID; null if not found.</returns>
+        /// <inheritdoc/>
         public async Task<BotConversationReference> GetBotConversationReferenceAsync(
             string botConversationId,
             CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(botConversationId);
+            ArgumentException.ThrowIfNullOrEmpty(botConversationId);
 
             // Get the BotConversationReference from storage for the given botConversationId.
             var botConversationInfo = await _storage
-                .ReadAsync(new[] { botConversationId }, cancellationToken)
+                .ReadAsync([botConversationId], cancellationToken)
                 .ConfigureAwait(false);
 
             if (botConversationInfo.TryGetValue(botConversationId, out var botConversationReference))
@@ -87,18 +92,58 @@ namespace Microsoft.Agents.Client
             return null;
         }
 
-        /// <summary>
-        /// Deletes the <see cref="BotConversationReference"/> with the specified ID.
-        /// </summary>
-        /// <param name="botConversationId">The ID of the <see cref="BotConversationReference"/> to be deleted.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Task to complete the deletion operation asynchronously.</returns>
+        public Task<string> GetBotConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+        {
+            return GetBotConversationIdAsync(GetConversationFactoryOptions(turnContext, hostAppId, botAlias), cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetBotConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+
+            var result = await _storage
+                .ReadAsync([GetParentKey(options)], cancellationToken)
+                .ConfigureAwait(false);
+
+            if (result?.Count == 0)
+            {
+                return null;
+            }
+
+            return ProtocolJsonSerializer.ToObject<BotConversationReference>(result.First().Value).BotConversationId;
+        }
+
+        /// <inheritdoc/>
         public async Task DeleteConversationReferenceAsync(
             string botConversationId,
             CancellationToken cancellationToken)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(botConversationId);
+
             // Delete the BotConversationReference from storage.
-            await _storage.DeleteAsync(new[] { botConversationId }, cancellationToken).ConfigureAwait(false);
+            var botConversation = await GetBotConversationReferenceAsync(botConversationId.ToString(), cancellationToken).ConfigureAwait(false);
+            if (botConversation != null)
+            {
+                await _storage.DeleteAsync([botConversationId, $"{botConversation.ToBotName}\\{botConversation.FromAppId}\\{botConversation.ConversationReference.Conversation.Id}"], cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static string GetParentKey(ConversationIdFactoryOptions options, ConversationReference conversation = null)
+        {
+            var conversationReference = conversation ?? options.Activity.GetConversationReference();
+            return $"{options.ToBotName}\\{options.FromBotId}\\{conversationReference.Conversation.Id}";
+        }
+
+        private ConversationIdFactoryOptions GetConversationFactoryOptions(ITurnContext turnContext, string hostAppId, string botAlias)
+        {
+            return new ConversationIdFactoryOptions
+            {
+                FromBotOAuthScope = turnContext.TurnState.Get<string>(TurnStateKeys.OAuthScopeKey),
+                FromBotId = hostAppId,
+                ToBotName = botAlias,
+                Activity = turnContext.Activity
+            };
         }
     }
 }

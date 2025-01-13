@@ -19,21 +19,6 @@ namespace Microsoft.Agents.BotBuilder
     public abstract class ChannelAdapter(ILogger logger = null) : IChannelAdapter
     {
         /// <summary>
-        /// The key value for any InvokeResponseActivity that would be on the TurnState.
-        /// </summary>
-        public const string InvokeResponseKey = "ChannelAdapter.InvokeResponse";
-
-        /// <summary>
-        /// The string value for the bot identity key.
-        /// </summary>
-        public const string BotIdentityKey = "BotIdentity";
-
-        /// <summary>
-        /// The string value for the OAuth scope key.
-        /// </summary>
-        public const string OAuthScopeKey = "Microsoft.Agents.Protocols.Adapter.ChannelAdapter.OAuthScope";
-
-        /// <summary>
         /// Logger for the bot adapter. 
         /// </summary>
         private readonly ILogger? _logger = logger ?? NullLogger.Instance;

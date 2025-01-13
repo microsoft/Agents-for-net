@@ -75,7 +75,7 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else if (activity.Type == ActivityTypes.InvokeResponse)
                 {
-                    turnContext.TurnState.Add(InvokeResponseKey, activity);
+                    turnContext.TurnState.Add(TurnStateKeys.InvokeResponseKey, activity);
                 }
                 else if (activity.Type == ActivityTypes.Trace && activity.ChannelId != Channels.Emulator)
                 {
@@ -83,15 +83,18 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                    if (!await StreamedResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
-                        var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                        {
+                            var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
 
@@ -311,6 +314,11 @@ namespace Microsoft.Agents.BotBuilder
             ]);
         }
 
+        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
+
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
         {
             // Create a conversation update activity to represent the result.
@@ -328,12 +336,12 @@ namespace Microsoft.Agents.BotBuilder
         private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, string oauthScope, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
         {
             var turnContext = new TurnContext(this, activity);
-            turnContext.TurnState.Add<IIdentity>(BotIdentityKey, claimsIdentity);
+            turnContext.TurnState.Add<IIdentity>(TurnStateKeys.BotIdentityKey, claimsIdentity);
             turnContext.TurnState.Add(connectorClient);
             turnContext.TurnState.Add(userTokenClient);
             turnContext.TurnState.Add(callback);
             turnContext.TurnState.Add(ChannelServiceFactory);
-            turnContext.TurnState.Set(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
+            turnContext.TurnState.Set(TurnStateKeys.OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
 
             return turnContext;
         }
@@ -356,7 +364,7 @@ namespace Microsoft.Agents.BotBuilder
             // Handle Invoke scenarios where the Bot will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
-                var activityInvokeResponse = turnContext.TurnState.Get<Activity>(InvokeResponseKey);
+                var activityInvokeResponse = turnContext.TurnState.Get<Activity>(TurnStateKeys.InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };

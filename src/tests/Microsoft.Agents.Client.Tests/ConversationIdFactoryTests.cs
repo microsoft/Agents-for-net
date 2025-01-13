@@ -30,7 +30,6 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Bot = this.BuildBotFrameworkSkill(),
                     FromBotId = _botId,
                     FromBotOAuthScope = _botId,
                 },
@@ -63,7 +62,6 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Bot = this.BuildBotFrameworkSkill(),
                     FromBotId = _botId,
                     FromBotOAuthScope = _botId,
                 },
@@ -73,7 +71,6 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Bot = this.BuildBotFrameworkSkill(),
                     FromBotId = _botId,
                     FromBotOAuthScope = _botId,
                 },
@@ -103,27 +100,6 @@ namespace Microsoft.Agents.Client.Tests
             activity.ApplyConversationReference(conversationReference);
 
             return activity;
-        }
-
-        private IChannelInfo BuildBotFrameworkSkill()
-        {
-            return new BotFrameworkSkill
-            {
-                AppId = _applicationId,
-                Id = SkillId,
-				Endpoint = new Uri(ServiceUrl)
-            };
-        }
-
-		private class BotFrameworkSkill : IChannelInfo
-		{
-			public string Id { get; set; }
-			public string AppId { get; set; }
-			public string AuthorityEndpoint { get; set; }
-			public Uri Endpoint { get; set; }
-            public string ResourceUrl { get; set; }
-            public string TokenProvider { get; set; }
-            public string ChannelFactory {  get; set; }
         }
 
 		private class ConversationReferenceEqualityComparer : EqualityComparer<ConversationReference>
