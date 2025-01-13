@@ -85,10 +85,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
             }
 
-            string audience = tokenValidationSection["Audience"];
-            if (string.IsNullOrEmpty(audience))
+            List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
+            if (audiences == null || audiences.Count == 0)
             {
-                throw new ArgumentNullException(audience, $"{authenticationSection}:Audience not set");
+                throw new ArgumentException($"{authenticationSection}:Audiences requires at least one value");
             }
 
             bool isGov = tokenValidationSection.GetValue<bool>("IsGov", false);
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(5),
                     ValidIssuers = validTokenIssuers,
-                    ValidAudience = audience,
+                    ValidAudiences = audiences,
                     ValidateIssuerSigningKey = true,
                     RequireSignedTokens = true,
                 };
