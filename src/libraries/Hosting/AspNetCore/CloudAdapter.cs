@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -37,6 +38,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly bool _async;
+        private readonly ILogger _logger;
 
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -46,6 +48,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;
+            _logger = logger ?? NullLogger.Instance;
 
             OnTurnError = async (turnContext, exception) =>
             {
@@ -58,7 +61,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
+                _logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
 
                 await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
 
