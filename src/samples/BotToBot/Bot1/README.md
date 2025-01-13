@@ -20,76 +20,40 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
     - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
-## Getting Started with Bot1 Sample
+### QuickStart using WebChat
 
-### Local development
+1. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
+   - Record the Application ID, the Tenant ID, and the Client Secret for use below
 
-Local development means running the Sample on 'your' workstation for development and debugging purposes.
+1. Configuring the token connection in the Agent settings
+   > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL Authentication provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
 
-Local development begins with utilizing the Bot Framework Emulator and Visual Studio on your workstation to build and run your Agent while debugging from Visual Studio.
+   1. Open the `appsettings.json` file in the root of the sample project.
 
-If you do not wish to configure authentication at this time, Skip to "Running the Agent for the first time".
+   1. Find the section labeled `Connections`,  it should appear similar to this:
+      ```json
+       "TokenValidation": {
+         "Audiences": [
+           "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+         ],
+         "TenantId": "00000000-0000-0000-0000-000000000000"
+       },
 
-### Authentication and Local Development
-
-There are two ways to support local development, depending on what your working with.
-
-**- Anonymous or No-Authentication**
-
-While this is the simplest way to get started and run your Agent, there are important limitations to consider.
-
-When running in Anonymous mode, your Agent will not be able to create authentication tokens to access other services, Nor can it interact with Azure Bot Services. Therefor, Anonymous Mode is there to support testing basic operational features of the Agent and to work with and test various events that your Agent can process. It should be used only during initial development.
-
-> [!IMPORTANT]
-> This sample is configured, by default, for Anonymous Authentication. Before using this sample with Azure Bot Service, it is necessary to configure authentication.
-
-**- Configured Authentication with Entra ID.**
-
-Configuring authentication for your Agent will allow it to communicate with Azure Bot Services and create access tokens for other services. 
-
-However there are a few key items to consider when configuring authentication for your Agent.
-
-1. Both Azure Bot Service's Bot registration and your Agent Must use the same ClientID for creating an authentication token.
-    1. By default Azure Bot Service will create a Managed Identity when you initially configure the bot registration.  **This type of identity cannot currently be used when working with Local Development**.
-    1. To successfully use **Local Development** with an Azure bot Service Identity, you must utilize either **Client Secret** or **Client Certificate** based authentication.
-1. Once you are ready to deploy to Azure App Services, you can use all types of Identity supported.
-    1. Its often more efficient to have an Azure Bot Service Registration for Local Development and a separate one configured for your App Services Deployment.
-
-#### Configuring authentication in the Bot1 Sample Project
-
-To configure authentication into the Bot1 Sample Project you will need the following information:
-
-1. Client ID of the Application identity you wish to use.
-1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
-
-1. Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
-
-1. Find the section labeled `Connections`, it should appear similar to this:
-
-     ```json
-     "TokenValidation": {
-       "Audiences": [
-         "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-       ],
-       "TenantId": "00000000-0000-0000-0000-000000000000"
-     },
-
-     "Connections": {
-       "BotServiceConnection": {
-         "Assembly": "Microsoft.Agents.Authentication.Msal",
-         "Type":  "MsalAuth",
-         "Settings": {
-           "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-           "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-           "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
-           "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-           "Scopes": [
-             "https://api.botframework.com/.default"
-          ],
-          "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+       "Connections": {
+         "BotServiceConnection": {
+           "Assembly": "Microsoft.Agents.Authentication.Msal",
+           "Type":  "MsalAuth",
+           "Settings": {
+             "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
+             "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+             "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
+             "Scopes": [
+               "https://api.botframework.com/.default"
+            ]
+         }
        }
-     }
-     ```
+      ```
     
 1. Set the **ClientId** to the AppId of the bot identity.
 1. Set the **ClientSecret** to the Secret that was created for your identity.
@@ -117,21 +81,22 @@ To configure authentication into the Bot1 Sample Project you will need the follo
      ]
    }
  
-1. Set the **HostAppId** to the AppId of the Bot1.
-1. Set the **ClientId** to the AppId of the of Bot2
+1. Set the **HostAppId** to the AppId of Bot1.
+1. Set the **ClientId** to the AppId of the of Bot2.
+1. Set the ChannelHost:Channels[Id="EchoBot"].Settings.Endpoint to the correct port used when running Bot2.
+1. Set the ChannelHost:Channels[Id="EchoBot"].Settings.ServiceUrl to the Bot1 api/messages endpoint
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
-    
-## Running the Agent for the first time
 
-To run the Bot1 Sample for the first time:
+1. Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).    
 
-1. Open the Bot1 Sample in Visual Studio 2022
-1. Run it in Debug Mode (F5)
-1. A blank web page will open, note down the URL which should be similar too `https://localhost:65349/`
-1. Open the [BotFramework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
-    1. Click **Open Bot**
-    1. In the bot URL field input the URL you noted down from the web page and add /api/messages to it. It should appear similar to `https://localhost:65349/api/messages`
-    1. Click **Connect**
+1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
+   ```bash
+   devtunnel host -p 3978 --allow-anonymous
+   ```
 
-If all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Say “agent” and I’ll patch you through"**
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
+
+1. Start the Agent in Visual Studio
+
+1. Select **Test in WebChat** on the Azure Bot
