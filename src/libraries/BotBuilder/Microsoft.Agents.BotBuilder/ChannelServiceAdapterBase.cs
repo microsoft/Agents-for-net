@@ -14,6 +14,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -358,7 +359,15 @@ namespace Microsoft.Agents.BotBuilder
             // Handle ExpectedReplies scenarios where the all the activities have been buffered and sent back at once in an invoke response.
             if (turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
-                return new InvokeResponse { Status = (int)HttpStatusCode.OK, Body = new ExpectedReplies(turnContext.BufferedReplyActivities) };
+                var expectedReplies = new ExpectedReplies(turnContext.BufferedReplyActivities);
+
+                var activityInvokeResponse = turnContext.TurnState.Get<Activity>(TurnStateKeys.InvokeResponseKey);
+                if (activityInvokeResponse != null)
+                {
+                    expectedReplies.Body = ProtocolJsonSerializer.ToObject<InvokeResponse>(activityInvokeResponse.Value).Body;
+                }
+
+                return new InvokeResponse { Status = (int)HttpStatusCode.OK, Body = expectedReplies };
             }
 
             // Handle Invoke scenarios where the Bot will return a specific body and return code.
