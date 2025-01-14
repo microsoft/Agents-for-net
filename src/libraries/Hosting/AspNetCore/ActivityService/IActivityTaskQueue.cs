@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
+namespace Microsoft.Agents.Hosting.AspNetCore.ActivityService
 {
     /// <summary>
     /// Interface for a class used to transfer an ActivityWithClaims to the <see cref="HostedActivityService"/>.

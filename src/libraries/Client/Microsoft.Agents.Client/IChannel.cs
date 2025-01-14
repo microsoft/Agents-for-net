@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Client
         string DisplayName { get; }
 
         /// <summary>
-        /// Sends an Activity with DeliveryMode "normal" or "expectReplies".  For `normal`, this would require handling of async replies via IChannelResponseHandler.
+        /// Sends an Activity with DeliveryMode "normal" or "expectReplies".  For `normal`, this would require handling of async replies via IChannelApiHandler via ChannelApiController.
         /// </summary>
         /// <remarks>This is a rather base level of functionality and in most cases <see cref="SendActivityForResultAsync"/> is easier to use.</remarks>
         /// <param name="channelConversationId"></param>

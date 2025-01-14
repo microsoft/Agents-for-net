@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
@@ -16,6 +15,7 @@ using System.Text;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

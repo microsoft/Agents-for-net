@@ -5,10 +5,10 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 
 namespace Bot2
 {

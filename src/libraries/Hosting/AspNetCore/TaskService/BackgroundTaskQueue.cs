@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
+namespace Microsoft.Agents.Hosting.AspNetCore.TaskService
 {
     /// <summary>
     /// Singleton queue, used to transfer a work item to the <see cref="HostedTaskService"/>.

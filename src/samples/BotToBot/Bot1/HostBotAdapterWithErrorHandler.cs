@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 
 namespace Bot1
 {

@@ -6,41 +6,54 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Hosting.AspNetCore.TaskService;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
+namespace Microsoft.Agents.Hosting.AspNetCore.ActivityService
 {
     /// <summary>
-    /// <see cref="BackgroundService"/> implementation used to process work items on background threads.
-    /// See <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">BackgroundService</see> for more information.
+    /// <see cref="BackgroundService"/> implementation used to process activities with claims.
+    ///  <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">More information.</see>
     /// </summary>
-    public class HostedTaskService : BackgroundService
+    public class HostedActivityService : BackgroundService
     {
         private readonly ILogger<HostedTaskService> _logger;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new ConcurrentDictionary<Func<CancellationToken, Task>, Task>();
-        private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new ConcurrentDictionary<ActivityWithClaims, Task>();
+        private IActivityTaskQueue _activityQueue;
+        private readonly IChannelAdapter _adapter;
+        private readonly IBot _bot;
         private readonly int _shutdownTimeoutSeconds;
 
         /// <summary>
-        /// Create a <see cref="HostedTaskService"/> instance for processing work on a background thread.
+        /// Create a <see cref="HostedActivityService"/> instance for processing Activities\
+        /// on background threads.
         /// </summary>
         /// <remarks>
         /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
         /// </remarks>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="taskQueue"><see cref="ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
-        /// <param name="logger"><see cref="ILogger"/> implementation, for logging including background thread exception information.</param>
-        public HostedTaskService(IConfiguration config, IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger)
+        /// <param name="bot">IBot which will be used to process Activities.</param>
+        /// <param name="adapter"><see cref="IBotAdapter"/> used to process Activities. </param>
+        /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
+        /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
+        /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
+        public HostedActivityService(IConfiguration config, IBot bot, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedTaskService> logger)
         {
             ArgumentNullException.ThrowIfNull(config);
-            ArgumentNullException.ThrowIfNull(taskQueue);
+            ArgumentNullException.ThrowIfNull(bot);
+            ArgumentNullException.ThrowIfNull(adapter);
+            ArgumentNullException.ThrowIfNull(activityTaskQueue);
 
             _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds");
-            _taskQueue = taskQueue;
-            _logger = logger;
+            _activityQueue = activityTaskQueue;
+            _bot = bot;
+            _adapter = adapter;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance;
         }
 
         /// <summary>
@@ -56,7 +69,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)));
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)));
             }
 
             await base.StopAsync(stoppingToken);
@@ -65,7 +78,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation($"Queued Hosted Service is running.{Environment.NewLine}");
-            
+
             await BackgroundProcessing(stoppingToken);
         }
 
@@ -73,8 +86,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var workItem = await _taskQueue.DequeueAsync(stoppingToken);
-                if (workItem != null)
+                var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken);
+                if (activityWithClaims != null)
                 {
                     try
                     {
@@ -82,17 +95,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         // New tasks should not be starting during shutdown.
                         if (_lock.TryEnterReadLock(500))
                         {
-                            var task = GetTaskFromWorkItem(workItem, stoppingToken)
+                            // Create the task which will execute the work item.
+                            var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
                                 .ContinueWith(t =>
                                 {
                                     // After the work item completes, clear the running tasks of all completed tasks.
-                                    foreach (var kv in _tasks.Where(tsk => tsk.Value.IsCompleted))
+                                    foreach (var kv in _activitiesProcessing.Where(tsk => tsk.Value.IsCompleted))
                                     {
-                                        _tasks.TryRemove(kv.Key, out Task removed);
+                                        _activitiesProcessing.TryRemove(kv.Key, out Task removed);
                                     }
                                 }, stoppingToken);
 
-                            _tasks.TryAdd(workItem, task);
+                            _activitiesProcessing.TryAdd(activityWithClaims, task);
                         }
                         else
                         {
@@ -107,22 +121,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             }
         }
 
-        private Task GetTaskFromWorkItem(Func<CancellationToken, Task> workItem, CancellationToken stoppingToken)
+        private Task GetTaskFromWorkItem(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
         {
             // Start the work item, and return the task
             return Task.Run(
                 async () =>
+            {
+                try
                 {
-                    try
-                    {
-                        await workItem(stoppingToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Bot Errors should be processed in the Adapter.OnTurnError.
-                        _logger.LogError(ex, "Error occurred executing WorkItem.");
-                    }
-                }, stoppingToken);
+                    var response = await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, _bot.OnTurnAsync, stoppingToken).ConfigureAwait(false);
+
+                    activityWithClaims.OnComplete?.Invoke(response);
+                }
+                catch (Exception ex)
+                {
+                    // Bot Errors should be processed in the Adapter.OnTurnError.
+                    _logger.LogError(ex, "Error occurred executing WorkItem.");
+                }
+            }, stoppingToken);
         }
     }
 }
