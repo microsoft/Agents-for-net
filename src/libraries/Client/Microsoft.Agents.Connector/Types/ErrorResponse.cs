@@ -27,6 +27,10 @@ namespace Microsoft.Agents.Connector.Types
 
         public override string ToString()
         {
+            if ( Error == null)
+            {
+                return string.Empty;
+            }
             return $"Error Code:{Error.Code}, {Error.Message}";
         }
 

@@ -75,6 +75,8 @@ namespace Microsoft.Agents.Samples
                     "https://login.microsoftonline.com/d6d49420-f39b-4df7-a1dc-d59a935871db/v2.0",
                     "https://sts.windows.net/f8cdef31-a31e-4b4a-93e4-5f571e91255a/",
                     "https://login.microsoftonline.com/f8cdef31-a31e-4b4a-93e4-5f571e91255a/v2.0",
+                    "https://sts.windows.net/69e9b82d-4842-4902-8d1e-abc5b98a55e8/",
+                    "https://login.microsoftonline.com/69e9b82d-4842-4902-8d1e-abc5b98a55e8/v2.0",
                 ];
 
                 string tenantId = tokenValidationSection["TenantId"];
