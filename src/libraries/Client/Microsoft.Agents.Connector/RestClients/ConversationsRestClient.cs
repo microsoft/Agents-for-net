@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -379,7 +379,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -424,7 +424,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -470,7 +470,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -515,7 +515,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -561,7 +561,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -607,7 +607,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }
@@ -658,7 +658,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         try
                         {
                             ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
+                            if (errorBody != null && errorBody.Error != null)
                             {
                                 ex.Body = errorBody;
                             }

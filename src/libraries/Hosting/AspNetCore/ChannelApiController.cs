@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <param name="handler">A <see cref="IChannelResponseHandler"/> that will handle the incoming request.</param>
     // Note: this class is marked as abstract to prevent the ASP runtime from registering it as a controller.
     [ChannelResponseExceptionFilter]
-    public abstract class ChannelApiController(IChannelApiHandler handler) : ControllerBase
+    public class ChannelApiController(IChannelApiHandler handler) : ControllerBase
     {
         private readonly IChannelApiHandler _handler = handler;
 

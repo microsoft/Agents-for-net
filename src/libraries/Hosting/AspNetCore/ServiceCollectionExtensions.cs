@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net.Http;
+using System.Reflection.Metadata;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -67,8 +68,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        public static IHostApplicationBuilder AddChannelHost<TService>(this IHostApplicationBuilder builder, Func<IServiceProvider, TService> responseHandlerFactory = null, string httpBotClientName = "HttpBotChannelFactory")
-            where TService : class, IChannelApiHandler
+        public static IHostApplicationBuilder AddChannelHost<THandler>(this IHostApplicationBuilder builder, string httpBotClientName = "HttpBotChannelFactory")
+            where THandler : class, IChannelApiHandler
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
 
@@ -98,14 +99,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add bot callback handler.
             // This is the object that handles callback endpoints for bot responses.
-            if (responseHandlerFactory != null)
-            {
-                builder.Services.AddTransient(typeof(IChannelApiHandler), responseHandlerFactory);
-            }
-            else
-            {
-                builder.Services.AddTransient<IChannelApiHandler, TService>();
-            }
+            builder.Services.AddTransient<THandler>();
+            builder.Services.AddTransient<IChannelApiHandler>((sp) => sp.GetService<THandler>());
 
             return builder;
         }
