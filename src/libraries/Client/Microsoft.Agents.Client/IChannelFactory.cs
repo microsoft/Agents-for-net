@@ -9,6 +9,6 @@ namespace Microsoft.Agents.Client
         /// Creates a <see cref="IChannel"/> used for calling another bot.
         /// </summary>
         /// <returns>A <see cref="IChannel"/> instance to call bots.</returns>
-        IChannel CreateChannel(IChannelInfo channelInfo);
+        IChannel CreateChannel(IChannelHost host, IChannelInfo channelInfo);
     }
 }

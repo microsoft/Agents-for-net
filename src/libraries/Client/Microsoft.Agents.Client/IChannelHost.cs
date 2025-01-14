@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 
+using System;
+
 namespace Microsoft.Agents.Client
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace Microsoft.Agents.Client
     public interface IChannelHost
     {
         string HostAppId { get; }
+        Uri DefaultHostEndpoint { get; }
 
         IChannel GetChannel(string alias);
     }

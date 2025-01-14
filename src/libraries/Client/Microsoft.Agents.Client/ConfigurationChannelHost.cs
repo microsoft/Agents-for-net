@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Client
     {
         private readonly IServiceProvider _serviceProvider;
 
-        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConfiguration configuration, string configSection = "ChannelHost")
+        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConfiguration configuration, string defaultChannelFactory, string configSection = "ChannelHost")
         {
             ArgumentException.ThrowIfNullOrEmpty(configSection);
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
@@ -26,18 +26,23 @@ namespace Microsoft.Agents.Client
             {
                 foreach (var channel in channels)
                 {
+                    if (string.IsNullOrEmpty(channel.ChannelFactory))
+                    {
+                        channel.ChannelFactory = defaultChannelFactory;
+                    }
+
                     ValidateChannel(channel);
                     Channels.Add(channel.Alias, channel);
                 }
             }
 
-            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:HostEndpoint");
+            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint");
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
-                HostEndpoint = new Uri(hostEndpoint);
+                DefaultHostEndpoint = new Uri(hostEndpoint);
             }
 
-            var hostAppId = configuration?.GetValue<string>($"{configSection}:HostAppId");
+            var hostAppId = configuration?.GetValue<string>($"{configSection}:HostClientId");
             if (!string.IsNullOrWhiteSpace(hostAppId))
             {
                 HostAppId = hostAppId;
@@ -45,7 +50,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc />
-        public Uri HostEndpoint { get; }
+        public Uri DefaultHostEndpoint { get; }
 
         /// <inheritdoc />
         public string HostAppId { get; }
@@ -69,7 +74,7 @@ namespace Microsoft.Agents.Client
         {
             ArgumentNullException.ThrowIfNull(channelInfo);
 
-            return GetClientFactory(channelInfo).CreateChannel(channelInfo);
+            return GetClientFactory(channelInfo).CreateChannel(this, channelInfo);
         }
 
         private IChannelFactory GetClientFactory(IChannelInfo channel)

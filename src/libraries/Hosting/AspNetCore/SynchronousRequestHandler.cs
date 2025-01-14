@@ -11,15 +11,14 @@ using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    public class SynchronousRequestHandler
+    /// <summary>
+    /// Internal producer/consumer queue to read Activities sent by the Adapter during DeliveryMode.Stream
+    /// </summary>
+    internal class SynchronousRequestHandler
     {
         private static readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
 
-        public SynchronousRequestHandler() 
-        {
-        }
-
-        public async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
+        public static async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
         {
             var channel = _conversations.GetOrAdd(channelConversationId, Channel.CreateUnbounded<IActivity>());
 
@@ -30,7 +29,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public void CompleteHandlerForConversation(string channelConversationId)
+        public static void CompleteHandlerForConversation(string channelConversationId)
         {
             if (_conversations.TryGetValue(channelConversationId, out var channel))
             {
@@ -39,7 +38,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public async Task SendActivitiesAsync(string conversationId, IActivity[] activities, CancellationToken cancellationToken)
+        public static async Task SendActivitiesAsync(string conversationId, IActivity[] activities, CancellationToken cancellationToken)
         {
             var channel = _conversations.GetOrAdd(conversationId, Channel.CreateUnbounded<IActivity>());
 

@@ -41,12 +41,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly bool _async;
         private readonly ILogger _logger;
-        private readonly SynchronousRequestHandler _synchronousRequestHandler = new();
 
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger logger = null,
+            ILogger<IBotHttpAdapter> logger = null,
             bool async = true) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
@@ -56,9 +55,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.
-                StringBuilder sbError = new StringBuilder(1024);
+                StringBuilder sbError = new(1024);
                 sbError.Append(exception.Message);
-                if (exception is ErrorResponseException errorResponse)
+                if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
                     sbError.Append(errorResponse.Body.ToString());
@@ -119,12 +118,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     // turn is done.
                     _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity)httpRequest.HttpContext.User.Identity, activity, (response) =>
                     {
-                        _synchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                        SynchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                         invokeResponse = response;
                     });
 
                     // block until turn is complete
-                    await _synchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                    await SynchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                     {
                         try
                         {
@@ -157,7 +156,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity) httpRequest.HttpContext.User.Identity, activity);
 
                         // Activity has been queued to process, so return Ok immediately
-                        httpResponse.StatusCode = (int)HttpStatusCode.OK;
+                        httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                     catch (UnauthorizedAccessException)
                     {
@@ -251,7 +250,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await _synchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await SynchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

@@ -12,10 +12,14 @@ namespace Microsoft.Agents.Client
             ArgumentNullException.ThrowIfNull(channelInfo);
 
             ClientId = channelInfo.ConnectionSettings[nameof(ClientId)];
-            ResourceUrl = channelInfo.ConnectionSettings[nameof(ResourceUrl)];
             Endpoint = new(channelInfo.ConnectionSettings[nameof(Endpoint)]);
             TokenProvider = channelInfo.ConnectionSettings[nameof(TokenProvider)];
             ServiceUrl = channelInfo.ConnectionSettings[nameof(ServiceUrl)];
+
+            if (channelInfo.ConnectionSettings.TryGetValue(nameof(ResourceUrl), out var resourceUrl))
+            {
+                ResourceUrl = resourceUrl;
+            }
 
             ValidateSettings();
         }
