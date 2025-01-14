@@ -5,6 +5,9 @@ on:
  - cron: 0 10 * * * # runs at 2am PST (10am UTC) every day
  workflow_dispatch:
 
+env:
+  AzDevOpsPipelineId: 25677
+
 permissions:
   id-token: write 
   contents: read  
@@ -47,7 +50,7 @@ jobs:
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
           -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}},"variables": {"ProjectBranch": {"value": "${{ github.head_ref || github.ref_name }}"' \
-          ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25677/runs?api-version=7.1)
+          ${{ env.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs?api-version=7.1)
         echo $BRANCH_NAME
         echo $response
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
@@ -63,7 +66,7 @@ jobs:
         while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ] || [ "$status" == "canceling" ]  ; do
           response=$(curl -X GET \
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
-            ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25677/runs/$run_id?api-version=7.1)
+            ${{ env.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
           r1=$(echo $response | jq -r .result)
           weblink=$(echo $response | jq -r ._links.web.href)
