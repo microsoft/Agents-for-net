@@ -7,6 +7,7 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -72,7 +73,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
 
             // Add the bots configuration class.  This loads client info and known bots.
-            builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>();
+            builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>(
+                (sp) =>
+                new ConfigurationChannelHost(
+                    sp.GetRequiredService<IServiceProvider>(),
+                    sp.GetRequiredService<IConnections>(),
+                    sp.GetRequiredService<IConfiguration>(),
+                    defaultChannelName: httpBotClientName // this ensures that the default channel name is set to the http bot client name.
+                                                          // Note: if this is overridden in the configuration, the value passed as httpBotClientName must also be updated.
+                                                          //     It is not expected this will be needed for most customers. 
+                    ));
 
             // Add bot client factory for HTTP
             // Use the same auth connection as the ChannelServiceFactory for now.

@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger logger = null,
+            ILogger<IBotHttpAdapter> logger = null,
             bool async = true) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Log any leaked exception from the application.
                 StringBuilder sbError = new StringBuilder(1024);
                 sbError.Append(exception.Message);
-                if (exception is ErrorResponseException errorResponse)
+                if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
                     sbError.Append(errorResponse.Body.ToString());
