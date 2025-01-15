@@ -1,16 +1,9 @@
 name: Pull Request Build and Validation
 
 on:
-  workflow_run:
-    workflows: ["Linux Local build and test"]
-    types:
-      - completed
-#    branches:
-#      - main
-
-#  pull_request:
-#    branches:
-#      - main
+  pull_request:
+    branches:
+      - main
 
 env:
   AzDevOpsPipelineId: 25676
@@ -21,6 +14,7 @@ permissions:
 
 jobs:
   build:
+    if: (github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name) && (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     steps:
