@@ -23,13 +23,15 @@ namespace Microsoft.Agents.Connector.RestClients
     {
         private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
+
+
         internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
         {
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
 
-                RequestUri = new Uri(endpoint, $"v3/conversations")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
                     .AppendQuery("continuationToken", continuationToken)
             };
 
@@ -76,7 +78,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint, $"v3/conversations")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -125,7 +127,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -181,7 +183,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/history")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -232,7 +234,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Put,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -289,7 +291,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -353,7 +355,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -398,7 +400,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -443,7 +445,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members/{userId}")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -489,7 +491,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/members/{memberId}")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -533,7 +535,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/pagedmembers")
+            request.RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
                 .AppendQuery("pageSize", pageSize.Value.ToString())
                 .AppendQuery("continuationToken", continuationToken);
 
@@ -580,7 +582,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/activities/{activityId}/members")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -626,7 +628,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint, $"v3/conversations/{conversationId}/attachments")
+                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)

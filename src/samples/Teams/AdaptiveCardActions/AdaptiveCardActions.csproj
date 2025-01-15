@@ -6,9 +6,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	</ItemGroup>
-
-	<ItemGroup>
 		<Compile Remove="Images\**" />
 		<Content Remove="Images\**" />
 		<EmbeddedResource Remove="Images\**" />
@@ -24,6 +21,7 @@
 	<ItemGroup>
 		<PackageReference Include="AdaptiveCards.Rendering.Html" />
 		<PackageReference Include="AdaptiveCards.Templating" />
+		<PackageReference Include="Newtonsoft.Json" />
 	</ItemGroup>
 
 	<ItemGroup>

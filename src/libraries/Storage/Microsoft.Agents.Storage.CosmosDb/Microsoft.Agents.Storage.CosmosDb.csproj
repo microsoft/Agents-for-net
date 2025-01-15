@@ -34,6 +34,7 @@
 
 	<!-- Force newer NewtonSoft because Azure.Cosmos is using one that alerts -->
     <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="System.Threading.Tasks.Extensions" />
   </ItemGroup>
 
