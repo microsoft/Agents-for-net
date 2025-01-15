@@ -5,8 +5,8 @@ on:
     workflows: ["Linux Local build and test"]
     types:
       - completed
-    branches:
-      - main
+#    branches:
+#      - main
 
 #  pull_request:
 #    branches:
