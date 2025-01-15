@@ -1,9 +1,16 @@
 name: Pull Request Build and Validation
 
 on:
-  pull_request:
+  workflow_run:
+    workflows: ["Linux Local build and test"]
+    types:
+      - completed
     branches:
       - main
+
+#  pull_request:
+#    branches:
+#      - main
 
 env:
   AzDevOpsPipelineId: 25676
