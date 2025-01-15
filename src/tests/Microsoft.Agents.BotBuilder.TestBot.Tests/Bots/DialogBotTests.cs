@@ -7,10 +7,10 @@ using Microsoft.BotBuilderSamples.Tests.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.BotBuilderSamples.Tests.Bots
 {

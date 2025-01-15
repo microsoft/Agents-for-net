@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
 using Xunit.Abstractions;
 
 namespace Microsoft.Agents.BotBuilder.Testing.XUnit

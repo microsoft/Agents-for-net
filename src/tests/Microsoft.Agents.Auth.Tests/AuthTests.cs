@@ -83,7 +83,7 @@ namespace Microsoft.CopilotStudio.Connector.Tests
         [Fact]
         public void ValidateAuthConfig()
         {
-            IServiceProvider serviceProvider = SetupServiceCollection.GenerateAuthMinServiceProvider("auth_validation_appsettings.json", _output);
+            IServiceProvider serviceProvider = SetupServiceCollection.GenerateAuthMinServiceProvider("authvalidation_appsettings.json", _output);
             IConfiguration config = serviceProvider.GetService<IConfiguration>();
 
             //Check for broken configuration.

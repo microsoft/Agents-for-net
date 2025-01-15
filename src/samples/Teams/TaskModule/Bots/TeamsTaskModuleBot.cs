@@ -7,14 +7,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Agents.Teams.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Agents.Samples.Models;
 using System.Text.Json.Nodes;
+using Microsoft.Agents.Core.Interfaces;
+using TaskModule.Models;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TaskModule.Bots
 {
     public class TeamsTaskModuleBot : TeamsActivityHandler
     {

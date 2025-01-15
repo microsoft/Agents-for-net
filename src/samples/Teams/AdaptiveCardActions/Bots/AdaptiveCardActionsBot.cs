@@ -5,11 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Teams.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using AdaptiveCards.Templating;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Interfaces;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace AdaptiveCardActions.Bots
 {
     // This bot responds to user input with suggested actions.
     // Suggested actions allow your bot to present buttons that the user

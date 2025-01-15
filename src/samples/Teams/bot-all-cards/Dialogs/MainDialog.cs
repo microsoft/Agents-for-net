@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using BotAllCards.Cards;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace BotAllCards.Dialogs
 {
     public class MainDialog : ComponentDialog
     {

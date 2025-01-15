@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Samples.Models
+namespace TaskModule.Models
 {
     public class AdaptiveCardTaskFetchValue<T>
     {

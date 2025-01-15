@@ -3,9 +3,9 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Connector;
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Teams;
+using Microsoft.Agents.Core.Teams.Models;
 using Xunit;
 
 namespace Microsoft.Agents.Teams.Tests

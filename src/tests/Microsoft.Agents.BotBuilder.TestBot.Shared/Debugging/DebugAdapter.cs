@@ -1,13 +1,12 @@
 ﻿
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Extensions.Logging;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Debugging
 {
     public class DebugAdapter : CloudAdapter
     {
-        public DebugAdapter(IChannelServiceClientFactory channelServiceClientFactory, ILogger logger = null) : base(channelServiceClientFactory, logger)
+        public DebugAdapter(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue) : base(channelServiceClientFactory, activityTaskQueue, async: false)
         {
         }
     }

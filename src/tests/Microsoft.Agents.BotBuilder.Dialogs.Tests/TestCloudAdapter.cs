@@ -7,12 +7,13 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
-    public class TestCloudAdapter : CloudAdapterBase
+    public class TestCloudAdapter : ChannelServiceAdapterBase
     {
         public TestCloudAdapter(IChannelServiceClientFactory channelServiceClientFactory)
             : base(channelServiceClientFactory)
@@ -37,7 +38,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 _innerTurnContext = innerTurnContext;
             }
 
-            public IBotAdapter Adapter => _innerTurnContext.Adapter;
+            public IChannelAdapter Adapter => _innerTurnContext.Adapter;
 
             public TurnContextStateCollection TurnState => _innerTurnContext.TurnState;
 

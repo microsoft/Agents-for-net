@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Client
         private readonly IServiceProvider _serviceProvider;
         private readonly IConnections _connections;
 
-        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConnections connections, IConfiguration configuration, string configSection = "ChannelHost")
+        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConnections connections, IConfiguration configuration, string defaultChannelName, string configSection = "ChannelHost")
         {
             ArgumentNullException.ThrowIfNullOrEmpty(configSection);
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
@@ -29,6 +29,10 @@ namespace Microsoft.Agents.Client
             {
                 foreach (var bot in bots)
                 {
+                    if (string.IsNullOrEmpty(bot.ChannelFactory))
+                    {
+                        bot.ChannelFactory = defaultChannelName; // Default the channel name to a know name if its not populated in the incomming configuraiton
+                    }
                     Channels.Add(bot.Id, bot);
                 }
             }

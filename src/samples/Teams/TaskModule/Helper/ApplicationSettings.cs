@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-namespace Microsoft.Teams.Samples.TaskModule.Web.Helper
+namespace TaskModule.Helper
 {
     public  class ApplicationSettings
     {

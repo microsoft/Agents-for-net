@@ -3,14 +3,14 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Teams.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Core.Interfaces;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TeamsAuth.Bots
 {
     // This IBot implementation is designed to support multiple Dialog types. Using a type parameter (T),
     // it enables different bot instances to run distinct Dialogs at separate endpoints within the same project.
@@ -18,29 +18,12 @@ namespace Microsoft.Agents.Samples.Bots
     // can bind them together, avoiding ambiguity.
     // ConversationState manages state across Dialog steps. While UserState is not directly used by the Dialog system,
     // it may be utilized within custom Dialogs. Both ConversationState and UserState need to be saved at the end of each turn.
-    public class DialogBot<T> : TeamsActivityHandler where T : Dialog
+    public class DialogBot<T>(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) : TeamsActivityHandler where T : Dialog
     {
-        protected readonly BotState ConversationState;
-        protected readonly Dialog Dialog;
-        protected readonly ILogger Logger;
-        protected readonly BotState UserState;
-
-        public DialogBot(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger)
-        {
-            ConversationState = conversationState;
-            UserState = userState;
-            Dialog = dialog;
-            Logger = logger;
-        }
-
-        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            await base.OnTurnAsync(turnContext, cancellationToken);
-
-            // Save any changes to ConversationState and UserState made during the turn.
-            await ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
-            await UserState.SaveChangesAsync(turnContext, false, cancellationToken);
-        }
+        protected readonly BotState ConversationState = conversationState;
+        protected readonly Dialog Dialog = dialog;
+        protected readonly ILogger Logger = logger;
+        protected readonly BotState UserState = userState;
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
@@ -48,6 +31,13 @@ namespace Microsoft.Agents.Samples.Bots
 
             // Execute the Dialog with the incoming message Activity.
             await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+        }
+
+        protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            // Save any state changes that might have occurred during the turn.
+            await ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+            await UserState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
     }
 }

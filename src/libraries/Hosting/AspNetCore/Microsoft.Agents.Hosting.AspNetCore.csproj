@@ -36,14 +36,15 @@
 		<!-- Force System.Text.Json to a safe version. -->
 		<PackageReference Include="System.Text.Json" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
-	  <ProjectReference Include="..\..\Core\Protocols\Microsoft.Agents.Protocols.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="README.md" Pack="true" PackagePath="\"/>
+	  <None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>

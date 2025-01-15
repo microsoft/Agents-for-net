@@ -19,7 +19,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.Setup
+namespace Microsoft.Agents.Samples
 {
     public static class AspNetExtensions
     {
@@ -34,21 +34,22 @@ namespace Microsoft.Agents.Hosting.Setup
         /// <param name="authenticationSection">Name of the config section to read.</param>
         /// <param name="logger">Optional logger to use for authentication event logging.</param>
         /// <remarks>
-        /// Example config:
+        /// Configuration:
         /// <code>
-        ///     {
-        ///        "TokenValidation": {
-        ///           "Audience": "{required:bot-appid},
-        ///           "TenantId": "{recommended:tenant-id}",
-        ///           "ValidIssuers": [
-        ///              "{default:Public-AzureBotService}"
-        ///           ],
-        ///           "IsGov": {optional:false},
-        ///           "AzureBotServiceOpenIdMetadataUrl": optional,
-        ///           "OpenIdMetadataUrl": optional,
-        ///           "AzureBotServiceTokenHandling": "{optional:true}"
-        ///        }
-        ///     }
+        ///   "TokenValidation": {
+        ///     "Audiences": [
+        ///       "{required:bot-appid}"
+        ///     ],
+        ///     "TenantId": "{recommended:tenant-id}",
+        ///     "ValidIssuers": [
+        ///       "{default:Public-AzureBotService}"
+        ///     ],
+        ///     "IsGov": {optional:false},
+        ///     "AzureBotServiceOpenIdMetadataUrl": optional,
+        ///     "OpenIdMetadataUrl": optional,
+        ///     "AzureBotServiceTokenHandling": "{optional:true}"
+        ///     "OpenIdMetadataRefresh": "optional-12:00:00"
+        ///   }
         /// </code>
         /// 
         /// `IsGov` can be omitted, in which case public Azure Bot Service and Azure Cloud metadata urls are used.
@@ -74,6 +75,8 @@ namespace Microsoft.Agents.Hosting.Setup
                     "https://login.microsoftonline.com/d6d49420-f39b-4df7-a1dc-d59a935871db/v2.0",
                     "https://sts.windows.net/f8cdef31-a31e-4b4a-93e4-5f571e91255a/",
                     "https://login.microsoftonline.com/f8cdef31-a31e-4b4a-93e4-5f571e91255a/v2.0",
+                    "https://sts.windows.net/69e9b82d-4842-4902-8d1e-abc5b98a55e8/",
+                    "https://login.microsoftonline.com/69e9b82d-4842-4902-8d1e-abc5b98a55e8/v2.0",
                 ];
 
                 string tenantId = tokenValidationSection["TenantId"];
@@ -106,6 +109,8 @@ namespace Microsoft.Agents.Hosting.Setup
             {
                 openIdMetadataUrl = isGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
             }
+
+            var openIdRefreshInterval = tokenValidationSection.GetValue<TimeSpan>("OpenIdMetadataRefresh", BaseConfigurationManager.DefaultAutomaticRefreshInterval);
 
             services.AddAuthentication(options =>
             {
@@ -162,14 +167,20 @@ namespace Microsoft.Agents.Hosting.Setup
                             // Use the Bot Framework authority for this configuration manager
                             context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(azureBotServiceOpenIdMetadataUrl, key =>
                             {
-                                return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient());
+                                return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
+                                {
+                                    AutomaticRefreshInterval = openIdRefreshInterval
+                                };
                             });
                         }
                         else
                         {
                             context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(openIdMetadataUrl, key =>
                             {
-                                return new ConfigurationManager<OpenIdConnectConfiguration>(openIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient());
+                                return new ConfigurationManager<OpenIdConnectConfiguration>(openIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
+                                {
+                                    AutomaticRefreshInterval = openIdRefreshInterval
+                                };
                             });
                         }
 

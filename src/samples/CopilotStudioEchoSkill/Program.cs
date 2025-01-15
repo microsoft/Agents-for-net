@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using EchoSkill.Bots;
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Primitives;
+using CopilotStudioEchoSkill;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +17,11 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBot<IBot, CopilotStudioEchoSkill>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<CopilotStudioBot, BotAdapterWithErrorHandler>();
 
 var app = builder.Build();
 

@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

@@ -3,12 +3,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Extensions.Configuration;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TeamsAuth.Dialogs
 {
     // MainDialog class handles the user authentication process using an OAuth prompt
     // and provides a sample flow for signing in, retrieving, and displaying user information.

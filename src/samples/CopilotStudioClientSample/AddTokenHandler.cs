@@ -15,6 +15,9 @@ namespace CopilotStudioClientSample
     /// <param name="settings">Direct To engine connection settings.</param>
     internal class AddTokenHandler(SampleConnectionSettings settings) : DelegatingHandler(new HttpClientHandler())
     {
+        private static readonly string _keyChainServiceName = "copilot_studio_client_app";
+        private static readonly string _keyChainAccountName = "copilot_studio_client";
+        
         private async Task<AuthenticationResult> AuthenticateAsync(CancellationToken ct = default!)
         {
             ArgumentNullException.ThrowIfNull(settings);
@@ -39,6 +42,10 @@ namespace CopilotStudioClientSample
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 storageProperties.WithLinuxUnprotectedFile();
+            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
             }
             MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
             tokenCacheHelper.RegisterCache(app.UserTokenCache);

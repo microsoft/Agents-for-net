@@ -4,12 +4,13 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Core.Interfaces;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TeamsAuth.Bots
 {
     // This bot extends the DialogBot<T> class to handle Teams-specific activities.
     // It inherits from TeamsActivityHandler, making it capable of responding to various Microsoft Teams events.

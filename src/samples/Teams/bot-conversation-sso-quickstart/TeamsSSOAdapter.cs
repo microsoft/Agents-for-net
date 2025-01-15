@@ -3,17 +3,18 @@
 // </copyright>
 
 using System;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Teams.Adapter;
+using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Storage;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace BotConversationSsoQuickstart
 {
-    public class TeamsSSOAdapter : AsyncCloudAdapter
+    public class TeamsSSOAdapter : CloudAdapter
     {
         public TeamsSSOAdapter(
             IChannelServiceClientFactory channelServiceClientFactory, 
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Samples.Bots
             ILogger<IBotHttpAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
-            : base(channelServiceClientFactory, logger, activityTaskQueue)
+            : base(channelServiceClientFactory, activityTaskQueue, logger)
         {
             base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
 

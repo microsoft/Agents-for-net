@@ -3,11 +3,10 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Connector;
 using Xunit;
 using System.Text.Json;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Model.Tests
 {

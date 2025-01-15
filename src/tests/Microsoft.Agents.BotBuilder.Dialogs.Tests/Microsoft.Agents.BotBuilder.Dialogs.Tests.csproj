@@ -40,8 +40,8 @@
 
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\libraries\BotBuilder\BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
-		<ProjectReference Include="..\..\libraries\Memory\Memory.Transcript\Microsoft.Agents.Memory.Transcript.csproj" />
+		<ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
+		<ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Transcript\Microsoft.Agents.Storage.Transcript.csproj" />
 		<ProjectReference Include="..\Microsoft.Agents.BotBuilder.TestBot.Tests\Microsoft.Agents.BotBuilder.TestBot.Tests.csproj" />
 	</ItemGroup>
 </Project>

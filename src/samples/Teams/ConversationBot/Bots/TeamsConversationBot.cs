@@ -8,16 +8,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.Agents.Teams.Adapter;
+using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using AdaptiveCards.Templating;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Connector.Types;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace ConversationBot.Bots
 {
     public class TeamsConversationBot(IConfiguration config) : TeamsActivityHandler
     {

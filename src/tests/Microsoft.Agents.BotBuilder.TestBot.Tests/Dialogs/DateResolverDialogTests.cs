@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.BotBuilder.Testing.XUnit;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.BotBuilderSamples.Tests.Dialogs.TestData;
 using Microsoft.BotBuilderSamples.Tests.Framework;
 using Xunit;

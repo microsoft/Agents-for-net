@@ -11,12 +11,14 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Testing;
 using Moq;
 using Xunit;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Memory;
+using Microsoft.Agents.Storage;
 using System.Text.Json;
-using Microsoft.Agents.Protocols.Serializer;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 using Microsoft.Agents.Samples.Bots;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +17,11 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// Add AspNet Authentication suitable for token validation
-builder.AddBot<IBot, Bot2>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<Bot2>();
 
 var app = builder.Build();
 

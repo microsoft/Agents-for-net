@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.Core.Teams.Models;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json;

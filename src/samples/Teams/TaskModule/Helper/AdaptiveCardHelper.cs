@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 using AdaptiveCards;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.IO;
 
-namespace Microsoft.Teams.Samples.TaskModule.Web.Helper
+namespace TaskModule.Helper
 {
     /// <summary>
     ///  Helper class which posts to the saved channel every 20 seconds.

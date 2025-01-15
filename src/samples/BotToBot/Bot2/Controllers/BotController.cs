@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Protocols.Primitives;
 using System.Threading;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Samples.Bots
 {

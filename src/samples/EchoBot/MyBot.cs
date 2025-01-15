@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

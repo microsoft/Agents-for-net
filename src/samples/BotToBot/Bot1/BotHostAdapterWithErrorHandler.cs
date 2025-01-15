@@ -4,11 +4,13 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Client;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -17,8 +19,8 @@ namespace Microsoft.Agents.Samples.Bots
         private readonly ILogger _logger;
         private readonly IChannelHost _botsConfig;
 
-        public BotHostAdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IConfiguration configuration, ILogger<IBotHttpAdapter> logger, IChannelHost botsConfig)
-            : base(channelServiceClientFactory, logger)
+        public BotHostAdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, IChannelHost botsConfig, ILogger<IBotHttpAdapter> logger)
+            : base(channelServiceClientFactory, activityTaskQueue, logger)
         {
             _botsConfig = botsConfig ?? throw new ArgumentNullException(nameof(botsConfig));
             _logger = logger ?? NullLogger<IBotHttpAdapter>.Instance;

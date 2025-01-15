@@ -9,10 +9,12 @@ using System.IO;
 using System.Text.Json;
 using AdaptiveCards.Templating;
 using AdaptiveCards;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Core.Interfaces;
+using BotAllCards.Dialogs;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace BotAllCards.Bots
 {
     // RichCardsBot prompts a user to select a Rich Card and then returns the card
     // that matches the user's selection.

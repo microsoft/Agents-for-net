@@ -25,9 +25,9 @@
       </PackageReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\libraries\Core\Protocols\Microsoft.Agents.Protocols.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="Resources\*">

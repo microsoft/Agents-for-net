@@ -4,10 +4,11 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace BotConversationSsoQuickstart.Dialogs
 {
     public class LogoutDialog : ComponentDialog
     {

@@ -3,10 +3,11 @@
 
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
-using Microsoft.Agents.Teams.Connector;
-using Microsoft.Agents.Teams.Primitives;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Teams.Models;
 using Xunit;
 
 namespace Microsoft.Agents.Teams.Tests

@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 using WeatherBot;
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using WeatherBot.Agents;
 using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using Azure.Identity;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,7 +50,11 @@ else
 // Register the WeatherForecastAgent
 builder.Services.AddTransient<WeatherForecastAgent>();
 
-builder.AddBot<IBot, MyBot>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<MyBot>();
 
 var app = builder.Build();
 

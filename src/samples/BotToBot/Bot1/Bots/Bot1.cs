@@ -10,10 +10,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Protocols.Adapter;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Agents.Protocols.Serializer;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -24,10 +27,10 @@ namespace Microsoft.Agents.Samples.Bots
     /// This demonstrates send activities to another bot (Channe), and how to implement the IChannelResponseHandler on 
     /// the bot.  See BotFrameworkSkillHandler for the Bot Framework handler.
     /// </remarks>
-    public class Bot1 : ActivityHandler, IChannelResponseHandler
+    public class Bot1 : ActivityHandler, IChannelApiHandler
     {
         public static readonly string ActiveSkillPropertyName = $"{typeof(Bot1).FullName}.ActiveSkillProperty";
-        private readonly IBotAdapter _adapter;
+        private readonly IChannelAdapter _adapter;
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IChannelHost _channelHost;
 
@@ -35,7 +38,7 @@ namespace Microsoft.Agents.Samples.Bots
         private static bool _activeBotClient = false;
         private readonly IChannelInfo _targetSkill;
 
-        public Bot1(IBotAdapter adapter, IChannelHost channelHost, IConversationIdFactory conversationIdFactory, IConfiguration configuration)
+        public Bot1(IChannelAdapter adapter, IChannelHost channelHost, IConversationIdFactory conversationIdFactory, IConfiguration configuration)
         {
             _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             _channelHost = channelHost ?? throw new ArgumentNullException(nameof(channelHost));
@@ -122,7 +125,7 @@ namespace Microsoft.Agents.Samples.Bots
             // Create a conversationId to interact with the skill and send the activity
             var options = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = turnContext.TurnState.Get<string>(BotAdapter.OAuthScopeKey),
+                FromBotOAuthScope = turnContext.TurnState.Get<string>(ChannelAdapter.OAuthScopeKey),
                 FromBotId = _channelHost.HostAppId,
                 Activity = turnContext.Activity,
                 Bot = targetChannel
@@ -144,6 +147,10 @@ namespace Microsoft.Agents.Samples.Bots
         //
         // IChannelResponseHandler
         //
+        public async Task<ResourceResponse> OnSendActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default)
+        {
+            return await ProcessActivityAsync(claimsIdentity, conversationId, null, activity, cancellationToken).ConfigureAwait(false);
+        }
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default)
         {
             return await ProcessActivityAsync(claimsIdentity, conversationId, null, activity, cancellationToken).ConfigureAwait(false);

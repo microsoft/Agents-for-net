@@ -2,16 +2,12 @@
 // Licensed under the MIT License.
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Authentication.Msal;
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Samples.Bots;
+using Microsoft.Agents.Samples;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
+using Microsoft.Agents.Hosting.AspNetCore;
+using MessagingExtensionsSearch.Bots;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +17,11 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-builder.AddBot<IBot, TeamsMessagingExtensionsSearchBot>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<TeamsMessagingExtensionsSearchBot>();
 
 var app = builder.Build();
 
