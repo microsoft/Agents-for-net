@@ -2,7 +2,7 @@ name: Pull Request Build and Validation
 
 on:
   workflow_run:
-    workflows: ["Linux Local build and test"]
+    workflows: [Linux Local build and test]
     types:
       - completed
 #    branches:
