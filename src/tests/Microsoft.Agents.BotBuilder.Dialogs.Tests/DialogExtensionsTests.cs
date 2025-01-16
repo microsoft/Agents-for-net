@@ -144,7 +144,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 turnContext.TurnState.Add(telemetryClientMock.Object);
 
-                await DialogExtensions.RunAsync(dialog, turnContext, conversationState.CreateProperty<DialogState>("DialogState"), CancellationToken.None);
+                await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
             }
 
             Assert.Equal(telemetryClientMock.Object, dialog.TelemetryClient);
@@ -206,7 +206,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 });
 
                 // Invoke RunAsync on the dialog.
-                await dialog.RunAsync(turnContext, convoState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+                await dialog.RunAsync(turnContext, convoState, cancellationToken);
             });
         }
 

@@ -32,19 +32,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TextPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(TextPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
-
             var textPrompt = new TextPrompt("TextPrompt");
-            dialogs.Add(textPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(textPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -70,16 +70,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TextPromptWithNaughtyStrings()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(TextPromptWithNaughtyStrings)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
-
             var textPrompt = new TextPrompt("TextPrompt");
-            dialogs.Add(textPrompt);
 
             var filePath = Path.Combine(new string[] { "Resources", "naughtyStrings.txt" });
             using var sr = new StreamReader(filePath);
@@ -91,6 +87,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 {
                     await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                     {
+                        var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                        var dialogs = new DialogSet(dialogState);
+                        dialogs.Add(textPrompt);
+
                         var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                         var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -130,13 +130,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TextPromptValidator()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(TextPromptValidator)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
-
-            var dialogs = new DialogSet(dialogState);
 
             PromptValidator<string> validator = async (promptContext, cancellationToken) =>
             {
@@ -153,10 +150,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             };
 
             var textPrompt = new TextPrompt("TextPrompt", validator);
-            dialogs.Add(textPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(textPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -184,13 +184,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TextPromptWithRetryPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(TextPromptWithRetryPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
-
-            var dialogs = new DialogSet(dialogState);
 
             PromptValidator<string> validator = (promptContext, cancellationToken) =>
             {
@@ -203,10 +200,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 return Task.FromResult(false);
             };
             var textPrompt = new TextPrompt("TextPrompt", validator);
-            dialogs.Add(textPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(textPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -238,13 +238,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TextPromptValidatorWithMessageShouldNotSendRetryPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(TextPromptValidatorWithMessageShouldNotSendRetryPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
-
-            var dialogs = new DialogSet(dialogState);
 
             PromptValidator<string> validator = async (promptContext, cancellationToken) =>
             {
@@ -260,10 +257,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 }
             };
             var textPrompt = new TextPrompt("TextPrompt", validator);
-            dialogs.Add(textPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(textPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);

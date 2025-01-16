@@ -641,11 +641,11 @@ namespace Microsoft.Agents.BotBuilder
         {
             switch (turnContext.Activity.Action)
             {
-                case "add":
-                case "add-upgrade":
+                case InstallationUpdateActionTypes.Add:
+                case InstallationUpdateActionTypes.AddUpgrade:
                     return OnInstallationUpdateAddAsync(turnContext, cancellationToken);
-                case "remove":
-                case "remove-upgrade":
+                case InstallationUpdateActionTypes.Remove:
+                case InstallationUpdateActionTypes.RemoveUpgrade:
                     return OnInstallationUpdateRemoveAsync(turnContext, cancellationToken);
                 default:
                     return Task.CompletedTask;

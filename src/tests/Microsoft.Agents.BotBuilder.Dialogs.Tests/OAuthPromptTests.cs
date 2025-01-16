@@ -70,16 +70,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                         ConnectionName = "abc",
                     });
                 var convoState = new ConversationState(new MemoryStorage());
-                var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
+                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
+
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(tc, "DialogState", () => new DialogState(), default);
+
                 // Create new DialogSet.
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(prompt);
-
-                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
 
                 var dc = await dialogs.CreateContextAsync(tc);
 
@@ -94,16 +95,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 var prompt = new OAuthPrompt("abc", new OAuthPromptSettings() { ConnectionName = "test" });
                 var convoState = new ConversationState(new MemoryStorage());
-                var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
+                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
+
                 // Create new DialogSet.
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(tc, "DialogState", () => new DialogState(), default);
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(prompt);
-
-                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
 
                 var dc = await dialogs.CreateContextAsync(tc);
 
@@ -115,17 +116,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptWithMagicCode()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -219,9 +219,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
                 var prompt = new OAuthPrompt("abc", new OAuthPromptSettings());
-                var convoState = new ConversationState(new MemoryStorage());
-                var dialogState = convoState.CreateProperty<DialogState>("dialogState");
-                var dialogs = new DialogSet(dialogState);
+                var dialogs = new DialogSet(new DialogState());
 
                 dialogs.Add(prompt);
 
@@ -233,19 +231,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptDoesNotDetectCodeInBeginDialog()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
-
-            // Create new DialogSet
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
                 // Add a magic code to the adapter preemptively so that we can test if the message that triggers BeginDialogAsync uses magic code detection
                 adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId, turnContext.Activity.From.Id, Token, MagicCode);
+
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -279,17 +276,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptWithTokenExchangeInvoke()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -349,17 +345,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptWithTokenExchangeFail()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -417,17 +412,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptWithTokenExchangeNoBodyFails()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -482,17 +476,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptWithTokenExchangeWrongConnectionNameFail()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -550,20 +543,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptInNotSupportedChannelShouldAddSignInCard()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings()
-            {
-                ConnectionName = "test"
-            }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { ConnectionName = ConnectionName }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -602,17 +591,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             oAuthPromptSettings.ShowSignInLink = showSignInLinkValue;
 
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -685,19 +673,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptRecognizeTokenAsync_WithNullTextMessageActivity_DoesNotThrow()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
             const string retryPromptText = "Sorry, invalid input. Please sign in.";
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -732,17 +719,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 };
 
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = testAdapter
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -778,17 +764,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OAuthPromptEndOnInvalidMessageSetting()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", EndOnInvalidMessage = true }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", EndOnInvalidMessage = true }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -837,7 +822,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             var prompt = new OAuthPrompt("OAuthPrompt", oauthPromptSettings);
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
@@ -845,7 +829,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             adapter.AddUserToken(ConnectionName, ChannelId, UserId, Token);
 
             // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
+            var dialogs = new DialogSet(new DialogState());
             dialogs.Add(prompt);
 
             var activity = new Activity { ChannelId = ChannelId, From = new ChannelAccount { Id = UserId } };
@@ -859,17 +843,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         private async Task OAuthPrompt(IStorage storage)
         {
             var convoState = new ConversationState(storage);
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -911,19 +894,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         private async Task PromptTimeoutEndsDialogTest(IActivity oauthPromptActivity)
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
-            // Set timeout to zero, so the prompt will end immediately.
-            dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", Timeout = 0 }));
-
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                var dialogs = new DialogSet(dialogState);
+
+                // Set timeout to zero, so the prompt will end immediately.
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", Timeout = 0 }));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);

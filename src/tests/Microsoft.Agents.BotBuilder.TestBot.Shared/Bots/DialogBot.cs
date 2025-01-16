@@ -49,7 +49,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
             Logger.LogInformation("Running dialog with Message Activity.");
 
             // Run the Dialog with the new message Activity.
-            await Dialog.Run(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+            await Dialog.Run(turnContext, ConversationState, cancellationToken);
         }
     }
 }

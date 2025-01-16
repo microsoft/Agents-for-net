@@ -14,17 +14,12 @@ namespace Microsoft.Agents.State
     /// User state is available in any turn that the bot is conversing with that user on that
     /// channel, regardless of the conversation.
     /// </remarks>
-    public class UserState : BotState
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="UserState"/> class.
+    /// </remarks>
+    /// <param name="storage">The storage layer to use.</param>
+    public class UserState(IStorage storage) : BotState(storage, nameof(UserState))
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserState"/> class.
-        /// </summary>
-        /// <param name="storage">The storage layer to use.</param>
-        public UserState(IStorage storage)
-            : base(storage, nameof(UserState))
-        {
-        }
-
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

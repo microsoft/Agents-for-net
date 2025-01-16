@@ -1,20 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Adapters;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Bot.Schema;
-using Newtonsoft.Json.Linq;
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Models;
 using Xunit;
-using Xunit.Sdk;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class NormalizeMentionsMiddlewareTests
     {
@@ -32,15 +26,12 @@ namespace Microsoft.Bot.Builder.Tests
                 if (context.Activity.Entities != null)
                 {
                     int i = 1;
-                    foreach (var entity in context.Activity.Entities)
+                    foreach (Mention entity in context.Activity.Entities)
                     {
-                        dynamic props = (dynamic)entity.Properties;
-                        var entityText = (string)props.text;
-                        var mentionedId = (string)props.mentioned.id;
-                        Assert.DoesNotContain("<at", entityText);
-                        Assert.DoesNotContain("</at>", entityText);
-                        Assert.Contains(entityText, context.Activity.Text);
-                        Assert.Equal($"user{i++}", mentionedId);
+                        Assert.DoesNotContain("<at", entity.Text);
+                        Assert.DoesNotContain("</at>", entity.Text);
+                        Assert.Contains(entity.Text, context.Activity.Text);
+                        Assert.Equal($"user{i++}", entity.Mentioned.Id);
                     }
                 }
 
@@ -92,14 +83,11 @@ namespace Microsoft.Bot.Builder.Tests
                 Assert.False(context.Activity.Text.Contains("<at") && context.Activity.Text.Contains("</at>"));
                 Assert.Contains("Bot", context.Activity.Text);
                 Assert.NotNull(context.Activity.Entities);
-                var entity = context.Activity.Entities.Single();
-                dynamic props = (dynamic)entity.Properties;
-                var entityText = (string)props.text;
-                var mentionedId = (string)props.mentioned.id;
-                Assert.DoesNotContain("<at", entityText);
-                Assert.DoesNotContain("</at>", entityText);
-                Assert.Contains(entityText, context.Activity.Text);
-                Assert.Equal($"bot", mentionedId);
+                var entity = context.Activity.Entities.Single() as Mention;
+                Assert.DoesNotContain("<at", entity.Text);
+                Assert.DoesNotContain("</at>", entity.Text);
+                Assert.Contains(entity.Text, context.Activity.Text);
+                Assert.Equal($"bot", entity.Mentioned.Id);
                 await context.SendActivityAsync("OK");
             })
                 .Send(CreateMentionActivity("this is <at>Bot</at>", CreateEntity("<at>Bot</at>", "bot")))
@@ -117,15 +105,17 @@ namespace Microsoft.Bot.Builder.Tests
 
         public Entity CreateEntity(string atText, string userId)
         {
-            var entity = new Entity()
+            var entity = new Mention()
             {
-                Type = "mention"
+                Type = "mention",
+                Text = atText,
+                Mentioned = new ChannelAccount()
+                {
+                    Id = userId,
+                    Name = "User",
+                }
             };
-            dynamic props = entity.Properties;
-            props.text = atText;
-            props.mentioned = new JObject();
-            props.mentioned.id = userId;
-            props.mentioned.name = "User";
+            
             return entity;
         }
     }

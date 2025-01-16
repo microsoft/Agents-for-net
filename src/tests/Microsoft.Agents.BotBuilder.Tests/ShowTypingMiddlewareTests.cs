@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Adapters;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Bot.Schema;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class ShowTypingMiddlewareTests
     {
@@ -113,10 +113,9 @@ namespace Microsoft.Bot.Builder.Tests
             }
         }
 
-        private void ValidateTypingActivity(IActivity obj)
+        private void ValidateTypingActivity(IActivity activity)
         {
-            var activity = obj.AsTypingActivity();
-            if (activity != null)
+            if (activity != null && activity.Type == "typing")
             {
                 return;
             }
@@ -140,7 +139,7 @@ namespace Microsoft.Bot.Builder.Tests
             {
             }
 
-            protected override TurnContext CreateTurnContext(Activity activity)
+            public override TurnContext CreateTurnContext(IActivity activity)
             {
                 // Get the default turnContext from the base.
                 var turnContext = base.CreateTurnContext(activity);

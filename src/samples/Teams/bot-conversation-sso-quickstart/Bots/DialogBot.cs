@@ -40,7 +40,7 @@ namespace BotConversationSsoQuickstart.Bots
             CancellationToken cancellationToken)
         {
             _logger.LogInformation("Running dialog with Message Activity.");
-            await _dialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
         }
 
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

@@ -1,27 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Tests;
-using Microsoft.Bot.Connector;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Bot.Schema;
-using Microsoft.Bot.Schema.SharePoint;
-using Microsoft.Bot.Schema.Teams;
-using Microsoft.Rest.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
+using Microsoft.Agents.Core.Models;
 using Xunit;
+using Microsoft.Agents.BotBuilder.SharePoint;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.SharePoint.Models;
 
-namespace Microsoft.Bot.Builder.SharePoint.Tests
+namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 {
     public class SharePointActivityHandlerTests
     {
@@ -33,11 +24,11 @@ namespace Microsoft.Bot.Builder.SharePoint.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getCardView",
-                Value = JObject.FromObject(new object()),
+                Value = new JsonObject()
             };
 
-            Activity[] activitiesToSend = null;
-            void CaptureSend(Activity[] arg)
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
                 activitiesToSend = arg;
             }
@@ -65,11 +56,11 @@ namespace Microsoft.Bot.Builder.SharePoint.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getQuickView",
-                Value = JObject.FromObject(new object()),
+                Value = new JsonObject()
             };
 
-            Activity[] activitiesToSend = null;
-            void CaptureSend(Activity[] arg)
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
                 activitiesToSend = arg;
             }
@@ -97,11 +88,11 @@ namespace Microsoft.Bot.Builder.SharePoint.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getPropertyPaneConfiguration",
-                Value = JObject.FromObject(new object()),
+                Value = new JsonObject()
             };
 
-            Activity[] activitiesToSend = null;
-            void CaptureSend(Activity[] arg)
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
                 activitiesToSend = arg;
             }
@@ -129,11 +120,11 @@ namespace Microsoft.Bot.Builder.SharePoint.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/setPropertyPaneConfiguration",
-                Value = JObject.FromObject(new object()),
+                Value = new JsonObject()
             };
 
-            Activity[] activitiesToSend = null;
-            void CaptureSend(Activity[] arg)
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
                 activitiesToSend = arg;
             }
@@ -161,11 +152,11 @@ namespace Microsoft.Bot.Builder.SharePoint.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/handleAction",
-                Value = JObject.FromObject(new object()),
+                Value = new JsonObject()
             };
 
-            Activity[] activitiesToSend = null;
-            void CaptureSend(Activity[] arg)
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
                 activitiesToSend = arg;
             }

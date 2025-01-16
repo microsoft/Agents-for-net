@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Storage;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Adapters;
-using Microsoft.Bot.Schema;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class AutoSaveStateMiddlewareTests
     {
@@ -14,14 +17,8 @@ namespace Microsoft.Bot.Builder.Tests
         public async Task AutoSaveStateMiddleware_DualReadWrite()
         {
             var storage = new MemoryStorage();
-
-            // setup userstate
             var userState = new UserState(storage);
-            var userProperty = userState.CreateProperty<int>("userCount");
-
-            // setup convState
             var convState = new ConversationState(storage);
-            var convProperty = convState.CreateProperty<int>("convCount");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation("AutoSaveStateMiddleware_DualReadWrite"))
                 .Use(new AutoSaveStateMiddleware(userState, convState));
@@ -31,8 +28,8 @@ namespace Microsoft.Bot.Builder.Tests
             BotCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from hSet
-                var userCount = await userProperty.GetAsync(context, () => USER_INITITAL_COUNT).ConfigureAwait(false);
-                var convCount = await convProperty.GetAsync(context, () => CONVERSATION_INITIAL_COUNT).ConfigureAwait(false);
+                var userCount = await userState.GetPropertyAsync(context, "userCount", () => USER_INITITAL_COUNT, cancellationToken).ConfigureAwait(false);
+                var convCount = await convState.GetPropertyAsync(context, "convCount", () => CONVERSATION_INITIAL_COUNT, cancellationToken).ConfigureAwait(false);
 
                 // System.Diagnostics.Debug.WriteLine($"{context.Activity.Id} UserCount({context.Activity.From.Id}):{userCount} convCount({context.Activity.Conversation.Id}):{convCount}");
                 if (context.Activity.Type == ActivityTypes.Message)
@@ -49,11 +46,11 @@ namespace Microsoft.Bot.Builder.Tests
 
                 // increment userCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 userCount++;
-                await userProperty.SetAsync(context, userCount);
+                await userState.SetPropertyAsync(context, "userCount", userCount, cancellationToken);
 
                 // increment convCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 convCount++;
-                await convProperty.SetAsync(context, convCount);
+                await convState.SetPropertyAsync(context, "convCount", convCount, cancellationToken);
             };
 
             await new TestFlow(adapter, botLogic)
@@ -88,15 +85,11 @@ namespace Microsoft.Bot.Builder.Tests
         [Fact]
         public async Task AutoSaveStateMiddleware_Chain()
         {
+            // setup state
             var storage = new MemoryStorage();
-
-            // setup userstate
-            var userState = new UserState(storage);
-            var userProperty = userState.CreateProperty<int>("userCount");
-
-            // setup convState
             var convState = new ConversationState(storage);
-            var convProperty = convState.CreateProperty<int>("convCount");
+            var userState = new UserState(storage);
+
             var bss = new AutoSaveStateMiddleware()
                 .Add(userState)
                 .Add(convState);
@@ -108,8 +101,8 @@ namespace Microsoft.Bot.Builder.Tests
             BotCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from botStateSet
-                var userCount = await userProperty.GetAsync(context, () => USER_INITITAL_COUNT).ConfigureAwait(false);
-                var convCount = await convProperty.GetAsync(context, () => CONVERSATION_INITIAL_COUNT).ConfigureAwait(false);
+                var userCount = await userState.GetPropertyAsync(context, "userCount", () => USER_INITITAL_COUNT, cancellationToken).ConfigureAwait(false);
+                var convCount = await convState.GetPropertyAsync(context, "convCount", () => CONVERSATION_INITIAL_COUNT, cancellationToken).ConfigureAwait(false);
 
                 if (context.Activity.Type == ActivityTypes.Message)
                 {
@@ -125,11 +118,11 @@ namespace Microsoft.Bot.Builder.Tests
 
                 // increment userCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 userCount++;
-                await userProperty.SetAsync(context, userCount);
+                await userState.SetPropertyAsync(context, "userCount", userCount, cancellationToken);
 
                 // increment convCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 convCount++;
-                await convProperty.SetAsync(context, convCount);
+                await convState.SetPropertyAsync(context, "convCount", convCount, cancellationToken);
             };
 
             await new TestFlow(adapter, botLogic)

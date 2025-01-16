@@ -52,20 +52,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
                 var convoState = new ConversationState(new MemoryStorage());
-                var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
-                // Create new DialogSet.
-                var dialogs = new DialogSet(dialogState);
-
                 // Create and add custom activity prompt to DialogSet.
                 var numberPromptMock = new NumberPromptMock("NumberPromptMock");
-                dialogs.Add(numberPromptMock);
 
                 await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+                    dialogs.Add(numberPromptMock);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                     await numberPromptMock.OnPromptNullOptions(dc);
@@ -90,20 +89,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task NumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add number prompt to DialogSet.
             var numberPrompt = new NumberPrompt<int>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -129,18 +127,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task NumberPromptRetry()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<int>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -172,12 +170,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task NumberPromptValidator()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
-
-            var dialogs = new DialogSet(dialogState);
 
             PromptValidator<int> validator = (promptContext, cancellationToken) =>
             {
@@ -191,10 +186,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 return Task.FromResult(false);
             };
             var numberPrompt = new NumberPrompt<int>("NumberPrompt", validator, Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -226,18 +224,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task FloatNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<float>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -266,18 +264,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task LongNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<long>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -306,18 +304,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DoubleNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -346,18 +344,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task CurrencyNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -386,18 +384,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task AgeNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -426,18 +424,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DimensionNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -466,18 +464,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task TemperatureNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -506,18 +504,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task CultureThruNumberPromptCtor()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.Dutch);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -545,18 +543,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task CultureThruActivityNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt", defaultLocale: Culture.Dutch);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -584,18 +582,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task NumberPromptDefaultsToEnUsLocale()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<double>("NumberPrompt");
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -624,18 +622,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DecimalNumberPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<decimal>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -664,18 +662,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task NoNumberButUnitPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             var numberPrompt = new NumberPrompt<decimal>("NumberPrompt", defaultLocale: Culture.English);
-            dialogs.Add(numberPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(numberPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);

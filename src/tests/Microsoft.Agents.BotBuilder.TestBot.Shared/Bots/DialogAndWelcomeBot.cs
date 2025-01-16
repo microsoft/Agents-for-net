@@ -32,7 +32,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
                     var welcomeCard = CreateAdaptiveCardAttachment();
                     var response = CreateResponse(turnContext.Activity, welcomeCard);
                     await turnContext.SendActivityAsync(response, cancellationToken);
-                    await Dialog.Run(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+                    await Dialog.Run(turnContext, ConversationState, cancellationToken);
                 }
             }
         }

@@ -39,7 +39,7 @@ namespace BotAllCards.Bots
             Logger.LogInformation("Running dialog with Message Activity.");
 
             // Run the Dialog with the new message Activity.
-            await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
         }
 
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

@@ -1,40 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
+	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplTests</ComponentAreaName>
+		<ComponentAreaName>CplTests.BotBuilder</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
-		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
-    <GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
 	</PropertyGroup>
-
 	<Import Project="..\..\Build.Common.core.props" />
 
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Moq"/>
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>    
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Properties\**" />
+		<EmbeddedResource Remove="Properties\**" />
+		<None Remove="Properties\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\libraries\Microsoft.Bot.Builder\Microsoft.Bot.Builder.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Update="chatdown_gen.cmd">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="LG\" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Moq" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+	  <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
+	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<None Update="Resources\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 </Project>

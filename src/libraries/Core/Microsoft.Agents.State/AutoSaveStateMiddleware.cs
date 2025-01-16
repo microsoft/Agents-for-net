@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
+using Microsoft.Agents.Core.Interfaces;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.State
 {
@@ -49,12 +49,9 @@ namespace Microsoft.Agents.State
         /// <returns>The updated <see cref="BotStateSet"/> object.</returns>
         public AutoSaveStateMiddleware Add(BotState botState)
         {
-            if (botState == null)
-            {
-                throw new ArgumentNullException(nameof(botState));
-            }
+            ArgumentNullException.ThrowIfNull(botState);
 
-            this.BotStateSet.Add(botState);
+            BotStateSet.Add(botState);
             return this;
         }
 
@@ -71,7 +68,7 @@ namespace Microsoft.Agents.State
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken))
         {
             await next(cancellationToken).ConfigureAwait(false);
-            await this.BotStateSet.SaveAllChangesAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await BotStateSet.SaveAllChangesAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
         }
     }
 }

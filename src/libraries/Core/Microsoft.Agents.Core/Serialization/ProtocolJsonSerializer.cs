@@ -55,6 +55,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new VideoCardConverter());
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
+            options.Converters.Add(new SuggestedActionsConverter());
 
             return options;
         }
@@ -68,7 +69,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new TaskModuleResponseConverter());
             options.Converters.Add(new TaskModuleResponseBaseConverter());
             options.Converters.Add(new MessagingExtensionAttachmentConverter());
-            options.Converters.Add(new SuggestedActionsConverter());
 
             return options;
         }

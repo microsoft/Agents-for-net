@@ -45,7 +45,7 @@ namespace BotConversationSsoQuickstart
                         // Delete the conversationState for the current conversation to prevent the
                         // bot from getting stuck in a error-loop caused by being in a bad state.
                         // ConversationState should be thought of as similar to "cookie-state" in a Web pages.
-                        await conversationState.DeleteAsync(turnContext);
+                        await conversationState.DeleteStateAsync(turnContext);
                     }
                     catch (Exception e)
                     {

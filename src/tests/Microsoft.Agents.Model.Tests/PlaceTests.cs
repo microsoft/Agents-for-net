@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -35,6 +36,20 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(place);
             Assert.IsType<Place>(place);
+        }
+
+        [Fact]
+        public void PlaceTypedDeserialize()
+        {
+            var json = "{\"entities\": [{\"type\": \"place\", \"name\": \"placename\"}]}";
+            var activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
+
+            Assert.NotNull(activity.Entities);
+            Assert.NotEmpty(activity.Entities);
+            Assert.IsType<Place>(activity.Entities[0]);
+
+            var place = activity.Entities[0] as Place;
+            Assert.Equal("placename", place.Name);
         }
     }
 }

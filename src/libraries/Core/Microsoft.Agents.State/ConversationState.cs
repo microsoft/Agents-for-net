@@ -14,17 +14,12 @@ namespace Microsoft.Agents.State
     /// Conversation state is available in any turn in a specific conversation, regardless of user,
     /// such as in a group conversation.
     /// </remarks>
-    public class ConversationState : BotState
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ConversationState"/> class.
+    /// </remarks>
+    /// <param name="storage">The storage layer to use.</param>
+    public class ConversationState(IStorage storage) : BotState(storage, nameof(ConversationState))
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConversationState"/> class.
-        /// </summary>
-        /// <param name="storage">The storage layer to use.</param>
-        public ConversationState(IStorage storage)
-            : base(storage, nameof(ConversationState))
-        {
-        }
-
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

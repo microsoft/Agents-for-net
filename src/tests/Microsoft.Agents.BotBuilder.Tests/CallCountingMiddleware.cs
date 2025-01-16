@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class CallCountingMiddleware : IMiddleware
     {

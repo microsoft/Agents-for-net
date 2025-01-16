@@ -1,24 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Connector;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Bot.Schema;
-using Microsoft.Rest;
-using Moq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class ActivityHandlerTests
     {
@@ -568,7 +563,7 @@ namespace Microsoft.Bot.Builder.Tests
         [Fact]
         public async Task TestOnAdaptiveCardInvokeAsync()
         {
-            var value = JObject.FromObject(new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "Action.Execute" } });
+            var value = new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "Action.Execute" } };
 
             // Arrange
             var activity = new Activity
@@ -658,7 +653,9 @@ namespace Microsoft.Bot.Builder.Tests
             // Arrange
             var turnContextMock = new Mock<ITurnContext>();
             turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
-            turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
+            //turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
+            turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
+            
             turnContextMock.Setup(tc => tc.TurnState).Returns(new TurnContextStateCollection());
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
@@ -691,7 +688,7 @@ namespace Microsoft.Bot.Builder.Tests
         public async Task TestOnSearchInvokeAsync()
         {
             // Arrange
-            var value = JObject.FromObject(new SearchInvokeValue { Kind = SearchInvokeTypes.Search, QueryText = "bot" });
+            var value = new SearchInvokeValue { Kind = SearchInvokeTypes.Search, QueryText = "bot" };
             var activity = GetSearchActivity(value);
             var turnContext = new TurnContext(new TestInvokeAdapter(), activity);
 
@@ -709,7 +706,7 @@ namespace Microsoft.Bot.Builder.Tests
         public async Task TestOnSearchInvokeAsync_NoKindOnTeamsDefaults()
         {
             // Arrange
-            var value = JObject.FromObject(new SearchInvokeValue { Kind = null, QueryText = "bot" });
+            var value = new SearchInvokeValue { Kind = null, QueryText = "bot" };
             var activity = GetSearchActivity(value);
             activity.ChannelId = Channels.Msteams;
             var turnContext = new TurnContext(new TestInvokeAdapter(), activity);
@@ -735,20 +732,20 @@ namespace Microsoft.Bot.Builder.Tests
         public async Task TestGetSearchInvokeValue_InvalidValueThrows()
         {
             var activity = GetSearchActivity(new object());
-            await AssertErrorThroughInvokeAdapter(activity, "Value property is not properly formed for search");
+            await AssertErrorThroughInvokeAdapter(activity, "Missing queryText property for search");
         }
 
         [Fact]
         public async Task TestGetSearchInvokeValue_MissingKindThrows()
         {
-            var activity = GetSearchActivity(JObject.FromObject(new SearchInvokeValue { Kind = null, QueryText = "test" }));
+            var activity = GetSearchActivity(new SearchInvokeValue { Kind = null, QueryText = "test" });
             await AssertErrorThroughInvokeAdapter(activity, "Missing kind property for search");
         }
 
         [Fact]
         public async Task TestGetSearchInvokeValue_MissingQueryTextThrows()
         {
-            var activity = GetSearchActivity(JObject.FromObject(new SearchInvokeValue { Kind = SearchInvokeTypes.Typeahead }));
+            var activity = GetSearchActivity(new SearchInvokeValue { Kind = SearchInvokeTypes.Typeahead });
             await AssertErrorThroughInvokeAdapter(activity, "Missing queryText property for search");
         }
 
@@ -774,7 +771,7 @@ namespace Microsoft.Bot.Builder.Tests
 
             // Assert
             var sent = adapter.Activity as Activity;
-            Assert.Equal(ActivityTypesEx.InvokeResponse, sent.Type);
+            Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
 
             Assert.IsType<InvokeResponse>(sent.Value);
             var value = sent.Value as InvokeResponse;
@@ -791,31 +788,13 @@ namespace Microsoft.Bot.Builder.Tests
             Assert.Equal(errorMessage, error.Message);
         }
 
-        private class NotImplementedAdapter : BotAdapter
-        {
-            public override Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, Activity[] activities, CancellationToken cancellationToken)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, Activity activity, CancellationToken cancellationToken)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         private class TestInvokeAdapter : NotImplementedAdapter
         {
             public IActivity Activity { get; private set; }
 
-            public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, Activity[] activities, CancellationToken cancellationToken)
+            public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
             {
-                Activity = activities.FirstOrDefault(activity => activity.Type == ActivityTypesEx.InvokeResponse);
+                Activity = activities.FirstOrDefault(activity => activity.Type == ActivityTypes.InvokeResponse);
                 return Task.FromResult(new ResourceResponse[0]);
             }
         }
@@ -1003,12 +982,6 @@ namespace Microsoft.Bot.Builder.Tests
                 set { _baseUri = value; }
             }
 
-            public JsonSerializerSettings SerializationSettings => throw new NotImplementedException();
-
-            public JsonSerializerSettings DeserializationSettings => throw new NotImplementedException();
-
-            public ServiceClientCredentials Credentials { get => new MockCredentials(); }
-
             public IAttachments Attachments => throw new NotImplementedException();
 
             public IConversations Conversations => throw new NotImplementedException();
@@ -1016,16 +989,6 @@ namespace Microsoft.Bot.Builder.Tests
             public void Dispose()
             {
                 throw new NotImplementedException();
-            }
-
-            private class MockCredentials : ServiceClientCredentials
-            {
-                public override Task ProcessHttpRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("awesome");
-                    request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Windows", "3.1"));
-                    return Task.CompletedTask;
-                }
             }
         }
     }

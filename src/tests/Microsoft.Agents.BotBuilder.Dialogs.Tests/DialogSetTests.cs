@@ -17,22 +17,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public void DialogSet_ConstructorValid()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            new DialogSet(dialogStateProperty);
+            new DialogSet(new DialogState());
         }
 
         [Fact]
         public void DialogSet_ConstructorNullProperty()
         {
-            Assert.Throws<ArgumentNullException>(() => new DialogSet(null));
+            Assert.Throws<ArgumentNullException>(() => new DialogSet((DialogState) null));
         }
 
         [Fact]
         public async Task DialogSet_CreateContextAsync()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty);
+            var ds = new DialogSet(new DialogState());
             var context = TestUtilities.CreateEmptyContext();
             await ds.CreateContextAsync(context);
         }
@@ -41,8 +39,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_NullCreateContextAsync()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty);
+            var ds = new DialogSet(new DialogState());
             var context = TestUtilities.CreateEmptyContext();
             await ds.CreateContextAsync(context);
         }
@@ -51,8 +48,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_AddWorks()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty)
+            var ds = new DialogSet(new DialogState())
                 .Add(new WaterfallDialog("A"))
                 .Add(new WaterfallDialog("B"));
             Assert.NotNull(ds.Find("A"));
@@ -94,8 +90,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_TelemetrySet()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty)
+            var ds = new DialogSet(new DialogState())
                 .Add(new WaterfallDialog("A"))
                 .Add(new WaterfallDialog("B"));
             Assert.Equal(typeof(NullBotTelemetryClient), ds.Find("A").TelemetryClient.GetType());
@@ -113,8 +108,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_NullTelemetrySet()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty)
+            var ds = new DialogSet(new DialogState())
                 .Add(new WaterfallDialog("A"))
                 .Add(new WaterfallDialog("B"));
 
@@ -129,8 +123,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_AddTelemetrySet()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty)
+            var ds = new DialogSet(new DialogState())
                 .Add(new WaterfallDialog("A"))
                 .Add(new WaterfallDialog("B"));
 
@@ -145,7 +138,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_AddTelemetrySet_OnCyclicalDialogStructures()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
 
             var component1 = new ComponentDialog("component1");
             var component2 = new ComponentDialog("component2");
@@ -162,8 +154,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task DialogSet_HeterogeneousLoggers()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogStateProperty = convoState.CreateProperty<DialogState>("dialogstate");
-            var ds = new DialogSet(dialogStateProperty)
+            var ds = new DialogSet(new DialogState())
                 .Add(new WaterfallDialog("A"))
                 .Add(new WaterfallDialog("B"));
             ds.Add(new WaterfallDialog("C"));

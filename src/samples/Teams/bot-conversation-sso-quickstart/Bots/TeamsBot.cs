@@ -34,7 +34,7 @@ namespace BotConversationSsoQuickstart.Bots
 
             // The OAuth Prompt needs to see the Invoke Activity in order to complete the login process.
             // Run the Dialog with the new Invoke Activity.
-            await _dialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
         }
     }
 }

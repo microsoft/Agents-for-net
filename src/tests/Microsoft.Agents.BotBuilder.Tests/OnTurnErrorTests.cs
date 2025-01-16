@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
 using System;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Adapters;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class OnTurnErrorTests
     {
@@ -28,12 +28,12 @@ namespace Microsoft.Bot.Builder.Tests
 
             await new TestFlow(adapter, (context, cancellationToken) =>
                 {
-                    if (context.Activity.AsMessageActivity().Text == "foo")
+                    if (context.Activity.Text == "foo")
                     {
-                        context.SendActivityAsync(context.Activity.AsMessageActivity().Text);
+                        context.SendActivityAsync(context.Activity.Text);
                     }
 
-                    if (context.Activity.AsMessageActivity().Text == "NotImplementedException")
+                    if (context.Activity.Text == "NotImplementedException")
                     {
                         throw new NotImplementedException("Test");
                     }

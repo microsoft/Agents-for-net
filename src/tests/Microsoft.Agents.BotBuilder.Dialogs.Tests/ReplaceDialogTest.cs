@@ -11,7 +11,6 @@ using Microsoft.Agents.Telemetry;
 using Moq;
 using Xunit;
 using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -23,16 +22,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var dialog = new FirstDialog();
 
             var storage = new MemoryStorage();
-            var userState = new UserState(storage);
             var conversationState = new ConversationState(storage);
             var adapter = new TestAdapter()
-                .UseStorage(storage)
-                .UseBotState(userState, conversationState);
-            var dialogManager = new DialogManager(dialog);
+                .Use(new AutoSaveStateMiddleware(conversationState));
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
-                await dialogManager.OnTurnAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
             .AssertReply("prompt one")
@@ -50,16 +46,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var dialog = new FirstDialog();
             var storage = new MemoryStorage();
-            var userState = new UserState(storage);
             var conversationState = new ConversationState(storage);
             var adapter = new TestAdapter()
-                .UseStorage(storage)
-                .UseBotState(userState, conversationState);
-            var dialogManager = new DialogManager(dialog);
+                .Use(new AutoSaveStateMiddleware(conversationState));
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
-                await dialogManager.OnTurnAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
             .AssertReply("prompt one")
@@ -80,16 +73,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var botTelemetryClient = new Mock<IBotTelemetryClient>();
             var dialog = new FirstDialog();
             var storage = new MemoryStorage();
-            var userState = new UserState(storage);
             var conversationState = new ConversationState(storage);
             var adapter = new TestAdapter()
-                .UseStorage(storage)
-                .UseBotState(userState, conversationState);
-            var dialogManager = new DialogManager(dialog);
+                .Use(new AutoSaveStateMiddleware(conversationState));
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
-                await dialogManager.OnTurnAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await dialog.RunAsync(turnContext, conversationState, cancellationToken);
 
                 Assert.NotNull(dialog.TelemetryClient);
             })

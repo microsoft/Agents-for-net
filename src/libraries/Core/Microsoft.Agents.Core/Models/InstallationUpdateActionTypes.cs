@@ -14,8 +14,18 @@ namespace Microsoft.Agents.Core.Models
         public const string Add = "add";
 
         /// <summary>
+        /// The type for add-upgrade installation update actions.
+        /// </summary>
+        public const string AddUpgrade = "add-upgrade";
+
+        /// <summary>
         /// The type for remove installation update actions.
         /// </summary>
         public const string Remove = "remove";
+
+        /// <summary>
+        /// The type for remove-upgrade installation update actions.
+        /// </summary>
+        public const string RemoveUpgrade = "remove-upgrade";
     }
 }

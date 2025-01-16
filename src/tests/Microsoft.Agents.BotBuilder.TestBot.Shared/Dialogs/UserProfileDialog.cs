@@ -7,19 +7,18 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
 using Microsoft.Agents.State;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs
 {
     public class UserProfileDialog : ComponentDialog
     {
-        private IStatePropertyAccessor<UserProfile> _userProfileAccessor;
+        private UserState _userState;
 
         public UserProfileDialog(UserState userState)
             : base("root")
         {
-            _userProfileAccessor = userState.CreateProperty<UserProfile>("UserProfile");
+            _userState = userState;
 
             // This array defines how the Waterfall will execute.
             var waterfallActions = new WaterfallStep[]
@@ -121,7 +120,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs
             if ((bool)stepContext.Result)
             {
                 // Get the current profile object from user state.
-                var userProfile = await _userProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
+                var userProfile = await _userState.GetPropertyAsync<UserProfile>(stepContext.Context, "UserProfile", () => new UserProfile(), cancellationToken);
 
                 userProfile.Transport = (string)stepContext.Values["transport"];
                 userProfile.Name = (string)stepContext.Values["name"];

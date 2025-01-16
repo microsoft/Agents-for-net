@@ -30,7 +30,7 @@ namespace TeamsAuth.Bots
             Logger.LogInformation("Running dialog with Message Activity.");
 
             // Execute the Dialog with the incoming message Activity.
-            await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
         }
 
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

@@ -27,7 +27,6 @@ namespace Microsoft.Agents.State
     /// You can define additional scopes for your bot.
     /// </remarks>
     /// <seealso cref="IStorage"/>
-    /// <seealso cref="IStatePropertyAccessor{T}"/>
     public abstract class BotState : IPropertyManager
     {
         private readonly string _contextServiceKey;
@@ -52,6 +51,8 @@ namespace Microsoft.Agents.State
             _contextServiceKey = contextServiceKey ?? throw new ArgumentNullException(nameof(contextServiceKey));
         }
 
+        public string ContextServiceKey {  get { return _contextServiceKey; } }
+
         /// <summary>
         /// Creates a named state property within the scope of a <see cref="BotState"/> and returns
         /// an accessor for the property.
@@ -60,15 +61,82 @@ namespace Microsoft.Agents.State
         /// <param name="name">The name of the property.</param>
         /// <returns>An accessor for the property.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
+        [Obsolete("Use BotState.GetPropertyAsync")]
         public IStatePropertyAccessor<T> CreateProperty<T>(string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
             return new BotStatePropertyAccessor<T>(this, name);
         }
+
+        /// <summary>
+        /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
+        /// </summary>
+        /// <param name="turnContext">The turn context.</param>
+        /// <param name="name">value.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task DeletePropertyAsync(ITurnContext turnContext, string name, CancellationToken cancellationToken)
+        {
+            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await DeletePropertyValueAsync(turnContext, name, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
+        /// </summary>
+        /// <param name="turnContext">The context object for this turn.</param>
+        /// <param name="name">value.</param>
+        /// <param name="defaultValueFactory">Defines the default value.
+        /// Invoked when no value been set for the requested state property.
+        /// If defaultValueFactory is defined as null in that case, the method returns null and</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<T> GetPropertyAsync<T>(ITurnContext turnContext, string name, Func<T> defaultValueFactory, CancellationToken cancellationToken)
+        {
+            T result = default;
+
+            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                // if T is a value type, lookup up will throw key not found if not found, but as perf
+                // optimization it will return null if not found for types which are not value types (string and object).
+                result = await GetPropertyValueAsync<T>(turnContext, name, cancellationToken).ConfigureAwait(false);
+
+                if (result == null && defaultValueFactory != null)
+                {
+                    // use default Value Factory and save default value for any further calls
+                    result = defaultValueFactory();
+                    await SetPropertyAsync(turnContext, name, result, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                if (defaultValueFactory != null)
+                {
+                    // use default Value Factory and save default value for any further calls
+                    result = defaultValueFactory();
+                    await SetPropertyAsync(turnContext, name, result, cancellationToken).ConfigureAwait(false);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Set the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
+        /// </summary>
+        /// <param name="turnContext">turn context.</param>
+        /// <param name="name">value.</param>
+        /// <param name="value">value.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SetPropertyAsync<T>(ITurnContext turnContext, string name, T value, CancellationToken cancellationToken)
+        {
+            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await SetPropertyValueAsync(turnContext, name, value, cancellationToken).ConfigureAwait(false);
+        }
+
 
         /// <summary>
         /// Populates the state cache for this <see cref="BotState"/> from the storage layer.
@@ -80,7 +148,7 @@ namespace Microsoft.Agents.State
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public virtual async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -88,7 +156,7 @@ namespace Microsoft.Agents.State
             var storageKey = GetStorageKey(turnContext);
             if (force || cachedState == null || cachedState.State == null)
             {
-                var items = await _storage.ReadAsync(new[] { storageKey }, cancellationToken).ConfigureAwait(false);
+                var items = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
                 items.TryGetValue(storageKey, out object val);
 
                 if (val is IDictionary<string, object> asDictionary)
@@ -123,7 +191,7 @@ namespace Microsoft.Agents.State
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -153,7 +221,7 @@ namespace Microsoft.Agents.State
         /// change in the storage layer.
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public virtual Task ClearStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task ClearStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -171,7 +239,7 @@ namespace Microsoft.Agents.State
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public virtual async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -191,7 +259,7 @@ namespace Microsoft.Agents.State
         /// <param name="turnContext">The context object for this turn.</param>
         /// <returns>A JSON representation of the cached state.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public JsonElement Get(ITurnContext turnContext)
+        internal JsonElement Get(ITurnContext turnContext)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -206,7 +274,7 @@ namespace Microsoft.Agents.State
         /// <param name="turnContext">The context object for this turn.</param>
         /// <returns>The cached bot state instance.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public CachedBotState GetCachedState(ITurnContext turnContext)
+        internal CachedBotState GetCachedState(ITurnContext turnContext)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -233,7 +301,7 @@ namespace Microsoft.Agents.State
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
         /// <paramref name="propertyName"/> is <c>null</c>.</exception>
 #pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
-        protected Task<T> GetPropertyValueAsync<T>(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default(CancellationToken))
+        protected Task<T> GetPropertyValueAsync<T>(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default)
 #pragma warning restore CA1801 // Review unused parameters
         {
             ArgumentNullException.ThrowIfNull(turnContext);
@@ -278,9 +346,7 @@ namespace Microsoft.Agents.State
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
         /// <paramref name="propertyName"/> is <c>null</c>.</exception>
-#pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
-        protected Task DeletePropertyValueAsync(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default(CancellationToken))
-#pragma warning restore CA1801 // Review unused parameters
+        protected Task DeletePropertyValueAsync(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
@@ -301,9 +367,7 @@ namespace Microsoft.Agents.State
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
         /// <paramref name="propertyName"/> is <c>null</c>.</exception>
-#pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
-        protected Task SetPropertyValueAsync(ITurnContext turnContext, string propertyName, object value, CancellationToken cancellationToken = default(CancellationToken))
-#pragma warning restore CA1801 // Review unused parameters
+        protected Task SetPropertyValueAsync(ITurnContext turnContext, string propertyName, object value, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
@@ -316,9 +380,7 @@ namespace Microsoft.Agents.State
         /// <summary>
         /// Internal cached bot state.
         /// </summary>
-#pragma warning disable CA1034 // Nested types should not be visible (we can't change this without breaking binary compat)
-        public class CachedBotState
-#pragma warning restore CA1034 // Nested types should not be visible
+        internal class CachedBotState
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="CachedBotState"/> class.
@@ -353,6 +415,7 @@ namespace Microsoft.Agents.State
             }
         }
 
+        #region Obsolete BotStatePropertyAccessor
         /// <summary>
         /// Implements an <see cref="IStatePropertyAccessor{T}"/> for a property container.
         /// Note the semantics of this accessor are intended to be lazy, this means the Get, Set and Delete
@@ -404,7 +467,7 @@ namespace Microsoft.Agents.State
             public async Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory, CancellationToken cancellationToken)
             {
                 T result = default(T);
-
+                
                 await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
 
                 try
@@ -446,5 +509,6 @@ namespace Microsoft.Agents.State
                 await _botState.SetPropertyValueAsync(turnContext, Name, value, cancellationToken).ConfigureAwait(false);
             }
         }
+        #endregion
     }
 }
