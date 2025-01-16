@@ -19,7 +19,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
     public class DialogSet
     {
         private readonly IDictionary<string, Dialog> _dialogs = new Dictionary<string, Dialog>();
-        private readonly IStatePropertyAccessor<DialogState> _dialogState;
+        private readonly DialogState _dialogState;
+        private readonly IStatePropertyAccessor<DialogState> _dialogStateProperty;
         private IBotTelemetryClient _telemetryClient;
         private string _version;
 
@@ -32,9 +33,16 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// and use its methods to start, continue, or end dialogs. To create a dialog context,
         /// call <see cref="CreateContextAsync(ITurnContext, CancellationToken)"/>.
         /// </remarks>
-        public DialogSet(IStatePropertyAccessor<DialogState> dialogState)
+        public DialogSet(DialogState dialogState)
         {
             _dialogState = dialogState ?? throw new ArgumentNullException(nameof(dialogState));
+            _telemetryClient = NullBotTelemetryClient.Instance;
+        }
+
+        [Obsolete("Use DialogSet(DialogState)")]
+        public DialogSet(IStatePropertyAccessor<DialogState> dialogStateProperty)
+        {
+            _dialogStateProperty = dialogStateProperty ?? throw new ArgumentNullException(nameof(dialogStateProperty));
             _telemetryClient = NullBotTelemetryClient.Instance;
         }
 
@@ -172,14 +180,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
-            if (_dialogState == null)
+            if (_dialogState == null && _dialogStateProperty == null)
             {
                 // Note: This shouldn't ever trigger, as the _dialogState is set in the constructor and validated there.
-                throw new InvalidOperationException("DialogSet.CreateContextAsync(): DialogSet created with a null IStatePropertyAccessor.");
+                throw new InvalidOperationException("DialogSet.CreateContextAsync(): DialogSet created with a null DialogState.");
             }
 
-            // Load/initialize dialog state
-            var state = await _dialogState.GetAsync(turnContext, () => { return new DialogState(); }, cancellationToken).ConfigureAwait(false);
+            var state = _dialogState;
+
+            if (_dialogState == null)
+            {
+                // Back-compat: Load/initialize dialog state using IStatePropertyAccessor
+                state = await _dialogStateProperty.GetAsync(turnContext, () => { return new DialogState(); }, cancellationToken).ConfigureAwait(false);
+            }
 
             // Create and return context
             return new DialogContext(this, turnContext, state);

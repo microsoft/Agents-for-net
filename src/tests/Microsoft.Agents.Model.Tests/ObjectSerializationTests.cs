@@ -362,6 +362,30 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(resultingText, outboundJson);
         }
 
+        [Fact]
+        public void EmptyListDoesntSerialzie()
+        {
+            var activity = new Activity()
+            {
+                MembersAdded = [],
+                MembersRemoved = [],
+                ReactionsAdded = [],
+                ReactionsRemoved = [],
+                Attachments = [],
+                Entities = [],
+                ListenFor = [],
+                TextHighlights = [],
+                SuggestedActions = new SuggestedActions()
+            };
+
+            // We'll add a single item to SuggestedActions.To.  It should serialize but
+            // not the other Actions List.
+            activity.SuggestedActions.To.Add("test");
+
+            var json = ProtocolJsonSerializer.ToJson(activity);
+            var expected = "{\"suggestedActions\":{\"to\":[\"test\"]}}";
+            Assert.Equal(expected, json);
+        }
 
 
         private Activity RoundTrip(Activity outActivity)

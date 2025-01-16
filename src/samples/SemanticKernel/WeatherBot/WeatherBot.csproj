@@ -16,6 +16,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+    <PackageReference Include="Azure.Identity" />
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
+	</ItemGroup>
+	<ItemGroup>	  
 		<PackageReference Include="AdaptiveCards" />
 		<PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
 		<PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI" />

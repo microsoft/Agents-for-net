@@ -37,23 +37,22 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task BasicActivityPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add custom activity prompt to DialogSet.
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
-            dialogs.Add(eventPrompt);
-
+            
             // Create mock Activity for testing.
             var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(eventPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -79,12 +78,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ActivityPromptShouldSendRetryPromptIfValidationFailed()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
-
-            var dialogs = new DialogSet(dialogState);
 
             PromptValidator<IActivity> validator = (prompt, cancellationToken) =>
             {
@@ -92,12 +88,15 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             };
 
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", validator);
-            dialogs.Add(eventPrompt);
 
             var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(eventPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
@@ -139,18 +138,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ActivityPromptResumeDialogShouldPromptNotRetry()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", (prompt, cancellationToken) => Task.FromResult(false));
-
-            dialogs.Add(eventPrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(eventPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 switch (turnContext.Activity.Text)
@@ -203,23 +202,22 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task OnPromptOverloadWithoutIsRetryParamReturnsBasicActivityPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add custom activity prompt to DialogSet.
             var eventPrompt = new EventActivityWithoutRetryPrompt("EventActivityWithoutRetryPrompt", Validator);
-            dialogs.Add(eventPrompt);
 
             // Create mock Activity for testing.
             var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(eventPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -260,20 +258,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
                 var convoState = new ConversationState(new MemoryStorage());
-                var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
-                // Create new DialogSet.
-                var dialogs = new DialogSet(dialogState);
-
                 // Create and add custom activity prompt to DialogSet.
                 var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
-                dialogs.Add(eventPrompt);
 
                 await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+                    dialogs.Add(eventPrompt);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                     await eventPrompt.OnPromptNullOptions(dc);

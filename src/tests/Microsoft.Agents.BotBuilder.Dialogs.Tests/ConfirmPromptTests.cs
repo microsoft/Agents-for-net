@@ -33,18 +33,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
-
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -75,17 +74,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptRetry()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptRetry)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
-
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -131,17 +130,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptNoOptions()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptNoOptions)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
-            dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
-
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -175,22 +174,23 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptChoiceOptionsNumbers()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptChoiceOptionsNumbers)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English);
 
             // Set options
             prompt.ChoiceOptions = new Choices.ChoiceFactoryOptions { IncludeNumbers = true };
             prompt.Style = Choices.ListStyle.Inline;
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(prompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -236,22 +236,23 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptChoiceOptionsMultipleAttempts()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptChoiceOptionsMultipleAttempts)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English);
 
             // Set options
             prompt.ChoiceOptions = new Choices.ChoiceFactoryOptions { IncludeNumbers = true };
             prompt.Style = Choices.ListStyle.Inline;
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(prompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -299,21 +300,22 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptChoiceOptionsNoNumbers()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptChoiceOptionsNoNumbers)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English);
 
             // Set options
             prompt.ChoiceOptions = new Choices.ChoiceFactoryOptions { IncludeNumbers = false, InlineSeparator = "~" };
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(prompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -359,19 +361,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPromptDifferentRecognizeLanguage()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPromptDifferentRecognizeLanguage)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English);
-
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(prompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -416,20 +418,21 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ShouldUsePromptClassStyleProperty()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English)
             {
                 Style = ListStyle.Inline
             };
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+                    dialogs.Add(prompt);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                     var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -453,20 +456,21 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task PromptOptionsStyleShouldOverridePromptClassStyleProperty()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
             var prompt = new ConfirmPrompt("ConfirmPrompt", defaultLocale: Culture.English)
             {
                 Style = ListStyle.Inline
             };
-            dialogs.Add(prompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+                    dialogs.Add(prompt);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                     var results = await dc.ContinueDialogAsync(cancellationToken);

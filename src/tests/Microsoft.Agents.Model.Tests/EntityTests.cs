@@ -83,28 +83,19 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void MentionRoundTrip()
+        public void EntityTypedDeserialize()
         {
-            var outMention = new Mention()
-            {
-                Text = "imamention",
-                Mentioned = new ChannelAccount()
-                {
-                    Id = "id",
-                    Name = "name",
-                }
-            };
+            var json = "{\"entities\": [{\"type\": \"unknown\", \"name\": \"name\"}]}";
+            var activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
 
-            var json = ProtocolJsonSerializer.ToJson(outMention);
-            var inEntity = ProtocolJsonSerializer.ToObject<Entity>(json);
+            Assert.NotNull(activity.Entities);
+            Assert.NotEmpty(activity.Entities);
+            Assert.IsType<Entity>(activity.Entities[0]);
 
-            Assert.IsAssignableFrom<Mention>(inEntity);
-
-            var inMention = inEntity as Mention;
-            Assert.Equal(outMention.Text, inMention.Text);
-            Assert.NotNull(inMention.Mentioned);
-            Assert.Equal(outMention.Mentioned.Name, inMention.Mentioned.Name);
-            Assert.Equal(outMention.Mentioned.Id, inMention.Mentioned.Id);
+            var entity = activity.Entities[0];
+            Assert.Equal("unknown", entity.Type);
+            Assert.NotEmpty(entity.Properties);
+            Assert.True(entity.Properties.ContainsKey("name")); 
         }
 
         private class EntityToObjectData : IEnumerable<object[]>

@@ -31,6 +31,7 @@
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Blobs\Microsoft.Agents.Storage.Blobs.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.CosmosDb\Microsoft.Agents.Storage.CosmosDb.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Transcript\Microsoft.Agents.Storage.Transcript.csproj" />
+      <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
     </ItemGroup>
 
 	<ItemGroup>

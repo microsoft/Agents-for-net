@@ -8,6 +8,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
 using WeatherBot.Agents;
+using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
+using Azure.Identity;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 
@@ -30,7 +32,13 @@ if (builder.Configuration.GetSection("AIServices").GetValue<bool>("UseAzureOpenA
     builder.Services.AddAzureOpenAIChatCompletion(
         deploymentName: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("DeploymentName"),
         endpoint: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("Endpoint"),
-        apiKey: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("ApiKey"));
+        //apiKey: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("ApiKey"));
+
+        //Use the Azure CLI (for local) or Managed Identity (for Azure running app) to authenticate to the Azure OpenAI service
+        credentials: new ChainedTokenCredential(
+           new AzureCliCredential(),
+           new ManagedIdentityCredential()
+        ));
 }
 else
 {

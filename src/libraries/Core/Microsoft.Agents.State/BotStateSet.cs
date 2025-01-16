@@ -21,16 +21,17 @@ namespace Microsoft.Agents.State
         /// <param name="botStates">initial list of <see cref="BotState"/> objects to manage.</param>
         public BotStateSet(params BotState[] botStates)
         {
-            this.BotStates.AddRange(botStates);
+            foreach (var botState in botStates)
+            {
+                BotStates.Add(botState.ContextServiceKey, botState);
+            }
         }
 
         /// <summary>
         /// Gets or sets the BotStates list for the BotStateSet.
         /// </summary>
         /// <value>The BotState objects managed by this class.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
-        public List<BotState> BotStates { get; set; } = new List<BotState>();
-#pragma warning restore CA2227 // Collection properties should be read only
+        public IDictionary<string, BotState> BotStates { get; set; } = new Dictionary<string, BotState>();
 
         /// <summary>
         /// Adds a bot state object to the set.
@@ -39,12 +40,9 @@ namespace Microsoft.Agents.State
         /// <returns>The updated <see cref="BotStateSet"/>, so you can fluently call <see cref="Add(BotState)"/> multiple times.</returns>
         public BotStateSet Add(BotState botState)
         {
-            if (botState == null)
-            {
-                throw new ArgumentNullException(nameof(botState));
-            }
+            ArgumentNullException.ThrowIfNull(botState);
 
-            this.BotStates.Add(botState);
+            BotStates.Add(botState.ContextServiceKey, botState);
             return this;
         }
 
@@ -56,9 +54,9 @@ namespace Microsoft.Agents.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task LoadAllAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task LoadAllAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            var tasks = this.BotStates.Select(bs => bs.LoadAsync(turnContext, force, cancellationToken)).ToList();
+            var tasks = BotStates.Select(bs => bs.Value.LoadAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
@@ -70,9 +68,9 @@ namespace Microsoft.Agents.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task SaveAllChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SaveAllChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            var tasks = this.BotStates.Select(bs => bs.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
+            var tasks = BotStates.Select(bs => bs.Value.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }

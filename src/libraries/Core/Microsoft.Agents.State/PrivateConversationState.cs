@@ -13,17 +13,12 @@ namespace Microsoft.Agents.State
     /// <remarks>
     /// Private conversation state is scoped to both the specific conversation and to that specific user.
     /// </remarks>
-    public class PrivateConversationState : BotState
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PrivateConversationState"/> class.
+    /// </remarks>
+    /// <param name="storage">The storage layer to use.</param>
+    public class PrivateConversationState(IStorage storage) : BotState(storage, nameof(PrivateConversationState))
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PrivateConversationState"/> class.
-        /// </summary>
-        /// <param name="storage">The storage layer to use.</param>
-        public PrivateConversationState(IStorage storage)
-            : base(storage, nameof(PrivateConversationState))
-        {
-        }
-
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

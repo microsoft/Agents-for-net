@@ -12,10 +12,9 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -40,7 +39,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly bool _async;
-        private readonly ILogger _logger;
 
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -50,12 +48,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;
-            _logger = NullLogger.Instance;
 
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.
-                StringBuilder sbError = new(1024);
+                StringBuilder sbError = new StringBuilder(1024);
                 sbError.Append(exception.Message);
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
@@ -63,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                _logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
+                logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
 
                 await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
 
@@ -94,15 +91,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentNullException.ThrowIfNull(httpResponse);
             ArgumentNullException.ThrowIfNull(bot);
 
-            // Get is a socket exchange request, so should be processed by base CloudAdapter
-            if (httpRequest.Method == HttpMethods.Get)
+            if (httpRequest.Method != HttpMethods.Post)
             {
-                await ProcessBlockingAsync(httpRequest, httpResponse, bot, cancellationToken);
+                httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
             }
             else
             {
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<Activity>(httpRequest).ConfigureAwait(false);
+                var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
                 if (!IsValidChannelActivity(activity, httpResponse))
                 {
@@ -110,114 +107,76 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     return;
                 }
 
-                if (activity.DeliveryMode == DeliveryModes.Stream)
+                try
                 {
-                    InvokeResponse invokeResponse = null;
-
-                    // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
-                    // turn is done.
-                    _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity)httpRequest.HttpContext.User.Identity, activity, (response) =>
+                    if (activity.DeliveryMode == DeliveryModes.Stream)
                     {
-                        SynchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
-                        invokeResponse = response;
-                    });
+                        InvokeResponse invokeResponse = null;
 
-                    // block until turn is complete
-                    await SynchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
-                    {
-                        try
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity)httpRequest.HttpContext.User.Identity, activity, (response) =>
                         {
-                            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: activity\r\ndata: {ProtocolJsonSerializer.ToJson(activity)}\r\n"), cancellationToken);
+                            SynchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
+
+                        // block until turn is complete
+                        await SynchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        {
+                            try
+                            {
+                                await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: activity\r\ndata: {ProtocolJsonSerializer.ToJson(activity)}\r\n"), cancellationToken);
+                                await httpResponse.Body.FlushAsync(cancellationToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                            }
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        if (invokeResponse?.Body != null)
+                        {
+                            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: invokeResponse\r\ndata: {ProtocolJsonSerializer.ToJson(invokeResponse)}\r\n"), cancellationToken);
                             await httpResponse.Body.FlushAsync(cancellationToken);
                         }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.ToString());
-                        }
-                    }, cancellationToken).ConfigureAwait(false);
-
-                    if (invokeResponse?.Body != null)
-                    {
-                        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: invokeResponse\r\ndata: {ProtocolJsonSerializer.ToJson(invokeResponse)}\r\n"), cancellationToken);
-                        await httpResponse.Body.FlushAsync(cancellationToken);
                     }
-                }
-                else if (!_async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                {
-                    // NOTE: Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                    // Process the inbound activity with the bot
-                    await ProcessBlockingAsync(httpRequest, httpResponse, bot, cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    try
+                    else if (!_async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    {
+                        // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
+                        // Process the inbound activity with the bot
+                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+
+                        // Write the response, potentially serializing the InvokeResponse
+                        await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                    }
+                    else
                     {
                         // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity((ClaimsIdentity) httpRequest.HttpContext.User.Identity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
 
-                        // Activity has been queued to process, so return Ok immediately
+                        // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
-                    catch (UnauthorizedAccessException)
-                    {
-                        // handle unauthorized here as this layer creates the http response
-                        httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // handle unauthorized here as this layer creates the http response
+                    httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
                 }
             }
         }
 
-        /// <summary>
-        /// Process the inbound HTTP request with the agent resulting in the outbound HTTP response. This method can be called directly from a Controller.
-        /// If the HTTP method is a POST, the body will contain the <see cref="Activity"/> to process. 
-        /// </summary>
-        /// <param name="httpRequest">The <see cref="HttpRequest"/>.</param>
-        /// <param name="httpResponse">The <see cref="HttpResponse"/>.</param>
-        /// <param name="bot">The <see cref="IBot"/> implementation to use for this request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A <see cref="Task"/> that represents the work queued to execute.</returns>
-        public virtual async Task ProcessBlockingAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default)
+        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(httpRequest);
-            ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(bot);
-
-            try
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
             {
-                ClaimsIdentity claimsIdentity = httpRequest.HttpContext.User.Identity as ClaimsIdentity;
-
-                // Only POST requests are handled
-                if (httpRequest.Method == HttpMethods.Post)
-                {
-                    // Deserialize the incoming Activity
-                    var activity = await HttpHelper.ReadRequestAsync<Activity>(httpRequest).ConfigureAwait(false);
-
-                    // A request must contain an Activity body
-                    if (string.IsNullOrEmpty(activity?.Type))
-                    {
-                        httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
-                        Logger.LogWarning("BadRequest: Missing activity or activity type.");
-                        return;
-                    }
-
-                    // Process the inbound activity with the bot
-                    var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
-
-                    // Write the response, potentially serializing the InvokeResponse
-                    await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
-                }
-                else
-                {
-                    httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-                }
+                return false;
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                // handle unauthorized here as this layer creates the http response
-                httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
 
-                Logger.LogError(ex, "Unauthorized: {ExceptionMessage}", ex.ToString());
-            }
+            await SynchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+
+            return true;
         }
 
         private bool IsValidChannelActivity(Activity activity, HttpResponse httpResponse)
@@ -239,18 +198,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 Logger.LogWarning("BadRequest: Missing Conversation.Id");
                 return false;
             }
-
-            return true;
-        }
-
-        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
-        {
-            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
-            {
-                return false;
-            }
-
-            await SynchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

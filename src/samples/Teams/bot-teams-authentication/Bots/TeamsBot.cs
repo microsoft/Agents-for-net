@@ -42,7 +42,7 @@ namespace TeamsAuth.Bots
             Logger.LogInformation("Running dialog with signin/verifystate from an Invoke Activity.");
 
             // Run the Dialog with the current Invoke Activity to complete the authentication process.
-            await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
         }
     }
 }

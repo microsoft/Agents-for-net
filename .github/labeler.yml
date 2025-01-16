@@ -1,0 +1,19 @@
+"Build: Automation":
+- changed-files:
+  - any-glob-to-any-file: ['.github/**', '.azuredevops/**']
+
+"Build: scripts & configs":
+- changed-files:
+  - any-glob-to-any-file: ['build/**']
+
+"ML: Samples":
+- changed-files:
+  - any-glob-to-any-file: ['src/samples/**']
+
+"ML: Core":
+- changed-files:
+  - any-glob-to-any-file: ['src/libraries/**']
+
+"ML: Tests":
+- changed-files:
+  - any-glob-to-any-file: ['src/tests/**']

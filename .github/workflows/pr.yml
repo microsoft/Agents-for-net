@@ -5,12 +5,16 @@ on:
     branches:
       - main
 
+env:
+  AzDevOpsPipelineId: 25676
+
 permissions:
   id-token: write 
   contents: read  
 
 jobs:
   build:
+    if: (github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name) && (github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +25,7 @@ jobs:
       with:
        client-id: ${{ secrets.AZURE_CLIENT_ID }}
        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-       organization: ${{ secrets.ADO_ORGANIZATION }}
+       organization: ${{ vars.AZDEVOPS_ORGANIZATION }}
 
     - name: Trigger Azure DevOps Pipeline
       id: trigger
@@ -30,7 +34,7 @@ jobs:
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
           -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}},"variables": {"ProjectBranch": {"value": "${{ github.head_ref || github.ref_name }}"}}}' \
-          ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs?api-version=7.1)
+          ${{ vars.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs?api-version=7.1)
         echo $BRANCH_NAME
         echo $response
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
@@ -46,7 +50,7 @@ jobs:
         while [ "$status" == "inProgress" ] || [ "$status" == "notStarted" ] || [ "$status" == "canceling" ]  ; do
           response=$(curl -X GET \
             -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
-            ${{ secrets.AZDEVOPS_URL }}/_apis/pipelines/25676/runs/$run_id?api-version=7.1)
+            ${{ vars.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs/$run_id?api-version=7.1)
           status=$(echo $response | jq -r .state)
           r1=$(echo $response | jq -r .result)
           weblink=$(echo $response | jq -r ._links.web.href)

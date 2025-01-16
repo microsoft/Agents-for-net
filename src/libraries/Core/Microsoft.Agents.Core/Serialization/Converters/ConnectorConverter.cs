@@ -64,7 +64,17 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 if (!TryWriteExtensionData(writer, value, property.Name))
                 {
                     var propertyValue = property.GetValue(value);
+
+                    if (propertyValue is IList list)
+                    {
+                        if (list == null || list.Count == 0)
+                        {
+                            continue;
+                        }
+                    }
+
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
+
                     {
                         var propertyName = options.PropertyNamingPolicy == JsonNamingPolicy.CamelCase
                             ? JsonNamingPolicy.CamelCase.ConvertName(property.Name)

@@ -6,27 +6,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Schema;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
-    public class SimpleAdapter : BotAdapter
+    public class SimpleAdapter : ChannelAdapter
     {
-        private readonly Action<Activity[]> _callOnSend = null;
-        private readonly Action<Activity> _callOnUpdate = null;
+        private readonly Action<IActivity[]> _callOnSend = null;
+        private readonly Action<IActivity> _callOnUpdate = null;
         private readonly Action<ConversationReference> _callOnDelete = null;
 
         public SimpleAdapter()
         {
         }
 
-        public SimpleAdapter(Action<Activity[]> callOnSend)
+        public SimpleAdapter(Action<IActivity[]> callOnSend)
         {
             _callOnSend = callOnSend;
         }
 
-        public SimpleAdapter(Action<Activity> callOnUpdate)
+        public SimpleAdapter(Action<IActivity> callOnUpdate)
         {
             _callOnUpdate = callOnUpdate;
         }
@@ -43,7 +44,7 @@ namespace Microsoft.Bot.Builder.Tests
             return Task.CompletedTask;
         }
 
-        public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, Activity[] activities, CancellationToken cancellationToken)
+        public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
             Assert.NotNull(activities); // SimpleAdapter.deleteActivity: missing reference
             Assert.True(activities.Count() > 0, "SimpleAdapter.sendActivities: empty activities array.");
@@ -59,7 +60,7 @@ namespace Microsoft.Bot.Builder.Tests
             return Task.FromResult(responses.ToArray());
         }
 
-        public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, Activity activity, CancellationToken cancellationToken)
+        public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
         {
             Assert.NotNull(activity); //SimpleAdapter.updateActivity: missing activity
             _callOnUpdate?.Invoke(activity);

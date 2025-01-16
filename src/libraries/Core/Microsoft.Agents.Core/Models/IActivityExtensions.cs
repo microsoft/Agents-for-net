@@ -38,9 +38,9 @@ namespace Microsoft.Agents.Core.Models
             {
                 foreach (var entity in activity.Entities)
                 {
-                    if (string.Compare(entity.Type, "mention", StringComparison.OrdinalIgnoreCase) == 0)
+                    if (entity is Mention mention)
                     {
-                        result.Add(ProtocolJsonSerializer.CloneTo<Mention>(entity));
+                        result.Add(mention);
                     }
                 }
             }

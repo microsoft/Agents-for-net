@@ -8,7 +8,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
     /// <summary>
     /// Extension method on object <see cref="object"/>.
     /// </summary>
-    public static class Extensions
+    internal static class Extensions
     {
         /// <summary>
         /// Extension Method on object to cast to type T to support TypeNameHandling.None during storage serialization.

@@ -1,77 +1,77 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder.Adapters;
-using Microsoft.Bot.Schema;
 using Xunit;
 
-namespace Microsoft.Bot.Builder.Tests
+namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class TurnContextTests
     {
         [Fact]
-        public void ConstructorNullAdapter()
+        public void Constructor_ShouldThrowOnNullAdapter()
         {
-            Assert.Throws<ArgumentNullException>(() => new TurnContext((BotAdapter)null, new Activity()));
+            Assert.Throws<ArgumentNullException>(() => new TurnContext((ChannelAdapter)null, new Activity()));
         }
 
         [Fact]
-        public void ConstructorNullAdapter2()
+        public void Constructor_ShouldThrowOnNullTurnContext()
         {
             Assert.Throws<ArgumentNullException>(() => new TurnContext((TurnContext)null, new Activity()));
         }
 
         [Fact]
-        public void ConstructorNullActivity()
+        public void Constructor_ShouldThrowOnNullActivity()
         {
-            var a = new TestAdapter(TestAdapter.CreateConversation("ConstructorNullActivity"));
-            Assert.Throws<ArgumentNullException>(() => new TurnContext(a, null));
+            var adapter = new TestAdapter(TestAdapter.CreateConversation("ConstructorNullActivity"));
+            Assert.Throws<ArgumentNullException>(() => new TurnContext(adapter, null));
         }
 
         [Fact]
-        public void Constructor()
+        public void Constructor_ShouldInstantiateCorrectly()
         {
-            var c = new TurnContext(new TestAdapter(TestAdapter.CreateConversation("Constructor")), new Activity());
-            Assert.NotNull(c);
+            var context = new TurnContext(new TestAdapter(TestAdapter.CreateConversation("Constructor")), new Activity());
+            Assert.NotNull(context);
         }
 
         [Fact]
-        public void TestTurnContextClone()
+        public void TurnContext_ShouldBeClonedCorrectly()
         {
-            var c1 = new TurnContext(new SimpleAdapter(), new Activity() { Text = "one" });
-            c1.TurnState.Add("x", "test");
-            c1.OnSendActivities((context, activities, next) => next());
-            c1.OnDeleteActivity((context, activity, next) => next());
-            c1.OnUpdateActivity((context, activity, next) => next());
-            var c2 = new TurnContext(c1, new Activity() { Text = "two" });
-            Assert.Equal("one", c1.Activity.Text);
-            Assert.Equal("two", c2.Activity.Text);
-            Assert.Equal(c1.Adapter, c2.Adapter);
-            Assert.Equal(c1.TurnState, c2.TurnState);
+            var context1 = new TurnContext(new SimpleAdapter(), new Activity() { Text = "one" });
+            context1.TurnState.Add("x", "test");
+            context1.OnSendActivities((context, activities, next) => next());
+            context1.OnDeleteActivity((context, activity, next) => next());
+            context1.OnUpdateActivity((context, activity, next) => next());
+            var ccontext2 = new TurnContext(context1, new Activity() { Text = "two" });
+            Assert.Equal("one", context1.Activity.Text);
+            Assert.Equal("two", ccontext2.Activity.Text);
+            Assert.Equal(context1.Adapter, ccontext2.Adapter);
+            Assert.Equal(context1.TurnState, ccontext2.TurnState);
 
             var binding = BindingFlags.Instance | BindingFlags.NonPublic;
             var onSendField = typeof(TurnContext).GetField("_onSendActivities", binding);
             var onDeleteField = typeof(TurnContext).GetField("_onDeleteActivity", binding);
             var onUpdateField = typeof(TurnContext).GetField("_onUpdateActivity", binding);
-            Assert.Equal(onSendField.GetValue(c1), onSendField.GetValue(c2));
-            Assert.Equal(onDeleteField.GetValue(c1), onDeleteField.GetValue(c2));
-            Assert.Equal(onUpdateField.GetValue(c1), onUpdateField.GetValue(c2));
+            Assert.Equal(onSendField.GetValue(context1), onSendField.GetValue(ccontext2));
+            Assert.Equal(onDeleteField.GetValue(context1), onDeleteField.GetValue(ccontext2));
+            Assert.Equal(onUpdateField.GetValue(context1), onUpdateField.GetValue(ccontext2));
         }
 
         [Fact]
-        public void RespondedIsFalse()
+        public void Responded_ShouldBeSetAsFalse()
         {
-            var c = new TurnContext(new TestAdapter(TestAdapter.CreateConversation("RespondedIsFalse")), new Activity());
-            Assert.False(c.Responded);
+            var context = new TurnContext(new TestAdapter(TestAdapter.CreateConversation("RespondedIsFalse")), new Activity());
+            Assert.False(context.Responded);
         }
 
         [Fact]
-        public async Task CacheValueUsingSetAndGet()
+        public async Task Responded_ShouldBeTrueAfterReplyingToActivity()
         {
             var adapter = new TestAdapter(TestAdapter.CreateConversation("CacheValueUsingSetAndGet"));
             await new TestFlow(adapter, MyBotLogic)
@@ -80,502 +80,469 @@ namespace Microsoft.Bot.Builder.Tests
         }
 
         [Fact]
-        public void GetThrowsOnNullKey()
+        public void Get_ThrowsOnNullKey()
         {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
-            Assert.Throws<ArgumentNullException>(() => c.TurnState.Get<object>(null));
+            var context = new TurnContext(new SimpleAdapter(), new Activity());
+            Assert.Throws<ArgumentNullException>(() => context.TurnState.Get<object>(null));
         }
 
         [Fact]
-        public void GetReturnsNullOnEmptyKey()
+        public void Get_ShouldReturnNullOnEmptyKey()
         {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
-            var service = c.TurnState.Get<object>(string.Empty); // empty key
+            var context = new TurnContext(new SimpleAdapter(), new Activity());
+            var service = context.TurnState.Get<object>(string.Empty);
             Assert.Null(service);
         }
 
         [Fact]
-        public void GetReturnsNullWithUnknownKey()
+        public void Get_ShouldReturnNullWithUnknownKey()
         {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
-            var o = c.TurnState.Get<object>("test");
-            Assert.Null(o);
+            var context = new TurnContext(new SimpleAdapter(), new Activity());
+            var result = context.TurnState.Get<object>("test");
+            Assert.Null(result);
         }
 
         [Fact]
-        public void TestTurnContextLocale()
+        public void Get_ShouldReturnCachedValueUsingKeyName()
         {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
+            var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            c.Locale = "fr-FR";
-
-            Assert.Equal("fr-FR", c.Locale);
-        }
-
-        [Fact]
-        public void CacheValueUsingGetAndSet()
-        {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
-
-            c.TurnState.Add("bar", "foo");
-            var result = c.TurnState.Get<string>("bar");
+            context.TurnState.Add("bar", "foo");
+            var result = context.TurnState.Get<string>("bar");
 
             Assert.Equal("foo", result);
         }
 
         [Fact]
-        public void CacheValueUsingGetAndSetGenericWithTypeAsKeyName()
+        public void Get_ShouldReturnGenericValuegUsingTypeAsKeyName()
         {
-            var c = new TurnContext(new SimpleAdapter(), new Activity());
+            var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            c.TurnState.Add<string>("foo");
-            string result = c.TurnState.Get<string>();
+            context.TurnState.Add("foo");
+            string result = context.TurnState.Get<string>();
 
             Assert.Equal("foo", result);
         }
 
         [Fact]
-        public void RequestIsSet()
+        public void Activity_ShouldBeCorrectlySet()
         {
-            var c = new TurnContext(new SimpleAdapter(), TestMessage.Message());
-            Assert.True(c.Activity.Id == "1234");
+            var context = new TurnContext(new SimpleAdapter(), TestMessage.Message());
+            Assert.Equal("1234", context.Activity.Id);
         }
 
         [Fact]
-        public async Task SendAndSetResponded()
+        public async Task SendActivityAsync_ShouldSetRespondedAsTrue()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
-            Assert.False(c.Responded);
-            var response = await c.SendActivityAsync(TestMessage.Message("testtest"));
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            Assert.False(context.Responded);
+            var response = await context.SendActivityAsync(TestMessage.Message("testtest"));
 
-            Assert.True(c.Responded);
-            Assert.True(response.Id == "testtest");
+            Assert.True(context.Responded);
+            Assert.Equal("testtest", response.Id);
         }
 
         [Fact]
-        public async Task SendBatchOfActivities()
+        public async Task SendActivityAsync_ShouldSendBatchOfActivities()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
-            Assert.False(c.Responded);
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            Assert.False(context.Responded);
 
             var message1 = TestMessage.Message("message1");
             var message2 = TestMessage.Message("message2");
 
-            var response = await c.SendActivitiesAsync(new IActivity[] { message1, message2 });
+            var response = await context.SendActivitiesAsync([message1, message2]);
 
-            Assert.True(c.Responded);
-            Assert.True(response.Length == 2);
-            Assert.True(response[0].Id == "message1");
-            Assert.True(response[1].Id == "message2");
+            Assert.True(context.Responded);
+            Assert.Equal(2, response.Length);
+            Assert.Equal("message1", response[0].Id);
+            Assert.Equal("message2", response[1].Id);
         }
 
         [Fact]
-        public async Task SendAndSetRespondedUsingIMessageActivity()
+        public async Task SendActivityAsync_ShouldSetRespondedUsingIMessageActivity()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
-            Assert.False(c.Responded);
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            Assert.False(context.Responded);
 
-            var msg = TestMessage.Message().AsMessageActivity();
-            await c.SendActivityAsync(msg);
-            Assert.True(c.Responded);
+            var msg = Activity.CreateMessageActivity();
+            await context.SendActivityAsync(msg);
+            Assert.True(context.Responded);
         }
 
         [Fact]
-        public async Task TraceActivitiesDoNoSetResponded()
+        public async Task SendActivityAsync_ShouldNotSetRespondedOnTraceActivity()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
-            Assert.False(c.Responded);
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            Assert.False(context.Responded);
 
-            // Send a Trace Activity, and make sure responded is NOT set. 
+            // Send a Trace Activity, and make sure responded is NOT set.
             var trace = Activity.CreateTraceActivity("trace");
-            await c.SendActivityAsync(trace);
-            Assert.False(c.Responded);
+            await context.SendActivityAsync(trace);
+            Assert.False(context.Responded);
 
             // Just to sanity check everything, send a Message and verify the
             // responded flag IS set.
-            var msg = TestMessage.Message().AsMessageActivity();
-            await c.SendActivityAsync(msg);
-            Assert.True(c.Responded);
+            var msg = Activity.CreateMessageActivity();
+            await context.SendActivityAsync(msg);
+            Assert.True(context.Responded);
         }
 
         [Fact]
-        public async Task SendOneActivityToAdapter()
+        public async Task SendActivityAsync_ShouldSendOneActivityThroughAdapter()
         {
             bool foundActivity = false;
 
-            void ValidateResponses(Activity[] activities)
+            void ValidateResponses(IActivity[] activities)
             {
-                Assert.True(activities.Count() == 1, "Incorrect Count");
-                Assert.True(activities[0].Id == "1234");
+                Assert.True(activities.Length == 1, "Incorrect Count");
+                Assert.Equal("1234", activities[0].Id);
                 foundActivity = true;
             }
 
-            var a = new SimpleAdapter(ValidateResponses);
-            var c = new TurnContext(a, new Activity());
-            await c.SendActivityAsync(TestMessage.Message());
+            var adapter = new SimpleAdapter(ValidateResponses);
+            var context = new TurnContext(adapter, new Activity());
+            await context.SendActivityAsync(TestMessage.Message());
             Assert.True(foundActivity);
         }
 
         [Fact]
-        public async Task CallOnSendBeforeDelivery()
+        public async Task SendActivityAsync_ShouldCallOnSendBeforeDelivery()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
 
             int count = 0;
-            c.OnSendActivities(async (context, activities, next) =>
+            context.OnSendActivities(async (context, activities, next) =>
             {
                 Assert.NotNull(activities); // Null Array passed in
-                count = activities.Count();
+                count = activities.Count;
                 return await next();
             });
 
-            await c.SendActivityAsync(TestMessage.Message());
+            await context.SendActivityAsync(TestMessage.Message());
 
-            Assert.True(count == 1);
+            Assert.Equal(1, count);
         }
 
         [Fact]
-        public async Task AllowInterceptionOfDeliveryOnSend()
+        public async Task SendActivityAsync_ShouldAllowInterceptionOfDeliveryOnSend()
         {
             bool responsesSent = false;
-            void ValidateResponses(Activity[] activities)
+            void ValidateResponses(IActivity[] activities)
             {
                 responsesSent = true;
-                Assert.True(false); // Should not be called. Interceptor did not work
+                Assert.Fail("ValidateResponses should not be called. Interceptor did not work.");
             }
 
-            var a = new SimpleAdapter(ValidateResponses);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateResponses);
+            var context = new TurnContext(adapter, new Activity());
 
             int count = 0;
-            c.OnSendActivities((context, activities, next) =>
+            context.OnSendActivities((context, activities, next) =>
             {
-                Assert.NotNull(activities); // Null Array passed in
-                count = activities.Count();
+                Assert.NotNull(activities);
+                count = activities.Count;
 
                 // Do not call next.
                 return Task.FromResult<ResourceResponse[]>(null);
             });
 
-            await c.SendActivityAsync(TestMessage.Message());
+            await context.SendActivityAsync(TestMessage.Message());
 
-            Assert.True(count == 1);
+            Assert.Equal(1, count);
             Assert.False(responsesSent, "Responses made it to the adapter.");
         }
 
         [Fact]
-        public async Task InterceptAndMutateOnSend()
+        public async Task SendActivityAsync_ShouldInterceptAndMutateOnSend()
         {
             bool foundIt = false;
-            void ValidateResponses(Activity[] activities)
+            void ValidateResponses(IActivity[] activities)
             {
                 Assert.NotNull(activities);
-                Assert.True(activities.Length == 1);
-                Assert.True(activities[0].Id == "changed");
+                Assert.Single(activities);
+                Assert.Equal("changed", activities[0].Id);
                 foundIt = true;
             }
 
-            var a = new SimpleAdapter(ValidateResponses);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateResponses);
+            var context = new TurnContext(adapter, new Activity());
 
-            c.OnSendActivities(async (context, activities, next) =>
+            context.OnSendActivities(async (context, activities, next) =>
             {
                 Assert.NotNull(activities); // Null Array passed in
-                Assert.True(activities.Count() == 1);
+                Assert.Single(activities);
                 Assert.True(activities[0].Id == "1234", "Unknown Id Passed In");
                 activities[0].Id = "changed";
                 return await next();
             });
 
-            await c.SendActivityAsync(TestMessage.Message());
+            await context.SendActivityAsync(TestMessage.Message());
 
             // Intercepted the message, changed it, and sent it on to the Adapter
             Assert.True(foundIt);
         }
 
         [Fact]
-        public async Task UpdateOneActivityToAdapter()
+        public async Task UpdateActivityAsync_ShouldUpdateOneActivityToAdapter()
         {
             bool foundActivity = false;
 
-            void ValidateUpdate(Activity activity)
+            void ValidateUpdate(IActivity activity)
             {
                 Assert.NotNull(activity);
-                Assert.True(activity.Id == "test");
+                Assert.Equal("test", activity.Id);
                 foundActivity = true;
             }
 
-            var a = new SimpleAdapter(ValidateUpdate);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateUpdate);
+            var context = new TurnContext(adapter, new Activity());
 
             var message = TestMessage.Message("test");
-            var updateResult = await c.UpdateActivityAsync(message);
+            var updateResult = await context.UpdateActivityAsync(message);
 
             Assert.True(foundActivity);
-            Assert.True(updateResult.Id == "test");
+            Assert.Equal("test", updateResult.Id);
         }
 
         [Fact]
-        public async Task UpdateActivityWithMessageFactory()
+        public async Task UpdateActivityAsync_ShouldWorkWithMessageFactory()
         {
             const string ACTIVITY_ID = "activity ID";
             const string CONVERSATION_ID = "conversation ID";
 
             var foundActivity = false;
 
-            void ValidateUpdate(Activity activity)
+            void ValidateUpdate(IActivity activity)
             {
                 Assert.NotNull(activity);
-                Assert.True(activity.Id == ACTIVITY_ID);
-                Assert.True(activity.Conversation.Id == CONVERSATION_ID);
+                Assert.Equal(ACTIVITY_ID, activity.Id);
+                Assert.Equal(CONVERSATION_ID, activity.Conversation.Id);
                 foundActivity = true;
             }
 
-            var a = new SimpleAdapter(ValidateUpdate);
-            var c = new TurnContext(a, new Activity(conversation: new ConversationAccount(id: CONVERSATION_ID)));
+            var adapter = new SimpleAdapter(ValidateUpdate);
+            var context = new TurnContext(adapter, new Activity(conversation: new ConversationAccount(id: CONVERSATION_ID)));
 
             var message = MessageFactory.Text("test text");
 
             message.Id = ACTIVITY_ID;
 
-            var updateResult = await c.UpdateActivityAsync(message);
+            var updateResult = await context.UpdateActivityAsync(message);
 
             Assert.True(foundActivity);
-            Assert.True(updateResult.Id == ACTIVITY_ID);
+            Assert.Equal(ACTIVITY_ID, updateResult.Id);
 
-            c.Dispose();
+            context.Dispose();
         }
 
         [Fact]
-        public async Task CallOnUpdateBeforeDelivery()
+        public async Task UpdateActivityAsync_ShouldCallOnUpdateBeforeDelivery()
         {
             bool foundActivity = false;
 
-            void ValidateUpdate(Activity activity)
+            void ValidateUpdate(IActivity activity)
             {
                 Assert.NotNull(activity);
-                Assert.True(activity.Id == "1234");
+                Assert.Equal("1234", activity.Id);
                 foundActivity = true;
             }
 
-            SimpleAdapter a = new SimpleAdapter(ValidateUpdate);
-            TurnContext c = new TurnContext(a, new Activity());
+            SimpleAdapter adapter = new SimpleAdapter(ValidateUpdate);
+            TurnContext context = new TurnContext(adapter, new Activity());
 
             bool wasCalled = false;
-            c.OnUpdateActivity(async (context, activity, next) =>
+            context.OnUpdateActivity(async (context, activity, next) =>
             {
-                Assert.NotNull(activity); // Null activity passed in
+                Assert.NotNull(activity);
                 wasCalled = true;
                 return await next();
             });
-            await c.UpdateActivityAsync(TestMessage.Message());
+            await context.UpdateActivityAsync(TestMessage.Message());
             Assert.True(wasCalled);
             Assert.True(foundActivity);
         }
 
         [Fact]
-        public async Task InterceptOnUpdate()
+        public async Task UpdateActivityAsync_ShouldInterceptOnUpdate()
         {
             bool adapterCalled = false;
-            void ValidateUpdate(Activity activity)
+            void ValidateUpdate(IActivity activity)
             {
                 adapterCalled = true;
-                Assert.True(false); // Should not be called
+                Assert.Fail("ValidateUpdate should not be called. Interceptor did not work.");
             }
 
-            var a = new SimpleAdapter(ValidateUpdate);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateUpdate);
+            var context = new TurnContext(adapter, new Activity());
 
             bool wasCalled = false;
-            c.OnUpdateActivity((context, activity, next) =>
+            context.OnUpdateActivity((context, activity, next) =>
             {
-                Assert.NotNull(activity); // Null activity passed in
+                Assert.NotNull(activity);
                 wasCalled = true;
 
                 // Do Not Call Next
                 return Task.FromResult<ResourceResponse>(null);
             });
 
-            await c.UpdateActivityAsync(TestMessage.Message());
+            await context.UpdateActivityAsync(TestMessage.Message());
             Assert.True(wasCalled); // Interceptor was called
             Assert.False(adapterCalled); // Adapter was not
         }
 
         [Fact]
-        public async Task InterceptAndMutateOnUpdate()
+        public async Task UpdateActivityAsync_ShouldInterceptAndMutateOnUpdate()
         {
             bool adapterCalled = false;
-            void ValidateUpdate(Activity activity)
+            void ValidateUpdate(IActivity activity)
             {
-                Assert.True(activity.Id == "mutated");
+                Assert.Equal("mutated", activity.Id);
                 adapterCalled = true;
             }
 
-            var a = new SimpleAdapter(ValidateUpdate);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateUpdate);
+            var context = new TurnContext(adapter, new Activity());
 
-            c.OnUpdateActivity(async (context, activity, next) =>
+            context.OnUpdateActivity(async (context, activity, next) =>
             {
-                Assert.NotNull(activity); // Null activity passed in
-                Assert.True(activity.Id == "1234");
+                Assert.NotNull(activity);
+                Assert.Equal("1234", activity.Id);
                 activity.Id = "mutated";
                 return await next();
             });
 
-            await c.UpdateActivityAsync(TestMessage.Message());
-            Assert.True(adapterCalled); // Adapter was not
+            await context.UpdateActivityAsync(TestMessage.Message());
+            Assert.True(adapterCalled); // Adapter was called
         }
 
         [Fact]
-        public async Task DeleteOneActivityToAdapter()
+        public async Task DeleteActivityAsync_ShouldDeleteOneActivityThroughAdapter()
         {
             bool deleteCalled = false;
 
-            void ValidateDelete(ConversationReference r)
+            void ValidateDelete(ConversationReference reference)
             {
-                Assert.NotNull(r);
-                Assert.True(r.ActivityId == "12345");
+                Assert.NotNull(reference);
+                Assert.Equal("12345", reference.ActivityId);
                 deleteCalled = true;
             }
 
-            var a = new SimpleAdapter(ValidateDelete);
-            var c = new TurnContext(a, TestMessage.Message());
-            await c.DeleteActivityAsync("12345");
+            var adapter = new SimpleAdapter(ValidateDelete);
+            var context = new TurnContext(adapter, TestMessage.Message());
+            await context.DeleteActivityAsync("12345");
             Assert.True(deleteCalled);
         }
 
         [Fact]
-        public async Task DeleteConversationReferenceToAdapter()
+        public async Task DeleteActivityAsync_ShouldDeleteConversationReferenceThroughAdapter()
         {
             bool deleteCalled = false;
 
-            void ValidateDelete(ConversationReference r)
+            void ValidateDelete(ConversationReference reference)
             {
-                Assert.NotNull(r);
-                Assert.True(r.ActivityId == "12345");
+                Assert.NotNull(reference);
+                Assert.Equal("12345", reference.ActivityId);
                 deleteCalled = true;
             }
 
-            var a = new SimpleAdapter(ValidateDelete);
-            var c = new TurnContext(a, TestMessage.Message());
+            var adapter = new SimpleAdapter(ValidateDelete);
+            var context = new TurnContext(adapter, TestMessage.Message());
 
             var reference = new ConversationReference("12345");
 
-            await c.DeleteActivityAsync(reference);
+            await context.DeleteActivityAsync(reference);
             Assert.True(deleteCalled);
         }
 
         [Fact]
-        public async Task InterceptOnDelete()
+        public async Task DeleteActivityAsync_ShouldInterceptOnDelete()
         {
             bool adapterCalled = false;
 
-            void ValidateDelete(ConversationReference r)
+            void ValidateDelete(ConversationReference reference)
             {
                 adapterCalled = true;
-                Assert.True(false); // Should not be called
+                Assert.Fail("ValidateDelete should not be called. Interceptor did not work.");
             }
 
-            var a = new SimpleAdapter(ValidateDelete);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateDelete);
+            var context = new TurnContext(adapter, new Activity());
 
             bool wasCalled = false;
-            c.OnDeleteActivity((context, convRef, next) =>
+            context.OnDeleteActivity((context, convRef, next) =>
             {
-                Assert.NotNull(convRef); // Null activity passed in
+                Assert.NotNull(convRef);
                 wasCalled = true;
 
                 // Do Not Call Next
                 return Task.FromResult<ResourceResponse[]>(null);
             });
 
-            await c.DeleteActivityAsync("1234");
+            await context.DeleteActivityAsync("1234");
             Assert.True(wasCalled); // Interceptor was called
             Assert.False(adapterCalled); // Adapter was not
         }
 
         [Fact]
-        public async Task InterceptAndMutateOnDelete()
+        public async Task DeleteActivityAsync_ShouldInterceptAndMutateOnDelete()
         {
             bool adapterCalled = false;
 
-            void ValidateDelete(ConversationReference r)
+            void ValidateDelete(ConversationReference reference)
             {
-                Assert.True(r.ActivityId == "mutated");
+                Assert.Equal("mutated", reference.ActivityId);
                 adapterCalled = true;
             }
 
-            var a = new SimpleAdapter(ValidateDelete);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateDelete);
+            var context = new TurnContext(adapter, new Activity());
 
-            c.OnDeleteActivity(async (context, convRef, next) =>
+            context.OnDeleteActivity(async (context, convRef, next) =>
             {
-                Assert.NotNull(convRef); // Null activity passed in
+                Assert.NotNull(convRef);
                 Assert.True(convRef.ActivityId == "1234", "Incorrect Activity Id");
                 convRef.ActivityId = "mutated";
                 await next();
             });
 
-            await c.DeleteActivityAsync("1234");
-            Assert.True(adapterCalled); // Adapter was called + valided the change
+            await context.DeleteActivityAsync("1234");
+            Assert.True(adapterCalled); // Adapter was called + validated the change
         }
 
         [Fact]
-        public async Task ThrowExceptionInOnSend()
+        public async Task SendActivityAsync_ShouldThrowExceptionInOnSend()
         {
-            var a = new SimpleAdapter();
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
 
-            c.OnSendActivities((context, activities, next) =>
+            context.OnSendActivities((context, activities, next) =>
             {
                 throw new Exception("test");
             });
 
-            try
-            {
-                await c.SendActivityAsync(TestMessage.Message());
-                Assert.True(false); // Should not get here
-            }
-            catch (Exception ex)
-            {
-                Assert.True(ex.Message == "test");
-            }
+            await Assert.ThrowsAsync<Exception>(() => context.SendActivityAsync(TestMessage.Message()));
         }
 
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            switch (turnContext.Activity.AsMessageActivity().Text)
+            if (turnContext.Activity.Text == "TestResponded")
             {
-                case "count":
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"));
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("two"));
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("three"));
-                    break;
-                case "ignore":
-                    break;
-                case "TestResponded":
-                    if (turnContext.Responded == true)
-                    {
-                        throw new InvalidOperationException("Responded Is True");
-                    }
+                Assert.False(turnContext.Responded, "Responded should be false before sending.");
 
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"));
+                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"), cancellationToken);
 
-                    if (turnContext.Responded == false)
-                    {
-                        throw new InvalidOperationException("Responded Is True");
-                    }
-
-                    break;
-                default:
-                    await turnContext.SendActivityAsync(
-                        turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"));
-                    break;
+                Assert.True(turnContext.Responded, "Responded should be true after sending.");
+            }
+            else
+            {
+                await turnContext.SendActivityAsync(
+                    turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"), cancellationToken);
             }
         }
     }

@@ -11,6 +11,7 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {

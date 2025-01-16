@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -35,6 +36,20 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(geoCoordinates);
             Assert.IsType<GeoCoordinates>(geoCoordinates);
+        }
+
+        [Fact]
+        public void GeoCoordinatesTypedDeserialize()
+        {
+            var json = "{\"entities\": [{\"type\": \"getCoordinates\", \"name\": \"geoname\"}]}";
+            var activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
+
+            Assert.NotNull(activity.Entities);
+            Assert.NotEmpty(activity.Entities);
+            Assert.IsType<GeoCoordinates>(activity.Entities[0]);
+
+            var geo = activity.Entities[0] as GeoCoordinates;
+            Assert.Equal("geoname", geo.Name);
         }
     }
 }

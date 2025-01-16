@@ -23,21 +23,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task BasicDateTimePrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             TestAdapter adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(BasicDateTimePrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add number prompt to DialogSet.
             var dateTimePrompt = new DateTimePrompt("DateTimePrompt", defaultLocale: Culture.English);
-            dialogs.Add(dateTimePrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(dateTimePrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync();
@@ -64,21 +63,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task MultipleResolutionsDateTimePrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             TestAdapter adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(MultipleResolutionsDateTimePrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add number prompt to DialogSet.
             var dateTimePrompt = new DateTimePrompt("DateTimePrompt", defaultLocale: Culture.English);
-            dialogs.Add(dateTimePrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(dateTimePrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -107,21 +105,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             string folder = Environment.CurrentDirectory;
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             TestAdapter adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(DateTimePromptWithValidator)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add number prompt to DialogSet.
             var dateTimePrompt = new DateTimePrompt("DateTimePrompt", CustomValidator, defaultLocale: Culture.English);
-            dialogs.Add(dateTimePrompt);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(dateTimePrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
