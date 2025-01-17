@@ -122,6 +122,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.State", "l
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvalClient", "samples\EvalClient\EvalClient.csproj", "{A839D635-0382-4E4C-8052-1F18B71434EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioClientSampleAPI", "samples\copilot_studio_client_api_and_spa\CopilotStudioClientSampleAPI\CopilotStudioClientSampleAPI.csproj", "{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -312,6 +314,10 @@ Global
 		{A839D635-0382-4E4C-8052-1F18B71434EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A839D635-0382-4E4C-8052-1F18B71434EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A839D635-0382-4E4C-8052-1F18B71434EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -372,6 +378,7 @@ Global
 		{71813B2D-D6A8-4388-9541-9B1287C93F19} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{6A27C156-842F-409C-86B7-D9CC0A38F02F} = {7A18F0C9-F8AF-4168-B954-6563BB2C1A90}
 		{A839D635-0382-4E4C-8052-1F18B71434EE} = {674A812C-7287-4883-97F9-697D83750648}
+		{D54EEE0D-64F7-4F29-B36A-BF0D70801FFB} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

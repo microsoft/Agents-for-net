@@ -1,0 +1,60 @@
+```mermaid
+classDiagram
+direction LR
+    class CopilotStudioClientSampleAPI {
+        +void ConfigureServices(IServiceCollection services)
+        +void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    }
+
+    class ChatConsoleService {
+        +void SendMessage(string message)
+        +void DeleteConversation()
+    }
+
+    class CopilotClientProvider {
+        +CopilotClient? GetCopilotClient(string key)
+        +void AddCopilotClient(string key, CopilotClient copilotClient)
+        +void RemoveCopilotClient(string key)
+    }
+
+    class SampleConnectionSettings {
+        +string? TenantId
+        +string? AppClientId
+        +SampleConnectionSettings(IConfigurationSection config)
+    }
+
+    class Microsoft.AspNetCore.Authentication.JwtBearer {
+        +void AddJwtBearer(Action<JwtBearerOptions> configureOptions)
+    }
+
+    class Microsoft.AspNetCore.Authentication.OpenIdConnect {
+        +void AddOpenIdConnect(Action<OpenIdConnectOptions> configureOptions)
+    }
+
+    class Microsoft.Identity.Web {
+        +void AddMicrosoftIdentityWebApp(Action<MicrosoftIdentityOptions> configureOptions)
+        +void AddMicrosoftIdentityWebApi(Action<MicrosoftIdentityOptions> configureOptions)
+    }
+
+    class Microsoft.Identity.Web.DownstreamApi {
+        +void AddDownstreamApi(string name, Action<DownstreamApiOptions> configureOptions)
+    }
+
+    class Microsoft.Agents.CopilotStudio.Client {
+        +void AddCopilotStudioClient(Action<CopilotStudioClientOptions> configureOptions)
+    }
+
+    class Swashbuckle.AspNetCore {
+        +void AddSwaggerGen(Action<SwaggerGenOptions> configureOptions)
+    }
+
+    CopilotStudioClientSampleAPI --> Microsoft.AspNetCore.Authentication.JwtBearer : Uses
+    CopilotStudioClientSampleAPI --> Microsoft.AspNetCore.Authentication.OpenIdConnect : Uses
+    CopilotStudioClientSampleAPI --> Microsoft.Identity.Web : Uses
+    CopilotStudioClientSampleAPI --> Microsoft.Identity.Web.DownstreamApi : Uses
+    CopilotStudioClientSampleAPI --> Microsoft.Agents.CopilotStudio.Client : Uses
+    CopilotStudioClientSampleAPI --> Swashbuckle.AspNetCore : Uses
+    CopilotStudioClientSampleAPI --> ChatConsoleService : Uses
+    CopilotStudioClientSampleAPI --> CopilotClientProvider : Uses
+    CopilotStudioClientSampleAPI --> SampleConnectionSettings : Uses
+```

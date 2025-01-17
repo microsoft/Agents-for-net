@@ -16,6 +16,10 @@
     <Microsoft_AspNetCore_PkgVer>8.0.11</Microsoft_AspNetCore_PkgVer>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.11" />
+    <PackageVersion Include="Microsoft.Identity.Web" Version="3.2.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.DownstreamApi" Version="3.2.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />

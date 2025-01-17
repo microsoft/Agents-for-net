@@ -1,0 +1,182 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+.app-container {
+  position: fixed; /* Fix the container to the viewport */
+  top: 0; /* Align to the top */
+  right: 0; /* Align to the right */
+  width: 25%; /* Set the width of the panel */
+  height: 100%; /* Make it full height */
+  background-color: white; /* Set background color */
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for better visibility */
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  font-family: Arial, sans-serif;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end; /* Align items to the right */
+  align-items: center;
+  position: relative;
+}
+
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  color: red;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+.user-menu {
+  font-size: 24px;
+  cursor: pointer;
+  position: right;
+}
+
+.menu {
+  position: absolute;
+  top: 40px; /* Adjust based on the height of the icon */
+  right: 20px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 1000;
+}
+
+.menu p {
+  margin: 0;
+  padding: 5px 0;
+}
+
+.logout-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background-color: #0056b3;
+}
+
+.chat-container {
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-history {
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  height: 85%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.chat-input {
+  position: absolute; /* Fix the chat-input at the bottom */
+  bottom: 0; /* Align to the bottom */
+  width: 100%; /* Make it full width */
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #ccc; /* Optional: Add a border to separate from chat history */
+  background-color: white; /* Optional: Set background color */
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.chat-input button {
+  margin-right: 15px; /* Ensure the button is 5px from the right border */
+  padding: 10px 20px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #0056b3;
+}
+
+.chat-input button:disabled {
+  background-color: grey;
+  cursor: not-allowed;
+}
+
+.spinner {
+  margin: 7px auto;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #3498db;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.message {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.message.assistant {
+  background-color: #f1f1f1;
+  text-align: left;
+}
+
+.message.user {
+  background-color: #d1e7dd;
+  text-align: right;
+}
+
+/* Apply common text style to input box and button */
+input[type="text"],
+.chat-input-button {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: #333;
+}
+
+/* Apply common text style to chat history */
+.chat-history .message p {
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  color: #333;
+}
+
+.recycle-icon, .user-menu {
+  cursor: pointer;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.recycle-icon:hover, .user-menu:hover {
+  color: white;
+  background-color: #0056b3;
+}

@@ -1,0 +1,54 @@
+.sample-page {
+    font-family: Arial, sans-serif;
+    width: 70%;
+    margin: 20px;
+    color: #333;
+}
+
+.sample-page h1 {
+    color: #2c3e50;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+
+.sample-page p {
+    font-size: 1.2em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.sample-page ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.sample-page ul li {
+    margin-bottom: 10px;
+}
+
+.sample-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.sample-page table, .sample-page th, .sample-page td {
+    border: 1px solid #ddd;
+}
+
+.sample-page th, .sample-page td {
+    padding: 12px;
+    text-align: left;
+}
+
+.sample-page th {
+    background-color: #f2f2f2;
+}
+
+.sample-page h2 {
+    color: #2c3e50;
+    font-size: 2em;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
