@@ -4,7 +4,31 @@
 
 Below is diagram of the overall architecture. This project implements Custom API. The CopilotStudio API is implement with the Microsoft.Agent.CopilotStudio.Client SDK.
 
-![overall architecture](./images/overallarchitecture.png)
+```mermaid
+graph TD
+
+    A[React SPA] -->|1 Login| F[Entra ID]
+    F -->|2 Access Token| A
+    A -->|3 API Request with Access Token| B[Custom API]
+    B -->|4 Request Access Token on behalf of user| F
+    F -->|5 Access Token| B
+    B -->|6 API Request with Access Token| C[CopilotStudio API]
+    C -->|13 API Response| B
+    B -->|14 API Response| A
+    C -->|7 Call Agent| G[Copilot Agent]
+    G -->|12 Agent Response| C
+
+    G -.->|8 Query| D[Search Index]
+    D -.->|9 Response| G
+    G -.->|10 Query| E[OpenAI]
+    E -.->|11 Response| G
+
+    subgraph Optional Components
+        direction TB
+        D[Search Index]
+        E[OpenAI]
+    end
+```
 
 ## User state and conversation
 
@@ -23,7 +47,7 @@ To setup for this sample, you will need the following:
 
 1. If not exist, create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
     1. Publish your newly created Copilot
-    1. Goto Settings => Advanced => Metadata and copy the following values, You will need them later:
+    1. Go to Settings => Advanced => Metadata and copy the following values, You will need them later:
         1. Schema name
         1. Environment Id
 
@@ -33,7 +57,7 @@ This step will require permissions to Create application identities in your Azur
 
 1. Open https://portal.azure.com 
 1. Navigate to Entra Id
-1. Create an new App Registration in Entra ID 
+1. Create an new App Registration in Entra ID
     1. Provide an Name
     1. Choose "Accounts in this organization directory only"
     1. Then click register.
@@ -41,17 +65,17 @@ This step will require permissions to Create application identities in your Azur
     1. On the Overview page, Note down for use later when configuring the example application:
         1. the Application (client) ID
         1. the Directory (tenant) ID
-    1. Goto Manage
-    1. Goto API Permissions
+    1. Go to Manage
+    1. Go to API Permissions
     1. Click Add Permission
-        1. In the side pannel that appears, Click the tab `API's my organization uses`
+        1. In the side panel that appears, Click the tab `API's my organization uses`
         1. Search for `Power Platform API`.
             1. *If you do not see `Power Platform API` see the note at the bottom of this section.*
         1. In the permissions list choose `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
         1. Click `Add Permissions`
     1. (Optional) Click `Grant Admin consent for copilotsdk`
     1. Go back to Manage
-    1. Goto Expose an API
+    1. Go to Expose an API
         1. Click on Add after Application ID URI to add and application ID URI
         1. Click Add a Scope
             1. Enter "signin_as_user" for Scope name
@@ -69,7 +93,7 @@ This step will require permissions to Create application identities in your Azur
         1. The secret will appear. Copy the secret, as you need to use it later. It cannot be retrieve after leaving the page.
 
 > [!TIP]
-> If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
+> If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, go to [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
 ## Instructions - Configure the Example Application
 
@@ -127,6 +151,6 @@ The following configuration settings are required in the `appsettings.json` file
 
 ## Start the API
 
-- Ensure this project is set as Startup Project is Visual Studio is used.
-- Run the application via F5 or dotnet run.
+- Ensure this project is set as Start-up Project if Visual Studio is used.
+- Run the application via F5 in Visual Studio or dotnet run.
 - Start the [CopilotStudioClientSampleAPIClient](..\CopilotStudioClientSampleAPIClient/README.md) SPA to open a REACT Client, login and call the API and Copilot Studio Agent.
