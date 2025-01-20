@@ -1,54 +1,44 @@
 .sample-page {
-    font-family: Arial, sans-serif;
-    width: 70%;
-    margin: 20px;
-    color: #333;
+  font-family: Arial, sans-serif;
+  width: 70%;
+  margin: 20px;
 }
 
-.sample-page h1 {
-    color: #2c3e50;
-    font-size: 2.5em;
-    margin-bottom: 20px;
+.sample-page-header {
+  background-color: #0078d4;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  border-radius: 5px;
 }
 
-.sample-page p {
-    font-size: 1.2em;
-    line-height: 1.6;
-    margin-bottom: 20px;
+.sample-page-content {
+  margin-top: 20px;
 }
 
-.sample-page ul {
-    list-style-type: disc;
-    margin-left: 20px;
-    margin-bottom: 20px;
+.sample-page-content h2 {
+  color: #0078d4;
 }
 
-.sample-page ul li {
-    margin-bottom: 10px;
+.sample-page-content p,
+.sample-page-content ul,
+.sample-page-content ol {
+  margin: 10px 0;
+  line-height: 1.6;
 }
 
-.sample-page table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
+.sample-page-content ul {
+  list-style-type: disc;
+  padding-left: 20px;
 }
 
-.sample-page table, .sample-page th, .sample-page td {
-    border: 1px solid #ddd;
+.sample-page-content ol {
+  list-style-type: decimal;
+  padding-left: 20px;
 }
 
-.sample-page th, .sample-page td {
-    padding: 12px;
-    text-align: left;
-}
-
-.sample-page th {
-    background-color: #f2f2f2;
-}
-
-.sample-page h2 {
-    color: #2c3e50;
-    font-size: 2em;
-    margin-top: 30px;
-    margin-bottom: 10px;
+.sample-page-content code {
+  background-color: #f4f4f4;
+  padding: 2px 4px;
+  border-radius: 3px;
 }

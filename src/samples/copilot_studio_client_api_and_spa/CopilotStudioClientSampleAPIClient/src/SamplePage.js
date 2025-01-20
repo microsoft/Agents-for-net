@@ -1,53 +1,37 @@
 import React from 'react';
 import './SamplePage.css';
 
-const SamplePage = () => {
-    return (
-        <div className="sample-page">
-            <h1>Lorem Ipsum</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <ul>
-                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
-                <li>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</li>
-                <li>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</li>
-                <li>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</li>
-                <li>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</li>
-            </ul>
-            <h2>Specifications</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Lorem</td>
-                        <td>Ipsum dolor sit amet</td>
-                    </tr>
-                    <tr>
-                        <td>Consectetur</td>
-                        <td>Adipiscing elit</td>
-                    </tr>
-                    <tr>
-                        <td>Sed</td>
-                        <td>Do eiusmod tempor</td>
-                    </tr>
-                    <tr>
-                        <td>Incididunt</td>
-                        <td>Ut labore et dolore</td>
-                    </tr>
-                    <tr>
-                        <td>Magna</td>
-                        <td>Aliqua</td>
-                    </tr>
-                </tbody>
-            </table>
-            <h2>Why Choose Lorem Ipsum?</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        </div>
-    );
-};
+function SamplePage() {
+  return (
+    <div className="sample-page">
+      <header className="sample-page-header">
+        <h1>Copilot Studio Client Sample API Client</h1>
+      </header>
+      <section className="sample-page-content">
+        <h2>Overview</h2>
+        <p>
+          The Copilot Studio Client Sample API Client is a sophisticated React-based application designed to demonstrate the seamless integration with the Copilot Studio Client Sample API. This application allows users to log in with their Microsoft Work or School account, providing access to a Microsoft Copilot Studio agent.
+        </p>
+        <h2>Key Features</h2>
+        <ul>
+          <li><strong>Agent Interaction:</strong> Engage in conversations with a Microsoft Copilot Studio agent through a user-friendly web interface.</li>
+          <li><strong>User Authentication:</strong> Securely log in and log out using Azure Active Directory with MSAL.</li>
+          <li><strong>Change Agent:</strong> Easily switch between different agents by modifying the URL with the query string parameter <code>?botidentifier=&lt;schema name of agent&gt;</code>. This directs the API to use the specified agent within the user's tenant.</li>
+          <li><strong>Token Acquisition:</strong> Silently acquire access tokens for authenticated API requests.</li>
+          <li><strong>API Interaction:</strong> Demonstrates how to interact with the Copilot Studio Client Sample API, including sending messages and managing conversations.</li>
+        </ul>
+        <h2>How to Use</h2>
+        <p>
+          To use this application, follow these steps:
+        </p>
+        <ol>
+          <li>Log in with your Microsoft Work or School account that has access to the agent. Default agent is **sldc_weather** as set in .env variable REACT_APP_BOT_IDENTIFIER</li>
+          <li>Start a conversation with the agent by typing a message in the chat input field and pressing Enter.</li>
+          <li>To change the bot, add the query string parameter <code>?botidentifier=&lt;schema name of agent&gt;</code> to the URL. This will direct the API to use the specified agent within your tenant.</li>
+        </ol>
+      </section>
+    </div>
+  );
+}
 
 export default SamplePage;
