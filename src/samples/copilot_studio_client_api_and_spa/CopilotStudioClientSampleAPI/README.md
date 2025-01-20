@@ -32,7 +32,7 @@ graph TD
 
 ## User state and conversation
 
-For each conversation a CopilotStudioClient needs to be created. The conversation needs to be started and once started the questions can be sent to the conversation. To allow continuous conversations the same CopilotStudioClient needs to be used. This is achieved by storing the CopilotStudioClient in the Memory of the API. For each request it is checked if a conversation exist for the current User (based on user's objectID). If it exist the conversationID is used and as such a conversation can be continued. If it does not exist a new CopilotStudioClient is created and such a new conversation.The state is maintained in the [CopilotConversationCache](./Services/CopilotConversationCache.cs). This solution stores the Cache in Memory, which is not suitable for production alike use cases.
+For each conversation a CopilotStudioClient needs to be created. The conversation needs to be started and once started the questions can be sent to the conversation. To allow continuous conversations the same conversationID needs to be used. This is achieved by storing the conversationID in the Memory of the API. For each request it is checked if a conversation exist for the current User (based on user's objectID). If it exist the conversationID is used and as such a conversation can be continued. If it does not exist a new conversationID is created and such a new conversation.The state is maintained in the [CopilotConversationCache](./Services/CopilotConversationCache.cs). This solution stores the Cache in Memory, which is not suitable for production alike use cases.
 
 ## Instructions - Setup
 
