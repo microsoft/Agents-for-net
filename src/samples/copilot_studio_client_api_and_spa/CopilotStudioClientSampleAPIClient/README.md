@@ -61,17 +61,9 @@ Set up the environment variables that are need to run the client:
 1. Fill in the variables;
     1. REACT_APP_BOT_IDENTIFIER, this get the value of the Schema name of the agent created in previous step.
     1. REACT_APP_API_BASE_URL, this has default value <https://localhost:7270>. This points to the API that is available when [CopilotStudioClientSampleAPI](../CopilotStudioClientSampleAPI/README.md) is started.
-
-### Set Up Authentication Variables
-
-In authConfig.js set the correct variables for ClientID, TenantId, RedirectURL and the scope to get access token for the API.
-
-| Key                | Description                                                                 |
-|--------------------|-----------------------------------------------------------------------------|
-| `clientId`         | The Client ID of your Azure AD application.                                 |
-| `authority`        | The authority URL for your Azure AD tenant (e.g., `https://login.microsoftonline.com/{tenantId}`). |
-| `redirectUri`      | The redirect URI for your application (e.g., `http://localhost:3000`).      |
-| `scopes`           | The scopes required for your application (e.g., `api://your-api-id/signin_as_user`). |
+    1. REACT_APP_CLIENTID, this is the client ID of the appregistration that has been created for this sample.
+    1. REACT_APP_TENANTID, this is the tenant ID of the Entra ID tenant where the CLIENT ID lives
+    1. REACT_APP_API_SCOPE, this is the scope to request a signin_as_user access token
 
 ### Install Dependencies
 
