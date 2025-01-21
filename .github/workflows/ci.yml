@@ -20,8 +20,21 @@ jobs:
       with:
         dotnet-version: 8.0.x        
 
+    - name: GetVersionInfo
+      shell: pwsh
+      run: | 
+          cd src/libraries
+          $nbgv_version=(dotnet nbgv get-version -v NuGetPackageVersion -f text)
+          Write-Host "Version:" $nbgv_version
+
+    - name: Restore
+      run: dotnet restore AgentSdk.proj
+  
     - name: Build
-      run: dotnet build
+      run: dotnet build --no-restore -c debug AgentSdk.proj
+
+    - name: Package
+      run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.sln 
 
     - name: Test
-      run: dotnet test ./src/
+      run: dotnet test --no-build --no-restore -c debug ./src/

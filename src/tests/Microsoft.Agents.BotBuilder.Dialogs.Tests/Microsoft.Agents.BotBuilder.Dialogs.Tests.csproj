@@ -7,10 +7,6 @@
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
-	<PropertyGroup>
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<None Remove="test.settings.json" />
 	</ItemGroup>

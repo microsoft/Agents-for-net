@@ -9,10 +9,6 @@
 	<Import Project="..\..\Build.Common.core.props" />
 	
 	<PropertyGroup>
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<!--    <TargetFramework>net8.0</TargetFramework> -->
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
