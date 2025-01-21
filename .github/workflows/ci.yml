@@ -20,6 +20,9 @@ jobs:
       with:
         dotnet-version: 8.0.x        
 
+    - name: Restore Dotnet Tools
+      run: dotnet tool restore
+      
     - name: GetVersionInfo
       shell: pwsh
       run: | 
