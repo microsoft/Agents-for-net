@@ -8,7 +8,7 @@
     <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/microsoft/agents</PackageProjectUrl>
     <PackageLicenseUrl Condition="'$(PackageLicenseUrl)' == ''">https://github.com/microsoft/Agents-for-net?tab=MIT-1-ov-file#readme</PackageLicenseUrl>
     <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/Microsoft/Agents-for-net</RepositoryUrl>
-    <NoWarn>$(NoWarn);NU1701;NU1900;NU5125</NoWarn>
+    <NoWarn>$(NoWarn);NU1701;NU1900;NU5125;NU5104</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
