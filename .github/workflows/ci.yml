@@ -15,20 +15,16 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x        
 
-    - name: Restore Dotnet Tools
-      run: dotnet tool restore
-      
-    - name: GetVersionInfo
-      shell: pwsh
-      run: | 
-          cd src/libraries
-          $nbgv_version=(dotnet nbgv get-version -v NuGetPackageVersion -f text)
-          Write-Host "Version:" $nbgv_version
+    - uses: dotnet/nbgv@master
+      with:
+          setAllVars: true        
+    - run: echo "NuGetPackageVersion $NuGetPackageVersion"      
 
     - name: Restore
       run: dotnet restore AgentSdk.proj
