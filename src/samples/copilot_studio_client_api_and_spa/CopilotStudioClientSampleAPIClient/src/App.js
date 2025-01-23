@@ -30,6 +30,12 @@ const App = () => {
         chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
   }, [chatHistory]);
+
+  useEffect(() => {
+    if (!isDisabled && inputRef.current) {
+        inputRef.current.focus();
+    }
+}, [isDisabled]);
   
   const handleLogin = () => {
       console.log("Login Request:", loginRequest); 
@@ -93,7 +99,6 @@ const App = () => {
             setIsLoading(false);
             setIsDisabled(false);
             setInputValue(""); // Clear input field 
-            inputRef.current.focus(); // Set focus on the input element
         })
         .catch(error => {
             console.error("API Error:", error);
