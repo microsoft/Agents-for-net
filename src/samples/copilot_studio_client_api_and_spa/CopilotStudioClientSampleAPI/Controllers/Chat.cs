@@ -28,7 +28,7 @@ namespace CopilotStudioClientSampleAPI.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly ILogger<Chat> _logger;
-        private readonly ConnectionSettings? _directToEngineSettings;
+        private readonly ConnectionSettings _directToEngineSettings;
         private readonly AzureAdSettings _azureAdSettings;
         private readonly IEnumerable<string> _requestedScopes;
 
@@ -89,7 +89,7 @@ namespace CopilotStudioClientSampleAPI.Controllers
                     .Build();
 
                 // Aquire token on behalf of user
-                UserAssertion userAssertion = new UserAssertion(jwtToken.RawData, "urn:ietf:params:oauth:grant-type:jwt-bearer");
+                UserAssertion userAssertion = new(jwtToken.RawData, "urn:ietf:params:oauth:grant-type:jwt-bearer");
                 var result = await application.AcquireTokenOnBehalfOf(_requestedScopes, userAssertion).ExecuteAsync();
                 return result.AccessToken;
             };
@@ -150,8 +150,8 @@ namespace CopilotStudioClientSampleAPI.Controllers
         private JwtSecurityToken? ExtractJwtToken()
         {
             // Get the raw JWT token from the Authorization header
-            var authHeader = HttpContext.Request.Headers["Authorization"].ToString();
-            var token = authHeader.StartsWith("Bearer ") ? authHeader.Substring("Bearer ".Length).Trim() : string.Empty;
+            var authHeader = HttpContext.Request.Headers.Authorization.ToString();
+            var token = authHeader.StartsWith("Bearer ") ? authHeader["Bearer ".Length..].Trim() : string.Empty;
 
             // Parse the token and cast it to JwtSecurityToken
             var handler = new JwtSecurityTokenHandler();
