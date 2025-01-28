@@ -14,6 +14,7 @@ using CopilotStudioClientSampleAPI.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Text.Json;
 using System.Collections.Generic;
+using Microsoft.Extensions.Options;
 
 namespace CopilotStudioClientSampleAPI.Controllers
 {
@@ -27,20 +28,31 @@ namespace CopilotStudioClientSampleAPI.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly ILogger<Chat> _logger;
-        private readonly SampleConnectionSettings _settings;
+        private readonly ConnectionSettings? _directToEngineSettings;
+        private readonly AzureAdSettings _azureAdSettings;
+        private readonly IEnumerable<string> _requestedScopes;
 
-        public Chat(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<Chat> logger, CopilotConversationCache copilotConversationCache)
+        public Chat(IHttpClientFactory httpClientFactory, 
+            IConfiguration configuration, 
+            ILogger<Chat> logger, 
+            CopilotConversationCache copilotConversationCache, 
+            IOptions<AzureAdSettings> azureAdSettings
+            )
         {
             _copilotConversationCache = copilotConversationCache;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _logger = logger;
-            _settings = new SampleConnectionSettings(_configuration.GetSection("DirectToEngineSettings"));
-            // Validate _settings properties
-            if (string.IsNullOrEmpty(_settings.TenantId) || string.IsNullOrEmpty(_settings.AppClientId) || string.IsNullOrEmpty(_settings.BotIdentifier))
+            _azureAdSettings = azureAdSettings.Value;
+
+            // Bind DirectToEngineSettings
+            _directToEngineSettings = new ConnectionSettings(_configuration.GetSection("DirectToEngineSettings"));
+            if (_directToEngineSettings == null)
             {
-                throw new ArgumentException("BotIdentifier, TenantId and AppClientId in SampleConnectionSettings cannot be null or empty.");
-            }
+                throw new ArgumentException("DirectToEngineSettings not found in config");
+            }   
+            // Get Configs
+            _requestedScopes = _configuration.GetSection("API").Get<IEnumerable<string>>() ?? [];
         }
 
         [HttpDelete]
@@ -67,41 +79,35 @@ namespace CopilotStudioClientSampleAPI.Controllers
                 return Unauthorized();
             }
 
-            // Get Configs
-            var requestedScopes = _configuration.GetSection("API").Get<IEnumerable<string>>() ?? [];
-            var clientId = _configuration.GetSection("AzureAd:ClientId").Value;
-            var tenantId = _configuration.GetSection("AzureAd:TenantId").Value;
-            var clientSecret = _configuration.GetSection("AzureAd:ClientSecret").Value;
-
             // Define the function to get the access token
             Func<string, Task<string>> tokenProviderFunction = async (url) =>
             {
                 // Build Confidential Application
-                var application = ConfidentialClientApplicationBuilder.Create(clientId)
-                    .WithClientSecret(clientSecret)
-                    .WithTenantId(tenantId)
+                var application = ConfidentialClientApplicationBuilder.Create(_azureAdSettings.ClientId)
+                    .WithClientSecret(_azureAdSettings.ClientSecret)
+                    .WithTenantId(_azureAdSettings.TenantId)
                     .Build();
 
                 // Aquire token on behalf of user
                 UserAssertion userAssertion = new UserAssertion(jwtToken.RawData, "urn:ietf:params:oauth:grant-type:jwt-bearer");
-                var result = await application.AcquireTokenOnBehalfOf(requestedScopes, userAssertion).ExecuteAsync();
+                var result = await application.AcquireTokenOnBehalfOf(_requestedScopes, userAssertion).ExecuteAsync();
                 return result.AccessToken;
             };
 
             // Set the required agent in CopilotStudio
             if (!string.IsNullOrEmpty(request.BotIdentifier))
             {
-                _settings.BotIdentifier = request.BotIdentifier;
+                _directToEngineSettings.BotIdentifier = request.BotIdentifier;
             }
 
             // Create Copilot Client
-            var copilotClient = new CopilotClient(_settings, _httpClientFactory, tokenProviderFunction, _logger, "mcs");
+            var copilotClient = new CopilotClient(_directToEngineSettings, _httpClientFactory, tokenProviderFunction, _logger, "mcs");
             
             // Get the current User
             var currentUser = User.Claims.Where(t => t.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier").FirstOrDefault()?.Value;
 
             // Get the current conversation, null if not exist
-            var conversationId = _copilotConversationCache.GetConversation(currentUser!, _settings.BotIdentifier!);
+            var conversationId = _copilotConversationCache.GetConversation(currentUser!, _directToEngineSettings.BotIdentifier!);
 
             var chatResponses = new List<ChatResponse>();
             try
@@ -116,13 +122,13 @@ namespace CopilotStudioClientSampleAPI.Controllers
                 {
                     var conversation = await chatClient.StartAsync(token);
                     chatResponses.AddRange(conversation.ChatResponses!);
-                    _copilotConversationCache.AddConversation(currentUser!, _settings.BotIdentifier!, conversation.ConversationId!);
+                    _copilotConversationCache.AddConversation(currentUser!, _directToEngineSettings.BotIdentifier!, conversation.ConversationId!);
                 }
 
                 // If a message if avaialable sent it to the Copilot Studio Agent
                 if (request.Message != string.Empty)
                 {
-                    var existingConversationId = _copilotConversationCache.GetConversation(currentUser!, _settings.BotIdentifier!);
+                    var existingConversationId = _copilotConversationCache.GetConversation(currentUser!, _directToEngineSettings.BotIdentifier!);
                     var questionResponse = await chatClient.Ask(request.Message, existingConversationId!, token);
                     chatResponses.AddRange(questionResponse);
                 }

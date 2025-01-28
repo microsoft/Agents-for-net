@@ -1,3 +1,5 @@
+using CopilotStudioClientSampleAPI.Models;
+using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
@@ -15,6 +17,9 @@ builder.Services.AddCors(options =>
               .AllowCredentials(); // Include if using cookies/authentication
     });
 });
+
+// Bind AzureAd settings
+builder.Services.Configure<AzureAdSettings>(builder.Configuration.GetSection("AzureAd"));
 
 // Register HttpClientFactory
 builder.Services.AddHttpClient();
