@@ -21,6 +21,10 @@ To use this library, you will need the following:
 
 ### Create an Application Registration in Entra ID to support user authentication to Copilot Studio
 
+This is used when you are creating an application soly for the purpose of user interactive login and will be using a client that will surface an Entra ID MultiFactor Authentication Prompt.
+
+If you are using this client from a service, you will need to exchange the user token used to login to your service for a token for your agent hosted in copilot studio. See here:
+
 This step will require permissions to Create application identities in your Azure tenant. For user authentication, you will be creating a Native Client Application Identity, which does not have secrets.
 
 1. Open <https://portal.azure.com>
@@ -48,6 +52,9 @@ This step will require permissions to Create application identities in your Azur
 
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
+
+### Add the CopilotStudio.Copilots.Invoke permissions to your Application Registration in Entra ID to support user authentication to Copilot Studio
+
 
 ## How-to use
 
