@@ -4,9 +4,10 @@ using CsvHelper;
 using System.Globalization;
 using CsvHelper.Configuration;
 using Microsoft.Agents.CopilotStudio.Client;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.AI;
 using Microsoft.Agents.Core.Models;
+
+#nullable disable
 
 namespace EvalClient;
 

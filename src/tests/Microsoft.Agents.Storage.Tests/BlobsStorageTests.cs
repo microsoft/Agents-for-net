@@ -116,110 +116,6 @@ namespace Microsoft.Agents.Storage.Tests
                 Times.Exactly(2));
         }
 
-        /*
-        [Fact]
-        public async Task WriteAsyncWithAllowedTypesSerializationBinder()
-        {
-            var serializationBinder = new AllowedTypesSerializationBinder(
-                new List<Type>
-                {
-                    typeof(IStoreItem),
-                });
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = serializationBinder,
-            };
-
-            InitStorage(jsonSerializerSettings);
-
-            _client.Setup(e => e.UploadAsync(
-                It.IsAny<Stream>(),
-                It.IsAny<BlobHttpHeaders>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobRequestConditions>(),
-                It.IsAny<IProgress<long>>(),
-                It.IsAny<AccessTier?>(),
-                It.IsAny<StorageTransferOptions>(),
-                It.IsAny<CancellationToken>()));
-
-            var changes = new Dictionary<string, object>
-            {
-                { "key1", new StoreItem() },
-                { "key2", new StoreItem { ETag = "*" } },
-                { "key3", new StoreItem { ETag = "ETag" } },
-                { "key4", new List<StoreItem>() { new StoreItem() } },
-                { "key5", new Dictionary<string, StoreItem>() { { "key1", new StoreItem() } } },
-                { "key6", "value1" },
-            };
-
-            await _storage.WriteAsync(changes);
-
-            _client.Verify(
-                e => e.UploadAsync(
-                    It.IsAny<Stream>(),
-                    It.IsAny<BlobHttpHeaders>(),
-                    It.IsAny<IDictionary<string, string>>(),
-                    It.IsAny<BlobRequestConditions>(),
-                    It.IsAny<IProgress<long>>(),
-                    It.IsAny<AccessTier?>(),
-                    It.IsAny<StorageTransferOptions>(),
-                    It.IsAny<CancellationToken>()),
-                Times.Exactly(6));
-            Assert.Equal(4, serializationBinder.AllowedTypes.Count);
-        }
-        
-        [Fact]
-        public async Task WriteAsyncWithEmptyAllowedTypesSerializationBinder()
-        {
-            var serializationBinder = new AllowedTypesSerializationBinder();
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = serializationBinder,
-            };
-
-            InitStorage(jsonSerializerSettings);
-
-            _client.Setup(e => e.UploadAsync(
-                It.IsAny<Stream>(),
-                It.IsAny<BlobHttpHeaders>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobRequestConditions>(),
-                It.IsAny<IProgress<long>>(),
-                It.IsAny<AccessTier?>(),
-                It.IsAny<StorageTransferOptions>(),
-                It.IsAny<CancellationToken>()));
-
-            var changes = new Dictionary<string, object>
-            {
-                { "key1", new StoreItem() },
-                { "key2", new StoreItem { ETag = "*" } },
-                { "key3", new StoreItem { ETag = "ETag" } },
-                { "key4", new List<StoreItem>() { new StoreItem() } },
-                { "key5", new Dictionary<string, StoreItem>() { { "key1", new StoreItem() } } },
-                { "key6", "value1" },
-            };
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
-
-            _client.Verify(
-                e => e.UploadAsync(
-                    It.IsAny<Stream>(),
-                    It.IsAny<BlobHttpHeaders>(),
-                    It.IsAny<IDictionary<string, string>>(),
-                    It.IsAny<BlobRequestConditions>(),
-                    It.IsAny<IProgress<long>>(),
-                    It.IsAny<AccessTier?>(),
-                    It.IsAny<StorageTransferOptions>(),
-                    It.IsAny<CancellationToken>()),
-                Times.Exactly(0));
-            Assert.Empty(serializationBinder.AllowedTypes);
-        }
-        */
-
         [Fact]
         public async Task WriteAsyncHttpBadRequestFailure()
         {
@@ -239,6 +135,35 @@ namespace Microsoft.Agents.Storage.Tests
             var changes = new Dictionary<string, object> { { "key", new StoreItem() } };
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
+        }
+
+        [Fact]
+        public async Task WriteAsyncHttpPreconditionFailure()
+        {
+            InitStorage();
+
+            _client.Setup(e => e.UploadAsync(
+                    It.IsAny<Stream>(),
+                    It.IsAny<BlobHttpHeaders>(),
+                    It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<BlobRequestConditions>(),
+                    It.IsAny<IProgress<long>>(),
+                    It.IsAny<AccessTier?>(),
+                    It.IsAny<StorageTransferOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.PreconditionFailed, "PreconditionFailed error"));
+
+            var changes = new Dictionary<string, object> { { "key", new StoreItem() } };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldThrowOnNullStoreItemChanges()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, CancellationToken.None));
         }
 
         [Fact]
@@ -290,81 +215,6 @@ namespace Microsoft.Agents.Storage.Tests
             Assert.IsAssignableFrom<StoreItem>(items["key"]);
             _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
-        
-        /*
-        [Fact]
-        public async Task ReadAsyncWithAllowedTypesSerializationBinder()
-        {            
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = new AllowedTypesSerializationBinder(
-                    new List<Type>
-                    {
-                        typeof(IStoreItem),
-                    }),
-            };
-
-            InitStorage(jsonSerializerSettings);
-
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var data = JsonConvert.SerializeObject(storeItem, jsonSerializerSettings);
-            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes(data));
-            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
-            var response = new Mock<Response<BlobDownloadInfo>>();
-
-            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
-            
-            var blobProperties = BlobsModelFactory.BlobProperties(eTag: new ETag("ETag updated"));
-            var properties = new Mock<Response<BlobProperties>>();
-            properties.SetupGet(e => e.Value).Returns(blobProperties);
-            _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(properties.Object);
-            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(response.Object);
-
-            var items = await _storage.ReadAsync(new string[] { "key" });
-
-            Assert.Single(items);
-            Assert.Equal("ETag updated", JObject.FromObject(items).GetValue("key")?.Value<string>("ETag"));
-            _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
-        
-        [Fact]
-        public async Task ReadAsyncWithEmptyAllowedTypesSerializationBinder()
-        {            
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = new AllowedTypesSerializationBinder(),
-            };
-
-            InitStorage(jsonSerializerSettings);
-
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var data = JsonConvert.SerializeObject(storeItem, jsonSerializerSettings);
-            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes(data));
-            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
-            var response = new Mock<Response<BlobDownloadInfo>>();
-
-            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
-            
-            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(response.Object);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.ReadAsync(new string[] { "key" }));
-
-            _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
-        */
 
         [Fact]
         public async Task ReadAsyncHttpPreconditionFailure()
@@ -413,6 +263,34 @@ namespace Microsoft.Agents.Storage.Tests
 
             Assert.Empty(items);
             _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ReadAsync_ShouldReturnWrittenStoreItem()
+        {
+            InitStorage();
+
+            var key = "key1";
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { key, new StoreItem() }
+            };
+
+            await _storage.WriteAsync(changes, CancellationToken.None);
+
+            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes("{\"ETag\":\"*\", \"$type\": \"Microsoft.Agents.Storage.Tests.StoreItem\", \"$typeAssembly\": \"Microsoft.Agents.Storage.Tests\"}"));
+            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
+            var response = new Mock<Response<BlobDownloadInfo>>();
+
+            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
+            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
+
+            var readStoreItems = new Dictionary<string, StoreItem>(await _storage.ReadAsync<StoreItem>([key], CancellationToken.None));
+
+            Assert.Single(readStoreItems);
+            Assert.IsAssignableFrom<StoreItem>(readStoreItems[key]);
+            _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage.Transcript;
-using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
+using Activity = Microsoft.Agents.Core.Models.Activity;
 
 namespace Microsoft.Agents.Storage.Tests
 {
@@ -41,7 +43,7 @@ namespace Microsoft.Agents.Storage.Tests
             var results = await Store.GetTranscriptActivitiesAsync("test", conversationId);
             Assert.Single(results.Items);
 
-            Assert.Equal(JsonConvert.SerializeObject(activity), JsonConvert.SerializeObject(results.Items[0]));
+            Assert.Equal(ProtocolJsonSerializer.ToJson(activity), ProtocolJsonSerializer.ToJson(results.Items[0]));
         }
 
         public async Task LogActivityWithInvalidIds()
@@ -67,7 +69,7 @@ namespace Microsoft.Agents.Storage.Tests
             var results = await Store.GetTranscriptActivitiesAsync(channelId, emulatorConversationId);
             Assert.Single(results.Items);
 
-            Assert.Equal(JsonConvert.SerializeObject(activity), JsonConvert.SerializeObject(results.Items[0]));
+            Assert.Equal(ProtocolJsonSerializer.ToJson(activity), ProtocolJsonSerializer.ToJson(results.Items[0]));
         }
 
         public async Task LogMultipleActivities()
@@ -130,7 +132,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             pagedResult = await Store.GetTranscriptActivitiesAsync("test", conversationId);
             Assert.Null(pagedResult.ContinuationToken);
-            Assert.Equal(activities.Count, pagedResult.Items.Count);
+            Assert.Equal(activities.Count, pagedResult.Items.Count());
 
             int indexActivity = 0;
             foreach (var result in pagedResult.Items.OrderBy(result => result.Timestamp))
@@ -139,13 +141,38 @@ namespace Microsoft.Agents.Storage.Tests
             }
 
             pagedResult = await Store.GetTranscriptActivitiesAsync("test", conversationId, startDate: start + TimeSpan.FromMinutes(5));
-            Assert.Equal(activities.Count / 2, pagedResult.Items.Count);
+            Assert.Equal(activities.Count / 2, pagedResult.Items.Count());
 
             indexActivity = 5;
             foreach (var result in pagedResult.Items.OrderBy(result => result.Timestamp))
             {
                 Assert.Equal(ProtocolJsonSerializer.ToJson(activities[indexActivity++]), ProtocolJsonSerializer.ToJson(result));
             }
+        }
+
+        public async Task LogActivitiesShouldCatchException()
+        {
+            string expectedError = "Try 3 - Failed to log activity because: System.InvalidOperationException";
+            string conversationId = "LogActivitiesShouldCatchException";
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "test",
+                From = new ChannelAccount { Id = "User-1" },
+                Conversation = new ConversationAccount(id: conversationId),
+                ChannelData = new MemoryStream() // unsupported type to cause serialization to fail
+            };
+
+            var listener = new TestTraceListener();
+            Trace.Listeners.Add(listener);            
+
+            await Store.LogActivityAsync(activity);
+
+            string traceOutput = listener.GetMessages();
+            Assert.Contains(expectedError, traceOutput);
+
+            Trace.Listeners.Remove(listener);
         }
 
         public async Task DeleteTranscript()
@@ -171,8 +198,8 @@ namespace Microsoft.Agents.Storage.Tests
             var pagedResult = await Store.GetTranscriptActivitiesAsync("test", conversationId);
             var pagedResult2 = await Store.GetTranscriptActivitiesAsync("test", conversationId2);
 
-            Assert.Equal(activities.Count, pagedResult.Items.Count);
-            Assert.Equal(activities.Count, pagedResult2.Items.Count);
+            Assert.Equal(activities.Count, pagedResult.Items.Count());
+            Assert.Equal(activities.Count, pagedResult2.Items.Count());
 
             await Store.DeleteTranscriptAsync("test", conversationId);
 
@@ -180,7 +207,7 @@ namespace Microsoft.Agents.Storage.Tests
             pagedResult2 = await Store.GetTranscriptActivitiesAsync("test", conversationId2);
 
             Assert.Empty(pagedResult.Items);
-            Assert.Equal(activities.Count, pagedResult2.Items.Count);
+            Assert.Equal(activities.Count, pagedResult2.Items.Count());
         }
 
         public async Task GetTranscriptActivities()

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.Models
     public class Place : Entity
     {
         /// <summary> Initializes a new instance of Place. </summary>
-        public Place() : base("Place")
+        public Place() : base(EntityTypes.Place)
         {
         }
 
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="geo"> Geo coordinates of the place (may be complex object of type `GeoCoordinates` or `GeoShape`). </param>
         /// <param name="hasMap"> Map to the place (may be `string` (URL) or complex object of type `Map`). </param>
         /// <param name="name"> The name of the thing. </param>
-        public Place(object address = default, object geo = default, object hasMap = default, string type = "Place", string name = default)
+        public Place(object address = default, object geo = default, object hasMap = default, string type = EntityTypes.Place, string name = default)
         {
             Address = address;
             Geo = geo;

@@ -18,12 +18,11 @@ namespace BotConversationSsoQuickstart.Bots
     // each with dependency on distinct IBot types, this way ASP Dependency Injection can glue everything together without ambiguity.
     // The ConversationState is used by the Dialog system. The UserState isn't, however, it might have been used in a Dialog implementation,
     // and the requirement is that all BotState objects are saved at the end of a turn.
-    public class DialogBot<T>(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) : TeamsActivityHandler where T : Dialog
+    public class DialogBot<T>(ConversationState conversationState, T dialog, ILogger<DialogBot<T>> logger) : TeamsActivityHandler where T : Dialog
     {
         protected readonly BotState _conversationState = conversationState;
         protected readonly Dialog _dialog = dialog;
         protected readonly ILogger _logger = logger;
-        protected readonly BotState _userState = userState;
 
         /// <summary>
         /// Handle when a message is addressed to the bot.
@@ -47,7 +46,6 @@ namespace BotConversationSsoQuickstart.Bots
         {
             // Save any state changes that might have occurred during the turn.
             await _conversationState.SaveChangesAsync(turnContext, false, cancellationToken);
-            await _userState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
     }
 }

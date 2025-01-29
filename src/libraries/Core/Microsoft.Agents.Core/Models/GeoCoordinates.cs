@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     {
         /// <summary> Initializes a new instance of GeoCoordinates. </summary>
         public GeoCoordinates()
-            :this(type:  "GeoCoordinates")
+            :this(type: EntityTypes.GeoCoordinates)
         {
         }
 

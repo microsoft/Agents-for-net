@@ -3,12 +3,11 @@
 // See https://aka.ms/new-console-template for more information
 using System.ClientModel;
 using Microsoft.Agents.CopilotStudio.Client;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.AI;
 using Azure.AI.OpenAI;
 using EvalClient;
+
+#nullable disable
 
 // Setup the Direct To Engine client example. 
 

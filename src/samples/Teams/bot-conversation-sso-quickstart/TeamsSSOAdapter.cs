@@ -6,11 +6,9 @@ using System;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.BotBuilder.Teams;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Storage;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace BotConversationSsoQuickstart
 {
@@ -19,20 +17,14 @@ namespace BotConversationSsoQuickstart
         public TeamsSSOAdapter(
             IChannelServiceClientFactory channelServiceClientFactory, 
             IActivityTaskQueue activityTaskQueue,
-            IConfiguration configuration,
             ILogger<IBotHttpAdapter> logger,
-            IStorage storage,
-            ConversationState conversationState)
-            : base(channelServiceClientFactory, activityTaskQueue, logger)
+            ConversationState conversationState,
+            IMiddleware[] middlewares = null)
+            : base(channelServiceClientFactory, activityTaskQueue, logger, middlewares: middlewares)
         {
-            base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
-
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.
-                // NOTE: In production environment, you should consider logging this to
-                // Azure Application Insights. Visit https://aka.ms/bottelemetry to see how
-                // to add telemetry capture to your bot.
                 logger.LogError(exception, $"[OnTurnError] unhandled error : {exception.Message}");
 
                 // Uncomment below commented line for local debugging..

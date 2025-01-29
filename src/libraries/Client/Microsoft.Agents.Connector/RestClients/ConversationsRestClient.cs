@@ -536,7 +536,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.Method = HttpMethod.Get;
 
             request.RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
-                .AppendQuery("pageSize", pageSize.Value.ToString())
+                .AppendQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
                 .AppendQuery("continuationToken", continuationToken);
 
             request.Headers.Add("Accept", "application/json");

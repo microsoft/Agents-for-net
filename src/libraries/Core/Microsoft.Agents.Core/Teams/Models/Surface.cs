@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Teams.Models
 {
     /// <summary>
@@ -24,6 +26,7 @@ namespace Microsoft.Agents.Core.Teams.Models
         /// <value>
         /// The value indicating where the notification will be rendered in the meeting UX.
         /// </value>
+        [JsonPropertyName("surface")]
         public SurfaceType Type { get; set; }
     }
 }

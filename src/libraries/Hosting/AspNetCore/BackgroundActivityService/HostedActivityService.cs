@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     public class HostedActivityService : BackgroundService
     {
-        private readonly ILogger<HostedTaskService> _logger;
+        private readonly ILogger<HostedActivityService> _logger;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new ConcurrentDictionary<ActivityWithClaims, Task>();
         private IActivityTaskQueue _activityQueue;
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        public HostedActivityService(IConfiguration config, IBot bot, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedTaskService> logger)
+        public HostedActivityService(IConfiguration config, IBot bot, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(bot);
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             _activityQueue = activityTaskQueue;
             _bot = bot;
             _adapter = adapter;
-            _logger = logger ?? NullLogger<HostedTaskService>.Instance;
+            _logger = logger ?? NullLogger<HostedActivityService>.Instance;
         }
 
         /// <summary>

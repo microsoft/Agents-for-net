@@ -244,6 +244,8 @@ namespace Microsoft.Agents.Storage.Blobs
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
+            ArgumentNullException.ThrowIfNull(changes);
+
             Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
             foreach (var change in changes)
             {

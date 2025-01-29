@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
@@ -40,7 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
             _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds");
             _taskQueue = taskQueue;
-            _logger = logger;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
         }
 
         /// <summary>

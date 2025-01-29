@@ -13,21 +13,25 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             var entity = base.Read(ref reader, typeToConvert, options);
 
-            if (string.Equals("mention", entity.Type, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(EntityTypes.Mention, entity.Type, StringComparison.OrdinalIgnoreCase))
             {
                 return JsonSerializer.Deserialize<Mention>(JsonSerializer.Serialize(entity, options), options);
             }
-            else if (string.Equals("place", entity.Type, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(EntityTypes.Place, entity.Type, StringComparison.OrdinalIgnoreCase))
             {
                 return JsonSerializer.Deserialize<Place>(JsonSerializer.Serialize(entity, options), options);
             }
-            else if (string.Equals("thing", entity.Type, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(EntityTypes.Thing, entity.Type, StringComparison.OrdinalIgnoreCase))
             {
                 return JsonSerializer.Deserialize<Thing>(JsonSerializer.Serialize(entity, options), options);
             }
-            else if (string.Equals("getCoordinates", entity.Type, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(EntityTypes.GeoCoordinates, entity.Type, StringComparison.OrdinalIgnoreCase))
             {
                 return JsonSerializer.Deserialize<GeoCoordinates>(JsonSerializer.Serialize(entity, options), options);
+            }
+            else if (string.Equals(EntityTypes.StreamInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
+            {
+                return JsonSerializer.Deserialize<StreamInfo>(JsonSerializer.Serialize(entity, options), options);
             }
 
             return entity;

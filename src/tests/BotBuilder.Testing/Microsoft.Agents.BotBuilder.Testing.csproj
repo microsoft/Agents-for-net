@@ -8,10 +8,6 @@
   <Import Project="..\..\Build.Common.core.props" />
 
   <PropertyGroup>
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-
-  <PropertyGroup>
     <PackageId>Microsoft.Agents.BotBuilder.Testing</PackageId>
     <Description>Library for building bot tests using Microsoft Bot Framework Connector</Description>
     <Summary>Library for building bot tests using Microsoft Bot Framework Connector</Summary>

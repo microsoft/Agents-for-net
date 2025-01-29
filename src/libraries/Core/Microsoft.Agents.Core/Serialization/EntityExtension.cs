@@ -4,6 +4,7 @@
 using System.Text.RegularExpressions;
 using System.Linq;
 using Microsoft.Agents.Core.Models;
+using System;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -66,6 +67,21 @@ namespace Microsoft.Agents.Core.Serialization
             }
 
             return activity.Text;
+        }
+
+        public static bool IsStreamingMessage(this IActivity activity)
+        {
+            return activity.Type == ActivityTypes.Typing && activity.GetStreamingEntity() != null;
+        }
+
+        public static StreamInfo GetStreamingEntity(this IActivity activity)
+        {
+            if (activity.Entities == null ||  activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
         }
     }
 }

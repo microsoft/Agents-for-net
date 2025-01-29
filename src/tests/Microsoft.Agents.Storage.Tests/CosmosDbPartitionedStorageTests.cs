@@ -12,6 +12,9 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Agents.Storage.CosmosDb;
 using Moq;
 using Xunit;
+using static Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.BotBuilder.Dialogs;
 
 namespace Microsoft.Agents.Storage.Tests
 {
@@ -110,92 +113,18 @@ namespace Microsoft.Agents.Storage.Tests
             {
                 RealId = "RealId",
                 ETag = "ETag1",
-                Document = (JsonObject)JsonObject.Parse("{ \"ETag\":\"ETag2\" }")
+                Document = JsonObject.Parse("{ \"ETag\":\"ETag2\" }").AsObject()
             };
             var itemResponse = new DocumentStoreItemResponseMock(resource);
 
             _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(itemResponse);
 
-            var items = await _storage.ReadAsync(new string[] { "key" });
+            var items = await _storage.ReadAsync(["key"]);
 
             Assert.Single(items);
             _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
-
-        /*
-        [Fact]
-        public async Task ReadAsyncWithAllowedTypesSerializationBinder()
-        {
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = new AllowedTypesSerializationBinder(
-                    new List<Type>
-                    {
-                        typeof(IStoreItem),
-                    }),
-            };
-
-            InitStorage(jsonSerializerSettings: jsonSerializerSettings);
-            
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var document = JObject.FromObject(storeItem, JsonSerializer.Create(jsonSerializerSettings));
-            var resource = new CosmosDbPartitionedStorage.DocumentStoreItem
-            {
-                RealId = "RealId",
-                ETag = "ETag1",
-                Document = document
-            };
-            var itemResponse = new DocumentStoreItemResponseMock(resource);
-
-            _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(itemResponse);
-
-            var items = await _storage.ReadAsync(new string[] { "key" });
-
-            Assert.Single(items);
-            _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-        */
-
-        /*
-        [Fact]
-        public async Task ReadAsyncWithEmptyAllowedTypesSerializationBinder()
-        {
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = new AllowedTypesSerializationBinder(),
-            };
-            InitStorage(jsonSerializerSettings: jsonSerializerSettings);
-            
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var document = JObject.FromObject(storeItem, JsonSerializer.Create(jsonSerializerSettings));
-            var resource = new CosmosDbPartitionedStorage.DocumentStoreItem
-            {
-                RealId = "RealId",
-                ETag = "ETag1",
-                Document = document
-            };
-            var itemResponse = new DocumentStoreItemResponseMock(resource);
-
-            _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(itemResponse);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.ReadAsync(new string[] { "key" }));
-
-            _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-        */
 
         [Fact]
         public async Task ReadAsyncPartitionKey()
@@ -206,14 +135,14 @@ namespace Microsoft.Agents.Storage.Tests
             {
                 RealId = "RealId",
                 ETag = "ETag1",
-                Document = (JsonObject)JsonObject.Parse("{ \"ETag\":\"ETag2\" }")
+                Document = JsonObject.Parse("{ \"ETag\":\"ETag2\" }").AsObject()
             };
             var itemResponse = new DocumentStoreItemResponseMock(resource);
 
             _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(itemResponse);
 
-            var items = await _storage.ReadAsync(new string[] { "key" });
+            var items = await _storage.ReadAsync(["key"]);
 
             Assert.Single(items);
             _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -227,7 +156,7 @@ namespace Microsoft.Agents.Storage.Tests
             _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new CosmosException("NotFound", HttpStatusCode.NotFound, 0, "0", 0));
 
-            var items = await _storage.ReadAsync(new string[] { "key" });
+            var items = await _storage.ReadAsync(["key"]);
 
             Assert.Empty(items);
             _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -241,7 +170,7 @@ namespace Microsoft.Agents.Storage.Tests
             _container.Setup(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new CosmosException("InternalServerError", HttpStatusCode.InternalServerError, 0, "0", 0));
 
-            await Assert.ThrowsAsync<CosmosException>(() => _storage.ReadAsync(new string[] { "key" }));
+            await Assert.ThrowsAsync<CosmosException>(() => _storage.ReadAsync(["key"]));
             _container.Verify(e => e.ReadItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -250,7 +179,33 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage("/customKey");
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.ReadAsync(new string[] { "key" }));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.ReadAsync(["key"]));
+        }
+
+        [Fact]
+        public async Task ReadAsync_ShouldReturnStoreItem()
+        {
+            InitStorage();
+
+            var item = new StoreItem();
+            var document = JsonObject.Parse(JsonSerializer.Serialize(item)).AsObject();
+            document.AddTypeInfo(item);
+
+            var resource = new DocumentStoreItem
+            {
+                RealId = "RealId",
+                ETag = "ETag1",
+                Document = document
+            };
+            var itemResponse = new DocumentStoreItemResponseMock(resource);
+
+            _container.Setup(e => e.ReadItemAsync<DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(itemResponse);
+
+            var items = await _storage.ReadAsync<StoreItem>(["key"]);
+
+            Assert.Single(items);
+            _container.Verify(e => e.ReadItemAsync<DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -283,79 +238,6 @@ namespace Microsoft.Agents.Storage.Tests
 
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
-        
-        /*
-        [Fact]
-        public async Task WriteAsyncWithAllowedTypesSerializationBinder()
-        {            
-            var serializationBinder = new AllowedTypesSerializationBinder(
-                new List<Type>
-                {
-                    typeof(IStoreItem),
-                });
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = serializationBinder,
-            };
-
-            InitStorage(jsonSerializerSettings: jsonSerializerSettings);
-
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
-            
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var document = JObject.FromObject(storeItem, JsonSerializer.Create(jsonSerializerSettings));
-            var changes = new Dictionary<string, object>
-            {
-                { "key1", new CosmosDbPartitionedStorage.DocumentStoreItem() },
-                { "key2", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "*", Document = document } },
-                { "key3", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "ETag" } },
-            };
-
-            await _storage.WriteAsync(changes);
-
-            _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
-            Assert.Equal(3, serializationBinder.AllowedTypes.Count);
-        }
-        */
-        
-        /*
-        [Fact]
-        public async Task WriteAsyncWithEmptyAllowedTypesSerializationBinder()
-        {            
-            var serializationBinder = new AllowedTypesSerializationBinder();
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All, // CODEQL [cs/unsafe-type-name-handling] we use All so that we get typed roundtrip out of storage, but we don't use validation because we don't know what types are valid
-                MaxDepth = null,
-                SerializationBinder = serializationBinder,
-            };
-            InitStorage(jsonSerializerSettings: jsonSerializerSettings);
-
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
-            
-            var storeItem = new StoreItem
-            {
-                ETag = "*"
-            };
-            var document = JObject.FromObject(storeItem, JsonSerializer.Create(jsonSerializerSettings));
-            var changes = new Dictionary<string, object>
-            {
-                { "key1", new CosmosDbPartitionedStorage.DocumentStoreItem() },
-                { "key2", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "*", Document = document } },
-                { "key3", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "ETag" } },
-            };
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
-
-            _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(0));
-            Assert.Empty(serializationBinder.AllowedTypes);
-        }
-        */
 
         [Fact]
         public async Task WriteAsyncEmptyTagFailure()
@@ -384,41 +266,56 @@ namespace Microsoft.Agents.Storage.Tests
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        /*
+        [Fact]
+        public async Task WriteAsync_ShouldCallUpsertItemAsync()
+        {
+            InitStorage();
+
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
+
+            var changes = new Dictionary<string, DocumentStoreItem>
+            {
+                { "key1", new DocumentStoreItem() },
+                { "key2", new DocumentStoreItem { ETag = "*" } },
+                { "key3", new DocumentStoreItem { ETag = "ETag" } },
+            };
+
+            await _storage.WriteAsync(changes);
+
+            _container.Verify(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldThrowOnNullStoreItemChanges()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<DocumentStoreItem>(null, CancellationToken.None));
+        }
+
         [Fact]
         public async Task WriteAsyncWithNestedFailure()
         {
             InitStorage();
 
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new CosmosException("InternalServerError", HttpStatusCode.InternalServerError, 0, "0", 0));
-
             var nestedJson = GenerateNestedDict();
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(nestedJson));
-            _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync(nestedJson));
         }
-        */
 
-        /*
         [Fact]
         public async Task WriteAsyncWithNestedDialogFailure()
         {
             InitStorage();
 
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new CosmosException("InternalServerError", HttpStatusCode.InternalServerError, 0, "0", 0));
-
             var nestedJson = GenerateNestedDict();
 
             var dialogInstance = new DialogInstance { State = nestedJson };
-            var dialogState = new DialogState(new List<DialogInstance> { dialogInstance });
+            var dialogState = new DialogState([dialogInstance]);
             var changes = new Dictionary<string, object> { { "state", dialogState } };
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
-            _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync(changes));
         }
-        */
 
         [Fact]
         public async Task DeleteAsyncValidation()
@@ -436,7 +333,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             _container.Setup(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
 
-            await _storage.DeleteAsync(new string[] { "key" });
+            await _storage.DeleteAsync(["key"]);
 
             _container.Verify(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -449,7 +346,7 @@ namespace Microsoft.Agents.Storage.Tests
             _container.Setup(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new CosmosException("NotFound", HttpStatusCode.NotFound, 0, "0", 0));
 
-            await _storage.DeleteAsync(new string[] { "key" });
+            await _storage.DeleteAsync(["key"]);
 
             _container.Verify(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -462,7 +359,7 @@ namespace Microsoft.Agents.Storage.Tests
             _container.Setup(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new CosmosException("InternalServerError", HttpStatusCode.InternalServerError, 0, "0", 0));
 
-            await Assert.ThrowsAsync<CosmosException>(() => _storage.DeleteAsync(new string[] { "key" }));
+            await Assert.ThrowsAsync<CosmosException>(() => _storage.DeleteAsync(["key"]));
             _container.Verify(e => e.DeleteItemAsync<CosmosDbPartitionedStorage.DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -490,7 +387,7 @@ namespace Microsoft.Agents.Storage.Tests
             _storage = new CosmosDbPartitionedStorage(client.Object, options, jsonSerializerSettings);
         }
 
-        private Dictionary<string, object> GenerateNestedDict()
+        private static Dictionary<string, object> GenerateNestedDict()
         {
             var nested = new Dictionary<string, object>();
             var current = new Dictionary<string, object>();

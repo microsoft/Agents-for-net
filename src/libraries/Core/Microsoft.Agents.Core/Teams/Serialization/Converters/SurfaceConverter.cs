@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Teams.Models;
 using System;
 using System.Collections.Generic;
@@ -68,7 +69,8 @@ namespace Microsoft.Agents.Core.Teams.Serialization.Converters
 
         public override void Write(Utf8JsonWriter writer, Surface value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            var json = System.Text.Json.JsonSerializer.Serialize(value, value?.GetType(), options);
+            JsonDocument.Parse(json).WriteTo(writer);
         }
 
         private static Surface CreateMeetingStageSurfaceWithContentType(ContentType? contentType)
