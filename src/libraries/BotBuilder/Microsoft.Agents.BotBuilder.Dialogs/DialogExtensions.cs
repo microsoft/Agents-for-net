@@ -170,7 +170,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// </summary>
         private static bool SendEoCToParent(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims))
+            if (turnContext.TurnState.Get<IIdentity>(TurnStateKeys.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims))
             {
                 // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
@@ -194,7 +194,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 return false;
             }
 
-            return turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims);
+            return turnContext.TurnState.Get<IIdentity>(TurnStateKeys.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims);
         }
 
         // Recursively walk up the DC stack to find the active DC.

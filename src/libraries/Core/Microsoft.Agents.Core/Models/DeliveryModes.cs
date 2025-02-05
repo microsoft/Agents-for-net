@@ -27,5 +27,7 @@ namespace Microsoft.Agents.Core.Models
         /// The value for ephemeral delivery modes.
         /// </summary>
         public const string Ephemeral = "ephemeral";
+
+        public const string Stream = "stream";
     }
 }

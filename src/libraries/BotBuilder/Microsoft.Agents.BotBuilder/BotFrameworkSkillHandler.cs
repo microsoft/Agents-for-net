@@ -53,7 +53,7 @@ namespace Microsoft.Agents.BotBuilder
         // IChannelResponseHandler
         //
 
-        public async Task<ResourceResponse> OnSendActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse> OnSendActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             return await ProcessActivityAsync(claimsIdentity, conversationId, null, activity, cancellationToken).ConfigureAwait(false);
         }
@@ -63,12 +63,12 @@ namespace Microsoft.Agents.BotBuilder
         // IChannelApiHandler
         //
 
-        public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             return await ProcessActivityAsync(claimsIdentity, conversationId, null, activity, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default)
         {
             return await ProcessActivityAsync(claimsIdentity, conversationId, activityId, activity, cancellationToken).ConfigureAwait(false);
         }
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.BotBuilder
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default)
         {
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
 
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.BotBuilder
             throw new NotImplementedException();
         }
 
-        private static void ApplySkillActivityToTurnContext(ITurnContext turnContext, Activity activity)
+        private static void ApplySkillActivityToTurnContext(ITurnContext turnContext, IActivity activity)
         {
             // adapter.ContinueConversation() sends an event activity with ContinueConversation in the name.
             // this warms up the incoming middlewares but once that's done and we hit the custom callback,
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.BotBuilder
             return botConversationReference;
         }
 
-        private async Task<ResourceResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string replyToActivityId, Activity activity, CancellationToken cancellationToken)
+        private async Task<ResourceResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string replyToActivityId, IActivity activity, CancellationToken cancellationToken)
         {
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
 
@@ -259,7 +259,7 @@ namespace Microsoft.Agents.BotBuilder
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         }
 
-        private async Task SendToBotAsync(Activity activity, ITurnContext turnContext, CancellationToken ct)
+        private async Task SendToBotAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
         {
             ApplySkillActivityToTurnContext(turnContext, activity);
             await _bot.OnTurnAsync(turnContext, ct).ConfigureAwait(false);

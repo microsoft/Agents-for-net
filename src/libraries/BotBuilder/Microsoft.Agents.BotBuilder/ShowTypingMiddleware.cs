@@ -83,7 +83,7 @@ namespace Microsoft.Agents.BotBuilder
 
         private static bool IsSkillBot(ITurnContext turnContext)
         {
-            return turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity
+            return turnContext.TurnState.Get<IIdentity>(TurnStateKeys.BotIdentityKey) is ClaimsIdentity claimIdentity
                 && BotClaims.IsBotClaim(claimIdentity.Claims);
         }
 

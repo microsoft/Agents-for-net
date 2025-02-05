@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     [AttributeUsage(AttributeTargets.Class)]
-    internal class ChannelServiceExceptionFilterAttribute : Attribute, IExceptionFilter
+    internal class ChannelResponseExceptionFilterAttribute : Attribute, IExceptionFilter
     {
         public void OnException(ExceptionContext context)
         {

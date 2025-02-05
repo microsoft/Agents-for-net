@@ -68,16 +68,15 @@ If you type a message and hit enter, or the send arrow, your messages should be 
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
-              ],
-              "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+              ]
           }
       }
       ```
 
       1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
-      1. Set the **Audience** to the AppId of the bot identity.
+      1. Set the **TokenValidation:TenantId** to the Tenant Id where your application is registered.
+      1. Set the **TokenValidation:Audiences** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 

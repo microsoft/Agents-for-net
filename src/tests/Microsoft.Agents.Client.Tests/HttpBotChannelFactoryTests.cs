@@ -21,22 +21,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullHttpFactory()
         {
-            Assert.Throws<ArgumentNullException>(() => new HttpBotChannelFactory(null, _logger.Object));
-        }
-
-        [Fact]
-        public void CreateChannel_ShouldReturnBotChannel()
-        {
-            _clientFactory.Setup(e => e.CreateClient(It.IsAny<string>()))
-                .Returns(_httpClient.Object)
-                .Verifiable(Times.Once);
-
-            var channelFactory = new HttpBotChannelFactory(_clientFactory.Object, _logger.Object);
-
-            var channel = channelFactory.CreateChannel(_provider.Object);
-
-            Assert.NotNull(channel);
-            Mock.Verify(_clientFactory);
+            Assert.Throws<ArgumentNullException>(() => new HttpBotChannelFactory(null, null, _logger.Object));
         }
     }
 }

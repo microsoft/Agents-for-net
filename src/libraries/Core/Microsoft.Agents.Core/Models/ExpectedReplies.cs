@@ -25,5 +25,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> A list of Activities included in the response. </summary>
         public IList<IActivity> Activities { get; set; }
+
+        public object Body { get; set; }
     }
 }

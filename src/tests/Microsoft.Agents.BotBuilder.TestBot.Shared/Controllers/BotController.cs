@@ -5,7 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Controllers
 {

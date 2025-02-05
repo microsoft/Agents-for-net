@@ -5,7 +5,7 @@ using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;

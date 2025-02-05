@@ -12,7 +12,7 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.BotBuilderSamples.Tests.Controllers
 {

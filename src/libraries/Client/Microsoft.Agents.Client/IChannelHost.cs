@@ -1,30 +1,24 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 using System;
-using System.Collections.Generic;
 
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Represents a host the contains IChannels for Bot-to-bot.
+    /// Represents a host that contains contains IChannels for Bot-to-bot.
     /// </summary>
     public interface IChannelHost
     {
-        /// <summary>
-        /// The endpoint to use in Activity.ServiceUrl.
-        /// </summary>
-        Uri HostEndpoint { get; }
-
         string HostAppId { get; }
 
         /// <summary>
-        /// The bots the host knows about.
+        /// This is the default endpoint to use for the ServiceUrl in Activities sent to an Agent.
+        /// This is used when the Channel:ConnectionSettings does not contain the 'ServiceUrl' value.
         /// </summary>
-        IDictionary<string, IChannelInfo> Channels { get; }
+        Uri DefaultHostEndpoint { get; }
 
-        IChannel GetChannel(IChannelInfo channelInfo);
-
-        IChannel GetChannel(string name);
+        IChannel GetChannel(string alias);
     }
 }

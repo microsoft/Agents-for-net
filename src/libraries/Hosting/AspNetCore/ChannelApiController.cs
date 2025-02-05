@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Client;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -21,8 +21,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// </remarks>
     /// <param name="handler">A <see cref="IChannelResponseHandler"/> that will handle the incoming request.</param>
     // Note: this class is marked as abstract to prevent the ASP runtime from registering it as a controller.
-    [ChannelServiceExceptionFilterAttribute]
-    public class ChannelApiController(IChannelApiHandler handler) : Controller
+    [ChannelResponseExceptionFilter]
+    public class ChannelApiController(IChannelApiHandler handler) : ControllerBase
     {
         private readonly IChannelApiHandler _handler = handler;
 
@@ -227,9 +227,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return new JsonResult(result);
         }
 
-        protected async Task<Activity> GetActivityAsync()
+        private async Task<IActivity> GetActivityAsync()
         {
-            return await HttpHelper.ReadRequestAsync<Activity>(Request).ConfigureAwait(false);
+            //if (!User.Identity.IsAuthenticated)
+            //{
+            //    Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            //    return null;
+            //}
+
+            return await HttpHelper.ReadRequestAsync<IActivity>(Request).ConfigureAwait(false);
         }
     }
 }

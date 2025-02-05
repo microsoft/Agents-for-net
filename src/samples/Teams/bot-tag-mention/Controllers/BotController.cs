@@ -4,9 +4,9 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace TagMentionBot.Controllers
 {

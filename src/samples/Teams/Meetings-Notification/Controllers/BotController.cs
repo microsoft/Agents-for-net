@@ -2,12 +2,10 @@
 // Licensed under the MIT License.
 
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-//using Microsoft.Bot.Builder;
-//using Microsoft.Bot.Builder.Integration.AspNet.Core;
 
 
 namespace InMeetingNotificationsBot.Bots

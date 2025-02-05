@@ -9,6 +9,7 @@ using Xunit;
 using Microsoft.Agents.Core.Teams.Models;
 using System;
 using System.Globalization;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.BotBuilder.Tests.Teams
 {

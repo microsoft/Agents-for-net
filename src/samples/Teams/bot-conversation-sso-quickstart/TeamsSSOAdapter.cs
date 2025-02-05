@@ -5,10 +5,10 @@
 using System;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 
 namespace BotConversationSsoQuickstart
 {

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Hosting.AspNetCore.TaskService;
 using System.Threading;
 using System.Threading.Tasks;
 

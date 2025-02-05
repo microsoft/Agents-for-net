@@ -8,7 +8,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder
+namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// Handles requests received via the ChannelAPI endpoints in a ChannelApi Controller.
@@ -18,6 +18,9 @@ namespace Microsoft.Agents.BotBuilder
     /// in <see cref="RestConnectorClient"/>.  This is primarily used for bot-to-bot and
     /// and handling replies from another bot when DeliveryMode is `normal`, or the 
     /// other bot is using the other ChannelAPI operations.
+    /// </remarks>
+    /// <remarks>
+    /// This is used in a ChannelApiController which is supplied in Hosting.
     /// </remarks>
     public interface IChannelApiHandler
     {
@@ -44,7 +47,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>Activity to send.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnReplyToActivityAsync() API.
@@ -68,7 +71,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>Activity to send.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnUpdateActivityAsync() API.
@@ -86,7 +89,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>replacement Activity.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnDeleteActivityAsync() API.

@@ -16,7 +16,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
     {
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
-            var claimsIdentity = turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) as ClaimsIdentity;
+            var claimsIdentity = turnContext.TurnState.Get<IIdentity>(TurnStateKeys.BotIdentityKey) as ClaimsIdentity;
 
             var botAppIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim);
 

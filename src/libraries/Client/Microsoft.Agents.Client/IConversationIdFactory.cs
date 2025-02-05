@@ -3,6 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.Client
 {
@@ -11,6 +12,8 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public interface IConversationIdFactory
     {
+        Task<string> CreateConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken);
+
         /// <summary>
         /// Creates a conversation id for a bot conversation.
         /// </summary>
@@ -29,6 +32,16 @@ namespace Microsoft.Agents.Client
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The caller's <see cref="ConversationReference"/> for a conversationId, with originatingAudience. Null if not found.</returns>
         Task<BotConversationReference> GetBotConversationReferenceAsync(string botConversationId, CancellationToken cancellationToken);
+
+        Task<string> GetBotConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Returns the Bot ConversationId earlier created by CreateConversationIdAsync.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>An existing bot conversationId, or null if one doesn't exist.</returns>
+        Task<string> GetBotConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes a <see cref="ConversationReference"/>.

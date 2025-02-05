@@ -5,7 +5,7 @@ using Microsoft.Agents.Core.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder
+namespace Microsoft.Agents.Core.Interfaces
 {
     /// <summary>
     /// Represents a bot that can operate on incoming activities.

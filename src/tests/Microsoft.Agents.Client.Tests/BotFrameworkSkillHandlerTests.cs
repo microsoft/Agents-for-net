@@ -244,7 +244,7 @@ namespace Microsoft.Agents.Client.Tests
             var skillHandler = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockConversationIdFactory.Object);
 
             // Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await skillHandler.OnSendActivityAsync(mockObjects.CreateTestClaims(), Guid.NewGuid().ToString(), new Activity()));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await skillHandler.OnSendToConversationAsync(mockObjects.CreateTestClaims(), Guid.NewGuid().ToString(), new Activity()));
             Assert.Equal(new KeyNotFoundException().Message, exception.Message);
         }
 
@@ -308,11 +308,18 @@ namespace Microsoft.Agents.Client.Tests
                     ServiceUrl = TestBotEndpoint
                 });
 
+                var configuration = new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        {"Settings:Endpoint", TestSkillEndpoint},
+                        {"Settings:ClientId", TestSkillId}
+                    })
+                    .Build();
+
                 var skill = new BotFrameworkSkill
                 {
-                    AppId = TestSkillId,
-                    Id = "skill",
-                    Endpoint = new Uri(TestSkillEndpoint)
+                    Alias = "skill",
+                    ConnectionSettings = configuration.GetValue<IDictionary<string, string>>("Settings")
                 };
 
                 var options = new ConversationIdFactoryOptions
@@ -320,7 +327,7 @@ namespace Microsoft.Agents.Client.Tests
                     FromBotOAuthScope = TestBotId,
                     FromBotId = TestBotId,
                     Activity = activity,
-                    Bot = skill
+                    ToBotName = "skill"
                 };
 
                 return await ConversationIdFactory.CreateConversationIdAsync(options, CancellationToken.None);
@@ -414,10 +421,11 @@ namespace Microsoft.Agents.Client.Tests
 
                 var httpClient = new HttpClient(new MockClientHandler(sendRequest));
 
+
                 var httpFactory = new Mock<IHttpClientFactory>();
                 httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
                     .Returns(httpClient);
-                
+
                 var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), httpFactory.Object, () => Task.FromResult<string>("test"));
 
                 return client;
@@ -441,13 +449,10 @@ namespace Microsoft.Agents.Client.Tests
 
         private class BotFrameworkSkill : IChannelInfo
         {
-            public string Id { get; set; }
-            public string AppId { get; set; }
-            public string AuthorityEndpoint { get; set; }
-            public Uri Endpoint { get; set; }
-            public string ResourceUrl { get; set; }
-            public string TokenProvider { get; set; }
+            public string Alias { get; set; }
+            public string DisplayName { get; set; }
             public string ChannelFactory {  get; set; }
+            public IDictionary<string, string> ConnectionSettings { get; set; }
         }
 
         private class TestSkillConversationIdFactory : IConversationIdFactory
@@ -461,7 +466,7 @@ namespace Microsoft.Agents.Client.Tests
                     ConversationReference = options.Activity.GetConversationReference(),
                     OAuthScope = options.FromBotOAuthScope
                 };
-                var key = $"{options.FromBotId}-{options.Bot.AppId}-{BotConversationReference.ConversationReference.Conversation.Id}-{BotConversationReference.ConversationReference.ChannelId}-skillconvo";
+                var key = $"{options.FromBotId}-{options.ToBotName}-{BotConversationReference.ConversationReference.Conversation.Id}-{BotConversationReference.ConversationReference.ChannelId}-skillconvo";
                 _conversationRefs.GetOrAdd(key, ProtocolJsonSerializer.ToJson(BotConversationReference));
                 return Task.FromResult(key);
             }
@@ -472,10 +477,25 @@ namespace Microsoft.Agents.Client.Tests
                 return Task.FromResult(conversationReference);
             }
 
+            public Task<string> GetBotConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken)
+            {
+                return null;
+            }
+
             public Task DeleteConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
             {
                 _conversationRefs.TryRemove(skillConversationId, out _);
                 return Task.CompletedTask;
+            }
+
+            public Task<string> CreateConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<string> GetBotConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
             }
         }
     }

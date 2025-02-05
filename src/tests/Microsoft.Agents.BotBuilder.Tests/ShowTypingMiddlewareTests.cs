@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Security.Claims;
@@ -149,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _parentBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _skillBotId));
-                turnContext.TurnState.Add(BotIdentityKey, claimsIdentity);
+                turnContext.TurnState.Add(TurnStateKeys.BotIdentityKey, claimsIdentity);
 
                 return turnContext;
             }

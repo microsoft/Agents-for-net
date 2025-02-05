@@ -26,6 +26,8 @@ namespace Microsoft.Agents.Client
         /// </value>
         public string FromBotId { get; set; }
 
+        public string ToBotName { get; set; }
+
         /// <summary>
         /// Gets or sets the activity which will be sent to the skill.
         /// </summary>
@@ -33,13 +35,5 @@ namespace Microsoft.Agents.Client
         /// The activity which will be sent to the skill.
         /// </value>
         public IActivity Activity { get; set; }
-
-        /// <summary>
-        /// Gets or sets the skill to create the conversation Id for.
-        /// </summary>
-        /// <value>
-        /// The skill to create the conversation Id for.
-        /// </value>
-        public IChannelInfo Bot { get; set; }
     }
 }

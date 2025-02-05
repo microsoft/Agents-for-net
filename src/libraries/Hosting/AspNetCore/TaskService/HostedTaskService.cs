@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
+namespace Microsoft.Agents.Hosting.AspNetCore.TaskService
 {
     /// <summary>
     /// <see cref="BackgroundService"/> implementation used to process work items on background threads.

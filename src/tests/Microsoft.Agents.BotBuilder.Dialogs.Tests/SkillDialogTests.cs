@@ -11,14 +11,15 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Testing;
 using Moq;
 using Xunit;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Storage;
 using System.Text.Json;
-using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.State;
+using Microsoft.Agents.Storage;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -51,15 +52,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task BeginDialogCallsSkill(string deliveryMode)
         {
             IActivity activitySent = null;
-            string toBotIdSent = null;
-            Uri toUriSent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
-                toBotIdSent = toBotId;
-                toUriSent = toUri;
+                //toUriSent = toUri;
                 activitySent = activity;
             }
 
@@ -84,8 +82,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert results and data sent to the SkillClient for fist turn
             Assert.Equal(1, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
-            Assert.Equal(dialogOptions.Skill.AppId, toBotIdSent);
-            Assert.Equal(dialogOptions.Skill.Endpoint.ToString(), toUriSent.ToString());
             Assert.Equal(activityToSend.Text, activitySent.Text);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
 
@@ -108,15 +104,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ShouldHandleInvokeActivities()
         {
             IActivity activitySent = null;
-            string toBotIdSent = null;
-            Uri toUriSent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
-                toBotIdSent = toBotId;
-                toUriSent = toUri;
                 activitySent = activity;
             }
 
@@ -137,8 +129,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await client.SendActivityAsync<Activity>("irrelevant");
 
             // Assert results and data sent to the SkillClient for fist turn
-            Assert.Equal(dialogOptions.Skill.AppId, toBotIdSent);
-            Assert.Equal(dialogOptions.Skill.Endpoint.ToString(), toUriSent.ToString());
             Assert.Equal(activityToSend.Name, activitySent.Name);
             Assert.Equal(DeliveryModes.ExpectReplies, activitySent.DeliveryMode);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
@@ -163,7 +153,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             IActivity activitySent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
                 activitySent = activity;
@@ -218,7 +208,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .SetupSequence(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -256,7 +246,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -283,7 +273,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -312,7 +302,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -341,7 +331,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .SetupSequence(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -369,7 +359,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             IActivity activitySent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
                 activitySent = activity;
@@ -427,6 +417,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         /// <returns> A Skill Dialog Options object.</returns>
         private static SkillDialogOptions CreateSkillDialogOptions(ConversationState conversationState, Mock<IChannel> mockSkillClient, string connectionName = null)
         {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    {"Settings:Endpoint", "http://testskill.contoso.com/api/messages"},
+                    {"Settings:ClientId", Guid.NewGuid().ToString()}
+                })
+                .Build();
+
             var dialogOptions = new SkillDialogOptions
             {
                 BotId = Guid.NewGuid().ToString(),
@@ -436,8 +434,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 SkillClient = mockSkillClient.Object,
                 Skill = new TestBotInfo
                 {
-                    AppId = Guid.NewGuid().ToString(),
-                    Endpoint = new Uri("http://testskill.contoso.com/api/messages")
+                    Alias = "skill",
+                    ConnectionSettings = configuration.GetValue<IDictionary<string, string>>("Settings")
                 },
                 ConnectionName = connectionName
             };
@@ -446,15 +444,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
         private class TestBotInfo : IChannelInfo
         {
-            public string Id { get; set; }
-            public string AppId { get; set; }
-            public string ResourceUrl { get; set; }
-            public Uri Endpoint { get; set; }
-            public string TokenProvider { get; set; }
+            public string Alias { get; set; }
+            public string DisplayName { get; set; }
             public string ChannelFactory { get; set; }
+            public IDictionary<string, string> ConnectionSettings { get; set; }
         }
 
-        private static Mock<IChannel> CreateMockSkillClient(Action<string, string, Uri, Uri, string, IActivity, CancellationToken> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
+        private static Mock<IChannel> CreateMockSkillClient(Action<string, IActivity, CancellationToken, IActivity> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
         {
             var mockSkillClient = new Mock<IChannel>();
             var activityList = new ExpectedReplies(expectedReplies ?? new List<IActivity> { MessageFactory.Text("dummy activity") });
@@ -462,7 +458,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             if (captureAction != null)
             {
                 mockSkillClient
-                    .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                     .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                     {
                         Status = returnStatus,
@@ -473,7 +469,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             else
             {
                 mockSkillClient
-                    .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                     .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                     {
                         Status = returnStatus,
@@ -523,10 +519,25 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 return Task.FromResult(ConversationRefs[skillConversationId]);
             }
 
+            public Task<string> GetBotConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken)
+            {
+                return null;
+            }
+
             public Task DeleteConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
             {
                 ConversationRefs.TryRemove(skillConversationId, out _);
                 return Task.CompletedTask;
+            }
+
+            public Task<string> CreateConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<string> GetBotConversationIdAsync(ITurnContext turnContext, string hostAppId, string botAlias, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
             }
         }
     }

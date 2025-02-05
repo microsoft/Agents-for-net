@@ -1,6 +1,6 @@
 ﻿
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Hosting.AspNetCore.ActivityService;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Debugging
 {

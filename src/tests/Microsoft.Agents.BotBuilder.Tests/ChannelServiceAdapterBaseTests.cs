@@ -284,7 +284,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             //Assert
             var invokeResponse = context.TurnState.Keys;
-            Assert.Contains(ChannelAdapter.InvokeResponseKey, context.TurnState.Keys);
+            Assert.Contains(TurnStateKeys.InvokeResponseKey, context.TurnState.Keys);
         }
 
         [Fact]

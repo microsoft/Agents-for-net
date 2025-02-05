@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,35 +14,35 @@ namespace Microsoft.Agents.Client
     public class ConfigurationChannelHost : IChannelHost
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IConnections _connections;
 
-        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConnections connections, IConfiguration configuration, string defaultChannelName, string configSection = "ChannelHost")
+        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConfiguration configuration, string defaultChannelFactory, string configSection = "ChannelHost")
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(configSection);
+            ArgumentException.ThrowIfNullOrEmpty(configSection);
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
 
             var section = configuration?.GetSection($"{configSection}:Channels");
-            var bots = section?.Get<ChannelInfo[]>();
-            if (bots != null)
+            var channels = section?.Get<ChannelInfo[]>();
+            if (channels != null)
             {
-                foreach (var bot in bots)
+                foreach (var channel in channels)
                 {
-                    if (string.IsNullOrEmpty(bot.ChannelFactory))
+                    if (string.IsNullOrEmpty(channel.ChannelFactory))
                     {
-                        bot.ChannelFactory = defaultChannelName; // Default the channel name to a know name if its not populated in the incomming configuraiton
+                        channel.ChannelFactory = defaultChannelFactory;
                     }
-                    Channels.Add(bot.Id, bot);
+
+                    ValidateChannel(channel);
+                    Channels.Add(channel.Alias, channel);
                 }
             }
 
-            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:HostEndpoint");
+            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint");
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
-                HostEndpoint = new Uri(hostEndpoint);
+                DefaultHostEndpoint = new Uri(hostEndpoint);
             }
 
-            var hostAppId = configuration?.GetValue<string>($"{configSection}:HostAppId");
+            var hostAppId = configuration?.GetValue<string>($"{configSection}:HostClientId");
             if (!string.IsNullOrWhiteSpace(hostAppId))
             {
                 HostAppId = hostAppId;
@@ -51,57 +50,53 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc />
-        public Uri HostEndpoint { get; }
+        public Uri DefaultHostEndpoint { get; }
 
         /// <inheritdoc />
         public string HostAppId { get; }
 
-        /// <inheritdoc />
-        public IDictionary<string, IChannelInfo> Channels { get; } = new Dictionary<string, IChannelInfo>();
+        internal IDictionary<string, IChannelInfo> Channels { get; } = new Dictionary<string, IChannelInfo>();
 
-        public IChannel GetChannel(string name)
+        /// <inheritdoc/>
+        public IChannel GetChannel(string alias)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(alias);
 
-            if (!Channels.TryGetValue(name, out IChannelInfo channelInfo))
+            if (!Channels.TryGetValue(alias, out IChannelInfo channelInfo))
             {
-                throw new InvalidOperationException($"IChannelInfo not found for '{name}'");
+                throw new InvalidOperationException($"IChannelInfo not found for '{alias}'");
             }
 
             return GetChannel(channelInfo);
         }
 
-        public IChannel GetChannel(IChannelInfo channelInfo)
+        private IChannel GetChannel(IChannelInfo channelInfo)
         {
             ArgumentNullException.ThrowIfNull(channelInfo);
 
-            return GetClientFactory(channelInfo).CreateChannel(GetTokenProvider(channelInfo));
+            return GetClientFactory(channelInfo).CreateChannel(this, channelInfo);
         }
 
         private IChannelFactory GetClientFactory(IChannelInfo channel)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(channel.ChannelFactory);
+            ArgumentException.ThrowIfNullOrEmpty(channel.ChannelFactory);
 
             return _serviceProvider.GetKeyedService<IChannelFactory>(channel.ChannelFactory) 
-                ?? throw new InvalidOperationException($"IBotClientFactory not found for channel '{channel.Id}'");
-        }
-
-        private IAccessTokenProvider GetTokenProvider(IChannelInfo channel)
-        {
-            ArgumentNullException.ThrowIfNullOrEmpty(channel.TokenProvider);
-
-            return _connections.GetConnection(channel.TokenProvider) 
-                ?? throw new InvalidOperationException($"IAccessTokenProvider not found for channel '{channel.Id}'");
+                ?? throw new InvalidOperationException($"IChannelFactory not found for channel '{channel.Alias}'");
         }
 
         private class ChannelInfo : IChannelInfo
         {
-            public string Id { get; set; }
-            public string AppId { get; set; }
-            public string ResourceUrl { get; set; }
-            public Uri Endpoint { get; set; }
-            public string TokenProvider { get; set; }
+            public string Alias { get; set; }
+            public string DisplayName { get; set; }
             public string ChannelFactory { get; set; }
+            public IDictionary<string, string> ConnectionSettings { get; set; }
+        }
+
+        private static void ValidateChannel(IChannelInfo channel)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(channel.Alias);
+            ArgumentException.ThrowIfNullOrWhiteSpace(channel.ChannelFactory);
         }
     }
 }

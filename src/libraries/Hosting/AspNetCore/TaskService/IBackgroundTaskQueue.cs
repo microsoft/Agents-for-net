@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
+namespace Microsoft.Agents.Hosting.AspNetCore.TaskService
 {
     /// <summary>
     /// Interface for a class used to transfer a work item to the <see cref="HostedTaskService"/>.

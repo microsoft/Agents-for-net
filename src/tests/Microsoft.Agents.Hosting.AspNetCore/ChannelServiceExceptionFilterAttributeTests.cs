@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [MemberData(nameof(TestDataExceptions))]
         public void OnException_ShouldSetStatusCodeResult(Type exception, int status)
         {
-            var attribute = new ChannelServiceExceptionFilterAttribute();
+            var attribute = new ChannelResponseExceptionFilterAttribute();
             var httpContext = new DefaultHttpContext();
             var actionContext = new ActionContext
             {

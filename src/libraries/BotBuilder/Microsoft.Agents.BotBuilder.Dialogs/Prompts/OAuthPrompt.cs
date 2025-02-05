@@ -198,7 +198,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
                         var serviceUrl = dc.Context.Activity.ServiceUrl;
-                        var claimsIdentity = dc.Context.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey);
+                        var claimsIdentity = dc.Context.TurnState.Get<ClaimsIdentity>(TurnStateKeys.BotIdentityKey);
                         var audience = callerInfo.Scope;
                         var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, claimsIdentity, audience, cancellationToken).ConfigureAwait(false);
                         if (dc.Context.TurnState.Get<IConnectorClient>() != null)
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
+            if (turnContext.TurnState.Get<ClaimsIdentity>(TurnStateKeys.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
             {
                 return new CallerInfo
                 {

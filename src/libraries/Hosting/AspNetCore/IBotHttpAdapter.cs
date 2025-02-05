@@ -3,8 +3,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
