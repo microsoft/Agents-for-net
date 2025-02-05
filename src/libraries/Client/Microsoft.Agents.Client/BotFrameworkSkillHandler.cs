@@ -19,6 +19,9 @@ namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// This is the Bot Framework SDK implementation of a Skill handler.
+    /// 
+    /// This would be used in a ChannelApiController to handle DeliverMode = `normal` async replies, and
+    /// handle those as would a Root Bot in Bot Framework.
     /// </summary>
     public class BotFrameworkSkillHandler : IChannelApiHandler
     {

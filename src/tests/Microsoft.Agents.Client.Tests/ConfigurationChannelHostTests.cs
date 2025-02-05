@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Net;
 using Xunit;
 
@@ -43,12 +44,13 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(null, _config, _defaultChannelFactory));
         }
 
-        private IConfiguration DefaultHostConfig(string clientId = "id", string tokenProvider = "provider", string serviceUrl = "http://serviceUrl.com", string endpoint = "http://endpoint.com")
+        private IConfiguration DefaultHostConfig(string channelFactory = "factory", string clientId = "id", string tokenProvider = "provider", string serviceUrl = "http://serviceUrl.com", string endpoint = "http://endpoint.com")
         {
             var sections = new Dictionary<string, string>{
                 {"ChannelHost:HostEndpoint", "hostEndpoint"},
                 {"ChannelHost:HostAppId", "hostAppId"},
                 {"ChannelHost:Channels:0:Alias", "botId"},
+                {"ChannelHost:Channels:0:ChannelFactory", channelFactory},
                 {"ChannelHost:Channels:0:ConnectionSettings:ClientId", clientId },
                 {"ChannelHost:Channels:0:ConnectionSettings:TokenProvider", tokenProvider },
                 {"ChannelHost:Channels:0:ConnectionSettings:ServiceUrl", serviceUrl },
@@ -107,11 +109,11 @@ namespace Microsoft.Agents.Client.Tests
         }
 
         [Fact]
-        public void GetChannel_ShouldThrowOnNullChannelFactory()
+        public void GetChannel_NullChannelFactory_Defaults()
         {
-            var host = new ConfigurationChannelHost(_serviceProvider.Object, DefaultHostConfig(), _defaultChannelFactory);
+            var host = new ConfigurationChannelHost(_serviceProvider.Object, DefaultHostConfig(channelFactory: null), _defaultChannelFactory);
 
-            Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannelAlias));
+            Assert.Equal(_defaultChannelFactory, host.Channels[_defaultChannelAlias].ChannelFactory);
         }
 
         [Fact]
@@ -124,7 +126,6 @@ namespace Microsoft.Agents.Client.Tests
             var host = new ConfigurationChannelHost(_serviceProvider.Object, DefaultHostConfig(), _defaultChannelFactory);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannelAlias));
-            Mock.Verify(_channelInfo);
         }
 
         /*

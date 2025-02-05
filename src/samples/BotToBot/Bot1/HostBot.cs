@@ -39,16 +39,7 @@ namespace Bot1
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             // Get active conversationId being used for the other bot.  If null, a conversation hasn't been started.
-            var channelConversationId = await _conversationIdFactory.GetBotConversationIdAsync(turnContext, _channelHost.HostAppId, Bot2Alias, cancellationToken);
-
-            // If C2 sends "agent", start sending to Bot2.
-            if (channelConversationId == null && turnContext.Activity.Text.Contains("agent"))
-            {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Got it, connecting you to the agent..."), cancellationToken);
-
-                // Create a new conversationId for the Bot2.  This conversationId should be used for all subsequent messages until a result is returned.
-                channelConversationId = await _conversationIdFactory.CreateConversationIdAsync(turnContext, _channelHost.HostAppId, Bot2Alias, cancellationToken);
-            }
+            var channelConversationId = await GetOrCreateConversationId(turnContext, cancellationToken);
 
             if (channelConversationId == null)
             {
@@ -102,6 +93,23 @@ namespace Bot1
                 // This conversation is over.
                 await _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken);
             }
+        }
+
+        private async Task<string> GetOrCreateConversationId(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            // Get active conversationId being used for the other bot.  If null, a conversation hasn't been started.
+            var channelConversationId = await _conversationIdFactory.GetBotConversationIdAsync(turnContext, _channelHost.HostAppId, Bot2Alias, cancellationToken);
+
+            // If C2 sends "agent", start sending to Bot2.
+            if (channelConversationId == null && turnContext.Activity.Text.Contains("agent"))
+            {
+                await turnContext.SendActivityAsync(MessageFactory.Text("Got it, connecting you to the agent..."), cancellationToken);
+
+                // Create a new conversationId for the Bot2.  This conversationId should be used for all subsequent messages until a result is returned.
+                channelConversationId = await _conversationIdFactory.CreateConversationIdAsync(turnContext, _channelHost.HostAppId, Bot2Alias, cancellationToken);
+            }
+
+            return channelConversationId;
         }
     }
 }

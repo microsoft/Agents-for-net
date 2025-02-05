@@ -19,6 +19,9 @@ namespace Microsoft.Agents.Client
     /// and handling replies from another bot when DeliveryMode is `normal`, or the 
     /// other bot is using the other ChannelAPI operations.
     /// </remarks>
+    /// <remarks>
+    /// This is used in a ChannelApiController which is supplied in Hosting.
+    /// </remarks>
     public interface IChannelApiHandler
     {
         /// <summary>

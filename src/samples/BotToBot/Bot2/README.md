@@ -35,9 +35,9 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
       ```json
       "TokenValidation": {
         "Audiences": [
-          "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
         ],
-        ""TenantId": "00000000-0000-0000-0000-000000000000"
+        ""TenantId": "{{TenantId}}"
       },
 
       "Connections": {
@@ -47,7 +47,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+              "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
@@ -56,10 +56,9 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
       }
       ```
 
-      1. Set the **ClientId** to the AppId of the bot identity.
+      1. Replace all **{{ClientId}}** with the AppId of the bot identity.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TokenValidation:TenantId** to the Tenant Id where your application is registered.
-      1. Set the **TokenValidation:Audiences** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 

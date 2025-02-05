@@ -34,9 +34,9 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
       ```json
        "TokenValidation": {
          "Audiences": [
-           "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+           "{{ClientId}}" // this is the Client ID used for the Azure Bot
          ],
-         "TenantId": "00000000-0000-0000-0000-000000000000"
+         "TenantId": "{{TenantId}}"
        },
 
        "Connections": {
@@ -46,7 +46,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
            "Settings": {
              "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
              "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-             "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+             "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
              "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
              "Scopes": [
                "https://api.botframework.com/.default"
@@ -55,27 +55,23 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
        }
       ```
     
-1. Set the **ClientId** to the AppId of the bot identity.
+1. Replace all **{{ClientId}}** with the AppId of the bot identity.
+1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
 1. Set the **ClientSecret** to the Secret that was created for your identity.
-1. Set the **TokenValidation:TenantId** to the Tenant Id where your application is registered.
-1. Set the **TokenValidation:Audiences** to the AppId of the bot identity.
 
 1. Find the section labeled `ChannelHost`, it should appear similar to this:
 
    ```json
    "ChannelHost": {
-     "HostAppId": "00000000-0000-0000-0000-000000000000", // This is the Client ID used for the remote bot to call you back with.,
+     "HostClientId": "{{ClientId}}", // This is the Client ID used for the remote bot to call you back with.,
+     "DefaultHostEndpoint": "http://localhost:3978/api/channel/", // Default host serviceUrl.  Channel can override this via Channel:ConnectionSettings:ServiceUrl
      "Channels": [
        {
-         "Id": "EchoBot",
-         "ChannelFactory": "HttpBotChannelFactory", // The name of the keyed IChannelFactory registered in DI
-         "Settings": {
+         "Alias": "EchoBot",
+         "DisplayName": "EchoBot",
+         "ConnectionSettings": {
            "ClientId": "00000000-0000-0000-0000-000000000000", // This is the Client ID of the other agent.
-           "TokenProvider": "BotServiceConnection", // Name of the connection to use to get the token from the connections array.
            "Endpoint": "http://localhost:39783/api/messages",
-           "ServiceUrl": "http://localhost:3978/api/botresponse", // ServiceUrl for response (non-streamed responses)
-           "ResourceUrl": null, // This is the Resource URL when creating the token, defaults to "api://{clientId}}
-           "NamedClient": null // optional named HttpClient
          }
        }
      ]

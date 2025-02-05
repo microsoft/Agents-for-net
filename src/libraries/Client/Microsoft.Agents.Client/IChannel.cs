@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Client
         Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null);
 
         /// <summary>
-        /// Convenience method when a result is not expected.
+        /// Sends an Activity with DeliveryMode "normal" or "expectReplies". Convenience method when a result is not expected.
         /// </summary>
         /// <param name="channelConversationId"></param>
         /// <param name="activity"></param>
@@ -39,6 +39,7 @@ namespace Microsoft.Agents.Client
         /// Supports a multi-turn conversation with an optional result.
         /// </summary>
         /// <remarks>The result is either an InvokeResponse.Body or EndOfConversation Value.  In cases where no final result is expected, the return value can be ignored.</remarks>
+        /// <remarks>This uses DeliveryMode Stream, so a IChannelApiHandler is not required.</remarks>
         /// <typeparam name="T">The type of the expected return value.</typeparam>
         /// <param name="channelConversationId"></param>
         /// <param name="activity"></param>

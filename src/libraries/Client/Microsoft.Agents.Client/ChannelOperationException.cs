@@ -5,10 +5,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public class ChannelOperationException : Exception
+    public class ChannelOperationException(string message) : Exception(message)
     {
-        public ChannelOperationException(string message) : base(message)
-        {
-        }
     }
 }

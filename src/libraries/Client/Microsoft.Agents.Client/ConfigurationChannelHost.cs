@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc />
         public string HostAppId { get; }
 
-        private IDictionary<string, IChannelInfo> Channels { get; } = new Dictionary<string, IChannelInfo>();
+        internal IDictionary<string, IChannelInfo> Channels { get; } = new Dictionary<string, IChannelInfo>();
 
         /// <inheritdoc/>
         public IChannel GetChannel(string alias)
