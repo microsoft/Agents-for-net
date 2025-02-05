@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.Models
     public class Mention : Entity
     {
         /// <summary> Initializes a new instance of Mention. </summary>
-        public Mention() : base("mention")
+        public Mention() : base(EntityTypes.Mention)
         {
         }
 
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="type"> Type of this entity (RFC 3987 IRI). </param>
         /// <param name="mentioned"> Channel account information needed to route a message. </param>
         /// <param name="text"> Sub Text which represents the mention (can be null or empty). </param>
-        public Mention(ChannelAccount mentioned = default, string text = default, string type = default) : base(type ?? "mention")
+        public Mention(ChannelAccount mentioned = default, string text = default, string type = default) : base(type ?? EntityTypes.Mention)
         {
             Mentioned = mentioned;
             Text = text;

@@ -216,3 +216,13 @@ appsettings.Development.json
 appsettings.Production.json
 **/[Aa]ppManifest/*.zip
 .deployment
+
+# JetBrains Rider
+*.sln.iml
+.idea
+
+# Mac files
+.DS_Store
+
+# VS Code files
+.vscode

@@ -1,13 +1,13 @@
-﻿using Microsoft.Agents.Authentication.Msal;
-using Microsoft.Agents.Authentication.Msal.Model;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Net.Http;
 using Xunit.Abstractions;
 
-namespace Microsoft.CopilotStudio.Connector.Tests
+namespace Microsoft.Agents.Auth.Tests
 {
     internal class SetupServiceCollection
     {

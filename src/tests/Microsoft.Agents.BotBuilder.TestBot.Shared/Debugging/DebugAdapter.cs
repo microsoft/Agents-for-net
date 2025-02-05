@@ -6,7 +6,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Debugging
 {
     public class DebugAdapter : CloudAdapter
     {
-        public DebugAdapter(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue) : base(channelServiceClientFactory, activityTaskQueue, async: false)
+        public DebugAdapter(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue) : base(channelServiceClientFactory, activityTaskQueue, options: new AdapterOptions() {  Async = false })
         {
         }
     }

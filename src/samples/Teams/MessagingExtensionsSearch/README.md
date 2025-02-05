@@ -95,19 +95,27 @@ This sample illustrates how to create a [Search-based](https://docs.microsoft.co
 
 In Teams, the command bar is located at the top of the window. When you at mention the bot what you type is forwarded (as you type) to the bot for processing. By way of illustration, this sample uses the text it receives to query the NuGet package store.
 
-**Mention In Search CommandBar:**
-  ![8-mention-Search-CommandBar ](Images/8-mention-Search-CommandBar.png)
+**Install App:**
+  ![Install App ](Images/1.Install.png)
 
-**Search Result:**
-  ![9-mention-Search-Result ](Images/9-mention-Search-Result.png)
+**Select App:**
+  ![Select App ](Images/3.SelectSample.png)
 
-**Selected Item:**
-  ![10-mention-Search-SelectedItem ](Images/10-mention-Search-SelectedItem.png)
+**Search Query Results:**
+  ![Search Query Results ](Images/4.QueryResults.png)
+
+**Send Search Result:**
+  ![Send Search Result ](Images/5.SentSelectedPackage.png)
+
+**Search Query Result with different query:**
+  ![Search Query Results ](Images/6.SearchQueryResult-2.png)
 
 There is a secondary, drill down, event illustrated in this sample: clicking on the results from the initial query will result in the bot receiving another event.
-![5-search-Result-ME ](Images/5-search-Result-ME.png)
+  ![Search-Result-ME ](Images/4.QueryResults.png)
 
-![6-selected-Item-ME ](Images/6-selected-Item-ME.png)
+  ![Selected-Item-ME ](Images/5.SentSelectedPackage.png)
+
+> NOTE: Search-based Messaging Extensions: Work from the compose box or the "…" menu in the messaging extension area, not the search bar at the top of Teams.
 
 ## Further reading
 To learn more about building Bots and Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

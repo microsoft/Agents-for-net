@@ -14,8 +14,8 @@ using Microsoft.Extensions.Logging;
 namespace BotConversationSsoQuickstart.Bots
 {
     // This bot is derived (view DialogBot<T>) from the TeamsActivityHandler class currently included as part of this sample.
-    public class TeamsBot<T>(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) 
-        : DialogBot<T>(conversationState, userState, dialog, logger) where T : Dialog
+    public class TeamsBot<T>(ConversationState conversationState, T dialog, ILogger<DialogBot<T>> logger) 
+        : DialogBot<T>(conversationState, dialog, logger) where T : Dialog
     {
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {

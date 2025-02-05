@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using Xunit;
 
-namespace Microsoft.CopilotStudio.Connector.Tests
+namespace Microsoft.Agents.Auth.Tests
 {
     public class SkippableConnectionTestAttribute : FactAttribute
     {

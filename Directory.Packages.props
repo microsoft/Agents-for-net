@@ -16,13 +16,19 @@
     <Microsoft_AspNetCore_PkgVer>8.0.11</Microsoft_AspNetCore_PkgVer>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.SpaServices" Version="3.1.32" />
+    <PackageVersion Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.36" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.1.2" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
-    <PackageVersion Include="Azure.Identity" Version="1.12.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.13.2" />
     <PackageVersion Include="Azure.Core" Version="1.43.0" />
-    <PackageVersion Include="Microsoft.Identity.Client" Version="4.64.1" />
-    <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.65.0" />
+    <PackageVersion Include="Microsoft.Identity.Client" Version="4.67.2" />
+    <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.67.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Abstractions" Version="8.1.2" />
     <PackageVersion Include="Microsoft.IdentityModel.LoggingExtensions" Version="8.1.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Validators" Version="8.1.2" />
@@ -31,7 +37,7 @@
     <PackageVersion Include="Azure.Security.KeyVault.Certificates" Version="4.6.0" />
     <PackageVersion Include="Microsoft.Azure.AutoRest.CSharp" Version="3.0.0-beta.20231020.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.AzureAppServices" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(Microsoft_Extentions_PkgVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(Microsoft_Extentions_PkgVer)" />

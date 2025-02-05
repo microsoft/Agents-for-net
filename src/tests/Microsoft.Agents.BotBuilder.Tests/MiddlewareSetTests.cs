@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
 using System;
 using System.Threading;
@@ -454,6 +453,28 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
             Assert.True(caughtException);
+        }
+
+        [Fact]
+        public void GetEnumerator_ShouldReturnMiddlewareList()
+        {
+            var callMeMiddleware = new CallMeMiddlware(() => { });
+
+            var doNotCallNextMiddleware = new DoNotCallNextMiddleware(() => { });
+
+            var middlewareSet = new MiddlewareSet();
+            middlewareSet.Use(callMeMiddleware);
+            middlewareSet.Use(doNotCallNextMiddleware);
+
+            var enumerator = middlewareSet.GetEnumerator();
+
+            Assert.True(enumerator.MoveNext()); 
+            Assert.Equal(callMeMiddleware, enumerator.Current);
+
+            Assert.True(enumerator.MoveNext()); 
+            Assert.Equal(doNotCallNextMiddleware, enumerator.Current);
+
+            Assert.False(enumerator.MoveNext()); // No more middlewares
         }
 
         public class WasCalledMiddlware : IMiddleware

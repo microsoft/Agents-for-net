@@ -184,26 +184,16 @@ namespace Microsoft.Agents.BotBuilder
             {
                 var cardActionType = ActionTypes.Signin;
                 var signInResource = await GetTokenClient(turnContext).GetSignInResourceAsync(ConnectionName, turnContext.Activity, null, cancellationToken).ConfigureAwait(false);
-                var value = signInResource.SignInLink;
 
-                // use the SignInLink when 
-                //   in speech channel or
-                //   bot is a skill or
-                //   an extra OAuthAppCredentials is being passed in
-                /*
-                if (turnContext.Activity.IsFromStreamingConnection() 
-                    || (turnContext.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && ClaimsHelpers.IsBotClaim(botIdentity.Claims)))
-                {
-                    if (turnContext.Activity.ChannelId == Channels.Emulator)
-                    {
-                        cardActionType = ActionTypes.OpenUrl;
-                    }
-                }
-                */
+                string value;
                 if ((ShowSignInLink != null && ShowSignInLink == false) || 
                     (ShowSignInLink == null && !ChannelRequiresSignInLink(turnContext.Activity.ChannelId)))
                 {
                     value = null;
+                }
+                else
+                {
+                    value = signInResource.SignInLink;
                 }
 
                 prompt.Attachments.Add(new Attachment
@@ -213,8 +203,8 @@ namespace Microsoft.Agents.BotBuilder
                     {
                         Text = Text,
                         ConnectionName = ConnectionName,
-                        Buttons = new[]
-                        {
+                        Buttons =
+                        [
                             new CardAction
                             {
                                 Title = Title,
@@ -222,7 +212,7 @@ namespace Microsoft.Agents.BotBuilder
                                 Type = cardActionType,
                                 Value = value
                             },
-                        },
+                        ],
                         TokenExchangeResource = signInResource.TokenExchangeResource,
                         TokenPostResource = signInResource.TokenPostResource
                     },

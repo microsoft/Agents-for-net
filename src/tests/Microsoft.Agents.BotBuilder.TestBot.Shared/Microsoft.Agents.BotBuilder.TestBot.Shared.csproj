@@ -6,10 +6,6 @@
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
-  
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
 
   <ItemGroup>
     <Content Remove="Cards\welcomeCard.json" />

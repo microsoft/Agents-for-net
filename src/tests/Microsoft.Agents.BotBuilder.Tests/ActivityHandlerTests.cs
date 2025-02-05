@@ -655,8 +655,9 @@ namespace Microsoft.Agents.BotBuilder.Tests
             turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
             //turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
-            
+
             turnContextMock.Setup(tc => tc.TurnState).Returns(new TurnContextStateCollection());
+            turnContextMock.Object.TurnState.Add<IConnectorClient>(new Mock<IConnectorClient>().Object);
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
             turnContextMock.Setup(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()));
@@ -664,7 +665,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
             turnContextMock.Setup(tc => tc.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
             turnContextMock.Setup(tc => tc.SendActivitiesAsync(It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new[] { new ResourceResponse() }));
             turnContextMock.Setup(tc => tc.DeleteActivityAsync(It.IsAny<ConversationReference>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
+            turnContextMock.Setup(tc => tc.DeleteActivityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
             turnContextMock.Setup(tc => tc.UpdateActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
+            turnContextMock.Setup(tc => tc.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
+
+            var typedTurnContext = new TypedTurnContext<IInvokeActivity>(turnContextMock.Object);
 
             // Act
             var bot = new TestDelegatingTurnContextActivityHandler();
@@ -673,7 +678,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             // Assert
             turnContextMock.VerifyGet(tc => tc.Activity, Times.AtLeastOnce);
             turnContextMock.VerifyGet(tc => tc.Adapter, Times.Once);
-            turnContextMock.VerifyGet(tc => tc.TurnState, Times.Once);
+            turnContextMock.VerifyGet(tc => tc.TurnState, Times.Exactly(2));
             turnContextMock.VerifyGet(tc => tc.Responded, Times.Once);
             turnContextMock.Verify(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()), Times.Once);
             turnContextMock.Verify(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()), Times.Once);
@@ -681,7 +686,13 @@ namespace Microsoft.Agents.BotBuilder.Tests
             turnContextMock.Verify(tc => tc.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()), Times.Once);
             turnContextMock.Verify(tc => tc.SendActivitiesAsync(It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()), Times.Once);
             turnContextMock.Verify(tc => tc.DeleteActivityAsync(It.IsAny<ConversationReference>(), It.IsAny<CancellationToken>()), Times.Once);
+            turnContextMock.Verify(tc => tc.DeleteActivityAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
             turnContextMock.Verify(tc => tc.UpdateActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()), Times.Once);
+            turnContextMock.Verify(tc => tc.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+
+            //Validate entities inheritated and managed by TypedTurnContext
+            Assert.NotNull(typedTurnContext.Connector);
+            Assert.NotNull(typedTurnContext.Activity);
         }
 
         [Fact]
@@ -747,6 +758,124 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var activity = GetSearchActivity(new SearchInvokeValue { Kind = SearchInvokeTypes.Typeahead });
             await AssertErrorThroughInvokeAdapter(activity, "Missing queryText property for search");
+        }
+
+        [Fact]
+        public async Task OnTurnAsync_ShouldThrowOnNullContext()
+        {
+            // Arrange
+            var turnContext = new TurnContext(new NotImplementedAdapter(), new Activity());
+            var bot = new TestActivityHandler();
+
+            //Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () => await ((IBot)bot).OnTurnAsync(turnContext));;
+        }
+
+        [Fact]
+        public async Task OnTurnAsync_ShouldThrowOnActivityNullType()
+        {
+            // Arrange
+            var turnContext = new TurnContext(new NotImplementedAdapter(), new Activity());
+            var bot = new TestActivityHandler();
+
+            //Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () => await ((IBot)bot).OnTurnAsync(turnContext)); ;
+        }
+
+
+        [Fact]
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnEmptyValue()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action"
+            };
+
+            //Assert
+            await AssertErrorThroughInvokeAdapter(activity, "Missing value property");
+        }
+
+        [Fact]
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnSerialization()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action",
+                Value = ""
+            };
+
+            //Assert
+            await AssertErrorThroughInvokeAdapter(activity, "Value property is not properly formed");
+        }
+
+        [Fact]
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNullAction()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action",
+                Value = new AdaptiveCardInvokeValue { Action = null }
+            };
+
+            //Assert
+            await AssertErrorThroughInvokeAdapter(activity, "Missing action property");
+        }
+
+        [Fact]
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNotSupportedAction()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action",
+                Value = new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "" } }
+            };
+
+            var adapter = new TestInvokeAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            //Assert
+            var sent = adapter.Activity as Activity;
+            Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
+
+            Assert.IsType<InvokeResponse>(sent.Value);
+            var value = sent.Value as InvokeResponse;
+            Assert.Equal(400, value.Status);
+
+            Assert.IsType<AdaptiveCardInvokeResponse>(value.Body);
+            var body = value.Body as AdaptiveCardInvokeResponse;
+            Assert.Equal("application/vnd.microsoft.error", body.Type);
+            Assert.Equal(400, body.StatusCode);
+
+            Assert.IsType<Error>(body.Value);
+            var error = body.Value as Error;
+            Assert.Equal("NotSupported", error.Code);
+            Assert.Equal("The action '' is not supported.", error.Message);
+        }
+
+        [Fact]
+        public async Task GetSearchInvokeValue_ShouldThrowExceptionOnSerialization()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "application/search",
+                Value = ""
+            };
+
+            //Assert
+            await AssertErrorThroughInvokeAdapter(activity, "Value property is not valid for search");
         }
 
         private Activity GetSearchActivity(object value)
@@ -966,9 +1095,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 turnContext.OnSendActivities((t, a, n) => Task.FromResult(new ResourceResponse[] { new ResourceResponse() }));
                 turnContext.OnUpdateActivity((t, a, n) => Task.FromResult(new ResourceResponse()));
                 await turnContext.DeleteActivityAsync(activity.GetConversationReference());
+                await turnContext.DeleteActivityAsync(activity.Id);
                 await turnContext.SendActivityAsync(new Activity());
                 await turnContext.SendActivitiesAsync(new IActivity[] { new Activity() });
                 await turnContext.UpdateActivityAsync(new Activity());
+                await turnContext.TraceActivityAsync(activity.Name, activity.Value, activity.ValueType, activity.Label);
             }
         }
 

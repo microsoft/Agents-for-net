@@ -10,6 +10,7 @@ namespace Microsoft.Agents.Client
         public HttpBotChannelSettings(IChannelInfo channelInfo)
         {
             ArgumentNullException.ThrowIfNull(channelInfo);
+            ArgumentNullException.ThrowIfNull(channelInfo.ConnectionSettings);
 
             ClientId = channelInfo.ConnectionSettings[nameof(ClientId)];
             Endpoint = new(channelInfo.ConnectionSettings[nameof(Endpoint)]);

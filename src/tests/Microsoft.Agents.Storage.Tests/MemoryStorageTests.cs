@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -80,6 +81,44 @@ namespace Microsoft.Agents.Storage.Tests
             var items = await storage.ReadAsync(new[] { "change1" }, default);
 
             Assert.NotEmpty(items);
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldThrowOnNullStoreItemChanges()
+        {
+            var storage = new MemoryStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.WriteAsync<StoreItem>(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ReadAsync_ShouldReturnWrittenStoreItem()
+        {
+            var storeItem = new StoreItem
+            {
+                Id = 1,
+                Topic = "topic",
+                ETag = "test",
+            };
+
+            var key = "key1";
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { key, storeItem }
+            };
+
+            var storage = new MemoryStorage();
+
+            await storage.WriteAsync(changes, CancellationToken.None);
+
+            var readStoreItems = new Dictionary<string, StoreItem>(await storage.ReadAsync<StoreItem>([key], CancellationToken.None));
+
+            Assert.NotNull(readStoreItems);
+            Assert.Single(readStoreItems);
+            Assert.Equal(storeItem.Id, readStoreItems[key].Id);
+            Assert.Equal(storeItem.Topic, readStoreItems[key].Topic);
+            Assert.NotNull(readStoreItems[key].ETag);
         }
     }
 

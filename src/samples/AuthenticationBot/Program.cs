@@ -9,6 +9,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using AuthenticationBot;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.State;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +27,16 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 // Add basic bot functionality
 builder.AddBot<AuthBot>();
 
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
+{
+    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
+});
+
 // Add IStorage for turn state persistence
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+// Create the Conversation state.
+builder.Services.AddSingleton<ConversationState>();
 
 var app = builder.Build();
 

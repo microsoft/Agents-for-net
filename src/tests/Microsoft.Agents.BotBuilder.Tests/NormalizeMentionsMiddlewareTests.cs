@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Models;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Core.Models;
 using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Tests
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                     .AssertReply("OK")
                 .Send(CreateMentionActivity("at>Tomtest</at>"))
                     .AssertReply("OK")
-                .Send(CreateMentionActivity("<at>Tom</at><at>John</at>", CreateEntity("<at>Tom</at>", "user1"), CreateEntity("<at>John</at>", "user2")))
+                .Send(CreateMentionActivity("<at>Tom</at><at>John</at>", CreateEntity("<at>Tom</at>", "user1"), CreateEntity("<at>John</at>", "user2"), CreateEntity("", "user3")))
                     .AssertReply("OK")
                 .StartTestAsync();
         }

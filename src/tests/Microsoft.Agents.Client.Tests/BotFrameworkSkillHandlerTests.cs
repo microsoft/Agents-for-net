@@ -1,15 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Security.Claims;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Client.Tests.Logger;
@@ -20,6 +11,15 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -208,6 +208,44 @@ namespace Microsoft.Agents.Client.Tests
             Assert.NotNull(member);
             Assert.Equal(TestMember.Id, member.Id);
             Assert.Equal(TestMember.Name, member.Name);
+        }
+
+
+        [Fact]
+        public async Task OnGetMemberAsync()
+        {
+            // Arrange
+            var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
+            var activity = new Activity(ActivityTypes.Message) { Text = $"Get Member." };
+            var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
+
+            // Act
+            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var member = await sut.OnGetMemberAsync(mockObjects.CreateTestClaims(), TestMember.Id, conversationId);
+
+            // Assert
+            Assert.NotNull(member);
+            Assert.Equal(TestMember.Id, member.Id);
+            Assert.Equal(TestMember.Name, member.Name);
+        }
+
+        [Fact]
+        public async Task GetSkillConversationReferenceAsync_ShouldThrowKeyNotFoundException()
+        {
+            // Arrange
+            var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
+
+            var mockConversationIdFactory = new Mock<IConversationIdFactory>();
+
+            mockConversationIdFactory.Setup(c => c.GetBotConversationReferenceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult<BotConversationReference>(null));
+
+            // Act
+            var skillHandler = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockConversationIdFactory.Object);
+
+            // Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await skillHandler.OnSendToConversationAsync(mockObjects.CreateTestClaims(), Guid.NewGuid().ToString(), new Activity()));
+            Assert.Equal(new KeyNotFoundException().Message, exception.Message);
         }
 
         /// <summary>

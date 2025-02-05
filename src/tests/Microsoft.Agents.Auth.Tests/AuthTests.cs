@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Authentication.Msal;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -8,7 +11,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.CopilotStudio.Connector.Tests
+namespace Microsoft.Agents.Auth.Tests
 {
     public class AuthTests
     {

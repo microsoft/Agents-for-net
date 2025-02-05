@@ -6,9 +6,9 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.TaskService
 {
@@ -30,17 +30,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.TaskService
         /// <remarks>
         /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
         /// </remarks>
-        /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
         /// <param name="taskQueue"><see cref="ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
         /// <param name="logger"><see cref="ILogger"/> implementation, for logging including background thread exception information.</param>
-        public HostedTaskService(IConfiguration config, IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger)
+        /// <param name="options"></param>
+        public HostedTaskService(IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger, AdapterOptions options = null)
         {
-            ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(taskQueue);
 
-            _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds");
+            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _taskQueue = taskQueue;
-            _logger = logger;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
         }
 
         /// <summary>

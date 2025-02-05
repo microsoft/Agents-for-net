@@ -49,7 +49,7 @@ jobs:
         response=$(curl -v -X POST \
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
-          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}},"variables": {"ProjectBranch": {"value": "${{ github.head_ref || github.ref_name }}"' \
+          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}},"variables": {"ProjectBranch": {"value": "${{ github.head_ref || github.ref_name }}"}}}' \
           ${{ vars.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs?api-version=7.1)
         echo $BRANCH_NAME
         echo $response

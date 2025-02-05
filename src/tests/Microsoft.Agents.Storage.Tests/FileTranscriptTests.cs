@@ -51,6 +51,12 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task FileTranscript_LogActivitiesShouldCatchException()
+        {
+            await LogActivitiesShouldCatchException();
+        }
+
+        [Fact]
         public async Task FileTranscript_GetConversationActivities()
         {
             await GetTranscriptActivities();

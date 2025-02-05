@@ -1,9 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using Xunit.Abstractions;
 
-namespace Microsoft.CopilotStudio.Connector.Tests
+namespace Microsoft.Agents.Auth.Tests
 {
     public class TraceConsoleLoggingProvider : ILoggerProvider
     {

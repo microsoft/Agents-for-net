@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="queryText"> The query text of this search invoke action value. </param>
         /// <param name="queryOptions"> The query options for the query. </param>
         /// <param name="context"> The context information about the query. </param>
-        internal SearchInvokeValue(string kind, string queryText, object queryOptions, object context)
+        internal SearchInvokeValue(string kind, string queryText, SearchInvokeOptions queryOptions, object context)
         {
             Kind = kind;
             QueryText = queryText;
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> The query text of this search invoke action value. </summary>
         public string QueryText { get; set; }
         /// <summary> The query options for the query. </summary>
-        public object QueryOptions { get; set; }
+        public SearchInvokeOptions QueryOptions { get; set; }
         /// <summary> The context information about the query. </summary>
         public object Context { get; set; }
     }

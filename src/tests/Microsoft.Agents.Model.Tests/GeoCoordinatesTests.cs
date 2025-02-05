@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void GeoCoordinatesTypedDeserialize()
         {
-            var json = "{\"entities\": [{\"type\": \"getCoordinates\", \"name\": \"geoname\"}]}";
+            var json = "{\"entities\": [{\"type\": \"geoCoordinates\", \"name\": \"geoname\"}]}";
             var activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
 
             Assert.NotNull(activity.Entities);

@@ -4,6 +4,7 @@
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Moq;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -527,6 +528,93 @@ namespace Microsoft.Agents.BotBuilder.Tests
             });
 
             await Assert.ThrowsAsync<Exception>(() => context.SendActivityAsync(TestMessage.Message()));
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_ShouldCreateActivityWithParameters()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            Assert.False(context.Responded);
+            var textMessage = "test activity created with parameters";
+            await context.SendActivityAsync(textMessage, textMessage, InputHints.AcceptingInput);
+
+            Assert.True(context.Responded);
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_ShouldThrowExceptionOnEmptyActivitiesList()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+           
+            await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync([]));
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_ShouldSendActivitiesWithExpectRepliesMode()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity() { DeliveryMode = DeliveryModes.ExpectReplies });
+            var message = new Activity
+            {
+                Type = ActivityTypes.InvokeResponse,
+                Id = "expect replies message",
+                Text = "test",
+            };
+
+            await context.SendActivitiesAsync([message]);
+
+            Assert.True(context.Responded);
+            Assert.NotEmpty(context.BufferedReplyActivities);
+            Assert.Equal("expect replies message", context.BufferedReplyActivities[0].Id);
+        }
+
+        [Fact]
+        public async Task TraceActivityAsync_ShouldNotUpdateContextReponded()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, TestMessage.Message());
+
+            await context.TraceActivityAsync("Message with trace");
+
+            Assert.False(context.Responded);
+        }
+
+        [Fact]
+        public void TraceActivityAsync_ShouldNotUpdateContextResponseOnMultipleDispose()
+        {
+            // Arrange
+            var adapter = new SimpleAdapter();
+            var activity = TestMessage.Message();
+
+            // Create a custom disposable TurnContextStateCollection
+            var turnState = new CustomDisposableTurnContextStateCollection();
+            var mockTurnContext = new Mock<ITurnContext>();
+            mockTurnContext.Setup(tc => tc.Adapter).Returns(adapter);
+            mockTurnContext.Setup(tc => tc.TurnState).Returns(turnState);
+
+            var context = new TurnContext(mockTurnContext.Object, activity);
+
+            // Act
+            context.Dispose();
+            context.Dispose();
+
+            // Assert
+            Assert.True(turnState.IsDisposed, "TurnState.Dispose was not called.");
+            Assert.Equal(1, turnState.DisposeCallCount);
+        }
+
+        private class CustomDisposableTurnContextStateCollection : TurnContextStateCollection, IDisposable
+        {
+            public bool IsDisposed { get; private set; }
+            public int DisposeCallCount { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                IsDisposed = true;
+                DisposeCallCount++;
+            }
         }
 
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)

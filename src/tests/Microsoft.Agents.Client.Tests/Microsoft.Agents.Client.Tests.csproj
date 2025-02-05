@@ -6,10 +6,6 @@
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
-	<PropertyGroup>
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<Compile Remove="Properties\**" />
 		<EmbeddedResource Remove="Properties\**" />

@@ -269,7 +269,8 @@ namespace Microsoft.Agents.Connector.Teams
 
             if (body != null)
             {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
+                var json = ProtocolJsonSerializer.ToJson(body);
+                request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             }
 
             if (customHeaders != null)
@@ -293,13 +294,21 @@ namespace Microsoft.Agents.Connector.Teams
                 {
                     case 200:
                     case 201:
+                    case 202:
                         {
                             if (typeof(T) == typeof(string))
                             {
                                 var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                                 return ProtocolJsonSerializer.ToObject<T>(responseContent);
                             }
-                            return ProtocolJsonSerializer.ToObject<T>(httpResponse.Content.ReadAsStream(cancellationToken));
+
+                            var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            if (!string.IsNullOrWhiteSpace(json))
+                            {
+                                return ProtocolJsonSerializer.ToObject<T>(json);
+                            }
+
+                            return default(T);
                         }
                     case 429:
                         {

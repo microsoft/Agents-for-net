@@ -875,7 +875,7 @@ namespace Microsoft.Agents.BotBuilder
 
             if (invokeValue.Action.Type != "Action.Execute")
             {
-                var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "NotSupported", $"The action '{invokeValue.Action.Type}'is not supported.");
+                var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "NotSupported", $"The action '{invokeValue.Action.Type}' is not supported.");
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);
             }
 

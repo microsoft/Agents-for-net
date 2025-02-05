@@ -23,31 +23,40 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// processed by the configured background service if possible.
     /// </summary>
     /// <remarks>
-    /// If the activity is not an Invoke, and DeliveryMode is not ExpectReplies, and this
-    /// is not a GET request to upgrade to WebSockets, then the activity will be enqueued for processing
-    /// on a background thread.
+    /// Invoke and ExpectReplies are always handled synchronously.
     /// </remarks>
-    /// <remarks>
-    /// Create an instance of <see cref="CloudAdapter"/>.
-    /// </remarks>
-    /// <param name="configuration"></param>
-    /// <param name="logger"></param>
-    /// <param name="activityTaskQueue"></param>
-    /// <param name="channelServiceClientFactory"></param>
     public class CloudAdapter
         : ChannelServiceAdapterBase, IBotHttpAdapter
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
-        private readonly bool _async;
+        private readonly AdapterOptions _adapterOptions;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="channelServiceClientFactory"></param>
+        /// <param name="activityTaskQueue"></param>
+        /// <param name="logger"></param>
+        /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
+        /// <param name="middlewares"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
-            bool async = true) : base(channelServiceClientFactory, logger)
+            AdapterOptions options = null,
+            Core.Interfaces.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
-            _async = async;
+            _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
+
+            if (middlewares != null)
+            {
+                foreach (var middleware in middlewares)
+                {
+                    Use(middleware);
+                }
+            }
 
             OnTurnError = async (turnContext, exception) =>
             {
@@ -141,7 +150,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             await httpResponse.Body.FlushAsync(cancellationToken);
                         }
                     }
-                    else if (!_async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot

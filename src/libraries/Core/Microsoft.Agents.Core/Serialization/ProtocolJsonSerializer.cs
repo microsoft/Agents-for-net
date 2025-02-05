@@ -56,6 +56,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
+            options.Converters.Add(new SearchInvokeValueConverter());
 
             return options;
         }
@@ -68,6 +69,9 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new MessagingExtensionActionResponseConverter());
             options.Converters.Add(new TaskModuleResponseConverter());
             options.Converters.Add(new TaskModuleResponseBaseConverter());
+            options.Converters.Add(new TaskModuleCardResponseConverter());
+            options.Converters.Add(new TaskModuleContinueResponseConverter());
+            options.Converters.Add(new TaskModuleMessageResponseConverter());
             options.Converters.Add(new MessagingExtensionAttachmentConverter());
 
             return options;
