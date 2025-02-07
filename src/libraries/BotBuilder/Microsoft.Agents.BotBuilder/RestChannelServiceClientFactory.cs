@@ -101,7 +101,7 @@ namespace Microsoft.Agents.BotBuilder
             var appId = BotClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 
             return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
-                appId, 
+                appId,
                 new Uri(_tokenServiceEndpoint),
                 _httpClientFactory,
                 useAnonymous ? null : () =>

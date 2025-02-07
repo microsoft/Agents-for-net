@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Authentication
         private readonly IEnumerable<ConnectionMapItem> _map;
         private readonly ILogger<ConfigurationConnections> _logger;
 
-        public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap") 
+        public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
         {
             ArgumentNullException.ThrowIfNullOrEmpty(connectionsKey);
             ArgumentNullException.ThrowIfNullOrEmpty(mapKey);
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Authentication
                 .GetSection(mapKey)
                 .Get<List<ConnectionMapItem>>() ?? Enumerable.Empty<ConnectionMapItem>();
 
-            if ( !_map.Any() )
+            if (!_map.Any())
             {
                 _logger.LogWarning("No connections map found in configuration.");
             }
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Authentication
                     {
                         return GetConnectionInstance(mapItem.Connection);
                     }
-                    
+
                     var match = Regex.Match(serviceUrl, mapItem.ServiceUrl, RegexOptions.IgnoreCase);
                     if (match.Success)
                     {
@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Authentication
             {
                 throw new ArgumentNullException(nameof(assemblyName), $"Assembly for '{name}' is missing or empty");
             }
-            
+
             if (string.IsNullOrEmpty(typeName))
             {
                 // A Type name wasn't given in config.  Just get the first matching valid type.

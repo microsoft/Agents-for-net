@@ -6,5 +6,5 @@
     /// <param name="code">Error code for the exception</param>
     /// <param name="description">Displayed Error message</param>
     /// <param name="helplink">Help URL Link for the Error.</param>
-    internal record AgentAuthErrorDefinition (int code , string description, string helplink);
+    internal record AgentAuthErrorDefinition(int code, string description, string helplink);
 }
