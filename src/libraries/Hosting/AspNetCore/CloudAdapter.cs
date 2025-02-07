@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -60,19 +61,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Log any leaked exception from the application.
                 StringBuilder sbError = new StringBuilder(1024);
-                sbError.Append(exception.Message);
+                int iLevel = 0;
+                exception.GetExceptionDetail(sbError,iLevel); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
+                
+                // Writing formatted exception message to log with errocodes and help links. 
+                logger.LogError(resolvedErrorMessage);
 
-                await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
-
-                // Send a trace activity
-                await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
+                    // Send a trace activity
+                    await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                }
                 sbError.Clear();
             };
         }
