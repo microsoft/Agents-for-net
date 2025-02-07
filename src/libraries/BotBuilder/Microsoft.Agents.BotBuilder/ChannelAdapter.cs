@@ -164,7 +164,6 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (OnTurnError != null)
                     {
-                        _logger?.LogError(exception: e, $"Handled Exception in {this.GetType().Name}");
                         await OnTurnError.Invoke(turnContext, e).ConfigureAwait(false);
                     }
                     else

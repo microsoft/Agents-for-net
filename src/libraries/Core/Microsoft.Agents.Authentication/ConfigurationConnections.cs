@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +41,7 @@ namespace Microsoft.Agents.Authentication
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
         private readonly IEnumerable<ConnectionMapItem> _map;
+        private readonly ILogger<ConfigurationConnections> _logger;
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap") 
         {
@@ -46,12 +49,24 @@ namespace Microsoft.Agents.Authentication
             ArgumentNullException.ThrowIfNullOrEmpty(mapKey);
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
+            _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
 
             _map = configuration
                 .GetSection(mapKey)
                 .Get<List<ConnectionMapItem>>() ?? Enumerable.Empty<ConnectionMapItem>();
 
-            _connections = configuration.GetSection(connectionsKey).Get<Dictionary<string, ConnectionDefinition>>() ?? [];
+            if ( !_map.Any() )
+            {
+                _logger.LogWarning("No connections map found in configuration.");
+            }
+
+            _connections = configuration
+                .GetSection(connectionsKey)
+                .Get<Dictionary<string, ConnectionDefinition>>() ?? [];
+            if (!_connections.Any())
+            {
+                _logger.LogWarning("No connections found in configuration.");
+            }
 
             var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
 
@@ -72,6 +87,17 @@ namespace Microsoft.Agents.Authentication
         /// <inheritdoc/>
         public IAccessTokenProvider GetDefaultConnection()
         {
+            // if no connections, abort and return null.
+            if (!_connections.Any())
+            {
+                _logger.LogError(ErrorHelper.MissingAuthenticationConfiguration.description);
+                throw new IndexOutOfRangeException(ErrorHelper.MissingAuthenticationConfiguration.description)
+                {
+                    HResult = ErrorHelper.MissingAuthenticationConfiguration.code,
+                    HelpLink = ErrorHelper.MissingAuthenticationConfiguration.helplink
+                };
+            }
+
             // Return the wildcard map item instance.
             foreach (var mapItem in _map)
             {
@@ -80,9 +106,9 @@ namespace Microsoft.Agents.Authentication
                     return GetConnectionInstance(mapItem.Connection);
                 }
             }
-            
+
             // Otherwise, return the first connection.
-            return GetConnectionInstance(_connections.First().Value);
+            return GetConnectionInstance(_connections.FirstOrDefault().Value);
         }
 
         /// <summary>

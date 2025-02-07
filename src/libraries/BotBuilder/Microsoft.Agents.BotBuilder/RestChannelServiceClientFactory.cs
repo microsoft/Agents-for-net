@@ -13,6 +13,7 @@ using Microsoft.Agents.Connector.Teams;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.BotBuilder.Errors;
 
 namespace Microsoft.Agents.BotBuilder
 {
@@ -77,9 +78,17 @@ namespace Microsoft.Agents.BotBuilder
                 _httpClientFactory,
                 useAnonymous ? null : () =>
                 {
-                    var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl)
-                        ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
-                    return tokenAccess.GetAccessTokenAsync(audience, scopes);
+                    try
+                    {
+                        var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl);
+                        return tokenAccess.GetAccessTokenAsync(audience, scopes);
+                    }
+                    catch (Exception ex)
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+                    }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
         }
