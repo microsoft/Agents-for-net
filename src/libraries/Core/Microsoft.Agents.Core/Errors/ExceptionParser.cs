@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Errors
                 firstIteration = true;
                 lastErrorMsg ??= new StringBuilder(1024);
             }
-                
+
             FormatExceptionMessage(
                 generalEx.Source != null ? generalEx.Source.ToString().Trim() : "Not Provided",
                 generalEx.TargetSite != null ? generalEx.TargetSite.Name.ToString() : "Not Provided",
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Core.Errors
                 sw.AppendLine($"Inner Exception Level {level}\t: ");
             if (errorCode.HasValue)
             {
-                if ( level == 0 ) 
+                if (level == 0)
                     sw.AppendLine("=====================================");
                 sw.AppendLine("ErrorCode: " + errorCode.Value);
             }
