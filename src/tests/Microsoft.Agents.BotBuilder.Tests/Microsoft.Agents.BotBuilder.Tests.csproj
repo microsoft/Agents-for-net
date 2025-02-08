@@ -27,6 +27,7 @@
 	  <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
+	  <ProjectReference Include="..\Microsoft.Agents.TestSupport\Microsoft.Agents.TestSupport.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>

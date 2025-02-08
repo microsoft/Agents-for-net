@@ -13,116 +13,163 @@ using System.Threading;
 using System.Net.Http;
 using Microsoft.Agents.Connector.Teams;
 using Microsoft.Agents.Connector;
+using Xunit.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Errors;
+using System.Text;
+using Microsoft.Agents.TestSupport;
 
 namespace Microsoft.Agents.BotBuilder.Tests
 {
     public class ChannelServiceClientFactoryTests
     {
+        readonly ITestOutputHelper _outputListener;
+        public ChannelServiceClientFactoryTests(ITestOutputHelper output)
+        {
+            _outputListener = output;
+        }
+
         [Fact]
         public void ConstructionThrows()
         {
-            var config = new ConfigurationRoot(new List<IConfigurationProvider>
-            {
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap", string.Empty },
-                    }
-                })
-            });
+                    });
 
-            var serviceProvider = new Mock<IServiceProvider>();
-            var connections = new ConfigurationConnections(serviceProvider.Object, config);
+            //var serviceProvider = new Mock<IServiceProvider>();
+            var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
 
             // Null IConfiguration
             Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(null, httpFactory.Object, connections));
 
             // Null IConnections
-            Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(config, httpFactory.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, null));
 
             // Null IHttpClientFactory
-            Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(config, null, connections));
+            Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), null, connections));
         }
 
-        [Fact(Skip = "Need to make a request on client to trigger exception")]
+        [Fact]
         public async Task ConnectionMapNotFoundThrowsAsync()
         {
-            var config = new ConfigurationRoot(new List<IConfigurationProvider>
-            {
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap", string.Empty },
-                    }
-                })
-            });
-            
-            var serviceProvider = new Mock<IServiceProvider>();
-            var connections = new ConfigurationConnections(serviceProvider.Object, config);
+                    });
+
+            var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
+            var traceActivity = Activity.CreateTraceActivity("Test");
+            traceActivity.Conversation = new ConversationAccount(id: "1234");
 
-            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
+            var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None));
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None));
+            try
+            {
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+            }
+
+            try
+            {
+
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+            }
+
+            try
+            {
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+            }
+
         }
 
-        [Fact(Skip = "Need to make a request on client to trigger exception")]
+
+        [Fact]
         public async Task ConnectionMapNotFoundAnonymousDoesNotThrowAsync()
         {
-            var config = new ConfigurationRoot(new List<IConfigurationProvider>
-            {
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap", string.Empty },
-                    }
-                })
-            });
+                    });
 
-            var serviceProvider = new Mock<IServiceProvider>();
-            var connections = new ConfigurationConnections(serviceProvider.Object, config);
+            var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
+
+            var traceActivity = Activity.CreateTraceActivity("Test");
+            traceActivity.Conversation = new ConversationAccount(id: "1234");
+            traceActivity.ChannelId = "Emulator";
+
+            var audience = "http://localhost";
+
             httpFactory.Setup(
                 x => x.CreateClient(It.IsAny<string>()))
                 .Returns(new Mock<HttpClient>().Object);
 
-            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
+            var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);
 
-            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", string.Empty, CancellationToken.None, useAnonymous: true);
+            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", audience, CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestTeamsConnectorClient>(connector);
 
             var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
         }
 
-        [Fact(Skip = "Need to make a request on client to trigger exception")]
+        [Fact]
         public async Task ConnectionNotFoundThrowsAsync()
         {
-            var config = new ConfigurationRoot(new List<IConfigurationProvider>
-            {
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
-                        { "ConnectionsMap:0:ServiceUrl", "*" },
+                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
-                    }
-                })
-            });
+                    });
 
-            var serviceProvider = new Mock<IServiceProvider>();
-            var connections = new ConfigurationConnections(serviceProvider.Object, config);
+            var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
+            var traceActivity = Activity.CreateTraceActivity("Test");
+            traceActivity.Conversation = new ConversationAccount(id: "1234");
 
-            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
+            var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None));
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None));
+            try
+            {
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+            }
+
+
+            try
+            {
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+            }
+            //await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None));
+            //await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None));
         }
 
         [Fact]

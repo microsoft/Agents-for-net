@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ConnectionNotFoundByName" xml:space="preserve">
+    <value>Connection '{0}' not found in configuration</value>
+    <comment>Rased when a mapped endpoint requests a connection by name that cannot be found</comment>
+  </data>
+  <data name="FailedToCreateAuthModuleProvider" xml:space="preserve">
+    <value>Failed to create authentication provider for connection name '{0}'</value>
+    <comment>Raised when a connection is found but the constructor cannot be invoked</comment>
+  </data>
   <data name="MissingAuthenticationConfig" xml:space="preserve">
     <value>No connections found in for this Agent in the Connections Configuration</value>
     <comment>Raised when authentication is requested but no authentication configurations are found in the Connections object.</comment>

@@ -61,6 +61,24 @@ namespace Microsoft.Agents.Authentication.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connection &apos;{0}&apos; not found in configuration.
+        /// </summary>
+        internal static string ConnectionNotFoundByName {
+            get {
+                return ResourceManager.GetString("ConnectionNotFoundByName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to create authentication provider for connection name &apos;{0}&apos;.
+        /// </summary>
+        internal static string FailedToCreateAuthModuleProvider {
+            get {
+                return ResourceManager.GetString("FailedToCreateAuthModuleProvider", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No connections found in for this Agent in the Connections Configuration.
         /// </summary>
         internal static string MissingAuthenticationConfig {

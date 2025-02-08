@@ -14,6 +14,8 @@
         private static int baseAuthProviderErrorCode = -40000;
 
         internal static AgentAuthErrorDefinition MissingAuthenticationConfiguration = new AgentAuthErrorDefinition(baseAuthProviderErrorCode, Properties.Resources.MissingAuthenticationConfig, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentAuthErrorDefinition ConnectionNotFoundByName = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 1, Properties.Resources.ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentAuthErrorDefinition FailedToCreateAuthModuleProvider = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 2, Properties.Resources.FailedToCreateAuthModuleProvider, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
 
     }
 
