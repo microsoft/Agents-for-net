@@ -17,6 +17,7 @@ namespace Microsoft.Agents.BotBuilder.Errors
         private static readonly int baseBotBuilderErrorCode = -50000;
 
         internal static AgentErrorDefinition NullIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition NullUserTokenProviderIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode-1, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
 
     }
 

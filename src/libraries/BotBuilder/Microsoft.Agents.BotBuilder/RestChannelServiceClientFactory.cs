@@ -106,9 +106,17 @@ namespace Microsoft.Agents.BotBuilder
                 _httpClientFactory,
                 useAnonymous ? null : () =>
                 {
-                    var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint)
-                        ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
-                    return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                    try
+                    {
+                        var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                    }
+                    catch(Exception ex)
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                    }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,
                 _logger));

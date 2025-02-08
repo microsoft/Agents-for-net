@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication.Errors;
+using Microsoft.Agents.Authentication.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.Authentication
                 _logger.LogWarning("No connections found in configuration.");
             }
 
-            var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
 
             foreach (var connection in _connections)
             {
@@ -173,9 +174,12 @@ namespace Microsoft.Agents.Authentication
         {
             if (!_connections.TryGetValue(name, out ConnectionDefinition value))
             {
-                return null;
+                throw new IndexOutOfRangeException(string.Format(ErrorHelper.ConnectionNotFoundByName.description , name))
+                {
+                    HResult = ErrorHelper.ConnectionNotFoundByName.code,
+                    HelpLink = ErrorHelper.ConnectionNotFoundByName.helplink
+                };
             }
-
             return GetConnectionInstance(value);
         }
 
@@ -187,109 +191,20 @@ namespace Microsoft.Agents.Authentication
                 return connection.Instance;
             }
 
-            // Construct the provider
-            connection.Instance = connection.Constructor.Invoke([_serviceProvider, connection.Settings]) as IAccessTokenProvider;
-            return connection.Instance;
-        }
-    }
-
-    class ConnectionDefinition
-    {
-        public string Assembly { get; set; }
-        public string Type { get; set; }
-        public IConfigurationSection Settings { get; set; }
-        public ConstructorInfo Constructor { get; set; }
-        public IAccessTokenProvider Instance { get; set; }
-    }
-
-    class ConnectionMapItem
-    {
-        public string ServiceUrl { get; set; }
-        public string Audience { get; set; }
-        public string Connection { get; set; }
-    }
-
-    class AssemblyLoader(AssemblyLoadContext loadContext)
-    {
-        private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
-
-        public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
-        {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
-
-            if (string.IsNullOrEmpty(assemblyName))
+            try
             {
-                throw new ArgumentNullException(nameof(assemblyName), $"Assembly for '{name}' is missing or empty");
+                // Construct the provider
+                connection.Instance = connection.Constructor.Invoke([_serviceProvider, connection.Settings]) as IAccessTokenProvider;
+                return connection.Instance;
             }
-
-            if (string.IsNullOrEmpty(typeName))
+            catch (Exception ex)
             {
-                // A Type name wasn't given in config.  Just get the first matching valid type.
-                // This is only really appropriate if an assembly only has a single IAccessTokenProvider.
-                return GetProviderConstructors(assemblyName).First();
-            }
-
-            // This throws for invalid assembly name.
-            Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
-
-            Type type = assembly.GetType(typeName);
-            if (!IsValidProviderType(type))
-            {
-                // Perhaps config left off the full type name?
-                type = assembly.GetType($"{assemblyName}.{typeName}");
-                if (!IsValidProviderType(type))
+                throw new InvalidOperationException(string.Format(ErrorHelper.FailedToCreateAuthModuleProvider.description, connection.Type), ex)
                 {
-                    throw new InvalidOperationException($"Type '{typeName}' not found in Assembly '{assemblyName}' or is the wrong type for '{name}'");
-                }
+                    HResult = ErrorHelper.FailedToCreateAuthModuleProvider.code,
+                    HelpLink = ErrorHelper.FailedToCreateAuthModuleProvider.helplink
+                };
             }
-
-            return GetConstructor(type) ?? throw new InvalidOperationException($"Type '{typeName},{assemblyName}' does not have the required constructor.");
-        }
-
-        public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)
-        {
-            ArgumentNullException.ThrowIfNullOrEmpty(assemblyName);
-
-            Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
-
-            foreach (Type loadedType in assembly.GetTypes())
-            {
-                if (!IsValidProviderType(loadedType))
-                {
-                    continue;
-                }
-
-                ConstructorInfo constructor = GetConstructor(loadedType);
-                if (constructor == null)
-                {
-                    continue;
-                }
-
-                yield return constructor;
-            }
-        }
-
-        private static bool IsValidProviderType(Type type)
-        {
-            if (type == null ||
-                !typeof(IAccessTokenProvider).IsAssignableFrom(type) ||
-                !type.IsPublic ||
-                type.IsNested ||
-                type.IsAbstract)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static ConstructorInfo GetConstructor(Type type)
-        {
-            return type.GetConstructor(
-                bindingAttr: BindingFlags.Instance | BindingFlags.Public,
-                binder: null,
-                types: [typeof(IServiceProvider), typeof(IConfigurationSection)],
-                modifiers: null);
         }
     }
 }
