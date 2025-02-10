@@ -21,7 +21,13 @@ We are in preview with this codebase right now.
 
 ## Using this code
 
+### Public Nuget feed.
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**
+
+### Nightly Nuget feed.
+We also provide nightly build packages via a public Nuget feed here: [AgentSdkNightly](https://pkgs.dev.azure.com/ConversationalAI/BotFramework/_packaging/SDK/nuget/v3/index.json).  They will all begin with **Microsoft.Agents**
+- This feed is updated overnight (PT) whenever commits occur in our repo. 
+- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
 
 ## Working with this codebase
 
