@@ -24,6 +24,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+		<ProjectReference Include="..\Microsoft.Agents.TestSupport\Microsoft.Agents.TestSupport.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

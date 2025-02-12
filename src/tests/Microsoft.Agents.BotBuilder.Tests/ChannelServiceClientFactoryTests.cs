@@ -22,13 +22,9 @@ using Microsoft.Agents.TestSupport;
 
 namespace Microsoft.Agents.BotBuilder.Tests
 {
-    public class ChannelServiceClientFactoryTests
+    public class ChannelServiceClientFactoryTests(ITestOutputHelper output)
     {
-        readonly ITestOutputHelper _outputListener;
-        public ChannelServiceClientFactoryTests(ITestOutputHelper output)
-        {
-            _outputListener = output;
-        }
+        readonly ITestOutputHelper _outputListener = output;
 
         [Fact]
         public void ConstructionThrows()

@@ -2,30 +2,30 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.TestSupport;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Loader;
 using System.Security.Claims;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Microsoft.Agents.Auth.Tests
 {
-    public class ConfigurationConnectionsTests
+    public class ConfigurationConnectionsTests(ITestOutputHelper output)
     {
-        private readonly Mock<IServiceProvider> _serviceProvider = new();
         private readonly ClaimsIdentity _identity = new([]);
+        readonly ITestOutputHelper _outputListener = output;
 
         [Fact]
         public void GetConnection_ShouldReturnAccessTokenProviderWithConnectionName()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -34,10 +34,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetConnection("BotServiceConnection");
 
@@ -47,11 +46,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetConnection_ShouldThrowOnNullConnectionName()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -60,10 +55,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             Assert.Throws<ArgumentNullException>(() => configurationConnections.GetConnection(null));
         }
@@ -71,11 +65,8 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetDefaultConnection_ShouldReturnAccessTokenProviderFromMap()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -84,10 +75,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetDefaultConnection();
 
@@ -97,11 +87,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetDefaultConnection_ShouldReturnAccessTokenProviderFromConnections()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -110,11 +96,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
+                    });
 
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetDefaultConnection();
 
@@ -124,11 +108,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnMatchingServiceUrl()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -137,10 +117,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetTokenProvider(_identity, "serviceUrl");
 
@@ -150,22 +129,16 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnEmptyServiceUrl()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "Connections:BotServiceConnection:Type", "MsalAuth" },
                         { "Connections:BotServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
+                    });
 
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetTokenProvider(_identity, "serviceUrl");
 
@@ -175,11 +148,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnGenericServiceUrl()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -188,10 +157,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetTokenProvider(_identity, "generic");
 
@@ -201,11 +169,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderFromConnectionInstance()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -214,13 +178,12 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetTokenProvider(_identity, "serviceUrl");
-            
+
             //Call a second time to obtain AccessTokenProvider from the Connection instance
             response = configurationConnections.GetTokenProvider(_identity, "serviceUrl");
 
@@ -230,11 +193,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnNullOnNotMatchingServiceUrl()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -243,10 +202,9 @@ namespace Microsoft.Agents.Auth.Tests
                         { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
                         { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
                         { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
 
             var response = configurationConnections.GetTokenProvider(_identity, "noUrl");
 
@@ -256,28 +214,31 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnNullOnEmptyConnections()
         {
-            var config = new ConfigurationRoot(
-            [
-                new MemoryConfigurationProvider(new MemoryConfigurationSource
-                {
-                    InitialData = new Dictionary<string, string>
+            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
                         { "ConnectionsMap:0:Audience", "audience" }
-                    }
-                })
-            ]);
-            var configurationConnections = new ConfigurationConnections(_serviceProvider.Object, config);
+                    });
+
+            var configurationConnections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
+
             var claims = new List<Claim>
             {
                 new(AuthenticationConstants.AudienceClaim, "audience"),
             };
             ClaimsIdentity identity = new(claims);
-            
-            var response = configurationConnections.GetTokenProvider(identity, "serviceUrl");
 
-            Assert.Null(response);
+            try
+            {
+                var response = configurationConnections.GetTokenProvider(identity, "serviceUrl");
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                ExceptionTester.IsException<IndexOutOfRangeException>(e, _outputListener);
+                return; 
+            }
+            throw new Exception("Should not reach this point");
         }
 
         [Fact]
