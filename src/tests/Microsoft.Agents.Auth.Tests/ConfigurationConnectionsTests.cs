@@ -283,7 +283,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnValidProviderType()
         {
-            var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "MsalAuth");
 
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnNullType()
         {
-            var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", null);
 
@@ -303,13 +303,13 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnNullLoadContext()
         {
-            Assert.Throws<ArgumentNullException>(() => new AssemblyLoader(null));
+            Assert.Throws<ArgumentNullException>(() => new AuthModuleLoader(null));
         }
 
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnNullAssemblyName()
         {
-            var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
 
             Assert.Throws<ArgumentNullException>(() => assemblyLoader.GetProviderConstructor("name", null, "type-name"));
         }
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnInvalidProviderType()
         {
-            var assemblyLoader = new AssemblyLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
 
             Assert.Throws<InvalidOperationException>(() => assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "type"));
         }
