@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Samples
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configuration"></param>
-        /// <param name="authenticationSection">Name of the config section to read.</param>
+        /// <param name="tokenValidationSectionName">Name of the config section to read.</param>
         /// <param name="logger">Optional logger to use for authentication event logging.</param>
         /// <remarks>
         /// Configuration:
@@ -59,11 +59,17 @@ namespace Microsoft.Agents.Samples
         /// `OpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
         /// `AzureBotServiceTokenHandling` defaults to true and should always be true until Azure Bot Service sends Entra ID token.
         /// </remarks>
-        public static void AddBotAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string authenticationSection = "TokenValidation", ILogger logger = null)
+        public static void AddBotAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
         {
-            IConfigurationSection tokenValidationSection = configuration.GetSection("TokenValidation");
-
+            IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
             List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>();
+            List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
+
+            if (!tokenValidationSection.Exists())
+            {
+                logger?.LogError($"Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json");
+                throw new InvalidOperationException($"Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json");
+            }
 
             // If ValidIssuers is empty, default for ABS Public Cloud
             if (validTokenIssuers == null || validTokenIssuers.Count == 0)
@@ -87,10 +93,9 @@ namespace Microsoft.Agents.Samples
                 }
             }
 
-            List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
             if (audiences == null || audiences.Count == 0)
             {
-                throw new ArgumentException($"{authenticationSection}:Audiences requires at least one value");
+                throw new ArgumentException($"{tokenValidationSectionName}:Audiences requires at least one value");
             }
 
             bool isGov = tokenValidationSection.GetValue<bool>("IsGov", false);
