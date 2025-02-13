@@ -5,7 +5,6 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
@@ -66,7 +65,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 new DialogInstance{ Id = "B" }
             ]);
 
-            _context.SetupGet(e => e.TurnState)
+            _context.SetupGet(e => e.StackState)
                 .Returns([])
                 .Verifiable(Times.Exactly(2));
 

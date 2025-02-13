@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TeamsAuth.Bots;
 using TeamsAuth.Dialogs;
+using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,10 +41,10 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 /* END COSMOSDB STORAGE */
 
 // Create the User state. (Used in this bot's Dialog implementation.)
-builder.Services.AddSingleton<UserState>();
+builder.Services.AddTransient<UserState>();
 
 // Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<ConversationState>();
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<MainDialog>();
@@ -53,7 +53,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

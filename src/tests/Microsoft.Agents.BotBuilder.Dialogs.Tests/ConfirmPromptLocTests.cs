@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
 using Microsoft.Agents.BotBuilder.Dialogs.Prompts;
-using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Core.Models;
@@ -13,6 +12,8 @@ using Microsoft.Recognizers.Text;
 using Xunit;
 using static Microsoft.Agents.BotBuilder.Dialogs.Prompts.PromptCultureModels;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -226,7 +227,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 turnContext.Activity.Locale = culture.Locale;
 
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
 
                 // Prompt should default to English if locale is a non-supported value
@@ -269,7 +271,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 turnContext.Activity.Locale = activityLocale;
 
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
 
                 // Prompt should default to English if locale is a non-supported value

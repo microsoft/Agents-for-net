@@ -11,9 +11,8 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Telemetry;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {
@@ -37,11 +36,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task RunAsync(this Dialog dialog, ITurnContext turnContext, BotState state, CancellationToken cancellationToken)
         {
-            var dialogState = await state.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+            var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
 
             // look for the IBotTelemetryClient on the TurnState, if not there take it from the Dialog, if not there fall back to the "null" default
-            dialogSet.TelemetryClient = turnContext.TurnState.Get<IBotTelemetryClient>() ?? dialog.TelemetryClient ?? NullBotTelemetryClient.Instance;
+            dialogSet.TelemetryClient = turnContext.Services.Get<IBotTelemetryClient>() ?? dialog.TelemetryClient ?? NullBotTelemetryClient.Instance;
 
             dialogSet.Add(dialog);
 
@@ -50,14 +49,26 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             await InternalRunAsync(turnContext, dialog.Id, dialogContext, cancellationToken).ConfigureAwait(false);
         }
 
+        [Obsolete("Use the non-IStatePropertyAccessor version")]
+        public static async Task RunAsync(this Dialog dialog, ITurnContext turnContext, IStatePropertyAccessor<DialogState> accessor, CancellationToken cancellationToken)
+        {
+            var state = await accessor.GetAsync(turnContext, () => { return new DialogState(); }, cancellationToken).ConfigureAwait(false);
+
+            var dialogSet = new DialogSet(state);
+
+            // look for the IBotTelemetryClient on the TurnState, if not there take it from the Dialog, if not there fall back to the "null" default
+            dialogSet.TelemetryClient = turnContext.Services.Get<IBotTelemetryClient>() ?? dialog.TelemetryClient ?? NullBotTelemetryClient.Instance;
+
+            dialogSet.Add(dialog);
+
+            var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken).ConfigureAwait(false);
+
+            await InternalRunAsync(turnContext, dialog.Id, dialogContext, cancellationToken).ConfigureAwait(false);
+        }
+
+
         internal static async Task<DialogTurnResult> InternalRunAsync(ITurnContext turnContext, string dialogId, DialogContext dialogContext, CancellationToken cancellationToken)
         {
-            // map TurnState into root dialog context.services
-            foreach (var service in turnContext.TurnState)
-            {
-                dialogContext.Services[service.Key] = service.Value;
-            }
-
             DialogTurnResult dialogTurnResult = null;
 
             // Loop as long as we are getting valid OnError handled we should continue executing the actions for the turn.
@@ -170,11 +181,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// </summary>
         private static bool SendEoCToParent(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims))
+            if (turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity))
             {
                 // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
-                var skillConversationReference = turnContext.TurnState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey);
+                var skillConversationReference = turnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey);
                 if (skillConversationReference != null)
                 {
                     // If the skillConversationReference.OAuthScope is for one of the supported channels, we are at the root and we should not send an EoC.
@@ -189,12 +200,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static bool IsFromParentToSkill(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey) != null)
+            if (turnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey) != null)
             {
                 return false;
             }
 
-            return turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity && BotClaims.IsBotClaim(claimIdentity.Claims);
+            return turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity);
         }
 
         // Recursively walk up the DC stack to find the active DC.

@@ -7,7 +7,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs

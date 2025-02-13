@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace BotAllCards.Bots
 {
@@ -40,6 +40,12 @@ namespace BotAllCards.Bots
 
             // Run the Dialog with the new message Activity.
             await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
+        }
+
+        protected override async Task OnTurnBeginAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await ConversationState.LoadAsync(turnContext, false, cancellationToken);
+            await UserState.LoadAsync(turnContext, false, cancellationToken);
         }
 
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

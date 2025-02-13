@@ -3,7 +3,7 @@
   "manifestVersion": "1.16",
   "version": "1.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.microsoft.agents.teams.linkunfurling",
+  "packageName": "com.Microsoft.Agents.Extensions.Teams.linkunfurling",
   "developer": {
     "name": "Link Unfurling",
     "websiteUrl": "https://www.microsoft.com",

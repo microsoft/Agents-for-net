@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Microsoft.Agents.Telemetry\Microsoft.Agents.Telemetry.csproj" />
     <ProjectReference Include="..\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
   </ItemGroup>
 

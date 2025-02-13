@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 
@@ -15,21 +14,21 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Create handoff initiation event.
         /// </summary>
-        /// <param name="turnContext">turn context.</param>
+        /// <param name="activity">Incoming activity</param>
         /// <param name="handoffContext">agent hub-specific context.</param>
         /// <param name="transcript">transcript of the conversation.</param>
         /// <returns>handoff event.</returns>
-        public static Activity CreateHandoffInitiation(ITurnContext turnContext, object handoffContext, Transcript transcript = null)
+        public static IActivity CreateHandoffInitiation(IActivity activity, object handoffContext, Transcript transcript = null)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            ArgumentNullException.ThrowIfNull(activity);
 
-            var handoffEvent = CreateHandoffEvent(HandoffEventNames.InitiateHandoff, handoffContext, turnContext.Activity.Conversation);
+            var handoffEvent = CreateHandoffEvent(HandoffEventNames.InitiateHandoff, handoffContext, activity.Conversation);
 
-            handoffEvent.From = turnContext.Activity.From;
-            handoffEvent.RelatesTo = turnContext.Activity.GetConversationReference();
-            handoffEvent.ReplyToId = turnContext.Activity.Id;
-            handoffEvent.ServiceUrl = turnContext.Activity.ServiceUrl;
-            handoffEvent.ChannelId = turnContext.Activity.ChannelId;
+            handoffEvent.From = activity.From;
+            handoffEvent.RelatesTo = activity.GetConversationReference();
+            handoffEvent.ReplyToId = activity.Id;
+            handoffEvent.ServiceUrl = activity.ServiceUrl;
+            handoffEvent.ChannelId = activity.ChannelId;
 
             if (transcript != null)
             {

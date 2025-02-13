@@ -4,10 +4,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
 {
@@ -37,6 +37,9 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
 
         public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
         {
+            await ConversationState.LoadAsync(turnContext, false, cancellationToken);
+            await UserState.LoadAsync(turnContext, false, cancellationToken);
+
             await base.OnTurnAsync(turnContext, cancellationToken);
 
             // Save any state changes that might have occurred during the turn.

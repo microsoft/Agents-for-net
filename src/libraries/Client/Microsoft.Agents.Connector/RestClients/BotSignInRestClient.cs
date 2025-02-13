@@ -12,12 +12,9 @@ using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class BotSignInRestClient(Uri endpoint,
-        IHttpClientFactory httpClientFactory,
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IBotSignIn
+    internal class BotSignInRestClient(IRestTransport transport) : IBotSignIn
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetSignInUrlRequest(string state, string codeChallenge, string emulatorUrl, string finalRedirect)
         {
@@ -25,7 +22,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 Method = HttpMethod.Get,
 
-                RequestUri = new Uri(endpoint, $"api/botsignin/GetSignInUrl")
+                RequestUri = new Uri(_transport.Endpoint, $"api/botsignin/GetSignInUrl")
                     .AppendQuery("state", state)
                     .AppendQuery("code_challenge", codeChallenge)
                     .AppendQuery("emulatorUrl", emulatorUrl)
@@ -42,7 +39,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(state);
 
             using var message = CreateGetSignInUrlRequest(state, codeChallenge, emulatorUrl, finalRedirect);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -61,7 +58,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 Method = HttpMethod.Get,
 
-                RequestUri = new Uri(endpoint, $"api/botsignin/GetSignInResource")
+                RequestUri = new Uri(_transport.Endpoint, $"api/botsignin/GetSignInResource")
                     .AppendQuery("state", state)
                     .AppendQuery("code_challenge", codeChallenge)
                     .AppendQuery("emulatorUrl", emulatorUrl)
@@ -78,7 +75,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(state);
 
             using var message = CreateGetSignInResourceRequest(state, codeChallenge, emulatorUrl, finalRedirect);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {

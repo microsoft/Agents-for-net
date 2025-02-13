@@ -36,14 +36,14 @@ namespace Microsoft.Agents.Authentication
         /// If the <see cref="AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
         /// obtain the attribute from the <see cref="AuthenticationConstants.AppIdClaim"/> or if present.
         /// </remarks>
-        /// <param name="claims">A list of <see cref="Claim"/> instances.</param>
+        /// <param name="identity">The bot identity</param>
         /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
-        public static string GetOutgoingAppId(IEnumerable<Claim> claims)
+        public static string GetOutgoingAppId(ClaimsIdentity identity)
         {
             // Verify we have a sensible Claims Identity
-            ArgumentNullException.ThrowIfNull(claims);
+            ArgumentNullException.ThrowIfNull(identity);
 
-            var claimsList = claims as IList<Claim> ?? claims.ToList();
+            var claimsList = identity.Claims;
             string appId = null;
 
             // Depending on Version, the is either in the
@@ -84,9 +84,11 @@ namespace Microsoft.Agents.Authentication
         /// </remarks>
         /// <param name="claims">A list of claims.</param>
         /// <returns>True if the list of claims is a bot claim, false if is not.</returns>
-        public static bool IsBotClaim(IEnumerable<Claim> claims)
+        public static bool IsBotClaim(ClaimsIdentity claims)
         {
-            var claimsList = claims.ToList();
+            ArgumentNullException.ThrowIfNull(claims);
+
+            var claimsList = claims.Claims;
 
             var version = claimsList.FirstOrDefault(claim => claim.Type == AuthenticationConstants.VersionClaim);
             if (string.IsNullOrWhiteSpace(version?.Value))
@@ -102,7 +104,7 @@ namespace Microsoft.Agents.Authentication
                 return false;
             }
 
-            var appId = GetOutgoingAppId(claimsList);
+            var appId = GetOutgoingAppId(claims);
             if (string.IsNullOrWhiteSpace(appId))
             {
                 return false;
@@ -112,10 +114,18 @@ namespace Microsoft.Agents.Authentication
             return appId != audience;
         }
 
-        public static string GetTokenAudience(IEnumerable<Claim> claims)
+        public static string GetTokenAudience(ClaimsIdentity identity)
         {
-            // Temporarily setting audience to api uri so that MSAL works.  This needs to be resolved.
-            return $"app://{BotClaims.GetOutgoingAppId(claims)}";
+            return BotClaims.IsBotClaim(identity)
+                ? $"app://{BotClaims.GetOutgoingAppId(identity)}"
+                : AuthenticationConstants.BotFrameworkScope;
+        }
+
+        public static IList<string> GetTokenScopes(ClaimsIdentity identity)
+        {
+            return BotClaims.IsBotClaim(identity)
+                ? [$"{BotClaims.GetOutgoingAppId(identity)}/.default"]
+                : null;
         }
     }
 }

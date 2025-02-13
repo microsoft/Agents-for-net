@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System.Threading;
@@ -44,8 +43,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
                 .Verifiable(Times.Once);
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(tc => tc.TurnState).Returns([]).Verifiable(Times.Exactly(2));
-            mockContext.Object.TurnState.Add(debugger.Object);
+            mockContext.Setup(tc => tc.Services).Returns([]);
+            mockContext.Setup(tc => tc.StackState).Returns([]);
+            mockContext.Object.Services.Set(debugger.Object);
             
             var dialogContext = new DialogContext(new DialogSet(), mockContext.Object, new DialogState());
 
@@ -65,8 +65,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
                 .Verifiable(Times.Once);
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(tc => tc.TurnState).Returns([]).Verifiable(Times.Exactly(2));
-            mockContext.Object.TurnState.Add(debugger.Object);
+            mockContext.Setup(tc => tc.Services).Returns([]).Verifiable(Times.Exactly(2));
+            mockContext.Setup(tc => tc.StackState).Returns([]);
+            mockContext.Object.Services.Set(debugger.Object);
 
             var dialogContext = new DialogContext(new DialogSet(), mockContext.Object, new DialogState());
 
@@ -84,8 +85,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
                 .Verifiable(Times.Once);
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(tc => tc.TurnState).Returns([]).Verifiable(Times.Exactly(2));
-            mockContext.Object.TurnState.Add(debugger.Object);
+            mockContext.Setup(tc => tc.Services).Returns([]).Verifiable(Times.Exactly(2));
+            mockContext.Setup(tc => tc.StackState).Returns([]);
+            mockContext.Object.Services.Set(debugger.Object);
 
             var dialogContext = new DialogContext(new DialogSet(), mockContext.Object, new DialogState());
 

@@ -3,7 +3,7 @@
   "manifestVersion": "1.12",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.microsoft.agents.teams.channelmessagesrsc",
+  "packageName": "com.Microsoft.Agents.Extensions.Teams.channelmessagesrsc",
   "developer": {
     "name": "Microsoft",
     "websiteUrl": "https://www.microsoft.com",

@@ -5,11 +5,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
 
 namespace BotConversationSsoQuickstart.Bots
 {
@@ -40,12 +40,6 @@ namespace BotConversationSsoQuickstart.Bots
         {
             _logger.LogInformation("Running dialog with Message Activity.");
             await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
-        }
-
-        protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            // Save any state changes that might have occurred during the turn.
-            await _conversationState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
     }
 }

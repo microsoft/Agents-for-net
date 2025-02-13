@@ -9,7 +9,7 @@
 		<PackageReference Include="AdaptiveCards" />
 		<PackageReference Include="AdaptiveCards.Templating" />
 		<PackageReference Include="Microsoft.Graph" />
-		<PackageReference Include="Microsoft.IdentityModel.Validators"/>
+		<PackageReference Include="Microsoft.IdentityModel.Validators" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -17,6 +17,7 @@
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
 		<ProjectReference Include="..\..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+		<ProjectReference Include="..\..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
 	</ItemGroup>
 
 

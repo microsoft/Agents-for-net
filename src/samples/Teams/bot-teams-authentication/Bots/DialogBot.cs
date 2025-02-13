@@ -3,12 +3,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
 
 namespace TeamsAuth.Bots
 {
@@ -31,6 +31,12 @@ namespace TeamsAuth.Bots
 
             // Execute the Dialog with the incoming message Activity.
             await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
+        }
+
+        protected override async Task OnTurnBeginAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await ConversationState.LoadAsync(turnContext, false, cancellationToken);
+            await UserState.LoadAsync(turnContext, false, cancellationToken);
         }
 
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

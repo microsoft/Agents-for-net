@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -57,7 +56,7 @@ namespace Microsoft.Agents.BotBuilder.Testing.XUnit
         {
             var stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
-            context.TurnState[_stopWatchStateKey] = stopwatch;
+            context.Services.Set(_stopWatchStateKey, stopwatch);
             await LogIncomingActivityAsync(context, context.Activity, cancellationToken).ConfigureAwait(false);
             context.OnSendActivities(OnSendActivitiesAsync);
 
@@ -99,7 +98,7 @@ namespace Microsoft.Agents.BotBuilder.Testing.XUnit
         /// <returns>A task that represents the work to execute.</returns>
         protected virtual Task LogOutgoingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var stopwatch = (System.Diagnostics.Stopwatch)context.TurnState[_stopWatchStateKey];
+            var stopwatch = context.Services.Get<System.Diagnostics.Stopwatch>(_stopWatchStateKey);
             var actor = "Bot:  ";
             if (activity.Type == ActivityTypes.Message)
             {

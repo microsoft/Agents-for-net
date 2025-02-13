@@ -12,9 +12,10 @@ using System.Text.Json;
 using System.Linq;
 using System;
 using System.Text.Json.Nodes;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Extensions.Teams.Connector;
 
 namespace TypeaheadSearch.Bots
 {

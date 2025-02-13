@@ -15,15 +15,9 @@ using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class ConversationsRestClient(
-        Uri endpoint, 
-        IHttpClientFactory httpClientFactory, 
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IConversations
+    internal class ConversationsRestClient(IRestTransport transport) : IConversations
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-
-
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
         {
@@ -31,7 +25,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 Method = HttpMethod.Get,
 
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
                     .AppendQuery("continuationToken", continuationToken)
             };
 
@@ -43,7 +37,7 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ConversationsResult> GetConversationsAsync(string continuationToken = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateGetConversationsRequest(continuationToken);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -78,7 +72,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -92,7 +86,7 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ConversationResourceResponse> CreateConversationAsync(ConversationParameters body = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateCreateConversationRequest(body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -127,7 +121,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -148,7 +142,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendToConversationRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -183,7 +177,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -199,7 +193,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendConversationHistoryRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -234,7 +228,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Put,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -256,7 +250,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateUpdateActivityRequest(conversationId, activityId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -291,7 +285,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -315,7 +309,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateReplyToActivityRequest(conversationId, activityId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -355,7 +349,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -368,7 +362,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateDeleteActivityRequest(conversationId, activityId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -400,7 +394,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -412,7 +406,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationMembersRequest(conversationId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -445,7 +439,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -458,7 +452,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(userId);
 
             using var message = CreateGetConversationMemberRequest(conversationId, userId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -491,7 +485,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -504,7 +498,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(memberId);
 
             using var message = CreateDeleteConversationMemberRequest(conversationId, memberId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -535,7 +529,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
+            request.RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
                 .AppendQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
                 .AppendQuery("continuationToken", continuationToken);
 
@@ -549,7 +543,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationPagedMembersRequest(conversationId, pageSize, continuationToken);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -582,7 +576,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -595,7 +589,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateGetActivityMembersRequest(conversationId, activityId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -628,7 +622,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -644,7 +638,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateUploadAttachmentRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {

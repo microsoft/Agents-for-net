@@ -6,6 +6,7 @@ using Microsoft.Agents.Core.Models;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.Compat;
 using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Tests

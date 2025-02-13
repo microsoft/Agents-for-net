@@ -214,7 +214,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         {
             if (TelemetryClient is NullBotTelemetryClient)
             {
-                var turnStateTelemetryClient = dialogContext.Context.TurnState.Get<IBotTelemetryClient>();
+                var turnStateTelemetryClient = dialogContext.Context.Services.Get<IBotTelemetryClient>();
                 TelemetryClient = turnStateTelemetryClient ?? TelemetryClient;
             }
 

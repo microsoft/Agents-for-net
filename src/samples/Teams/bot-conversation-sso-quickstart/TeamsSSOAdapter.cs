@@ -3,12 +3,11 @@
 // </copyright>
 
 using System;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace BotConversationSsoQuickstart
 {
@@ -20,7 +19,7 @@ namespace BotConversationSsoQuickstart
             ILogger<IBotHttpAdapter> logger,
             ConversationState conversationState,
             IMiddleware[] middlewares = null)
-            : base(channelServiceClientFactory, activityTaskQueue, logger, middlewares: middlewares)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, middlewares: middlewares)
         {
             OnTurnError = async (turnContext, exception) =>
             {

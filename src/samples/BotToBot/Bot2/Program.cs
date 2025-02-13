@@ -31,7 +31,7 @@ app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample - Bot2Bot Sample - Bot2");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample - Bot2Bot Sample - Bot2");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }
