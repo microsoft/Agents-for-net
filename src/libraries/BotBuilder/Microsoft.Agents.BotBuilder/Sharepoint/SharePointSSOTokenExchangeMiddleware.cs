@@ -8,6 +8,7 @@ using Microsoft.Agents.Core.SharePoint.Models;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,7 +96,7 @@ namespace Microsoft.Agents.BotBuilder.SharePoint
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
-                ETag = ProtocolJsonSerializer.ToObject<JsonObject>(turnContext.Activity.Value)["id"].ToString(),
+                ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
             };
 
             var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };
@@ -149,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.SharePoint
                         turnContext.Activity.From.Id,
                         _oAuthConnectionName,
                         turnContext.Activity.ChannelId,
-                        new TokenExchangeRequest { Token = aceRequest.Data as string },
+                        new TokenExchangeRequest { Token = ((JsonElement)aceRequest.Data).GetString() },
                         cancellationToken).ConfigureAwait(false);
                 }
                 else
