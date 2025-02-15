@@ -49,7 +49,7 @@ namespace Microsoft.Agents.BotBuilder
         public int? Timeout { get; init; } = timeout;
         public bool? ShowSignInLink { get; init; } = showSignInLink;
 
-        public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, IActivity prompt, CancellationToken cancellationToken = default)
+        public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, IActivity? prompt, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
