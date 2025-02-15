@@ -61,29 +61,47 @@ namespace Microsoft.Agents.Authentication.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Type &apos;{0}&apos; not found in Assembly &apos;{1}&apos; or is the wrong type for &apos;{2}&apos;.
+        /// </summary>
+        internal static string Error_AuthModuleNotFound {
+            get {
+                return ResourceManager.GetString("Error_AuthModuleNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connection &apos;{0}&apos; not found in configuration.
         /// </summary>
-        internal static string ConnectionNotFoundByName {
+        internal static string Error_ConnectionNotFoundByName {
             get {
-                return ResourceManager.GetString("ConnectionNotFoundByName", resourceCulture);
+                return ResourceManager.GetString("Error_ConnectionNotFoundByName", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Failed to create authentication provider for connection name &apos;{0}&apos;.
         /// </summary>
-        internal static string FailedToCreateAuthModuleProvider {
+        internal static string Error_FailedToCreateAuthModuleProvider {
             get {
-                return ResourceManager.GetString("FailedToCreateAuthModuleProvider", resourceCulture);
+                return ResourceManager.GetString("Error_FailedToCreateAuthModuleProvider", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type &apos;{0},{1}&apos; does not have the required constructor..
+        /// </summary>
+        internal static string Error_InvalidAuthProviderConstructor {
+            get {
+                return ResourceManager.GetString("Error_InvalidAuthProviderConstructor", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to No connections found in for this Agent in the Connections Configuration.
         /// </summary>
-        internal static string MissingAuthenticationConfig {
+        internal static string Error_MissingAuthenticationConfig {
             get {
-                return ResourceManager.GetString("MissingAuthenticationConfig", resourceCulture);
+                return ResourceManager.GetString("Error_MissingAuthenticationConfig", resourceCulture);
             }
         }
     }

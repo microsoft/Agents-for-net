@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Agents.Authentication.Errors;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +9,13 @@ using System.Runtime.Loader;
 
 namespace Microsoft.Agents.Authentication
 {
-    internal class AuthModuleLoader(AssemblyLoadContext loadContext)
+    internal class AuthModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
+        
+        // Default auth lib for AgentSDK authentication.  
+        private readonly string _defaultAuthenticationLib = "Microsoft.Agents.Authentication.Msal"; 
+        private readonly string _defaultAuthenticationLibEntryType = "MsalAuth";
 
         public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
         {
@@ -17,14 +23,18 @@ namespace Microsoft.Agents.Authentication
 
             if (string.IsNullOrEmpty(assemblyName))
             {
-                throw new ArgumentNullException(nameof(assemblyName), $"Assembly for '{name}' is missing or empty");
+                // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
+                logger.LogInformation("No assembly name given in config for connection `{name}`.  Using default assembly lib: `{assemblyName}`", name, _defaultAuthenticationLib);
+                assemblyName = _defaultAuthenticationLib; 
             }
+
+
 
             if (string.IsNullOrEmpty(typeName))
             {
-                // A Type name wasn't given in config.  Just get the first matching valid type.
-                // This is only really appropriate if an assembly only has a single IAccessTokenProvider.
-                return GetProviderConstructors(assemblyName).First();
+                // A Type name wasn't given in config.  Set to the default type name
+                logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, _defaultAuthenticationLibEntryType);
+                typeName = _defaultAuthenticationLibEntryType;
             }
 
             // This throws for invalid assembly name.
@@ -37,11 +47,10 @@ namespace Microsoft.Agents.Authentication
                 type = assembly.GetType($"{assemblyName}.{typeName}");
                 if (!IsValidProviderType(type))
                 {
-                    throw new InvalidOperationException($"Type '{typeName}' not found in Assembly '{assemblyName}' or is the wrong type for '{name}'");
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AuthProviderTypeNotFound, null, typeName, assemblyName, name);
                 }
             }
-
-            return GetConstructor(type) ?? throw new InvalidOperationException($"Type '{typeName},{assemblyName}' does not have the required constructor.");
+            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, null, typeName, assemblyName); 
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

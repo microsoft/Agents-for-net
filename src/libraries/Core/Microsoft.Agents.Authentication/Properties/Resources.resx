@@ -117,15 +117,23 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ConnectionNotFoundByName" xml:space="preserve">
+  <data name="Error_AuthModuleNotFound" xml:space="preserve">
+    <value>Type '{0}' not found in Assembly '{1}' or is the wrong type for '{2}'</value>
+    <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>
+  </data>
+  <data name="Error_ConnectionNotFoundByName" xml:space="preserve">
     <value>Connection '{0}' not found in configuration</value>
     <comment>Rased when a mapped endpoint requests a connection by name that cannot be found</comment>
   </data>
-  <data name="FailedToCreateAuthModuleProvider" xml:space="preserve">
+  <data name="Error_FailedToCreateAuthModuleProvider" xml:space="preserve">
     <value>Failed to create authentication provider for connection name '{0}'</value>
     <comment>Raised when a connection is found but the constructor cannot be invoked</comment>
   </data>
-  <data name="MissingAuthenticationConfig" xml:space="preserve">
+  <data name="Error_InvalidAuthProviderConstructor" xml:space="preserve">
+    <value>Type '{0},{1}' does not have the required constructor.</value>
+    <comment>0 is the assembly name, 1 is the type in the assembly that is trying to be created</comment>
+  </data>
+  <data name="Error_MissingAuthenticationConfig" xml:space="preserve">
     <value>No connections found in for this Agent in the Connections Configuration</value>
     <comment>Raised when authentication is requested but no authentication configurations are found in the Connections object.</comment>
   </data>

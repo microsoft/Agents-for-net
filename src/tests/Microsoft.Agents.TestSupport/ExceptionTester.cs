@@ -14,13 +14,16 @@ namespace Microsoft.Agents.TestSupport
         /// <typeparam name="T"></typeparam>
         /// <param name="e"></param>
         /// <param name="output"></param>
-        public static void IsException<T>(Exception e, ITestOutputHelper output)
+        public static void IsException<T>(Exception e, int expectedErrorCode,  ITestOutputHelper output)
         {
-            Assert.IsType<T>(e);
             StringBuilder stringBuilder = new(1024);
             int level = 0;
             e.GetExceptionDetail(stringBuilder, level);
             output.WriteLine(stringBuilder.ToString());
+
+            Assert.IsType<T>(e);
+            Assert.Equal(expectedErrorCode, e.HResult);
+
         }
     }
 }

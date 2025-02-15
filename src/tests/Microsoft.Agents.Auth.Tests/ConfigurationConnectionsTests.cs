@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.TestSupport;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Loader;
@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Auth.Tests
         public void GetConnection_ShouldReturnAccessTokenProviderWithConnectionName()
         {
 
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetConnection_ShouldThrowOnNullConnectionName()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Auth.Tests
         public void GetDefaultConnection_ShouldReturnAccessTokenProviderFromMap()
         {
 
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetDefaultConnection_ShouldReturnAccessTokenProviderFromConnections()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnMatchingServiceUrl()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnEmptyServiceUrl()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "Connections:BotServiceConnection:Type", "MsalAuth" },
                         { "Connections:BotServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderOnGenericServiceUrl()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnAccessTokenProviderFromConnectionInstance()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetTokenProvider_ShouldReturnNullOnNotMatchingServiceUrl()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "serviceUrl" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -212,9 +212,9 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void GetTokenProvider_ShouldReturnNullOnEmptyConnections()
+        public void GetTokenProvider_ShouldReturnIndexOutOfRangeExceptionOnEmptyConnections()
         {
-            var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
                         { "ConnectionsMap:0:Connection", "BotServiceConnection" },
@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Auth.Tests
             }
             catch (IndexOutOfRangeException e)
             {
-                ExceptionTester.IsException<IndexOutOfRangeException>(e, _outputListener);
+                ExceptionTester.IsException<IndexOutOfRangeException>(e, ErrorHelper.ConnectionNotFoundByName.code, _outputListener);
                 return; 
             }
             throw new Exception("Should not reach this point");
@@ -244,7 +244,8 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnValidProviderType()
         {
-            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);                    
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "MsalAuth");
 
@@ -254,7 +255,8 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnNullType()
         {
-            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", null);
 
@@ -264,23 +266,44 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnNullLoadContext()
         {
-            Assert.Throws<ArgumentNullException>(() => new AuthModuleLoader(null));
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+            Assert.Throws<ArgumentNullException>(() => new AuthModuleLoader(null, serviceProvider.GetService<ILogger<ConfigurationConnections>>()));
         }
 
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnNullAssemblyName()
         {
-            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
 
-            Assert.Throws<ArgumentNullException>(() => assemblyLoader.GetProviderConstructor("name", null, "type-name"));
+            try
+            {
+                assemblyLoader.GetProviderConstructor("name", null, "type-name");
+            }
+            catch(InvalidOperationException ex)
+            {
+                ExceptionTester.IsException<InvalidOperationException>(ex, ErrorHelper.AuthProviderTypeNotFound.code, _outputListener);
+                return;
+            }
+            throw new Exception("Should not reach this point");
         }
 
         [Fact]
         public void GetProviderConstructor_ShouldThrowOnInvalidProviderType()
         {
-            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
 
-            Assert.Throws<InvalidOperationException>(() => assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "type"));
+            try
+            {
+                assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "type");
+            }
+            catch (InvalidOperationException ex)
+            {
+                ExceptionTester.IsException<InvalidOperationException>(ex, ErrorHelper.AuthProviderTypeNotFound.code, _outputListener);
+                return;
+            }
+            throw new Exception("Should not reach this point");
         }
     }
 }

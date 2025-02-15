@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Authentication
                 _logger.LogWarning("No connections found in configuration.");
             }
 
-            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default);
+            var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, _logger);
 
             foreach (var connection in _connections)
             {
@@ -174,11 +174,7 @@ namespace Microsoft.Agents.Authentication
         {
             if (!_connections.TryGetValue(name, out ConnectionDefinition value))
             {
-                throw new IndexOutOfRangeException(string.Format(ErrorHelper.ConnectionNotFoundByName.description , name))
-                {
-                    HResult = ErrorHelper.ConnectionNotFoundByName.code,
-                    HelpLink = ErrorHelper.ConnectionNotFoundByName.helplink
-                };
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.ConnectionNotFoundByName, null, name);
             }
             return GetConnectionInstance(value);
         }
@@ -199,11 +195,7 @@ namespace Microsoft.Agents.Authentication
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException(string.Format(ErrorHelper.FailedToCreateAuthModuleProvider.description, connection.Type), ex)
-                {
-                    HResult = ErrorHelper.FailedToCreateAuthModuleProvider.code,
-                    HelpLink = ErrorHelper.FailedToCreateAuthModuleProvider.helplink
-                };
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
             }
         }
     }
