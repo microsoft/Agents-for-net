@@ -19,6 +19,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Errors;
 using System.Text;
 using Microsoft.Agents.TestSupport;
+using Microsoft.Agents.BotBuilder.Errors;
 
 namespace Microsoft.Agents.BotBuilder.Tests
 {
@@ -70,7 +71,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             }
             catch (Exception e)
             {
-                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+                ExceptionTester.IsException<OperationCanceledException>(e, ErrorHelper.NullIAccessTokenProvider.code, _outputListener);
             }
 
             try
@@ -81,7 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             }
             catch (Exception e)
             {
-                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+                ExceptionTester.IsException<OperationCanceledException>(e, ErrorHelper.NullIAccessTokenProvider.code, _outputListener);
             }
 
             try
@@ -91,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             }
             catch (Exception e)
             {
-                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+                ExceptionTester.IsException<OperationCanceledException>(e, ErrorHelper.NullUserTokenProviderIAccessTokenProvider.code, _outputListener);
             }
 
         }
@@ -151,7 +152,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             }
             catch (Exception e)
             {
-                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+                ExceptionTester.IsException<OperationCanceledException>(e, ErrorHelper.NullIAccessTokenProvider.code, _outputListener);
             }
 
 
@@ -162,7 +163,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             }
             catch (Exception e)
             {
-                ExceptionTester.IsException<OperationCanceledException>(e, _outputListener);
+                ExceptionTester.IsException<OperationCanceledException>(e, ErrorHelper.NullUserTokenProviderIAccessTokenProvider.code, _outputListener);
             }
             //await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None));
             //await Assert.ThrowsAsync<InvalidOperationException>(async () => await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None));
