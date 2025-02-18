@@ -530,7 +530,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
             }
         }
-        internal HttpRequestMessage CreateGetConversationPagedMembersRequest(string conversationId, int? pageSize, string continuationToken)
+        internal HttpRequestMessage CreateGetConversationPagedMembersRequest(string conversationId, int? pageSize, string continuationToken = default)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
@@ -544,7 +544,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = null, string continuationToken = null, CancellationToken cancellationToken = default)
+        public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default(int?), string continuationToken = null, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
