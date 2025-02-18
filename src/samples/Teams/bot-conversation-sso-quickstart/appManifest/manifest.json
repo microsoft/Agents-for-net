@@ -3,7 +3,7 @@
   "manifestVersion": "1.16",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.microsoft.agents.teams.conversationsso",
+  "packageName": "com.Microsoft.Agents.Extensions.Teams.conversationsso",
   "developer": {
     "name": "Teams App, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",

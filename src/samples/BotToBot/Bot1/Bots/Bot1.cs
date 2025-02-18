@@ -13,10 +13,11 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.BotBuilder.Compat;
+using System.Linq;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -125,7 +126,7 @@ namespace Microsoft.Agents.Samples.Bots
             // Create a conversationId to interact with the skill and send the activity
             var options = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = turnContext.TurnState.Get<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = BotClaims.GetTokenScopes(turnContext.Identity).First(),
                 FromBotId = _channelHost.HostAppId,
                 Activity = turnContext.Activity,
                 Bot = targetChannel
@@ -169,7 +170,7 @@ namespace Microsoft.Agents.Samples.Bots
             {
                 activity.ApplyConversationReference(botConversationReference.ConversationReference);
                 turnContext.Activity.Id = replyToActivityId;
-                turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}";
+                turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
 
                 if (activity.Type == ActivityTypes.EndOfConversation)
                 {

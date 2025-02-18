@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Agents.BotBuilder.Teams;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Models;
 
 namespace LinkUnfurling.Bots
 {

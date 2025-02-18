@@ -11,16 +11,6 @@ namespace Microsoft.Agents.BotBuilder
     public static class OAuthTurnStateConstants
     {
         /// <summary>
-        /// TurnState key for the OAuth login timeout.
-        /// </summary>
-        public const string OAuthLoginTimeoutKey = "loginTimeout";
-
-        /// <summary>
-        /// Name of the token polling settings key.
-        /// </summary>
-        public const string TokenPollingSettingsKey = "tokenPollingSettings";
-
-        /// <summary>
         /// Default amount of time an OAuthCard will remain active (clickable and actively waiting for a token).
         /// After this time:
         /// (1) the OAuthCard will not allow the user to click on it.

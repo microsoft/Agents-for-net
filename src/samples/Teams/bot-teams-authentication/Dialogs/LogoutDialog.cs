@@ -53,7 +53,7 @@ namespace TeamsAuth.Dialogs
                 if (text.IndexOf("logout") >= 0)
                 {
                     // Accesses the UserTokenClient to handle the sign-out process.
-                    var userTokenClient = innerDc.Context.TurnState.Get<IUserTokenClient>();
+                    var userTokenClient = innerDc.Context.Services.Get<IUserTokenClient>();
                     await userTokenClient.SignOutUserAsync(innerDc.Context.Activity.From.Id, ConnectionName, innerDc.Context.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
 
                     // Sends a confirmation message and cancels any active dialogs.

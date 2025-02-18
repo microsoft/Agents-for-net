@@ -31,7 +31,7 @@ app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample - EchoSkill");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample - EchoSkill");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

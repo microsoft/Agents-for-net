@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder.Teams;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.BotBuilder;
 
 namespace ReceiveMessagesWithRSC.Bots
 {

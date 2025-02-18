@@ -4,7 +4,6 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
@@ -106,7 +105,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             _dialogContext.Object.Stack.Add(new DialogInstance { Id = "A", Version = "1" });
 
-            _context.SetupGet(e => e.TurnState)
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
+            _context.SetupGet(e => e.Services)
                 .Returns([])
                 .Verifiable(Times.Once);
             _dialog.Setup(e => e.OnDialogEventAsync(It.IsAny<DialogContext>(), It.IsAny<DialogEvent>(), It.IsAny<CancellationToken>()))

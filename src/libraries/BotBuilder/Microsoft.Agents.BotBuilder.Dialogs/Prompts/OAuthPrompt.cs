@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -180,7 +179,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
             // Check for timeout
             var state = dc.ActiveDialog.State;
-            var expires = state[PersistedExpires].CastTo<DateTime>();
+            var expires = (DateTime) state[PersistedExpires];
             var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
 
             try
@@ -198,17 +197,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
                         var serviceUrl = dc.Context.Activity.ServiceUrl;
-                        var claimsIdentity = dc.Context.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey);
                         var audience = callerInfo.Scope;
-                        var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, claimsIdentity, audience, cancellationToken).ConfigureAwait(false);
-                        if (dc.Context.TurnState.Get<IConnectorClient>() != null)
-                        {
-                            dc.Context.TurnState.Set(connectorClient);
-                        }
-                        else
-                        {
-                            dc.Context.TurnState.Add(connectorClient);
-                        }
+                        var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, dc.Context.Identity, audience, cancellationToken).ConfigureAwait(false);
+                        dc.Context.Services.Set<IConnectorClient>(connectorClient);
                     }
                 }
 
@@ -223,7 +214,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                 // Increment attempt count
                 // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
-                promptState[Prompt<int>.AttemptCountKey] = promptState[Prompt<int>.AttemptCountKey].CastTo<int>() + 1;
+                promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value
                 var isValid = recognized.Succeeded;
@@ -286,7 +277,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)
         {
-            var clientFactory = turnContext.TurnState.Get<IChannelServiceClientFactory>();
+            var clientFactory = turnContext.Services.Get<IChannelServiceClientFactory>();
             if (clientFactory != null)
             {
                 return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -302,12 +293,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
+            if (turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity))
             {
                 return new CallerInfo
                 {
                     CallerServiceUrl = turnContext.Activity.ServiceUrl,
-                    Scope = BotClaims.GetOutgoingAppId(botIdentity.Claims),
+                    Scope = BotClaims.GetOutgoingAppId(turnContext.Identity),
                 };
             }
 

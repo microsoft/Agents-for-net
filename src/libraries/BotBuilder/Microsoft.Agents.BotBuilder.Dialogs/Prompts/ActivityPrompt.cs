@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -123,7 +122,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
             // Increment attempt count
             // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
-            state[Prompt<int>.AttemptCountKey] = state[Prompt<int>.AttemptCountKey].CastTo<int>() + 1;
+            state[Prompt<int>.AttemptCountKey] = (int) state[Prompt<int>.AttemptCountKey] + 1;
 
             // Validate the return value
             var isValid = false;

@@ -5,7 +5,6 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,17 +20,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <summary>
         /// The key value for any InvokeResponseActivity that would be on the TurnState.
         /// </summary>
-        public const string InvokeResponseKey = "ChannelAdapter.InvokeResponse";
-
-        /// <summary>
-        /// The string value for the bot identity key.
-        /// </summary>
-        public const string BotIdentityKey = "BotIdentity";
-
-        /// <summary>
-        /// The string value for the OAuth scope key.
-        /// </summary>
-        public const string OAuthScopeKey = "Microsoft.Agents.Protocols.Adapter.ChannelAdapter.OAuthScope";
+        public const string InvokeResponseKey = "ChannelAdapterInvokeResponse";
 
         /// <summary>
         /// Logger for the bot adapter. 

@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Connector.Teams;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -73,7 +72,7 @@ namespace Microsoft.Agents.BotBuilder
             ArgumentException.ThrowIfNullOrWhiteSpace(audience);
 
             // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
-            return Task.FromResult<IConnectorClient>(new RestTeamsConnectorClient(
+            return Task.FromResult<IConnectorClient>(new RestConnectorClient(
                 new Uri(serviceUrl),
                 _httpClientFactory,
                 useAnonymous ? null : () =>

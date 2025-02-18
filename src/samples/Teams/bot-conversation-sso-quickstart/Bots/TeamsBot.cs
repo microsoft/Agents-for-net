@@ -5,9 +5,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 

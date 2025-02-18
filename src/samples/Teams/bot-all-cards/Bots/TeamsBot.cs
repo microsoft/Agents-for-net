@@ -10,9 +10,9 @@ using System.Text.Json;
 using AdaptiveCards.Templating;
 using AdaptiveCards;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using BotAllCards.Dialogs;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
 
 namespace BotAllCards.Bots
 {

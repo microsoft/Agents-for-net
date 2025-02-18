@@ -82,7 +82,43 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 }
                 else
                 {
-                    value.Add(keyString, itemValue);
+                    object objValue = null;
+                    if (itemValue != null)
+                    {
+                        var valValue = itemValue.AsValue();
+                        switch (valValue.GetValueKind())
+                        {
+                            case JsonValueKind.Number:
+                                if (valValue.TryGetValue<int>(out var intValue))
+                                {
+                                    objValue = intValue;
+                                }
+                                break;
+
+                            case JsonValueKind.String:
+                                if (valValue.TryGetValue<DateTime>(out var dateValue))
+                                {
+                                    objValue = dateValue;
+                                }
+                                else if (valValue.TryGetValue<string>(out var strValue))
+                                {
+                                    objValue = strValue;
+                                }
+                                break;
+
+                            case JsonValueKind.True:
+                            case JsonValueKind.False:
+                                if (valValue.TryGetValue<bool>(out var boolValue))
+                                {
+                                    objValue = boolValue;
+                                }
+                                break;
+
+                            default:
+                                objValue = itemValue; break;
+                        }
+                    }
+                    value.Add(keyString, objValue);
                 }
             }
             throw new JsonException($"JSON did not contain the end of {typeToConvert.FullName}!");

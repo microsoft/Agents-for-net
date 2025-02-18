@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Xunit;
 using Moq;
-using Microsoft.Agents.Core.Interfaces;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests

@@ -9,9 +9,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using AuthenticationBot;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.BotBuilder.Teams;
-using Microsoft.Agents.State;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,22 +28,25 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 // Add basic bot functionality
 builder.AddBot<AuthBot>();
 
-builder.Services.AddSingleton<IMiddleware[]>((sp) =>
-{
-    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
-});
-
 // Add IStorage for turn state persistence
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Create the Conversation state.
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<PrivateConversationState>();
+
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
+{
+    return 
+    [
+        new AutoSaveStateMiddleware(true, new PrivateConversationState(sp.GetService<IStorage>())),
+        new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
+    ];
+});
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

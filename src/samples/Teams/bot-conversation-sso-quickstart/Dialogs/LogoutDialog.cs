@@ -81,7 +81,7 @@ namespace BotConversationSsoQuickstart.Dialogs
                 if (text != null && text.IndexOf("logout") >= 0)
                 {
                     // The UserTokenClient encapsulates the authentication processes.
-                    var userTokenClient = innerDc.Context.TurnState.Get<IUserTokenClient>();
+                    var userTokenClient = innerDc.Context.Services.Get<IUserTokenClient>();
                     await userTokenClient.SignOutUserAsync(innerDc.Context.Activity.From.Id, ConnectionName, innerDc.Context.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
 
                     await innerDc.Context.SendActivityAsync(MessageFactory.Text("You have been signed out."), cancellationToken);

@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Samples.Bots;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +31,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

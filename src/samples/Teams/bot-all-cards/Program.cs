@@ -3,7 +3,6 @@
 
 using BotAllCards.Bots;
 using BotAllCards.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
@@ -11,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,17 +33,17 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 builder.Services.AddSingleton<UserState>();
 
 // Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<ConversationState>();
 
 // The Dialog that will be run by the bot.
-builder.Services.AddSingleton<MainDialog>();
+builder.Services.AddTransient<MainDialog>();
 
 var app = builder.Build();
 
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using TypeaheadSearch.Bots;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Samples;
 
 var builder = WebApplication.CreateBuilder(args);

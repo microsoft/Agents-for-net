@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal static class UriExtensions
+    public static class UriExtensions
     {
         public static Uri AppendQuery(this Uri uri, string name, string value, bool escape = true)
         {

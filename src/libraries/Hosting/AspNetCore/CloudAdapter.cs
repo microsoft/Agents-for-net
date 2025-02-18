@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
-            Core.Interfaces.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };

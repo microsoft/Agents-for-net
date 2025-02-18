@@ -8,8 +8,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.BotBuilderSamples.Tests.Framework;
 using Xunit;
 using Microsoft.Agents.Storage;
-using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.BotBuilderSamples.Tests.Bots
 {
