@@ -26,8 +26,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new ConcurrentDictionary<ActivityWithClaims, Task>();
         private IActivityTaskQueue _activityQueue;
         private readonly IChannelAdapter _adapter;
-        private readonly IBot _bot;
         private readonly int _shutdownTimeoutSeconds;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// Create a <see cref="HostedActivityService"/> instance for processing Activities
@@ -36,24 +36,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <remarks>
         /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
         /// </remarks>
+        /// <param name="provider"></param>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="bot">IBot which will be used to process Activities.</param>
         /// <param name="adapter"><see cref="IChannelAdapter"/> used to process Activities. </param>
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        public HostedActivityService(IConfiguration config, IBot bot, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger)
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger)
         {
             ArgumentNullException.ThrowIfNull(config);
-            ArgumentNullException.ThrowIfNull(bot);
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
+            ArgumentNullException.ThrowIfNull(provider);
 
             _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds", 60);
             _activityQueue = activityTaskQueue;
-            _bot = bot;
             _adapter = adapter;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
+            _serviceProvider = provider;
         }
 
         /// <summary>
@@ -129,7 +129,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 try
                 {
-                    await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, _bot.OnTurnAsync, stoppingToken);
+                    // We must go back through DI to get the IBot. This is because the IBot is typically transient, and anything
+                    // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
+                    // and disposed before this gets called.
+                    var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
+                    await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, ((IBot) bot).OnTurnAsync, stoppingToken);
                 }
                 catch (Exception ex)
                 {

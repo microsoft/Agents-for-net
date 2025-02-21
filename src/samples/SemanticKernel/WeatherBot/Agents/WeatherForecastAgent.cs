@@ -9,13 +9,14 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Agents.State;
+using System;
 
 namespace WeatherBot.Agents
 {
     public class WeatherForecastAgent
     {
         private readonly Kernel _kernel;
-        private readonly ChatHistory _chatHistory;
         private readonly ChatCompletionAgent _agent;
         private int retryCount;
 
@@ -40,7 +41,6 @@ namespace WeatherBot.Agents
         public WeatherForecastAgent(Kernel kernel)
         {
             this._kernel = kernel;
-            this._chatHistory = [];
 
             // Define the agent
             this._agent =
@@ -67,15 +67,17 @@ namespace WeatherBot.Agents
         /// </summary>
         /// <param name="input">A message to process.</param>
         /// <returns>An instance of <see cref="WeatherForecastAgentResponse"/></returns>
-        public async Task<WeatherForecastAgentResponse> InvokeAgentAsync(string input)
+        public async Task<WeatherForecastAgentResponse> InvokeAgentAsync(string input, ChatHistory chatHistory)
         {
+            ArgumentNullException.ThrowIfNull(chatHistory);
+
             ChatMessageContent message = new(AuthorRole.User, input);
-            this._chatHistory.Add(message);
+            chatHistory.Add(message);
 
             StringBuilder sb = new();
-            await foreach (ChatMessageContent response in this._agent.InvokeAsync(this._chatHistory))
+            await foreach (ChatMessageContent response in this._agent.InvokeAsync(chatHistory))
             {
-                this._chatHistory.Add(response);
+                chatHistory.Add(response);
                 sb.Append(response.Content);
             }
 
@@ -97,7 +99,7 @@ namespace WeatherBot.Agents
 
                 // Try again, providing corrective feedback to the model so that it can correct its mistake
                 this.retryCount++;
-                return await InvokeAgentAsync($"That response did not match the expected format. Please try again. Error: {je.Message}");
+                return await InvokeAgentAsync($"That response did not match the expected format. Please try again. Error: {je.Message}", chatHistory);
             }
         }
     }

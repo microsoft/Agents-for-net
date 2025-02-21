@@ -8,10 +8,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
 using WeatherBot.Agents;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using Azure.Identity;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,9 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
 builder.AddBot<MyBot>();
+
+builder.Services.AddSingleton<IStorage>(new MemoryStorage());
+builder.Services.AddSingleton<ConversationState>();
 
 var app = builder.Build();
 

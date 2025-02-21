@@ -25,15 +25,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// It is assumed these Claims have been authenticated via JwtTokenValidation.AuthenticateRequest 
         /// before enqueueing.
         /// </remarks>
+        /// <param name="bot"></param>
         /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
         /// activity.</param>
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity, Type bot = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _activities.Enqueue(new ActivityWithClaims { ClaimsIdentity = claimsIdentity, Activity = activity});
+            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity});
             _signal.Release();
         }
 
