@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -45,7 +44,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void TurnContext_ShouldBeClonedCorrectly()
         {
             var context1 = new TurnContext(new SimpleAdapter(), new Activity() { Text = "one" });
-            context1.TurnState.Add("x", "test");
+            context1.StackState.Set("x", "test");
             context1.OnSendActivities((context, activities, next) => next());
             context1.OnDeleteActivity((context, activity, next) => next());
             context1.OnUpdateActivity((context, activity, next) => next());
@@ -53,7 +52,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             Assert.Equal("one", context1.Activity.Text);
             Assert.Equal("two", ccontext2.Activity.Text);
             Assert.Equal(context1.Adapter, ccontext2.Adapter);
-            Assert.Equal(context1.TurnState, ccontext2.TurnState);
+            Assert.Equal(context1.StackState, ccontext2.StackState);
 
             var binding = BindingFlags.Instance | BindingFlags.NonPublic;
             var onSendField = typeof(TurnContext).GetField("_onSendActivities", binding);
@@ -84,14 +83,14 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void Get_ThrowsOnNullKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            Assert.Throws<ArgumentNullException>(() => context.TurnState.Get<object>(null));
+            Assert.Throws<ArgumentNullException>(() => context.StackState.Get<object>(null));
         }
 
         [Fact]
         public void Get_ShouldReturnNullOnEmptyKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            var service = context.TurnState.Get<object>(string.Empty);
+            var service = context.StackState.Get<object>(string.Empty);
             Assert.Null(service);
         }
 
@@ -99,7 +98,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void Get_ShouldReturnNullWithUnknownKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            var result = context.TurnState.Get<object>("test");
+            var result = context.StackState.Get<object>("test");
             Assert.Null(result);
         }
 
@@ -108,8 +107,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            context.TurnState.Add("bar", "foo");
-            var result = context.TurnState.Get<string>("bar");
+            context.StackState.Set("bar", "foo");
+            var result = context.StackState.Get<string>("bar");
 
             Assert.Equal("foo", result);
         }
@@ -119,8 +118,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            context.TurnState.Add("foo");
-            string result = context.TurnState.Get<string>();
+            context.StackState.Set("foo");
+            string result = context.StackState.Get<string>();
 
             Assert.Equal("foo", result);
         }
@@ -589,10 +588,12 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var activity = TestMessage.Message();
 
             // Create a custom disposable TurnContextStateCollection
-            var turnState = new CustomDisposableTurnContextStateCollection();
+            var stackState = new CustomDisposableTurnContextStateCollection();
+            var services = new CustomDisposableTurnContextStateCollection();
             var mockTurnContext = new Mock<ITurnContext>();
             mockTurnContext.Setup(tc => tc.Adapter).Returns(adapter);
-            mockTurnContext.Setup(tc => tc.TurnState).Returns(turnState);
+            mockTurnContext.Setup(tc => tc.StackState).Returns(stackState);
+            mockTurnContext.Setup(tc => tc.Services).Returns(services);
 
             var context = new TurnContext(mockTurnContext.Object, activity);
 
@@ -601,8 +602,10 @@ namespace Microsoft.Agents.BotBuilder.Tests
             context.Dispose();
 
             // Assert
-            Assert.True(turnState.IsDisposed, "TurnState.Dispose was not called.");
-            Assert.Equal(1, turnState.DisposeCallCount);
+            Assert.True(stackState.IsDisposed, "StackState.Dispose was not called.");
+            Assert.Equal(1, stackState.DisposeCallCount);
+            Assert.True(services.IsDisposed, "Services.Dispose was not called.");
+            Assert.Equal(1, services.DisposeCallCount);
         }
 
         private class CustomDisposableTurnContextStateCollection : TurnContextStateCollection, IDisposable

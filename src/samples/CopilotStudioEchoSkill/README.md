@@ -64,8 +64,8 @@ This sample is intended to introduce you to:
       }
       ```
 
-      1. Replace `{{ClientId}}` with the AppId of the bot identity.
-      1. Replace `{{TenantId}}` with the Tenant Id where your application is registered.
+      1. Replace all `{{ClientId}}` with the AppId of the bot identity.
+      1. Replace all `{{TenantId}}` with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.

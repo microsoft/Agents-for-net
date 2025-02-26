@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Security.Claims;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
@@ -12,6 +13,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     public class ActivityWithClaims
     {
         /// <summary>
+        /// Optional: Defaults to IBot
+        /// </summary>
+        public Type BotType { get; set; }
+
+        /// <summary>
         /// <see cref="ClaimsIdentity"/> retrieved from a call to authentication.
         /// </summary>
         public ClaimsIdentity ClaimsIdentity { get; set; }
@@ -19,6 +25,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// <see cref="Activity"/> to be processed.
         /// </summary>
-        public Activity Activity { get; set; }
+        public IActivity Activity { get; set; }
+        
+        public bool IsProactive { get; set; }
+        public string ProactiveAudience { get; set; }
+
     }
 }

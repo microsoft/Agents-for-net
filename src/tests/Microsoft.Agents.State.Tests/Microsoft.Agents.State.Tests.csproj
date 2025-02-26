@@ -24,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.State\Microsoft.Agents.State.csproj" />
       <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
     </ItemGroup>
 

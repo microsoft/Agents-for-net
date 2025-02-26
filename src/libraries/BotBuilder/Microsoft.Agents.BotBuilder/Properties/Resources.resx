@@ -119,6 +119,10 @@
   </resheader>
   <data name="IAccessTokenProviderNotFound" xml:space="preserve">
     <value>An instance of IAccessTokenProvider not found for {0}</value>
-    <comment>Raised when an the call get an access token provider returns null.</comment>
+    <comment>Raised when the call get an access token provider returns null.</comment>
+  </data>
+  <data name="UserAuthenticationNotConfigured" xml:space="preserve">
+    <value>The Application.Authentication property is unavailable because no user authentication handlers were configured.</value>
+    <comment>Raised when accessing Application.Authentication but it hasn't been configured.</comment>
   </data>
 </root>

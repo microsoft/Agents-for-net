@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -149,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _parentBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _skillBotId));
-                turnContext.TurnState.Add(BotIdentityKey, claimsIdentity);
+                turnContext.Identity = claimsIdentity;
 
                 return turnContext;
             }

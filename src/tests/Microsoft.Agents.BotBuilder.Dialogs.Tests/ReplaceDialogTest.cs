@@ -3,14 +3,14 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Telemetry;
 using Moq;
 using Xunit;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -28,6 +28,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
@@ -52,6 +53,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
@@ -79,6 +81,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
 
                 Assert.NotNull(dialog.TelemetryClient);
@@ -149,7 +152,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
                 public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default(CancellationToken))
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"));
+                    await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"), cancellationToken);
                     await base.EndDialogAsync(turnContext, instance, reason, cancellationToken);
                 }
             }

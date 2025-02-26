@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Connector.Tests
         private const string ChannelId = "channel-id";
         private const string Code = "code";
         private const string Include = "include";
-        private readonly AadResourceUrls AadResourceUrls = new() { ResourceUrls = ["resource-url"] };
+        private readonly string[] AadResourceUrls = ["resource-url"];
         private readonly TokenExchangeRequest TokenExchangeRequest = new();
         private static readonly Mock<HttpClient> MockHttpClient = new();
 
@@ -38,33 +38,33 @@ namespace Microsoft.Agents.Connector.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullFactory()
         {
-            Assert.Throws<ArgumentNullException>(() => new UserTokenRestClient(Endpoint, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new RestUserTokenClient("appId", Endpoint, null, null, null));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullEndpoint()
         {
-            Assert.Throws<ArgumentNullException>(() => new UserTokenRestClient(null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new RestUserTokenClient("appId", null, null, null, null, null));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullTokenProvider()
         {
-            Assert.Throws<ArgumentNullException>(() => new UserTokenRestClient(Endpoint, new Mock<IHttpClientFactory>().Object, null, null));
+            Assert.Throws<ArgumentNullException>(() => new RestUserTokenClient("appId", Endpoint, new Mock<IHttpClientFactory>().Object, null, null));
         }
 
         [Fact]
         public async Task GetTokenAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync(null, ConnectionName, ChannelId));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetUserTokenAsync(null, ConnectionName, ChannelId, "code", CancellationToken.None));
         }
 
         [Fact]
         public async Task GetTokenAsync_ShouldThrowOnNullConnectionName()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync(UserId, null, ChannelId));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetUserTokenAsync(UserId, null, ChannelId, "code", CancellationToken.None));
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var result = await client.GetTokenAsync(UserId, ConnectionName, ChannelId, Code);
+            var result = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None);
 
             Assert.Equal(tokenResponse.Token, result.Token);
         }
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Connector.Tests
             
             var client = UseClient();
 
-            Assert.Null(await client.GetTokenAsync(UserId, ConnectionName, ChannelId, Code));
+            Assert.Null(await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
         }
 
         [Fact]
@@ -106,14 +106,14 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetTokenAsync(UserId, ConnectionName, ChannelId, Code));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
         }
 
         [Fact]
         public async Task SignOutAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutAsync(null, ConnectionName, ChannelId));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutUserAsync(null, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
@@ -133,7 +133,8 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            Assert.NotNull(await client.SignOutAsync(UserId, ConnectionName, ChannelId));
+            // will throw for test failure
+            await client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None);
         }
 
         [Fact]
@@ -143,7 +144,8 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            Assert.Null(await client.SignOutAsync(UserId, ConnectionName, ChannelId));
+            // no error should happen
+            await client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None);
         }
 
         [Fact]
@@ -153,14 +155,14 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.SignOutAsync(UserId, ConnectionName, ChannelId));
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
         public async Task GetTokenStatusAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenStatusAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenStatusAsync(null, null, null, CancellationToken.None));
         }
 
         [Fact]
@@ -182,7 +184,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var status = await client.GetTokenStatusAsync(UserId, ConnectionName, ChannelId);
+            var status = await client.GetTokenStatusAsync(UserId, ConnectionName, ChannelId, CancellationToken.None);
 
             Assert.Single(status);
             Assert.True(status[0].HasToken);
@@ -195,21 +197,21 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include, CancellationToken.None));
         }
 
         [Fact]
         public async Task GetAadTokensAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ConnectionName, AadResourceUrls));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ConnectionName, AadResourceUrls, "channelId", CancellationToken.None));
         }
 
         [Fact]
         public async Task GetAadTokensAsync_ShouldThrowOnNullConnectionName()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(UserId, null, AadResourceUrls));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(UserId, null, AadResourceUrls, "channelId", CancellationToken.None));
         }
 
         [Fact]
@@ -235,7 +237,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var result = await client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId);
+            var result = await client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId, CancellationToken.None);
 
             Assert.Equal(2, result.Count);
             Assert.Equal(tokens["firstToken"].Token, result["firstToken"].Token);
@@ -249,35 +251,35 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(null, ConnectionName, ChannelId, TokenExchangeRequest));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(null, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullConnectionName()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, null, ChannelId, TokenExchangeRequest));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(UserId, null, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullChannelId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, null, TokenExchangeRequest));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, null, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullExchangeRequest()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None));
         }
 
         [Fact]
@@ -297,7 +299,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            Assert.NotNull(await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest));
+            Assert.NotNull(await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -307,7 +309,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -328,7 +330,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var response = await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest);
+            var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
             Assert.NotNull(response);
             Assert.Equal(ConnectionName, ((TokenResponse)response).ConnectionName);
             Assert.Equal("test-token", ((TokenResponse)response).Token);
@@ -341,7 +343,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -361,9 +363,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var response = await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest);
-            Assert.IsAssignableFrom<ErrorResponse>(response);
-            Assert.Equal("Error Message", ((ErrorResponse)response).Error.Message);
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -383,7 +383,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var response = await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest);
+            var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
             Assert.IsAssignableFrom<TokenResponse>(response);
             Assert.Equal(ConnectionName, ((TokenResponse)response).ConnectionName);
         }
@@ -395,17 +395,17 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var response = await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest);
+            var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
             Assert.Null(response);
         }
 
-        private static UserTokenRestClient UseClient()
+        private static RestUserTokenClient UseClient()
         {
             var httpFactory = new Mock<IHttpClientFactory>();
             httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
                 .Returns(MockHttpClient.Object);
 
-            return new UserTokenRestClient(Endpoint, httpFactory.Object, () => Task.FromResult<string>("test"));
+            return new RestUserTokenClient("appId", Endpoint, httpFactory.Object, () => Task.FromResult<string>("test"));
         }
     }
 }

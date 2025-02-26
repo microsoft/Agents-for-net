@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;

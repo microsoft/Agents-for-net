@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.Choice;
 using static Microsoft.Agents.BotBuilder.Dialogs.Prompts.PromptCultureModels;

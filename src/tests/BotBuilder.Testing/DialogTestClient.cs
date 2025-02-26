@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Testing
 {
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
         {
             ConversationState = conversationState ?? new ConversationState(new MemoryStorage());
             _testAdapter = new TestAdapter(channelId)
-                .Use(new AutoSaveStateMiddleware(ConversationState));
+                .Use(new AutoSaveStateMiddleware(true, ConversationState));
 
             AddUserMiddlewares(middlewares);
 
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
         public DialogTestClient(TestAdapter testAdapter, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null)
         {
             ConversationState = conversationState ?? new ConversationState(new MemoryStorage());
-            _testAdapter = testAdapter.Use(new AutoSaveStateMiddleware(ConversationState));
+            _testAdapter = testAdapter.Use(new AutoSaveStateMiddleware(true, ConversationState));
 
             AddUserMiddlewares(middlewares);
 
@@ -128,7 +128,8 @@ namespace Microsoft.Agents.BotBuilder.Testing
             async (turnContext, cancellationToken) =>
             {
                 // Ensure dialog state is created and pass it to DialogSet.
-                var dialogState = await ConversationState.GetPropertyAsync(turnContext, "DialogState", () => new DialogState(), cancellationToken).ConfigureAwait(false);
+                await ConversationState.LoadAsync(turnContext).ConfigureAwait(false);
+                var dialogState = ConversationState.GetValue("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(targetDialog);
 

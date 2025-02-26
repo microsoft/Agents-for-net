@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -58,7 +57,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                     return 0;
                 }
 
-                return State[Prompt<T>.AttemptCountKey].CastTo<int>();
+                return (int) State[Prompt<T>.AttemptCountKey];
             }
         }
     }

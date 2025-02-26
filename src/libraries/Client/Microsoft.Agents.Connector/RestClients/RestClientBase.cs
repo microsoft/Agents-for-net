@@ -8,13 +8,16 @@ using System;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class RestClientBase(IHttpClientFactory httpClientFactory, string httpClientName, Func<Task<string>> tokenProviderFunction)
+    public class RestClientBase(Uri endpoint, IHttpClientFactory httpClientFactory, string httpClientName, Func<Task<string>> tokenProviderFunction) : IRestTransport
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         private readonly Func<Task<string>> _tokenProviderFunction = tokenProviderFunction;
         private readonly string _httpClientName = httpClientName ?? throw new ArgumentNullException(nameof(httpClientName));
+        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
-        protected async Task<HttpClient> GetHttpClientAsync()
+        public Uri Endpoint => _endpoint;
+
+        public async Task<HttpClient> GetHttpClientAsync()
         {
             var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 

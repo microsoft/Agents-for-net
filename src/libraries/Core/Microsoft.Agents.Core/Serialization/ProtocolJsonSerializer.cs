@@ -7,8 +7,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Agents.Core.Serialization.Converters;
-using Microsoft.Agents.Core.SharePoint.Serialization.Converters;
-using Microsoft.Agents.Core.Teams.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -20,12 +18,15 @@ namespace Microsoft.Agents.Core.Serialization
         public const string ApplicationJson = "application/json";
         public static JsonSerializerOptions SerializationOptions = CreateConnectorOptions();
 
+        static ProtocolJsonSerializer()
+        {
+            SerializationInitAttribute.InitSerialization();
+        }
+
         public static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
-                .ApplyCoreOptions()
-                .ApplyTeamsOptions()
-                .ApplySharepointOptions();
+                .ApplyCoreOptions();
 
             return options;
         }
@@ -56,31 +57,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
-            options.Converters.Add(new SearchInvokeValueConverter());
-
-            return options;
-        }
-
-        private static JsonSerializerOptions ApplyTeamsOptions(this JsonSerializerOptions options)
-        {
-            options.Converters.Add(new SurfaceConverter());
-            options.Converters.Add(new TabSubmitDataConverter());
-            options.Converters.Add(new TeamsChannelDataConverter());
-            options.Converters.Add(new MessagingExtensionActionResponseConverter());
-            options.Converters.Add(new TaskModuleResponseConverter());
-            options.Converters.Add(new TaskModuleResponseBaseConverter());
-            options.Converters.Add(new TaskModuleCardResponseConverter());
-            options.Converters.Add(new TaskModuleContinueResponseConverter());
-            options.Converters.Add(new TaskModuleMessageResponseConverter());
-            options.Converters.Add(new MessagingExtensionAttachmentConverter());
-
-            return options;
-        }
-
-        private static JsonSerializerOptions ApplySharepointOptions(this JsonSerializerOptions options)
-        {
-            options.Converters.Add(new AceDataConverter());
-            options.Converters.Add(new AceRequestConverter());
 
             return options;
         }
@@ -145,13 +121,19 @@ namespace Microsoft.Agents.Core.Serialization
         /// Convert an object to the desired type using serialization and deserialization.
         /// </summary>
         /// <param name="value">The object to be converted to desired type: string, MemoryStream, object</param>
+        /// <param name="defaultFactory"></param>
         /// <typeparam name="T">The type of object to convert to.</typeparam>
         /// <returns>The converted object.</returns>
-        public static T ToObject<T>(object value)
+        public static T ToObject<T>(object value, Func<T> defaultFactory = null)
         {
             if (value == null)
             {
-                throw new ArgumentNullException(nameof(value));
+                if (defaultFactory != null)
+                {
+                    return defaultFactory();
+                }
+
+                return default;
             }
 
             if (value is T result)
@@ -177,7 +159,13 @@ namespace Microsoft.Agents.Core.Serialization
             return System.Text.Json.JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 
-
+        public static bool Equals<T>(T value1, T value2)
+        {
+            return string.Equals(
+                    JsonSerializer.Serialize(value1, ProtocolJsonSerializer.SerializationOptions),
+                    JsonSerializer.Serialize(value2, ProtocolJsonSerializer.SerializationOptions)
+                );
+        }
 
         public static T CloneTo<T>(object obj)
         {

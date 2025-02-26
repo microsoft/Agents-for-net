@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Storage
                                 &&
                            newStoreItem.ETag != oldStateETag)
                         {
-                            throw new ArgumentException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                            throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
                         }
 
                         newState["ETag"] = (_eTag++).ToString(CultureInfo.InvariantCulture);

@@ -16,9 +16,9 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Storage;
 using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -451,9 +451,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
                 .Verifiable(Times.Exactly(3));
-            _context.SetupGet(e => e.TurnState)
+            _context.SetupGet(e => e.Services)
                 .Returns([])
-                .Verifiable(Times.Exactly(2));
+                .Verifiable(Times.Exactly(1));
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
 
             MockSendToSkillAsync(activity);
 
@@ -473,9 +475,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity())
                 .Verifiable(Times.Exactly(3));
-            _context.SetupGet(e => e.TurnState)
-                .Returns([])
-                .Verifiable(Times.Once);
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
             MockSendToSkillAsync(activity);
 
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
@@ -493,9 +496,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
                 .Verifiable(Times.Once);
-            _context.SetupGet(e => e.TurnState)
-                .Returns([])
-                .Verifiable(Times.Once);
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
             MockSendToSkillAsync(activity);
 
             await _dialog.RepromptDialogAsync(_context.Object, _dialogState.DialogStack[0]);
@@ -511,9 +515,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
                 .Verifiable(Times.Once);
-            _context.SetupGet(e => e.TurnState)
-                .Returns([])
-                .Verifiable(Times.Once);
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
             MockSendToSkillAsync(activity);
 
             var result = await _dialog.ResumeDialogAsync(_dialogContext.Object, DialogReason.BeginCalled);

@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Storage.Blobs
                 catch (RequestFailedException ex)
                 when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
                 {
-                    throw new InvalidOperationException($"Etag conflict: {ex.Message}");
+                    throw new EtagException($"Etag conflict: {ex.Message}");
                 }
             }
         }

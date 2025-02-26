@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Security;
@@ -21,7 +20,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
             await Assert.ThrowsAsync<Exception>(() =>
                   new TestFlow(adapter, async (context, cancellationToken) =>
                   {
-                      await context.SendActivityAsync(context.Activity.CreateReply("one"));
+                      await context.SendActivityAsync(context.Activity.CreateReply("one"), cancellationToken);
                   })
                           .Test("foo", (activity) => throw new Exception(uniqueExceptionId))
                           .StartTestAsync());  
@@ -49,7 +48,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
             await Assert.ThrowsAsync<Exception>(() =>
                 new TestFlow(adapter, async (context, cancellationToken) =>
                 {
-                    await context.SendActivityAsync(context.Activity.CreateReply("one"));
+                    await context.SendActivityAsync(context.Activity.CreateReply("one"), cancellationToken);
                 })
                     .Send("foo")
                     .AssertReply(
@@ -231,15 +230,15 @@ namespace Microsoft.Agents.BotBuilder.Testing
             switch (turnContext.Activity.Text)
             {
                 case "count":
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"));
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("two"));
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("three"));
+                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"), cancellationToken);
+                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("two"), cancellationToken);
+                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("three"), cancellationToken);
                     break;
                 case "ignore":
                     break;
                 default:
                     await turnContext.SendActivityAsync(
-                        turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"));
+                        turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"), cancellationToken);
                     break;
             }
         }

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Core.Interfaces;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,7 +64,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             async Task EchoWithException(ITurnContext ctx, CancellationToken cancellationToken)
             {
                 string toEcho = "ECHO:" + ctx.Activity.Text;
-                await ctx.SendActivityAsync(ctx.Activity.CreateReply(toEcho));
+                await ctx.SendActivityAsync(ctx.Activity.CreateReply(toEcho), cancellationToken);
                 throw new Exception(uniqueId);
             }
 
@@ -82,17 +81,17 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken)
             {
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"));
+                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"), cancellationToken);
                 try
                 {
                     await next(cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("CAUGHT:" + ex.Message));
+                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("CAUGHT:" + ex.Message), cancellationToken);
                 }
 
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"));
+                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"), cancellationToken);
             }
         }
 
@@ -100,9 +99,9 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken)
             {
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"));
+                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"), cancellationToken);
                 await next(cancellationToken);
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"));
+                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"), cancellationToken);
             }
         }
     }

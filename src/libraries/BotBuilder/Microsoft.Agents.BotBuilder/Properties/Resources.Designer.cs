@@ -68,5 +68,14 @@ namespace Microsoft.Agents.BotBuilder.Properties {
                 return ResourceManager.GetString("IAccessTokenProviderNotFound", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Application.Authentication property is unavailable because no user authentication handlers were configured..
+        /// </summary>
+        internal static string UserAuthenticationNotConfigured {
+            get {
+                return ResourceManager.GetString("UserAuthenticationNotConfigured", resourceCulture);
+            }
+        }
     }
 }

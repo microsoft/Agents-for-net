@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var changes = new Dictionary<string, object> { { "key", new StoreItem() } };
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<EtagException>(() => _storage.WriteAsync(changes));
         }
 
         [Fact]

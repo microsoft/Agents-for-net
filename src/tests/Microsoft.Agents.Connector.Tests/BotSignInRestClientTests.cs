@@ -31,15 +31,9 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public void Constructor_ShouldThrowOnNullEndpoint()
+        public void Constructor_ShouldThrowOnNullTransport()
         {
-            Assert.Throws<ArgumentNullException>(() => new BotSignInRestClient(null, null, null));
-        }
-
-        [Fact]
-        public void Constructor_ShouldThrowOnNullFactory()
-        {
-            Assert.Throws<ArgumentNullException>(() => new BotSignInRestClient(Endpoint, null, null));
+            Assert.Throws<ArgumentNullException>(() => new BotSignInRestClient(null));
         }
 
         [Fact]
@@ -124,11 +118,13 @@ namespace Microsoft.Agents.Connector.Tests
 
         private static BotSignInRestClient UseClient()
         {
-            var httpFactory = new Mock<IHttpClientFactory>();
-            httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
-                .Returns(MockHttpClient.Object);
+            var transport = new Mock<IRestTransport>();
+            transport.Setup(x => x.Endpoint)
+                .Returns(Endpoint);
+            transport.Setup(a => a.GetHttpClientAsync())
+                .Returns(Task.FromResult(MockHttpClient.Object));
 
-            return new BotSignInRestClient(Endpoint, httpFactory.Object, () => Task.FromResult<string>("test"));
+            return new BotSignInRestClient(transport.Object);
         }
     }
 }

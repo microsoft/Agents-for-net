@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// This contains the routes for the ChannelAPI.  These are the endpoints that
     /// ConnectorClient uses in the case of a bot-to-bot or Bot Framework Skill.
     /// The implementation of this is via <see cref="IChannelApiHandler"/>.
-    /// See the Microsoft.Agents.BotBuilder.BotFrameworkSkillHandler class for the Bot Framework Root bot handling of these.
+    /// See the Microsoft.Agents.BotBuilder.ProxyChannelApiHandler class for an example of this for Dialogs and Skills.
     /// <see cref="IConnectorClient"/>
     /// </summary>
     /// <remarks>
