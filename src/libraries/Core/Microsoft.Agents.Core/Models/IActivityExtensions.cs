@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>new .Text property value.</returns>
         public static string RemoveRecipientMention<T>(this T activity) where T : IActivity
         {
-            return activity.RemoveMentionText(activity.Recipient.Id);
+            return activity.RemoveMentionText(activity.Recipient?.Id);
         }
 
         /// <summary>

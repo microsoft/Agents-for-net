@@ -7,14 +7,26 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
-		<ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.State\Microsoft.Agents.State.csproj" />
 		<ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
+		<ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
 		<ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage\Microsoft.Agents.Storage.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Content Update="appManifest\manifest.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+		<Content Update="appsettings.Development.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
 		<Content Update="appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
 	</ItemGroup>
 </Project>

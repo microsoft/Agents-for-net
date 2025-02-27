@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
-using Microsoft.Agents.State;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs
             if ((bool)stepContext.Result)
             {
                 // Get the current profile object from user state.
-                var userProfile = await _userState.GetPropertyAsync<UserProfile>(stepContext.Context, "UserProfile", () => new UserProfile(), cancellationToken);
+                var userProfile = _userState.GetValue<UserProfile>("UserProfile", () => new UserProfile());
 
                 userProfile.Transport = (string)stepContext.Values["transport"];
                 userProfile.Name = (string)stepContext.Values["name"];

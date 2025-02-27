@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     {
         private readonly ILogger<HostedTaskService> _logger;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new ConcurrentDictionary<Func<CancellationToken, Task>, Task>();
+        private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new();
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly int _shutdownTimeoutSeconds;
 

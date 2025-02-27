@@ -14,20 +14,16 @@ using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class UserTokenRestClient(
-        Uri endpoint,
-        IHttpClientFactory httpClientFactory,
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IUserToken
+    internal class UserTokenRestClient(IRestTransport transport) : IUserToken
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(_endpoint, $"api/usertoken/GetToken")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetToken")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId)
@@ -42,7 +38,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(_endpoint, $"api/usertoken/exchange")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -64,7 +60,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentNullException.ThrowIfNull(exchangeRequest);
 
             using var message = CreateExchangeRequest(userId, connectionName, channelId, exchangeRequest);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -95,13 +91,14 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
             using var message = CreateGetTokenRequest(userId, connectionName, channelId, code);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                 case 404:
+                    // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
                 default:
                     throw new HttpRequestException($"GetTokenAsync {httpResponse.StatusCode}");
@@ -113,7 +110,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(endpoint, $"api/usertoken/GetAadTokens")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetAadTokens")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -133,7 +130,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
             using var message = CreateGetAadTokensRequest(userId, connectionName, channelId, aadResourceUrls);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -151,7 +148,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Delete;
 
-            request.RequestUri = new Uri(endpoint, $"api/usertoken/SignOut")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/SignOut")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -166,7 +163,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(userId);
 
             using var message = CreateSignOutRequest(userId, connectionName, channelId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -186,7 +183,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(endpoint, $"api/usertoken/GetTokenStatus")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetTokenStatus")
                 .AppendQuery("userId", userId)
                 .AppendQuery("channelId", channelId)
                 .AppendQuery("include", include);
@@ -201,7 +198,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(userId);
 
             using var message = CreateGetTokenStatusRequest(userId, channelId, include);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -219,7 +216,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(endpoint, $"api/usertoken/exchange")
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -240,7 +237,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(channelId);
 
             using var message = CreateExchangeTokenRequest(userId, connectionName, channelId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {

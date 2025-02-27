@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IncludeAspNetSampleHelpers>false</IncludeAspNetSampleHelpers>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- this is not needed in a client sample ** remove when we move the samples to another repo** -->
+	  <Compile Remove="$(SamplesRoot)Shared\AspNetExtensions.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
+		<PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
+	</ItemGroup>
+</Project>

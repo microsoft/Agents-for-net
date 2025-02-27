@@ -4,9 +4,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using System;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared
 {
@@ -14,7 +13,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared
     {
         public static async Task Run(this Dialog dialog, ITurnContext turnContext, BotState state, CancellationToken cancellationToken)
         {
-            var dialogState = await state.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken).ConfigureAwait(false);
+            var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
             dialogSet.Add(dialog);
 

@@ -20,26 +20,25 @@ namespace Microsoft.Agents.Connector
     /// <summary>
     /// Client for OAuth flow using the TokenAPI endpoints.  This uses the Azure Bot Service Token Service to facilitate the token exchange.
     /// </summary>
-    public class RestUserTokenClient : IUserTokenClient, IDisposable
+    public class RestUserTokenClient : RestClientBase, IUserTokenClient, IDisposable
     {
         private readonly string _appId;
-        private readonly Uri _endpoint;
         private readonly UserTokenRestClient _userTokenClient;
         private readonly BotSignInRestClient _botSignInClient;
         private readonly ILogger _logger;
         private bool _disposed;
 
-        public Uri BaseUri => _endpoint;
+        public Uri BaseUri => Endpoint;
 
         public RestUserTokenClient(string appId, Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestUserTokenClient), ILogger logger = null)
+            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
         {
             ArgumentException.ThrowIfNullOrEmpty(appId);
 
             _appId = appId;
-            _endpoint = endpoint;
 
-            _userTokenClient = new UserTokenRestClient(endpoint, httpClientFactory, tokenProviderFunction, namedClient);
-            _botSignInClient = new BotSignInRestClient(endpoint, httpClientFactory, tokenProviderFunction, namedClient);
+            _userTokenClient = new UserTokenRestClient(this);
+            _botSignInClient = new BotSignInRestClient(this);
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -128,6 +127,10 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation($"ExchangeAsyncAsync ConnectionName: {connectionName}");
             var result = await _userTokenClient.ExchangeAsyncAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
+            if (result == null)
+            {
+                return null;
+            }
 
             if (result is ErrorResponse errorResponse)
             {

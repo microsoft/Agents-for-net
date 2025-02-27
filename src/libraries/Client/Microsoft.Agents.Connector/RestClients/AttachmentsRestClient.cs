@@ -14,18 +14,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class AttachmentsRestClient(Uri endpoint,
-        IHttpClientFactory httpClientFactory,
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IAttachments
+    internal class AttachmentsRestClient(IRestTransport transport) : IAttachments
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetAttachmentInfoRequest(string attachmentId)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}");
+            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}");
             request.Headers.Add("Accept", "application/json");
             return request;
         }
@@ -43,7 +40,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             using var message = CreateGetAttachmentInfoRequest(attachmentId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int) httpResponse.StatusCode)
             {
@@ -75,7 +72,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
+            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
             request.Headers.Add("Accept", "application/octet-stream, application/json");
             return request;
         }
@@ -98,7 +95,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             using var message = CreateGetAttachmentRequest(attachmentId, viewId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Moq;
@@ -18,14 +20,20 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
         public OAuthFlowTests()
         {
-            _flow = new OAuthFlow("Test flow", "testing oauth flow", "connection name", 1000, null); ;
+            _flow = new OAuthFlow(new OAuthSettings()
+            {
+                ConnectionName = "connection name",
+                Title = "Test flow", 
+                Text = "testing oauth flow", 
+                Timeout = 1000
+            });
         }
 
         [Fact]
         public async Task SignOutUserAsync_ShouldThrowOnNullUserTokenClient()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            await Assert.ThrowsAsync<NotSupportedException>(async() => await _flow.SignOutUserAsync(context));
+            await Assert.ThrowsAsync<NotSupportedException>(async() => await _flow.SignOutUserAsync(context, CancellationToken.None));
         }
         
         [Fact]
@@ -46,14 +54,14 @@ namespace Microsoft.Agents.BotBuilder.Tests
             mockUserTokenClient.Setup(
                 x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
 
-            context.TurnState.Add<IUserTokenClient>(mockUserTokenClient.Object);
+            context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
 
             //Act
-            await _flow.SignOutUserAsync(context);
+            await _flow.SignOutUserAsync(context, CancellationToken.None);
 
             // Assert
             mockUserTokenClient.Verify(
-                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.ConnectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
+                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.Settings.ConnectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Fact]
@@ -82,10 +90,10 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 x => x.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TokenResponse)null);
 
-            context.TurnState.Add<IUserTokenClient>(mockUserTokenClient.Object);
+            context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
 
             //Act
-            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1));
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
 
             // Assert
             Assert.Null(result);
@@ -115,7 +123,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
 
             //Act
-            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1));
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
 
             // Assert
             Assert.Null(result);
@@ -140,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
-                Value = new TokenResponse(Channels.Msteams, _flow.ConnectionName, "token", null),
+                Value = new TokenResponse(Channels.Msteams, _flow.Settings.ConnectionName, "token", null),
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
                 Text = "invoke",
@@ -148,7 +156,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
 
             //Act
-            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1));
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
 
             // Assert
             Assert.Null(result);

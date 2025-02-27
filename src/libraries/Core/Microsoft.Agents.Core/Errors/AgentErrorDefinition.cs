@@ -33,7 +33,10 @@ namespace Microsoft.Agents.Core.Errors
     {
         public static T GenerateException<T>(AgentErrorDefinition errorDefinition, Exception innerException, params string[] messageFormat) where T : Exception
         {
-            var excp = (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat), innerException });
+            var excp = innerException != null
+                ? (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat), innerException })
+                : (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat) });
+
             excp.HResult = errorDefinition.code;
             excp.HelpLink = errorDefinition.helplink;
             return excp;

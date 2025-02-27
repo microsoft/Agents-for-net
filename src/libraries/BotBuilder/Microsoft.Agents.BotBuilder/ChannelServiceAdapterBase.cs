@@ -6,13 +6,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -75,7 +73,7 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else if (activity.Type == ActivityTypes.InvokeResponse)
                 {
-                    turnContext.TurnState.Add(InvokeResponseKey, activity);
+                    turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
                 else if (activity.Type == ActivityTypes.Trace && activity.ChannelId != Channels.Emulator)
                 {
@@ -85,12 +83,12 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
                     {
-                        var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
                         response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
                         response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
                     }
                 }
@@ -111,7 +109,7 @@ namespace Microsoft.Agents.BotBuilder
 
             Logger.LogInformation($"UpdateActivityAsync ActivityId: {activity.Id}");
 
-            var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+            var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
 
@@ -123,7 +121,7 @@ namespace Microsoft.Agents.BotBuilder
 
             Logger.LogInformation($"DeleteActivityAsync Conversation Id: {reference.Conversation.Id}, ActivityId: {reference.ActivityId}");
 
-            var connectorClient = turnContext.TurnState.Get<IConnectorClient>();
+            var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
         }
 
@@ -133,7 +131,7 @@ namespace Microsoft.Agents.BotBuilder
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
             var claims = CreateClaimsIdentity(botAppId);
-            return ProcessProactiveAsync(CreateClaimsIdentity(botAppId), reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claims.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(CreateClaimsIdentity(botAppId), reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -141,7 +139,7 @@ namespace Microsoft.Agents.BotBuilder
         {
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claimsIdentity.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -161,7 +159,7 @@ namespace Microsoft.Agents.BotBuilder
             ValidateContinuationActivity(continuationActivity);
 
             var claims = CreateClaimsIdentity(botAppId);
-            return ProcessProactiveAsync(claims, continuationActivity, BotClaims.GetTokenAudience(claims.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(claims, continuationActivity, BotClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -171,7 +169,7 @@ namespace Microsoft.Agents.BotBuilder
             _ = callback ?? throw new ArgumentNullException(nameof(callback));
             ValidateContinuationActivity(continuationActivity);
 
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -214,11 +212,16 @@ namespace Microsoft.Agents.BotBuilder
                 using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken).ConfigureAwait(false);
 
                 // Create a turn context and run the pipeline.
-                using var context = CreateTurnContext(createActivity, claimsIdentity, null, connectorClient, userTokenClient, callback);
+                using var context = CreateTurnContext(createActivity, claimsIdentity, connectorClient, userTokenClient, callback);
 
                 // Run the pipeline.
                 await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        {
+            await ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -229,8 +232,9 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name="audience">The audience for the call.</param>
         /// <param name="callback">The method to call for the resulting bot turn.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="async"></param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        protected async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
 
@@ -241,7 +245,7 @@ namespace Microsoft.Agents.BotBuilder
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken).ConfigureAwait(false);
 
             // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(continuationActivity, claimsIdentity, audience, connectorClient, userTokenClient, callback);
+            using var context = CreateTurnContext(continuationActivity, claimsIdentity, connectorClient, userTokenClient, callback);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -253,16 +257,12 @@ namespace Microsoft.Agents.BotBuilder
             Logger.LogInformation($"ProcessActivityAsync");
             IList<string> scopes = null;
 
-            string outgoingAudience;
-            if (BotClaims.IsBotClaim(claimsIdentity.Claims))
+            if (BotClaims.IsBotClaim(claimsIdentity))
             {
-                outgoingAudience = BotClaims.GetTokenAudience(claimsIdentity.Claims);
-                scopes = [$"{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}/.default"];
-                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}";
+                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
             }
             else
             {
-                outgoingAudience = AuthenticationConstants.BotFrameworkScope;
                 //activity.CallerId = ???
             }
 
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.BotBuilder
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 claimsIdentity, 
                 activity.ServiceUrl, 
-                outgoingAudience, 
+                BotClaims.GetTokenAudience(claimsIdentity), 
                 cancellationToken, 
                 scopes: scopes,
                 useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
@@ -283,7 +283,7 @@ namespace Microsoft.Agents.BotBuilder
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(activity, claimsIdentity, outgoingAudience, connectorClient, userTokenClient, callback);
+            using var context = CreateTurnContext(activity, claimsIdentity, connectorClient, userTokenClient, callback);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -325,15 +325,15 @@ namespace Microsoft.Agents.BotBuilder
             return (Activity)activity;
         }
 
-        private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, string oauthScope, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
+        private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
         {
             var turnContext = new TurnContext(this, activity);
-            turnContext.TurnState.Add<IIdentity>(BotIdentityKey, claimsIdentity);
-            turnContext.TurnState.Add(connectorClient);
-            turnContext.TurnState.Add(userTokenClient);
-            turnContext.TurnState.Add(callback);
-            turnContext.TurnState.Add(ChannelServiceFactory);
-            turnContext.TurnState.Set(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
+
+            turnContext.Identity = claimsIdentity;
+
+            turnContext.Services.Set(connectorClient);
+            turnContext.Services.Set(userTokenClient);
+            turnContext.Services.Set(ChannelServiceFactory);
 
             return turnContext;
         }
@@ -356,7 +356,7 @@ namespace Microsoft.Agents.BotBuilder
             // Handle Invoke scenarios where the Bot will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
-                var activityInvokeResponse = turnContext.TurnState.Get<Activity>(InvokeResponseKey);
+                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };

@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Telemetry;
 using Moq;

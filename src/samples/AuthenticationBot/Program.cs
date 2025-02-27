@@ -1,17 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AuthenticationBot;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.AspNetCore;
-using AuthenticationBot;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.BotBuilder.Teams;
-using Microsoft.Agents.State;
+using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,25 +27,51 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add basic bot functionality
-builder.AddBot<AuthBot>();
-
-builder.Services.AddSingleton<IMiddleware[]>((sp) =>
+// Add ApplicationOptions
+builder.Services.AddTransient(sp =>
 {
-    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
+    var adapter = sp.GetService<IChannelAdapter>();
+    var storage = sp.GetService<IStorage>();
+
+    var authOptions = new UserAuthenticationOptions()
+    {
+        // Auto-SignIn will use this OAuth flow
+        Default = "graph",
+
+        AutoSignIn = (context, cancellationToken) =>
+        {
+            return Task.FromResult(context.Activity.Text == "auto");
+        },
+
+        Handlers =
+        [
+            new OAuthAuthentication(
+                "graph",
+                new OAuthSettings()
+                {
+                    ConnectionName = builder.Configuration["ConnectionName"]
+                },
+                storage)]
+    };
+
+    return new AgentApplicationOptions()
+    {
+        Adapter = adapter,
+        StartTypingTimer = false,
+        TurnStateFactory = () => new TurnState(storage),
+        UserAuthentication = authOptions
+    };
 });
 
-// Add IStorage for turn state persistence
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
+// Add the bot (which is transient)
+builder.AddBot<AuthBot>();
 
-// Create the Conversation state.
-builder.Services.AddSingleton<ConversationState>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

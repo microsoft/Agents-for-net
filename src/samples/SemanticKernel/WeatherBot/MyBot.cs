@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
-using System.Collections.Generic;
+using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading;
 using System.Threading.Tasks;
 using WeatherBot.Agents;
@@ -13,19 +13,22 @@ using WeatherBot.Agents;
 namespace WeatherBot
 {
     // This is the core handler for the Bot Message loop. Each new request will be processed by this class.
-    public class MyBot : ActivityHandler
+    public class MyBot : AgentApplication
     {
         private readonly WeatherForecastAgent _weatherAgent;
 
-        public MyBot(WeatherForecastAgent weatherAgent)
+        public MyBot(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : base(options)
         {
-            this._weatherAgent = weatherAgent;
+            _weatherAgent = weatherAgent;
         }
 
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        [ActivityRoute(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
+            var chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
+
             // Invoke the WeatherForecastAgent to process the message
-            var forecastResponse = await _weatherAgent.InvokeAgentAsync(turnContext.Activity.Text);
+            var forecastResponse = await _weatherAgent.InvokeAgentAsync(turnContext.Activity.Text, chatHistory);
             if (forecastResponse == null)
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text("Sorry, I couldn't get the weather forecast at the moment."), cancellationToken);
@@ -47,15 +50,16 @@ namespace WeatherBot
             await turnContext.SendActivityAsync(response, cancellationToken);
         }
 
-        protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        [ConversationUpdateRoute(Event = ConversationUpdateEvents.MembersAdded)]
+        protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            // When someone (or something) connects to the bot, a MembersAdded activity is received.
-            // For this sample,  we treat this as a welcome event, and send a message saying hello.
-            // For more details around the membership lifecycle, please see the lifecycle documentation.
-            IActivity message = MessageFactory.Text("Hello and Welcome! I'm here to help with all your weather forecast needs!");
-
-            // Send the response message back to the user. 
-            await turnContext.SendActivityAsync(message, cancellationToken);
+            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+            {
+                if (member.Id != turnContext.Activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome! I'm here to help with all your weather forecast needs!"), cancellationToken);
+                }
+            }
         }
     }
 }

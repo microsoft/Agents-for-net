@@ -15,9 +15,9 @@ using Xunit;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Telemetry;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -149,7 +149,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             using (var turnContext = new TurnContext(adapter.Object, activity))
             {
-                turnContext.TurnState.Add(telemetryClientMock.Object);
+                await conversationState.LoadAsync(turnContext, false);
+                turnContext.Services.Set(telemetryClientMock.Object);
 
                 await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
             }
@@ -160,12 +161,15 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [Fact]
         public async Task InternalRunAsync_ShouldThrowWhenHandlingException()
         {
-            var exception = new Exception("Error setting TurnState");
+            var exception = new Exception("Error accessing Identity");
             _dialogContext.Object.Stack = null;
 
-            _context.SetupSequence(e => e.TurnState)
-                .Returns([])
+            _context.SetupSequence(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.Identity)
                 .Throws(exception);
+            _context.SetupSequence(e => e.StackState)
+                .Returns([]);
 
             var ex = await Assert.ThrowsAsync<AggregateException>(() => DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None));
             Assert.Equal(2, ex.InnerExceptions.Count);
@@ -177,7 +181,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var exception = new Exception("Error setting TurnState");
 
-            _context.SetupSequence(e => e.TurnState)
+            _context.SetupSequence(e => e.StackState)
                 .Returns([])
                 .Throws(exception);
 
@@ -188,20 +192,21 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [Fact]
         public async Task InternalRunAsync_ShouldReturnEmptyOnEndOfConversation()
         {
-            var collection = new TurnContextStateCollection();
             var claims = new ClaimsIdentity([
                 new Claim(AuthenticationConstants.VersionClaim, "2.0"),
                 new Claim(AuthenticationConstants.AudienceClaim, "skillId"),
                 new Claim(AuthenticationConstants.AuthorizedParty, "parentBotId")
             ]);
-            collection.Add(ChannelAdapter.BotIdentityKey, claims);
 
-            _context.SetupGet(e => e.TurnState)
-                .Returns(collection)
-                .Verifiable(Times.Exactly(3));
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity { Type = ActivityTypes.EndOfConversation })
                 .Verifiable(Times.Once);
+            _context.Setup(e => e.Identity)
+                .Returns(claims);
 
             var result = await DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None);
 
@@ -212,20 +217,21 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [Fact]
         public async Task InternalRunAsync_ShouldReturnEmptyOnRepromptEvent()
         {
-            var collection = new TurnContextStateCollection();
             var claims = new ClaimsIdentity([
                 new Claim(AuthenticationConstants.VersionClaim, "2.0"),
                 new Claim(AuthenticationConstants.AudienceClaim, "skillId"),
                 new Claim(AuthenticationConstants.AuthorizedParty, "parentBotId")
             ]);
-            collection.Add(ChannelAdapter.BotIdentityKey, claims);
 
-            _context.SetupGet(e => e.TurnState)
-                .Returns(collection)
-                .Verifiable(Times.Exactly(3));
+            _context.SetupGet(e => e.StackState)
+                .Returns(new TurnContextStateCollection());
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity { Type = ActivityTypes.Event, Name = DialogEvents.RepromptDialog })
                 .Verifiable(Times.Exactly(3));
+            _context.Setup(e => e.Identity)
+                .Returns(claims);
 
             var result = await DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None);
 
@@ -245,8 +251,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(conversationId));
             adapter
-                .UseStorage(storage)
-                .UseBotState(userState, convoState)
+                //.UseStorage(storage)
+                //.UseBotState(userState, convoState)
                 .Use(new AutoSaveStateMiddleware(userState, convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
@@ -257,6 +263,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             return new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+
                 if (testCase != FlowTestCase.RootBotOnly)
                 {
                     // Create a skill ClaimsIdentity and put it in TurnState so SkillValidation.IsSkillClaim() returns true.
@@ -264,20 +272,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _skillBotId));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _parentBotId));
-                    turnContext.TurnState.Add(ChannelAdapter.BotIdentityKey, claimsIdentity);
+                    ((TurnContext)turnContext).Identity = claimsIdentity;
 
                     if (testCase == FlowTestCase.RootBotConsumingSkill)
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.TurnState.Add(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)
                     {
                         // Simulate the SkillConversationReference with a parent Bot ID stored in TurnState.
                         // This emulates a response coming to a skill from another skill through SkillHandler. 
-                        turnContext.TurnState.Add(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
+                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
                     }
                 }
 

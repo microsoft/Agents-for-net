@@ -7,8 +7,8 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -82,12 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _validator = validator;
 
-            _dialogOAuthFlow = new OAuthFlow(
-                _settings.Title,
-                _settings.Text,
-                _settings.ConnectionName,
-                _settings.Timeout,
-                _settings.ShowSignInLink);
+            _dialogOAuthFlow = new OAuthFlow(_settings);
         }
 
         /// <summary>
@@ -142,7 +137,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             }
 
             // Initialize state
-            var timeout = _settings.Timeout ?? (int)OAuthTurnStateConstants.OAuthLoginTimeoutValue.TotalMilliseconds;
+            var timeout = _settings.Timeout ?? (int)OAuthPromptSettings.DefaultTimeoutValue.TotalMilliseconds;
             var state = dc.ActiveDialog.State;
             state[PersistedOptions] = opt;
             state[PersistedState] = new Dictionary<string, object>
@@ -153,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             state[PersistedExpires] = DateTime.UtcNow.AddMilliseconds(timeout);
             SetCallerInfoInDialogState(state, dc.Context);
 
-            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, opt?.Prompt, cancellationToken).ConfigureAwait(false);
+            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, opt?.Prompt == null ? null : () => Task.FromResult(opt?.Prompt), cancellationToken).ConfigureAwait(false);
             if (token != null)
             {
                 // Return token
@@ -180,7 +175,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
             // Check for timeout
             var state = dc.ActiveDialog.State;
-            var expires = state[PersistedExpires].CastTo<DateTime>();
+            var expires = (DateTime) state[PersistedExpires];
             var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
 
             try
@@ -193,22 +188,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                     var callerInfo = (CallerInfo)dc.ActiveDialog.State[PersistedCaller];
                     if (callerInfo != null)
                     {
-                        // set the ServiceUrl to the skill host's Url
+                        // set the ServiceUrl to the caller host's Url
                         dc.Context.Activity.ServiceUrl = callerInfo.CallerServiceUrl;
 
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
                         var serviceUrl = dc.Context.Activity.ServiceUrl;
-                        var claimsIdentity = dc.Context.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey);
                         var audience = callerInfo.Scope;
-                        var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, claimsIdentity, audience, cancellationToken).ConfigureAwait(false);
-                        if (dc.Context.TurnState.Get<IConnectorClient>() != null)
-                        {
-                            dc.Context.TurnState.Set(connectorClient);
-                        }
-                        else
-                        {
-                            dc.Context.TurnState.Add(connectorClient);
-                        }
+                        var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, dc.Context.Identity, audience, cancellationToken).ConfigureAwait(false);
+                        dc.Context.Services.Set<IConnectorClient>(connectorClient);
                     }
                 }
 
@@ -223,7 +210,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                 // Increment attempt count
                 // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
-                promptState[Prompt<int>.AttemptCountKey] = promptState[Prompt<int>.AttemptCountKey].CastTo<int>() + 1;
+                promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value
                 var isValid = recognized.Succeeded;
@@ -269,7 +256,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// the result contains the user's token.</remarks>
         public async Task<TokenResponse> GetUserTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return await OAuthFlow.GetTokenClient(turnContext).GetUserTokenAsync(turnContext.Activity.From.Id, _settings.ConnectionName, turnContext.Activity.ChannelId, magicCode: null, cancellationToken).ConfigureAwait(false);
+            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -281,12 +268,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            await OAuthFlow.GetTokenClient(turnContext).SignOutUserAsync(turnContext.Activity.From.Id, _settings.ConnectionName, turnContext.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
         public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)
         {
-            var clientFactory = turnContext.TurnState.Get<IChannelServiceClientFactory>();
+            var clientFactory = turnContext.Services.Get<IChannelServiceClientFactory>();
             if (clientFactory != null)
             {
                 return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -302,12 +289,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
+            if (turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity))
             {
                 return new CallerInfo
                 {
                     CallerServiceUrl = turnContext.Activity.ServiceUrl,
-                    Scope = BotClaims.GetOutgoingAppId(botIdentity.Claims),
+                    Scope = BotClaims.GetOutgoingAppId(turnContext.Identity),
                 };
             }
 

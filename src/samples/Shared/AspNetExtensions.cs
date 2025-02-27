@@ -3,21 +3,23 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Agents.Authentication;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols;
 using System.Collections.Concurrent;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.IdentityModel.Validators;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Net.Http;
+
+#nullable disable
 
 namespace Microsoft.Agents.Samples
 {

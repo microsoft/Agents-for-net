@@ -2,35 +2,48 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EchoBot
 {
-    // This is the core handler for the Bot Message loop. Each new request will be processed by this class.
-    public class MyBot : ActivityHandler
+    public class MyBot : AgentApplication
     {
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        public MyBot(AgentApplicationOptions options) : base(options)
         {
-            // Create a new Activity from the message the user provided and modify the text to echo back.
-            IActivity message = MessageFactory.Text($"Echo: {turnContext.Activity.Text}");
+            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
+            OnMessage("/reset", ResetAsync);
 
-            // Send the response message back to the user. 
-            await turnContext.SendActivityAsync(message, cancellationToken);
+            // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
+            OnActivity(ActivityTypes.Message, OnMessageAsync);
         }
 
-        protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            // When someone (or something) connects to the bot, a MembersAdded activity is received.
-            // For this sample,  we treat this as a welcome event, and send a message saying hello.
-            // For more details around the membership lifecycle, please see the lifecycle documentation.
-            IActivity message = MessageFactory.Text("Hello and Welcome!");
+            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+            {
+                if (member.Id != turnContext.Activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                }
+            }
+        }
 
-            // Send the response message back to the user. 
-            await turnContext.SendActivityAsync(message, cancellationToken);
+        protected async Task ResetAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
+            await turnContext.SendActivityAsync("Ok I've deleted the current conversation state", cancellationToken: cancellationToken);
+        }
+
+        protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            // Increment count state.
+            int count = turnState.Conversation.IncrementMessageCount();
+
+            await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
         }
     }
 }

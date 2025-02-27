@@ -4,7 +4,6 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +41,21 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
 
+        public static IHostApplicationBuilder AddBot(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
+        {
+            return AddBot<CloudAdapter>(builder, implementationFactory);
+        }
+
+        public static IHostApplicationBuilder AddBot<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
+            where TAdapter : CloudAdapter
+        {
+            AddCore<TAdapter>(builder);
+
+            builder.Services.AddTransient<IBot>(implementationFactory);
+
+            return builder;
+        }
+
         public static IHostApplicationBuilder AddBot<TBot>(this IHostApplicationBuilder builder)
             where TBot : class, IBot
         {
@@ -52,14 +66,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TBot : class, IBot
             where TAdapter : CloudAdapter
         {
-            // Add Connections object to access configured token connections.
-            builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
-
-            // Add factory for ConnectorClient and UserTokenClient creation
-            builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
-
-            // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
-            AddCloudAdapter<TAdapter>(builder.Services);
+            AddCore<TAdapter>(builder);
 
             // Add the Bot,  this is the primary worker for the bot. 
             builder.Services.AddTransient<IBot, TBot>();
@@ -90,9 +97,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 sp.GetService<IHttpClientFactory>(),
                 (ILogger<HttpBotChannelFactory>)sp.GetService(typeof(ILogger<HttpBotChannelFactory>))));
 
-            // Add IStorage for turn state persistence
-            builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
             // Add conversation id factory.  
             // This is a memory only implementation, and for production would require persistence.
             builder.Services.AddSingleton<IConversationIdFactory, ConversationIdFactory>();
@@ -103,6 +107,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             builder.Services.AddTransient<IChannelApiHandler>((sp) => sp.GetService<THandler>());
 
             return builder;
+        }
+
+        private static void AddCore<TAdapter>(this IHostApplicationBuilder builder)
+            where TAdapter : CloudAdapter
+        {
+            // Add Connections object to access configured token connections.
+            builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
+
+            // Add factory for ConnectorClient and UserTokenClient creation
+            builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+
+            // Add IStorage for turn state persistence
+            builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+            // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
+            AddCloudAdapter<TAdapter>(builder.Services);
         }
 
         private static void AddAsyncCloudAdapterSupport(this IServiceCollection services)

@@ -119,6 +119,18 @@
   </resheader>
   <data name="IAccessTokenProviderNotFound" xml:space="preserve">
     <value>An instance of IAccessTokenProvider not found for {0}</value>
-    <comment>Raised when an the call get an access token provider returns null.</comment>
+    <comment>Raised when the call get an access token provider returns null.</comment>
+  </data>
+  <data name="UserAuthenticationNotConfigured" xml:space="preserve">
+    <value>The AgentApplication.Authentication property is unavailable because no user authentication handlers were configured.</value>
+    <comment>Raised when accessing AgentApplication.Authentication but it hasn't been configured.</comment>
+  </data>
+  <data name="AttributeSelectorNotFound" xml:space="preserve">
+    <value>The ActivityRouteAttribute.Selector method is not found.</value>
+    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method isn't found on the AgentApplication or subclass.</comment>
+  </data>
+  <data name="AttributeSelectorInvalid" xml:space="preserve">
+    <value>The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition.</value>
+    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
   </data>
 </root>

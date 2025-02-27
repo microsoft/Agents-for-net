@@ -4,15 +4,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Xunit;
 using Xunit.Sdk;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -75,8 +74,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     .Use(new AutoSaveStateMiddleware(convoState));
 
                 var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
-
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(tc, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(tc, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
 
                 // Create new DialogSet.
                 var dialogs = new DialogSet(dialogState);
@@ -102,7 +101,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
 
                 // Create new DialogSet.
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(tc, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(tc, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(prompt);
 
@@ -122,7 +122,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -240,7 +241,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 // Add a magic code to the adapter preemptively so that we can test if the message that triggers BeginDialogAsync uses magic code detection
                 adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId, turnContext.Activity.From.Id, Token, MagicCode);
 
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -282,7 +284,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
                 
@@ -351,7 +354,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -418,7 +422,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -482,7 +487,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -549,7 +555,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { ConnectionName = ConnectionName }));
 
@@ -597,7 +604,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
 
@@ -681,7 +689,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -690,7 +699,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = MessageFactory.Text(retryPromptText) }, cancellationToken: cancellationToken);
+                   await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = MessageFactory.Text(retryPromptText) }, cancellationToken: cancellationToken);
                 }
             };
 
@@ -725,7 +734,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", oAuthPromptSettings));
 
@@ -770,7 +780,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", EndOnInvalidMessage = true }));
 
@@ -849,7 +860,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
 
@@ -900,7 +912,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             BotCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
-                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), default);
+                await convoState.LoadAsync(turnContext, false, default);
+                var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
 
                 // Set timeout to zero, so the prompt will end immediately.
@@ -982,4 +995,26 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         }
         */
     }
+
+    public class Location
+    {
+        public float? Lat { get; set; }
+
+        public float? Long { get; set; }
+    }
+
+
+    public class Options
+    {
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+        public int? Age { get; set; }
+
+        public bool? Bool { get; set; }
+
+        public Location Location { get; set; }
+    }
+
 }

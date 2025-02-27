@@ -130,7 +130,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var adapter = new TestAdapter(TestAdapter.CreateConversation("RecognizerLogsTelemetry"));
             var activity = MessageFactory.Text("hi");
             var context = new TurnContext(adapter, activity);
-            context.TurnState.Set(telemetryClient.Object);
+            context.Services.Set(telemetryClient.Object);
             var dc = new DialogContext(new DialogSet(), context, new DialogState());
 
             var result = await recognizer.RecognizeAsync(dc, activity, telemetryProperties: properties);

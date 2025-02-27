@@ -10,8 +10,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var record = UseRecord();
 
-            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<Core.Interfaces.IMiddleware>);
+            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<BotBuilder.IMiddleware>);
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Throws(new UnauthorizedAccessException())
                 .Verifiable(Times.Once);
 
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Verifiable(Times.Once);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var factory = new Mock<IChannelServiceClientFactory>();
             var queue = new Mock<IActivityTaskQueue>();
             var logger = new Mock<ILogger<IBotHttpAdapter>>();
-            var middleware = new Mock<Core.Interfaces.IMiddleware>();
+            var middleware = new Mock<BotBuilder.IMiddleware>();
 
             var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, middlewares: middleware.Object);
             return new(adapter, factory, queue, logger);
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 IChannelServiceClientFactory channelServiceClientFactory,
                 IActivityTaskQueue activityTaskQueue,
                 ILogger<IBotHttpAdapter> logger = null,
-                params Core.Interfaces.IMiddleware[] middlewares)
+                params BotBuilder.IMiddleware[] middlewares)
             : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, null, middlewares)
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)

@@ -18,38 +18,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly SemaphoreSlim _signal = new(0);
         private readonly ConcurrentQueue<ActivityWithClaims> _activities = new ConcurrentQueue<ActivityWithClaims>();
 
-        /// <summary>
-        /// Enqueue an Activity, with Claims, to be processed on a background thread.
-        /// </summary>
-        /// <remarks>
-        /// It is assumed these Claims have been authenticated via JwtTokenValidation.AuthenticateRequest 
-        /// before enqueueing.
-        /// </remarks>
-        /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
-        /// activity.</param>
-        /// <param name="activity"><see cref="Activity"/> to be processed.</param>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity)
+
+        /// <inheritdoc/>
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _activities.Enqueue(new ActivityWithClaims { ClaimsIdentity = claimsIdentity, Activity = activity});
+            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience });
             _signal.Release();
         }
 
-        /// <summary>
-        /// Wait for a signal of an enqueued Activity with Claims to be processed.
-        /// </summary>
-        /// <param name="cancellationToken">CancellationToken used to cancel the wait.</param>
-        /// <returns>An ActivityWithClaims to be processed.
-        /// </returns>
-        /// <remarks>It is assumed these claims have already been authenticated via JwtTokenValidation.AuthenticateRequest.</remarks>
+        /// <inheritdoc/>
         public async Task<ActivityWithClaims> WaitForActivityAsync(CancellationToken cancellationToken)
         {
             await _signal.WaitAsync(cancellationToken);
 
-            ActivityWithClaims dequeued;
-            _activities.TryDequeue(out dequeued);
+            _activities.TryDequeue(out ActivityWithClaims dequeued);
 
             return dequeued;
         }

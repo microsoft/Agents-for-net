@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.BotBuilder.Testing;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             {
                 if (exception is NotImplementedException)
                 {
-                    await context.SendActivityAsync(context.Activity.CreateReply(exception.Message));
+                    await context.SendActivityAsync(context.Activity.CreateReply(exception.Message), CancellationToken.None);
                 }
                 else
                 {

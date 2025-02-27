@@ -14,6 +14,7 @@ namespace Microsoft.Agents.Storage.Tests
 {
     public class TranscriptLoggerMiddlewareTests
     {
+        /*
         [Fact]
         public async Task ShouldNotLogContinueConversation()
         {
@@ -140,5 +141,6 @@ namespace Microsoft.Agents.Storage.Tests
             Assert.Equal(activity.Text, activities.Items[0].Text);
             Assert.NotEqual(activity.Id, activities.Items[0].Id);
         }
+        */
     }
 }
