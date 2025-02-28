@@ -207,7 +207,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             {
                 _logger.LogTrace("Starting conversation");
                 Uri uriStart = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, null);
-                var body = new { EmitStartConversationEvent = true };
+                var body = new { EmitStartConversationEvent = emitStartConversationEvent };
 
                 HttpRequestMessage req = new()
                 {
