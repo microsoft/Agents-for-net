@@ -1,6 +1,5 @@
-﻿// <copyright file="TeamsBot.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -11,12 +10,16 @@ using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
-namespace BotConversationSsoQuickstart.Bots
+namespace TeamsConversationSsoQuickstart.Bots
 {
     // This bot is derived (view DialogBot<T>) from the TeamsActivityHandler class currently included as part of this sample.
-    public class TeamsBot<T>(ConversationState conversationState, T dialog, ILogger<DialogBot<T>> logger) 
-        : DialogBot<T>(conversationState, dialog, logger) where T : Dialog
+    public class TeamsBot<T> : DialogBot<T> where T : Dialog
     {
+        public TeamsBot(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) 
+            : base(conversationState, userState, dialog, logger)
+        {
+        }
+
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             foreach (var member in turnContext.Activity.MembersAdded)
@@ -34,7 +37,9 @@ namespace BotConversationSsoQuickstart.Bots
 
             // The OAuth Prompt needs to see the Invoke Activity in order to complete the login process.
             // Run the Dialog with the new Invoke Activity.
-            await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
+#pragma warning disable CS0618 // Type or member is obsolete
+            await _dialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
     }
 }
