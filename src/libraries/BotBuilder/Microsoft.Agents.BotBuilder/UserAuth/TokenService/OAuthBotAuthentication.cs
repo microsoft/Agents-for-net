@@ -20,11 +20,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         private readonly IStorage _storage;
         private FlowState _state;
         private readonly DedupeTokenExchange _dedupe;
-
-        /// <summary>
-        /// Name of the authentication handler
-        /// </summary>
-        protected string _name;
+        private readonly string _name;
 
         /// <summary>
         /// Initializes the class
@@ -34,8 +30,8 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="storage"></param>
         public OAuthBotAuthentication(string name, OAuthSettings oauthSettings, IStorage storage)
         {
-            _name = name;
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            _name = name;
 
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
