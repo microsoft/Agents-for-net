@@ -13,3 +13,6 @@
 
 # Global rule:
 * @microsoft/botframework-sdk
+
+# MCP Rules:
+src/**/Microsoft.Agents.MCP.* @microsoft/m365-agents-sdk-mcp-team
