@@ -25,5 +25,7 @@ namespace Microsoft.Agents.Client
         /// The OAuth scope.
         /// </value>
         public string OAuthScope { get; set; }
+
+        public string BotName { get; set; }
     }
 }

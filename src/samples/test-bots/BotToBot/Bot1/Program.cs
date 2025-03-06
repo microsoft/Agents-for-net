@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Bot1;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Samples.Bots;
@@ -17,10 +18,10 @@ builder.Services.AddHttpClient();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<Bot1>();
+builder.AddBot<HostBot>();
 
 // Add ChannelHost to enable calling other Agents
-builder.AddChannelHost<Bot1>();
+builder.AddChannelHost<AdapterChannelApiHandler>();
 
 var app = builder.Build();
 
@@ -28,7 +29,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapGet("/", () => "Microsoft Agents SDK Sample - Bot2Bot Sample - Bot1");
     app.UseDeveloperExceptionPage();
-    app.MapControllers().AllowAnonymous();
+    app.MapControllers(); //.AllowAnonymous();
 }
 else
 {

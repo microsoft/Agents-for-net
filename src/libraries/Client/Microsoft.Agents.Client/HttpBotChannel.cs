@@ -76,6 +76,8 @@ namespace Microsoft.Agents.Client
             activityClone.ServiceUrl = serviceUrl.ToString();
             activityClone.Recipient ??= new ChannelAccount();
             activityClone.Recipient.Role = RoleTypes.Skill;
+            activityClone.From ??= new ChannelAccount();
+            activityClone.From.Role = RoleTypes.Bot;
 
             // Create the HTTP request from the cloned Activity and send it to the bot.
             using (var jsonContent = new StringContent(activityClone.ToJson(), Encoding.UTF8, "application/json"))
