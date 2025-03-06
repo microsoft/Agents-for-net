@@ -4,6 +4,7 @@
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Connector;

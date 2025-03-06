@@ -4,6 +4,7 @@
 #nullable disable
 
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;

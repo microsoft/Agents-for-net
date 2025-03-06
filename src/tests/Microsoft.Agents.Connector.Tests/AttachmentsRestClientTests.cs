@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
