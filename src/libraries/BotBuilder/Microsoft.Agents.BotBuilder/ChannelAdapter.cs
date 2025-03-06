@@ -159,6 +159,10 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     await MiddlewareSet.ReceiveActivityWithStatusAsync(turnContext, callback, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw; // Do not try to send another request if the failure is an operation cancel. 
+                }
                 catch (Exception e)
                 {
                     if (OnTurnError != null)
