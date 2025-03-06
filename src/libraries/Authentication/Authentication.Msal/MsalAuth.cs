@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Authentication.Msal
     /// This class is used to acquire access tokens using the Microsoft Authentication Library(MSAL).
     /// </summary>
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
-    public class MsalAuth : IAccessTokenProvider
+    public class MsalAuth : IAccessTokenProvider, IMSALProvider
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
@@ -130,6 +130,11 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return authResultPayload.MsalAuthResult.AccessToken;
+        }
+
+        IApplicationBase IMSALProvider.CreateClientApplication()
+        {
+            return (IApplicationBase) CreateClientApplication();
         }
 
         private object CreateClientApplication()
