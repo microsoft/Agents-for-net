@@ -124,11 +124,20 @@
   <data name="CreateConversationError" xml:space="preserve">
     <value>CreateConversation operation returned an invalid status code '({0}) {1}'</value>
   </data>
+  <data name="GetAttachmentInfoError" xml:space="preserve">
+    <value>GetAttachmentInfo operation returned an invalid status code '({0}) {1}'</value>
+  </data>
+  <data name="GetAttachment_Error" xml:space="preserve">
+    <value>GetAttachment operation returned an invalid status code '({0}) {1}'</value>
+  </data>
   <data name="GetConversationsError" xml:space="preserve">
-    <value>GetConversations operation returned an invalid status code '({0}){1}'</value>
+    <value>GetConversations operation returned an invalid status code '({0}) {1}'</value>
+  </data>
+  <data name="GetSignInResourceAsync_BadRequest" xml:space="preserve">
+    <value>Unable to locate the OAuth Configuration.  If you are using Azure Bot Service, please verify that the OAuth configuration exists</value>
   </data>
   <data name="ReplyToActivityError" xml:space="preserve">
-    <value>Raised when the ReplyToActivityFailes to Return a success code '({0}){1}'.</value>
+    <value>ReplyToActivity operation returned an invalid status code '({0}) {1}'</value>
     <comment>Raised when the ReplyToActivityFailes to Return a success code '({0}){1}'.</comment>
   </data>
   <data name="SendConversationHistoryError" xml:space="preserve">

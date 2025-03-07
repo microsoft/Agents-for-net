@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -72,20 +73,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachmentInfo operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (System.Text.Json.JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -134,20 +122,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return null;
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (System.Text.Json.JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }

@@ -79,7 +79,25 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to GetConversations operation returned an invalid status code &apos;({0}){1}&apos;.
+        ///   Looks up a localized string similar to GetAttachment operation returned an invalid status code &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string GetAttachment_Error {
+            get {
+                return ResourceManager.GetString("GetAttachment_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GetAttachmentInfo operation returned an invalid status code &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string GetAttachmentInfoError {
+            get {
+                return ResourceManager.GetString("GetAttachmentInfoError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GetConversations operation returned an invalid status code &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string GetConversationsError {
             get {
@@ -88,7 +106,16 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Raised when the ReplyToActivityFailes to Return a success code &apos;({0}){1}&apos;..
+        ///   Looks up a localized string similar to Unable to locate the OAuth Configuration.  If you are using Azure Bot Service, please verify that the OAuth configuration exists.
+        /// </summary>
+        internal static string GetSignInResourceAsync_BadRequest {
+            get {
+                return ResourceManager.GetString("GetSignInResourceAsync_BadRequest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ReplyToActivity operation returned an invalid status code &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string ReplyToActivityError {
             get {
