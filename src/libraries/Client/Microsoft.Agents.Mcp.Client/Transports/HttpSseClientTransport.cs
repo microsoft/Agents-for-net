@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Mcp.Client.Transports
                 throw new Exception("SSE connect did not send an endpoint payload ");
             }
 
-            Endpoint = line[7..];
+            Endpoint = line[6..];
             ingestionFunc = ingestMessage;
 
             // Stream payloads

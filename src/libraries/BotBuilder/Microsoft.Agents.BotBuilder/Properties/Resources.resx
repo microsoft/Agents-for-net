@@ -133,4 +133,8 @@
     <value>The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition.</value>
     <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
   </data>
+  <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
+    <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
+    <comment>Raised when when initializing AgentApplication.</comment>
+  </data>
 </root>

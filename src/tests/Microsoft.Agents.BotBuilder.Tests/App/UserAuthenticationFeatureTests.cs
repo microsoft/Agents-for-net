@@ -7,6 +7,7 @@ using Microsoft.Agents.BotBuilder.Tests.App.TestUtils;
 using Microsoft.Agents.BotBuilder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         private const string SharePointToken = "sharePoint token";
         private Mock<IUserAuthentication> MockGraph;
         private Mock<IUserAuthentication> MockSharePoint;
+        private Mock<IChannelAdapter> MockChannelAdapter;
 
         public UserAuthenticationFeatureTests()
         {
@@ -40,13 +42,32 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             MockSharePoint
                 .Setup(e => e.Name)
                 .Returns(SharePointName);
+
+            MockChannelAdapter = new Mock<IChannelAdapter>();
+        }
+
+        [Fact]
+        public void Test_NoAdapter()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                var app = new TestApplication(new TestApplicationOptions());
+                var options = new UserAuthenticationOptions();
+                options.Handlers =
+                [
+                    MockGraph.Object,
+                    MockSharePoint.Object,
+                ];
+
+                var authManager = new TestUserAuthenticationFeature(app, options);
+            });
         }
 
         [Fact]
         public async Task Test_AutoSignIn_Default()
         {
             // arrange
-            var app = new TestApplication(new TestApplicationOptions());
+            var app = new TestApplication(new TestApplicationOptions() {  Adapter = MockChannelAdapter.Object });
             var options = new UserAuthenticationOptions();
             options.Handlers =
             [
@@ -71,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         public async Task Test_AutoSignIn_Named()
         {
             // arrange
-            var app = new TestApplication(new TestApplicationOptions());
+            var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
             var options = new UserAuthenticationOptions
             {
                 Handlers =
@@ -100,7 +121,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((TokenResponse) null));
 
-            var app = new TestApplication(new TestApplicationOptions());
+            var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
             var options = new UserAuthenticationOptions
             {
                 Handlers =
@@ -123,7 +144,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         public async Task Test_SignOut_DefaultHandler()
         {
             // arrange
-            var app = new TestApplication(new TestApplicationOptions());
+            var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
             var options = new UserAuthenticationOptions
             {
                 Handlers =
@@ -155,7 +176,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         public async Task Test_SignOut_SpecificHandler()
         {
             // arrange
-            var app = new TestApplication(new TestApplicationOptions());
+            var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
             var options = new UserAuthenticationOptions
             {
                 Handlers =

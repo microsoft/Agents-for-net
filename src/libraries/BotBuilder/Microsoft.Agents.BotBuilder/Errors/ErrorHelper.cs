@@ -34,13 +34,15 @@ namespace Microsoft.Agents.BotBuilder.Errors
         private static readonly int baseBotBuilderErrorCode = -50000;
 
         internal static AgentErrorDefinition NullIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition NullUserTokenProviderIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode-1, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition NullUserTokenProviderIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode - 1, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthenticationNotConfigured = new AgentErrorDefinition(baseBotBuilderErrorCode - 2, Properties.Resources.UserAuthenticationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
-
+        internal static AgentErrorDefinition UserAuthenticationRequiresAdapter = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.UserAuthenticationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
 
         // ActivityRouteAttribute
-        internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+
+        // Application
     }
 
 }
