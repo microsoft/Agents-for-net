@@ -44,22 +44,21 @@ builder.AddBot(sp =>
 
     var app = new AgentApplication(options);
     var searchCommandsFunctions = new ActivityHandlers(sp.GetService<IHttpClientFactory>());
+    var teamsAgentExtension = new TeamsAgentExtension(app);
 
-    app.WithTeams((extension) => {
+    app.RegisterExtension(teamsAgentExtension, (extension) => {
         extension.MessageExtensions.OnQuery("searchCmd", searchCommandsFunctions.QueryHandler);
         extension.MessageExtensions.OnSelectItem(searchCommandsFunctions.SelectItemHandler);
-    });
-
-    // Display a welcome message
-    app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
-    {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        extension.OnConversationUpdate(TeamsConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                if (member.Id != turnContext.Activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                }
             }
-        }
+        });
     });
 
     // Listen for user to say "/reset" and then delete conversation state

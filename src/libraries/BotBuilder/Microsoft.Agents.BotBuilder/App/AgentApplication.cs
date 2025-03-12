@@ -690,5 +690,15 @@ namespace Microsoft.Agents.BotBuilder.App
         }
 
         #endregion
+
+        #region Extension
+
+        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+            where TExtension : AgentExtension
+        {
+            ArgumentNullException.ThrowIfNull(extensionRegistration);
+            extensionRegistration(extension);
+        }
+        #endregion
     }
 }

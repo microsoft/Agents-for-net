@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// <summary>
     /// AgentApplication class for routing and processing incoming requests.
     /// </summary>
-    public class TeamsAgentExtension : IAgentExtension
+    public class TeamsAgentExtension : AgentExtension
     {
         private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
         private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
@@ -36,6 +36,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="options"></param>
         public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
         {
+            ChannelId = Channels.Msteams;
+
             AgentApplication = agentApplication;
 
             Meetings = new MeetingsFeature(agentApplication);
@@ -63,6 +65,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TaskModulesFeature TaskModules { get; }
 
         protected AgentApplication AgentApplication { get; init;}
+        public override string ChannelId { get; init; }
+
 
         /// <summary>
         /// Handles conversation update events.
@@ -84,8 +88,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                            && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
                             && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
                             && context.Activity?.GetChannelData<TeamsChannelData>()?.Channel != null
                             && context.Activity?.GetChannelData<TeamsChannelData>()?.Team != null
@@ -121,8 +124,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                            && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
                             && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
                             && context.Activity?.GetChannelData<TeamsChannelData>()?.Team != null
                         );
@@ -132,14 +134,13 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                            && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
                             && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
                         );
                         break;
                     }
             }
-            AgentApplication.AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false);
             return this;
         }
 
@@ -156,11 +157,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "editMessage"));
             };
-            AgentApplication.AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false);
             return this;
         }
 
@@ -177,11 +177,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
             };
-            AgentApplication.AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false);
             return this;
         }
 
@@ -198,11 +197,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.MessageDelete, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
             };
-            AgentApplication.AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false);
             return this;
         }
 
@@ -217,7 +215,6 @@ namespace Microsoft.Agents.Extensions.Teams.App
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
             );
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
@@ -225,7 +222,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 ReadReceiptInfo readReceiptInfo = ProtocolJsonSerializer.ToObject<ReadReceiptInfo>(turnContext.Activity.Value) ?? new();
                 await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
             };
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: false);
             return this;
         }
 
@@ -239,8 +236,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME)
-                && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams));
+                && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
@@ -252,7 +248,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true);
             return this;
         }
 
@@ -266,8 +262,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME)
-                && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams));
+                && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
@@ -279,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true);
             return this;
         }
 
@@ -325,7 +320,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true);
             return this;
         }
 
@@ -354,7 +349,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true);
             return AgentApplication;
         }
 
@@ -395,7 +390,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 }
             };
 
-            AgentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true);
             return this;
         }
     }
