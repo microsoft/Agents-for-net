@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Mcp.Tests
             using var services = serviceCollection.BuildServiceProvider();
             var processor = services.GetRequiredService<IMcpProcessor>();
             var transportManager = services.GetRequiredService<ITransportManager>();
-            var logger = services.GetRequiredService<ILogger<SseTransportTests>>();
+            var logger = services.GetRequiredService<ILogger<TransportTestBase>>();
 
             IMcpTransport transport = CreateTransport(processor, transportManager, logger);
 
@@ -44,6 +44,6 @@ namespace Microsoft.Agents.Mcp.Tests
 
         }
 
-        protected abstract IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<SseTransportTests> logger);
+        protected abstract IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<TransportTestBase> logger);
     }
 }

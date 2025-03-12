@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Mcp.Tests
 {
     public class CallbackTransportTests : TransportTestBase
     {
-        protected override IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<SseTransportTests> logger)
+        protected override IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<TransportTestBase> logger)
         {
             Mock<IHttpClientFactory> httpClientFactoryMock = new Mock<IHttpClientFactory>();
             var clientTransport = new HttpCallbackClientTransport(
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Mcp.Tests
             HttpCallbackClientTransport clientTransport,
             IMcpProcessor processor,
             ITransportManager transportManager,
-            ILogger<SseTransportTests> logger)
+            ILogger<TransportTestBase> logger)
         {
             var handler = new PlumbingHandler(httpClientFactoryMock.Object, clientTransport, processor, transportManager, logger);
             httpClientFactoryMock.Setup(x => x.CreateClient("")).Returns(() => new HttpClient(handler, false));

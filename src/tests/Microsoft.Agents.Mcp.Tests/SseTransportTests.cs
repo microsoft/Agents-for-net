@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Mcp.Tests
     {
         private delegate void TryGetTransportCallback(string sessionId, out IMcpTransport transport);
 
-        protected override IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<SseTransportTests> logger)
+        protected override IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<TransportTestBase> logger)
         {
             Mock<IHttpClientFactory> httpClientFactoryMock = new Mock<IHttpClientFactory>();
             SetupFakeHttpCalls(httpClientFactoryMock, processor, transportManager, logger);
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Mcp.Tests
             Mock<IHttpClientFactory> httpClientFactoryMock,
             IMcpProcessor processor,
             ITransportManager transportManager,
-            ILogger<SseTransportTests> logger)
+            ILogger<TransportTestBase> logger)
         {
             var handler = new PlumbingHandler(processor, transportManager, logger);
             httpClientFactoryMock.Setup(x => x.CreateClient("")).Returns(() => new HttpClient(handler, false));
