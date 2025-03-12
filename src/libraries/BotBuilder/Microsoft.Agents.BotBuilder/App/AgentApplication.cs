@@ -694,7 +694,7 @@ namespace Microsoft.Agents.BotBuilder.App
         #region Extension
 
         public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
-            where TExtension : AgentExtension
+            where TExtension : IAgentExtension
         {
             ArgumentNullException.ThrowIfNull(extensionRegistration);
             extensionRegistration(extension);
