@@ -4,6 +4,8 @@ using Microsoft.Agents.Mcp.Server.Methods.Tools.ToolsList;
 using System.Collections.Immutable;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Concurrent;
+
 
 
 #if (!NET9_0_OR_GREATER)
@@ -20,6 +22,9 @@ public class ServiceCollectionToolExecutorFactory : IOperationExecutorFactory
     private ImmutableDictionary<string, IMcpToolExecutor> _dictionary;
     private ImmutableArray<ToolDefinition> _definitions;
 
+    // Add a cache for schemas
+    private readonly ConcurrentDictionary<Type, JsonNode> _schemaCache = new();
+
     public ServiceCollectionToolExecutorFactory(IServiceProvider serviceProvider)
     {
         var services = serviceProvider.GetKeyedServices<IMcpToolExecutor>(DefaultToolKey);
@@ -34,12 +39,23 @@ public class ServiceCollectionToolExecutorFactory : IOperationExecutorFactory
 
     private JsonNode GetSchemaType(Type inputType)
     {
+        // Check if the schema is already cached
+        if (_schemaCache.TryGetValue(inputType, out var cachedSchema))
+        {
+            return cachedSchema;
+        }
+
 #if (NET9_0_OR_GREATER)
-        return JsonSerializerOptions.Default.GetJsonSchemaAsNode(inputType, exporterOptions)
+        var schema = JsonSerializerOptions.Default.GetJsonSchemaAsNode(inputType, exporterOptions);
 #else
         JSchema schema = _generator.Generate(inputType);
-        return JsonNode.Parse(schema.ToString()) ?? throw new ArgumentException("Invalid tool input type");
+        var schemaNode = JsonNode.Parse(schema.ToString()) ?? throw new ArgumentException("Invalid tool input type");
 #endif
+
+        // Cache the generated schema
+        _schemaCache[inputType] = schemaNode;
+
+        return schemaNode;
     }
 
     public IMcpToolExecutor GetExecutor(string name) => _dictionary[name];

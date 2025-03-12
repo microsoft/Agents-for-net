@@ -17,12 +17,29 @@ builder.Services.AddDefaultServerExecutors();
 builder.Services.AddMemorySessionManager();
 builder.Services.AddTransportManager();
 
-builder.Services.AddToolExecutor<GitHubCreateRepoOperationExecutor>();
+//Repository operations
+builder.Services.AddToolExecutor<GitHubRepositoryOperationExecutor>();
+builder.Services.AddToolExecutor<GitHubForkRepositoryOperationExecutor>();
+builder.Services.AddToolExecutor<GitHubSearchRepositoriesOperationExecutor>();
+//issue operations
 builder.Services.AddToolExecutor<GitHubCreateIssueOperationExecutor>(); 
 builder.Services.AddToolExecutor<GitHubAddIssueCommentOperationExecutor>();
 builder.Services.AddToolExecutor<GitHubIssueOperationExecutor>();
 builder.Services.AddToolExecutor<GitHubListIssuesOperationExecutor>();
 builder.Services.AddToolExecutor<GitHubUpdateIssueOperationExecutor>();
+//PR operations
+builder.Services.AddToolExecutor<GitHubCreatePullRequestOperationExecutor>();
+builder.Services.AddToolExecutor<GitHubGetPullRequestOperationExecutor>();
+builder.Services.AddToolExecutor<GitHubListPullRequestsOperationExecutor>();
+builder.Services.AddToolExecutor<GitHubMergePullRequestOperationExecutor>();
+
+//commit operations
+builder.Services.AddToolExecutor<GitHubListCommitsOperationExecutor>();
+
+//branch operations
+builder.Services.AddToolExecutor<GitHubBranchOperationExecutor>();
+//file operations
+builder.Services.AddToolExecutor<GitHubFileOperationsExecutor>();
 
 builder.Services.AddLogging();
 builder.Logging.AddConsole();
