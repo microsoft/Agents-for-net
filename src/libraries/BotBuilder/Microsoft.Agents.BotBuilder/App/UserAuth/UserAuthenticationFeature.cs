@@ -8,6 +8,7 @@ using System.Threading;
 using System;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.BotBuilder.Errors;
 
 namespace Microsoft.Agents.BotBuilder.App.UserAuth
 {
@@ -53,6 +54,11 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _dispatcher = new UserAuthenticationDispatcher([.. _options.Handlers]);
             _app = app ?? throw new ArgumentNullException(nameof(app));
+
+            if (_app.Options.Adapter == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.UserAuthenticationRequiresAdapter, null);
+            }
 
             if (_options.AutoSignIn != null)
             {

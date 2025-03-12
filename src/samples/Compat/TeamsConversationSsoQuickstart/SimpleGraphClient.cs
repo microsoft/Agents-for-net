@@ -1,6 +1,5 @@
-﻿// <copyright file="SimpleGraphClient.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 
-namespace BotConversationSsoQuickstart
+namespace TeamsConversationSsoQuickstart
 {
     // This class is a wrapper for the Microsoft Graph API
     // See: https://developer.microsoft.com/en-us/graph

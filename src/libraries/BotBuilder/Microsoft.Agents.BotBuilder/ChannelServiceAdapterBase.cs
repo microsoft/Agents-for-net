@@ -255,7 +255,6 @@ namespace Microsoft.Agents.BotBuilder
         public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessActivityAsync");
-            IList<string> scopes = null;
 
             if (BotClaims.IsBotClaim(claimsIdentity))
             {
@@ -276,7 +275,7 @@ namespace Microsoft.Agents.BotBuilder
                 activity.ServiceUrl, 
                 BotClaims.GetTokenAudience(claimsIdentity), 
                 cancellationToken, 
-                scopes: scopes,
+                scopes: BotClaims.GetTokenScopes(claimsIdentity),
                 useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for OAuth flow.

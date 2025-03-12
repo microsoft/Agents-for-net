@@ -14,6 +14,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Connector
 {

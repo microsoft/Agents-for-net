@@ -23,16 +23,6 @@ builder.Logging.AddConsole();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add ApplicationOptions
-builder.Services.AddTransient(sp =>
-{
-    return new AgentApplicationOptions()
-    {
-        StartTypingTimer = false,
-        TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
-    };
-});
-
 // Create the User state. (Used in this bot's Dialog implementation.)
 builder.Services.AddSingleton<UserState>();
 

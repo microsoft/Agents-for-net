@@ -3,10 +3,8 @@
 
 using CopilotStudioEchoSkill;
 using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,15 +21,8 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add ApplicationOptions
-builder.Services.AddTransient(sp =>
-{
-    return new AgentApplicationOptions()
-    {
-        StartTypingTimer = false,
-        TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
-    };
-});
+// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
+builder.Services.AddTransient<AgentApplicationOptions>();
 
 // Add the bot (which is transient)
 builder.AddBot<MyBot, BotAdapterWithErrorHandler>();

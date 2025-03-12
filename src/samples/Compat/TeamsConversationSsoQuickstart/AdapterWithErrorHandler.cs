@@ -1,6 +1,5 @@
-﻿// <copyright file="AdapterWithErrorHandler.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -8,19 +7,25 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Configuration;
 
-namespace BotConversationSsoQuickstart
+namespace TeamsConversationSsoQuickstart
 {
-    public class TeamsSSOAdapter : CloudAdapter
+    public class AdapterWithErrorHandler : CloudAdapter
     {
-        public TeamsSSOAdapter(
+        public AdapterWithErrorHandler(
             IChannelServiceClientFactory channelServiceClientFactory, 
             IActivityTaskQueue activityTaskQueue,
+            IConfiguration configuration,
             ILogger<IBotHttpAdapter> logger,
-            ConversationState conversationState,
-            IMiddleware[] middlewares = null)
-            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, middlewares: middlewares)
+            IStorage storage,
+            ConversationState conversationState)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
         {
+            base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
+
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.

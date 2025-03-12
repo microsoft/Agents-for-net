@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
 {

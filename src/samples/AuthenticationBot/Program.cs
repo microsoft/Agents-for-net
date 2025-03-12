@@ -5,7 +5,6 @@ using AuthenticationBot;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
@@ -27,7 +26,7 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add ApplicationOptions
+// Add AgentApplicationOptions with User Authentication handlers.
 builder.Services.AddTransient(sp =>
 {
     var adapter = sp.GetService<IChannelAdapter>();
@@ -54,11 +53,8 @@ builder.Services.AddTransient(sp =>
                 storage)]
     };
 
-    return new AgentApplicationOptions()
+    return new AgentApplicationOptions(builder.Configuration, adapter, storage)
     {
-        Adapter = adapter,
-        StartTypingTimer = false,
-        TurnStateFactory = () => new TurnState(storage),
         UserAuthentication = authOptions
     };
 });

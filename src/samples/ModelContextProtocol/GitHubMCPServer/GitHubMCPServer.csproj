@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+	  <LangVersion>latest</LangVersion>
+	  <ImplicitUsings>disable</ImplicitUsings>
+	  <SkipAspExtension>true</SkipAspExtension>
+	  <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Mcp.Core\Microsoft.Agents.Mcp.Core.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Hosting\Microsoft.Agents.Mcp.Server.AspNet\Microsoft.Agents.Mcp.Server.AspNet.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Hosting\Microsoft.Agents.Mcp.Server\Microsoft.Agents.Mcp.Server.csproj" />
+  </ItemGroup>
+
+</Project>

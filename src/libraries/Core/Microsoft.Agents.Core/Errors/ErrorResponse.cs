@@ -5,9 +5,15 @@
 
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Connector.Types
+namespace Microsoft.Agents.Core.Errors
 {
-    /// <summary> An HTTP API Error response. </summary>
+    ///TODO: Consolidate the ErrorResponse and Error classes into the General ErrorProcessor
+
+    /// <summary> 
+    /// An HTTP API Error response. 
+    /// 
+    /// </summary>
+
     public class ErrorResponse
     {
         /// <summary> Initializes a new instance of ErrorResponse. </summary>

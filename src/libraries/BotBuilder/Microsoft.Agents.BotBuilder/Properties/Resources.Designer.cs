@@ -95,5 +95,14 @@ namespace Microsoft.Agents.BotBuilder.Properties {
                 return ResourceManager.GetString("UserAuthenticationNotConfigured", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        /// </summary>
+        internal static string UserAuthenticationRequiresAdapter {
+            get {
+                return ResourceManager.GetString("UserAuthenticationRequiresAdapter", resourceCulture);
+            }
+        }
     }
 }

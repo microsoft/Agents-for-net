@@ -7,8 +7,11 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
@@ -83,7 +86,12 @@ namespace Microsoft.Agents.Connector.RestClients
                     {
                         return ProtocolJsonSerializer.ToObject<SignInResource>(httpResponse.Content.ReadAsStream(cancellationToken));
                     }
+                case 400:
+                    {
+                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetSignInResourceAsync_BadRequestError, cancellationToken: cancellationToken);
+                    }
                 default:
+
                     throw new HttpRequestException($"GetSignInResourceAsync {httpResponse.StatusCode}");
             }
         }

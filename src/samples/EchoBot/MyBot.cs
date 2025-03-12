@@ -33,7 +33,7 @@ namespace EchoBot
 
         protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            // Increment count state.
+            // Increment count state.  This demonstrates saving ConversationState in an agent.
             int count = turnState.Conversation.IncrementMessageCount();
 
             await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);

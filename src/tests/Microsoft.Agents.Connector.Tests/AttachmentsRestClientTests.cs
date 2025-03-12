@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -114,7 +115,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
             
-            var exMessage = $"GetAttachmentInfo operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetAttachmentInfo operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -206,7 +207,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetAttachment operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetAttachment operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {

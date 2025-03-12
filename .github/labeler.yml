@@ -17,3 +17,7 @@
 "ML: Tests":
 - changed-files:
   - any-glob-to-any-file: ['src/tests/**']
+
+"MCP":
+- changed-files:
+  - any-glob-to-any-file: ['src/**/*MCP*']

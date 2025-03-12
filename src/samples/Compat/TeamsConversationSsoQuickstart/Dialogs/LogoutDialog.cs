@@ -1,6 +1,5 @@
-﻿// <copyright file="LogoutDialog.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +7,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.Core.Models;
 
-namespace BotConversationSsoQuickstart.Dialogs
+namespace TeamsConversationSsoQuickstart.Dialogs
 {
     public class LogoutDialog : ComponentDialog
     {

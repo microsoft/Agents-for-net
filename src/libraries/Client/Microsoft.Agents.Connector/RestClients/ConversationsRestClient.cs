@@ -6,10 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
@@ -47,22 +50,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversations operation returned an invalid status code '{httpResponse.StatusCode}'");
-
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -98,20 +86,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"CreateConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -154,20 +129,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendToConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -205,20 +167,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendConversationHistory operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -262,20 +211,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UpdateActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -326,20 +262,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"ReplyToActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -371,20 +294,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -416,20 +326,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -462,20 +359,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -507,20 +391,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -553,20 +424,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationPagedMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -599,20 +457,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetActivityMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -650,22 +495,30 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UploadAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
+        }
+
+        /// <summary>
+        /// Common handler for Non Successful responses.
+        /// </summary>
+        /// <param name="httpResponse"></param>
+        /// <param name="errorMessage"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="errors"></param>
+        private static Exception HandleExceptionResponse(HttpResponseMessage httpResponse, AgentErrorDefinition errorMessage, CancellationToken cancellationToken, params string[] errors)
+        {
+            ArgumentNullException.ThrowIfNull(httpResponse);
+
+            var ex = ErrorResponseException.CreateErrorResponseException(httpResponse, errorMessage, cancellationToken: cancellationToken, errors: errors);
+
+            if (httpResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                    ErrorHelper.InvalidAccessTokenForAgentCallback, ex);
+            }
+            throw ex;
         }
     }
 }

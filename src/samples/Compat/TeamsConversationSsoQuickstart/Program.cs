@@ -1,20 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using BotConversationSsoQuickstart;
-using BotConversationSsoQuickstart.Bots;
-using BotConversationSsoQuickstart.Dialogs;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
+using TeamsConversationSsoQuickstart.Bots;
+using TeamsConversationSsoQuickstart;
+using TeamsConversationSsoQuickstart.Dialogs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,19 +24,11 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter>();
+builder.AddBot<TeamsBot<MainDialog>, AdapterWithErrorHandler>();
 
-// Create the Conversation state.
+// Add Conversation and User state.
 builder.Services.AddSingleton<ConversationState>();
-
-builder.Services.AddSingleton<IMiddleware[]>((sp) =>
-{
-    return 
-    [
-        new AutoSaveStateMiddleware(true, sp.GetService<ConversationState>()),
-        new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
-    ];
-});
+builder.Services.AddSingleton<UserState>();
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<MainDialog>();
