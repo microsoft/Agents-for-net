@@ -26,15 +26,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
 
         private static readonly string DEFAULT_TASK_DATA_FILTER = "verb";
 
-        private readonly TeamsApplication _app;
+        private readonly AgentApplication _app;
+        private readonly TaskModulesOptions _taskModulesOptions;
 
         /// <summary>
         /// Creates a new instance of the TaskModules class.
         /// </summary>
         /// <param name="app"> The top level application class to register handlers with.</param>
-        public TaskModulesFeature(TeamsApplication app)
+        /// <param name="taskModulesOptions"></param>
+        public TaskModulesFeature(AgentApplication app, TaskModulesOptions? taskModulesOptions = null)
         {
             this._app = app;
+            this._taskModulesOptions = taskModulesOptions;
         }
 
         /// <summary>
@@ -48,7 +51,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
 
-            string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
+            string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
         }
@@ -64,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
 
-            string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
+            string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
         }
@@ -150,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
 
-            string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
+            string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
         }
@@ -167,7 +170,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
 
-            string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
+            string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
         }

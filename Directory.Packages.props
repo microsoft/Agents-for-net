@@ -82,7 +82,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="$(Microsoft_Extentions_PkgVer)" />
     <!-- Teams samples -->
     <PackageVersion Include="AdaptiveCards" Version="3.1.0" />
-    <PackageVersion Include="AdaptiveCards.Templating" Version="2.0.3" />
+    <PackageVersion Include="AdaptiveCards.Templating" Version="2.0.5" />
     <PackageVersion Include="Microsoft.Graph" Version="4.47.0" />
     <PackageVersion Include="Microsoft.Graph.Core" Version="2.0.14" />
     <!-- Semantic Kernel Samples -->
@@ -92,7 +92,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.29.0" />
     <!-- Required until we move ModelContextProtocol libraries to net9 -->
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-	<!-- Azure OpenAI -->
-	<PackageVersion Include="OpenAI" Version="2.1.0" />
+    <!-- Azure OpenAI -->
+    <PackageVersion Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 </Project>
