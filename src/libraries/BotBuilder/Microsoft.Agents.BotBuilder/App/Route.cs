@@ -14,7 +14,7 @@ namespace Microsoft.Agents.BotBuilder.App
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>True if the route handler should be triggered. Otherwise, False.</returns>
-    public delegate Task<bool> RouteSelectorAsync(ITurnContext turnContext, CancellationToken cancellationToken);
+    public delegate Task<bool> RouteSelector(ITurnContext turnContext, CancellationToken cancellationToken);
 
     /// <summary>
     /// The common route handler. Function for handling an incoming request.
@@ -28,7 +28,7 @@ namespace Microsoft.Agents.BotBuilder.App
 
     internal class Route
     {
-        public Route(RouteSelectorAsync selector, bool isInvokeRoute = false)
+        public Route(RouteSelector selector, bool isInvokeRoute = false)
         {
             Selector = selector;
             Handler = (_, _, _) => Task.CompletedTask;
@@ -42,14 +42,14 @@ namespace Microsoft.Agents.BotBuilder.App
             IsInvokeRoute = isInvokeRoute;
         }
 
-        public Route(RouteSelectorAsync selector, RouteHandler handler, bool isInvokeRoute = false)
+        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false)
         {
             Selector = selector;
             Handler = handler;
             IsInvokeRoute = isInvokeRoute;
         }
 
-        public RouteSelectorAsync Selector { get; private set; }
+        public RouteSelector Selector { get; private set; }
 
         public RouteHandler Handler { get; private set; }
 

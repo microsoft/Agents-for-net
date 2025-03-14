@@ -52,7 +52,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verb);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
+            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
             return OnActionExecute(routeSelector, handler);
         }
 
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         {
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
+            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
             return OnActionExecute(routeSelector, handler);
         }
 
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(RouteSelectorAsync routeSelector, ActionExecuteHandlerAsync handler)
+        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnActionExecute(routeSelector, handler);
                 }
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             ArgumentException.ThrowIfNullOrWhiteSpace(verb);
             ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelectorAsync routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
+            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
             return OnActionSubmit(routeSelector, handler);
         }
 
@@ -194,7 +194,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelectorAsync routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
+            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
             return OnActionSubmit(routeSelector, handler);
         }
 
@@ -221,7 +221,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(RouteSelectorAsync routeSelector, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(RouteSelector routeSelector, ActionSubmitHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -283,7 +283,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnActionSubmit(routeSelector, handler);
                 }
@@ -301,7 +301,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         {
             ArgumentNullException.ThrowIfNull(dataset);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
+            RouteSelector routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
             return OnSearch(routeSelector, handler);
         }
 
@@ -315,7 +315,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         {
             ArgumentNullException.ThrowIfNull(datasetPattern);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
+            RouteSelector routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
             return OnSearch(routeSelector, handler);
         }
 
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(RouteSelectorAsync routeSelector, SearchHandlerAsync handler)
+        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -385,7 +385,7 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnSearch(routeSelector, handler);
                 }
@@ -393,9 +393,9 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             return _app;
         }
 
-        private static RouteSelectorAsync CreateActionExecuteSelector(Func<string, bool> isMatch)
+        private static RouteSelector CreateActionExecuteSelector(Func<string, bool> isMatch)
         {
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 AdaptiveCardInvokeValue? invokeValue;
                 return Task.FromResult(
@@ -409,9 +409,9 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             return routeSelector;
         }
 
-        private static RouteSelectorAsync CreateActionSubmitSelector(Func<string, bool> isMatch, string filter)
+        private static RouteSelector CreateActionSubmitSelector(Func<string, bool> isMatch, string filter)
         {
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 JsonObject obj = ProtocolJsonSerializer.ToObject<JsonObject>(turnContext.Activity.Value);
                 return Task.FromResult(
@@ -425,9 +425,9 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
             return routeSelector;
         }
 
-        private static RouteSelectorAsync CreateSearchSelector(Func<string, bool> isMatch)
+        private static RouteSelector CreateSearchSelector(Func<string, bool> isMatch)
         {
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value);
                 return Task.FromResult(

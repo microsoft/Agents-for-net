@@ -80,14 +80,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
     {
         public List<string> calls = [];
 
-        [ActivityRoute(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(Type = RouteType.Activity, ActivityType = ActivityTypes.Message, Rank = RouteRank.Last)]
         public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageAsync");
             return Task.CompletedTask;
         }
 
-        [ActivityRoute(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(Type = RouteType.Activity, ActivityType = ActivityTypes.Message, Rank = RouteRank.Last)]
         public Task OnMessageDuplicateAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageDuplicateAsync");
@@ -99,14 +99,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             return Task.FromResult(turnContext.Activity.Text == "test_selector");
         }
 
-        [ActivityRoute(Selector = "TestSelectorAsync")]
+        [Route(Selector = "TestSelectorAsync")]
         public Task OnSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnSelectorAsync");
             return Task.CompletedTask;
         }
 
-        [ActivityRoute(Regex = "test*.")]
+        [Route(Regex = "test*.")]
         public Task OnRegExAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnRegExAsync");
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
     class SelectorNotFoundTestApp(AgentApplicationOptions options) : AgentApplication(options)
     {
-        [ActivityRoute(Selector = "NotFoundSelectorAsync")]
+        [Route(Selector = "NotFoundSelectorAsync")]
         public Task OnNotFoundSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             return Task.FromResult(1);
         }
 
-        [ActivityRoute(Selector = "InvalidSelectorAsync")]
+        [Route(Selector = "InvalidSelectorAsync")]
         public Task OnInvalidSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;

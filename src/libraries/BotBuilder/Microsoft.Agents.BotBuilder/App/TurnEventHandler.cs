@@ -23,5 +23,5 @@ namespace Microsoft.Agents.BotBuilder.App
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>True to continue execution of the current turn. Otherwise, False.</returns>
-    public delegate Task<bool> TurnEventHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
+    public delegate Task<bool> TurnEventHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 }

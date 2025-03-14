@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -459,7 +459,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -590,7 +590,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -750,7 +750,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };

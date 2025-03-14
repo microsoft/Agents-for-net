@@ -10,55 +10,47 @@ using System.Threading;
 using System.Threading.Tasks;
 using WeatherBot.Agents;
 
-namespace WeatherBot
+namespace WeatherBot;
+
+// This is the core handler for the Bot Message loop. Each new request will be processed by this class.
+public class MyBot(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : AgentApplication(options)
 {
-    // This is the core handler for the Bot Message loop. Each new request will be processed by this class.
-    public class MyBot : AgentApplication
+    [Route(Type = RouteType.Activity, ActivityType = ActivityTypes.Message, Rank = RouteRank.Last)]
+    protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        private readonly WeatherForecastAgent _weatherAgent;
+        var chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
 
-        public MyBot(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : base(options)
+        // Invoke the WeatherForecastAgent to process the message
+        var forecastResponse = await weatherAgent.InvokeAgentAsync(turnContext.Activity.Text, chatHistory);
+        if (forecastResponse == null)
         {
-            _weatherAgent = weatherAgent;
+            await turnContext.SendActivityAsync(MessageFactory.Text("Sorry, I couldn't get the weather forecast at the moment."), cancellationToken);
+            return;
         }
 
-        [ActivityRoute(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
-        protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        // Create a response message based on the response content type from the WeatherForecastAgent
+        IActivity response = forecastResponse.ContentType switch
         {
-            var chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
-
-            // Invoke the WeatherForecastAgent to process the message
-            var forecastResponse = await _weatherAgent.InvokeAgentAsync(turnContext.Activity.Text, chatHistory);
-            if (forecastResponse == null)
+            WeatherForecastAgentResponseContentType.AdaptiveCard => MessageFactory.Attachment(new Attachment()
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Sorry, I couldn't get the weather forecast at the moment."), cancellationToken);
-                return;
-            }
+                ContentType = "application/vnd.microsoft.card.adaptive",
+                Content = forecastResponse.Content,
+            }),
+            _ => MessageFactory.Text(forecastResponse.Content),
+        };
 
-            // Create a response message based on the response content type from the WeatherForecastAgent
-            IActivity response = forecastResponse.ContentType switch
-            {
-                WeatherForecastAgentResponseContentType.AdaptiveCard => MessageFactory.Attachment(new Attachment()
-                {
-                    ContentType = "application/vnd.microsoft.card.adaptive",
-                    Content = forecastResponse.Content,
-                }),
-                _ => MessageFactory.Text(forecastResponse.Content),
-            };
+        // Send the response message back to the user. 
+        await turnContext.SendActivityAsync(response, cancellationToken);
+    }
 
-            // Send the response message back to the user. 
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
-        [ConversationUpdateRoute(Event = ConversationUpdateEvents.MembersAdded)]
-        protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(Type = RouteType.Conversation, Event = ConversationUpdateEvents.MembersAdded)]
+    protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
-            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+            if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                if (member.Id != turnContext.Activity.Recipient.Id)
-                {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome! I'm here to help with all your weather forecast needs!"), cancellationToken);
-                }
+                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome! I'm here to help with all your weather forecast needs!"), cancellationToken);
             }
         }
     }

@@ -228,7 +228,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
         private void AddManualSignInCompletionHandler()
         {
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.Name, SignInCompletionEventName)

@@ -12,7 +12,7 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly ReaderWriterLock rwl = new();
         private List<RouteEntry> routes = [];
 
-        public void AddRoute(RouteSelectorAsync selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
+        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
         {
             try
             {

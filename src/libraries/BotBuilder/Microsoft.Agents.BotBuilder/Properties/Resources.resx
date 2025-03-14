@@ -126,15 +126,23 @@
     <comment>Raised when accessing AgentApplication.Authentication but it hasn't been configured.</comment>
   </data>
   <data name="AttributeSelectorNotFound" xml:space="preserve">
-    <value>The ActivityRouteAttribute.Selector method is not found.</value>
-    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method isn't found on the AgentApplication or subclass.</comment>
+    <value>The RouteAttribute.Selector method '{0}' is not found.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated method isn't found on the AgentApplication or subclass.</comment>
   </data>
   <data name="AttributeSelectorInvalid" xml:space="preserve">
-    <value>The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition.</value>
-    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
+    <value>The RouteAttribute.Selector method '{0}' does not match the RouteSelector delegate definition.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated Selector method does not have a valid signature.</comment>
   </data>
   <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
     <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing AgentApplication.</comment>
+  </data>
+  <data name="AttributeHandlerInvalid" xml:space="preserve">
+    <value>The method does not match the RouteHandler delegate definition.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
+  </data>
+  <data name="AttributeMissingArgs" xml:space="preserve">
+    <value>A RouteAttribute is missing required arguments.</value>
+    <comment>Raised when a RouteAttribute was specified but missing required values.  </comment>
   </data>
 </root>

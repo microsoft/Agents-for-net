@@ -26,8 +26,8 @@ namespace Microsoft.Agents.BotBuilder.App
         private TypingTimer? _typingTimer;
 
         private readonly RouteList _routes;
-        private readonly ConcurrentQueue<TurnEventHandlerAsync> _beforeTurn;
-        private readonly ConcurrentQueue<TurnEventHandlerAsync> _afterTurn;
+        private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
+        private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
 
         /// <summary>
         /// Creates a new AgentApplication instance.
@@ -47,8 +47,8 @@ namespace Microsoft.Agents.BotBuilder.App
             }
 
             _routes = new RouteList();
-            _beforeTurn = new ConcurrentQueue<TurnEventHandlerAsync>();
-            _afterTurn = new ConcurrentQueue<TurnEventHandlerAsync>();
+            _beforeTurn = new ConcurrentQueue<TurnEventHandler>();
+            _afterTurn = new ConcurrentQueue<TurnEventHandler>();
 
             // Application Features
 
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="isInvokeRoute">Boolean indicating if the RouteSelectorAsync is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication AddRoute(RouteSelectorAsync selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
+        public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(selector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.BotBuilder.App
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(type);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
+            RouteSelector routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
             OnActivity(routeSelector, handler, rank: rank);
             return this;
         }
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.App
         {
             ArgumentNullException.ThrowIfNull(typePattern);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type));
+            RouteSelector routeSelector = (context, _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type));
             OnActivity(routeSelector, handler, rank: rank);
             return this;
         }
@@ -160,7 +160,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(RouteSelectorAsync routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        public AgentApplication OnActivity(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -195,7 +195,7 @@ namespace Microsoft.Agents.BotBuilder.App
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnActivity(routeSelector, handler, rank: rank);
                 }
@@ -215,7 +215,7 @@ namespace Microsoft.Agents.BotBuilder.App
             ArgumentException.ThrowIfNullOrWhiteSpace(conversationUpdateEvent);
             ArgumentNullException.ThrowIfNull(handler);
 
-            RouteSelectorAsync routeSelector;
+            RouteSelector routeSelector;
             switch (conversationUpdateEvent)
             {
                 case ConversationUpdateEvents.MembersAdded:
@@ -258,7 +258,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public virtual AgentApplication OnConversationUpdate(RouteSelectorAsync conversationUpdateSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        public virtual AgentApplication OnConversationUpdate(RouteSelector conversationUpdateSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(conversationUpdateSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.BotBuilder.App
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(text);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _)
+            RouteSelector routeSelector = (context, _)
                 => Task.FromResult
                 (
                     string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
@@ -338,7 +338,7 @@ namespace Microsoft.Agents.BotBuilder.App
         {
             ArgumentNullException.ThrowIfNull(textPattern);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _)
+            RouteSelector routeSelector = (context, _)
                 => Task.FromResult
                 (
                     string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
@@ -359,7 +359,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessage(RouteSelectorAsync routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        public AgentApplication OnMessage(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -397,7 +397,7 @@ namespace Microsoft.Agents.BotBuilder.App
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnMessage(routeSelector, handler, rank: rank);
                 }
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.BotBuilder.App
         public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ReactionsAdded != null
@@ -433,7 +433,7 @@ namespace Microsoft.Agents.BotBuilder.App
         public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ReactionsRemoved != null
@@ -452,7 +452,7 @@ namespace Microsoft.Agents.BotBuilder.App
         public AgentApplication OnHandoff(HandoffHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.Name, "handoff/action")
@@ -480,7 +480,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="handler">Function to call before turn execution.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBeforeTurn(TurnEventHandlerAsync handler)
+        public AgentApplication OnBeforeTurn(TurnEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             _beforeTurn.Enqueue(handler);
@@ -495,7 +495,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="handler">Function to call after turn execution.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnAfterTurn(TurnEventHandlerAsync handler)
+        public AgentApplication OnAfterTurn(TurnEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             _afterTurn.Enqueue(handler);
@@ -598,7 +598,7 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
 
                 // Call before turn handler
-                foreach (TurnEventHandlerAsync beforeTurnHandler in _beforeTurn)
+                foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                 {
                     if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
                     {
@@ -655,7 +655,7 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
 
                 // Call after turn handler
-                foreach (TurnEventHandlerAsync afterTurnHandler in _afterTurn)
+                foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                 {
                     if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
                     {
@@ -675,7 +675,8 @@ namespace Microsoft.Agents.BotBuilder.App
         private void ApplyRouteAttributes()
         {
             // This will evaluate all methods that have an attribute, in declaration order (grouped by inheritance chain)
-            foreach (var method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            var methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            foreach (var method in methods)
             {
                 var activityRoutes = method.GetCustomAttributes<Attribute>(true);
                 foreach (var attribute in activityRoutes)

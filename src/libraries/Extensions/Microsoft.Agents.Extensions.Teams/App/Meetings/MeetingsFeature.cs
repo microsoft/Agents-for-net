@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         public AgentApplication OnStart(MeetingStartHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         public AgentApplication OnEnd(MeetingEndHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         public AgentApplication OnParticipantsJoin(MeetingParticipantsEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         public AgentApplication OnParticipantsLeave(MeetingParticipantsEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.ChannelId, Channels.Msteams)

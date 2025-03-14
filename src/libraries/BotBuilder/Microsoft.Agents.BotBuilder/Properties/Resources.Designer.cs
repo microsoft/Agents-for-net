@@ -61,7 +61,25 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition..
+        ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
+        /// </summary>
+        internal static string AttributeHandlerInvalid {
+            get {
+                return ResourceManager.GetString("AttributeHandlerInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A RouteAttribute is missing required arguments..
+        /// </summary>
+        internal static string AttributeMissingArgs {
+            get {
+                return ResourceManager.GetString("AttributeMissingArgs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The RouteAttribute.Selector method &apos;{0}&apos; does not match the RouteSelector delegate definition..
         /// </summary>
         internal static string AttributeSelectorInvalid {
             get {
@@ -70,7 +88,7 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ActivityRouteAttribute.Selector method is not found..
+        ///   Looks up a localized string similar to The RouteAttribute.Selector method &apos;{0}&apos; is not found..
         /// </summary>
         internal static string AttributeSelectorNotFound {
             get {

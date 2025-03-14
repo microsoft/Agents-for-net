@@ -38,9 +38,11 @@ namespace Microsoft.Agents.BotBuilder.Errors
         internal static AgentErrorDefinition UserAuthenticationNotConfigured = new AgentErrorDefinition(baseBotBuilderErrorCode - 2, Properties.Resources.UserAuthenticationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthenticationRequiresAdapter = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.UserAuthenticationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
 
-        // ActivityRouteAttribute
+        // Application RouteAttribute
         internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeHandlerInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.AttributeHandlerInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeMissingArgs = new AgentErrorDefinition(baseBotBuilderErrorCode - 7, Properties.Resources.AttributeMissingArgs, "https://aka.ms/AgentsSDK-Error01");
 
         // Application
     }
