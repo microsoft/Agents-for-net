@@ -80,9 +80,21 @@ namespace Microsoft.Agents.Authentication
         /// <inheritdoc/>
         public IAccessTokenProvider GetConnection(string name)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(name);
 
             return GetConnectionInstance(name);
+        }
+
+        public bool TryGetConnection(string name, out IAccessTokenProvider connection)
+        {
+            if (!_connections.TryGetValue(name, out ConnectionDefinition definition))
+            {
+                connection = null;
+                return false;
+            }
+
+            connection = GetConnectionInstance(definition, doThrow: false);
+            return connection != null;
         }
 
         /// <inheritdoc/>
@@ -179,7 +191,7 @@ namespace Microsoft.Agents.Authentication
             return GetConnectionInstance(value);
         }
 
-        private IAccessTokenProvider GetConnectionInstance(ConnectionDefinition connection)
+        private IAccessTokenProvider GetConnectionInstance(ConnectionDefinition connection, bool doThrow = true)
         {
             if (connection.Instance != null)
             {
@@ -195,8 +207,12 @@ namespace Microsoft.Agents.Authentication
             }
             catch (Exception ex)
             {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
+                if (doThrow)
+                {
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
+                }
             }
+            return null;
         }
     }
 }

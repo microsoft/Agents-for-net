@@ -16,11 +16,6 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         CompletionWithoutToken,
 
         /// <summary>
-        /// The incoming activity is not valid for sign in flow.
-        /// </summary>
-        InvalidActivity,
-
-        /// <summary>
         /// The the flow timed out (C2 didn't respond in time).
         /// </summary>
         Timeout,

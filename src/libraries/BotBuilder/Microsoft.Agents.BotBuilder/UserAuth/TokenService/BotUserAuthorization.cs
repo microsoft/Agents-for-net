@@ -13,13 +13,13 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     /// <summary>
     /// Base class for bot authentication that handles common logic.
     /// </summary>
-    internal class OAuthBotAuthentication
+    internal class BotUserAuthorization
     {
         private readonly OAuthFlow _flow;
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
         private FlowState _state;
-        private readonly DedupeTokenExchange _dedupe;
+        private readonly ClientTokenExchange _dedupe;
 
         /// <summary>
         /// Name of the authentication handler
@@ -32,14 +32,14 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="name">The name of authentication handler</param>
         /// <param name="oauthSettings"></param>
         /// <param name="storage"></param>
-        public OAuthBotAuthentication(string name, OAuthSettings oauthSettings, IStorage storage)
+        public BotUserAuthorization(string name, OAuthSettings oauthSettings, IStorage storage)
         {
             _name = name;
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            _dedupe = new DedupeTokenExchange(_settings, _storage);
+            _dedupe = new ClientTokenExchange(_settings, _storage);
 
             // Subclasses will define the signin prompt so the OAuthFlow optional args aren't needed.
             _flow = new OAuthFlow(oauthSettings);
@@ -94,7 +94,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="turnContext">The turn context</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The token response if available.</returns>
-        public async Task<TokenResponse> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (_settings.EnableSso && !await _dedupe.DedupeAsync(turnContext, cancellationToken).ConfigureAwait(false))
             {
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 
             await SaveFlowStateAsync(turnContext, _state, cancellationToken).ConfigureAwait(false);
 
-            return tokenResponse;
+            return tokenResponse?.Token;
         }
 
         private async Task<TokenResponse> OnGetOrStartFlowAsync(ITurnContext turnContext, CancellationToken cancellationToken)

@@ -77,6 +77,8 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 
 ## Running this Agent in Teams
 
+1. There are two version of the manifest provided.  One for M365 Copilot and one for Teams.
+   1. Copy the desired version to manifest.json
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
      - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`

@@ -51,7 +51,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             ArgumentNullException.ThrowIfNull(turnContext);
 
             // Attempt to get the users token
-            var output = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
+            var output = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
             if (output != null)
             {
                 // Return token
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             {
                 if (!prompt.Attachments.Any(a => a.Content is SigninCard))
                 {
-                    var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
+                    var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                     prompt.Attachments.Add(new Attachment
                     {
                         ContentType = SigninCard.ContentType,
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             else if (!prompt.Attachments.Any(a => a.Content is OAuthCard))
             {
                 var cardActionType = ActionTypes.Signin;
-                var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
+                var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
 
                 string value;
                 if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                     Content = new OAuthCard
                     {
                         Text = _settings.Text,
-                        ConnectionName = _settings.ConnectionName,
+                        ConnectionName = _settings.AzureBotOAuthConnectionName,
                         Buttons =
                         [
                             new CardAction
@@ -215,6 +215,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 prompt.InputHint = InputHints.AcceptingInput;
             }
 
+            prompt.ChannelData = turnContext.Activity.ChannelData;
             await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
         }
 
@@ -249,7 +250,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 // progress) retry in that case.
                 try
                 {
-                    result = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode, cancellationToken).ConfigureAwait(false);
+                    result = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode, cancellationToken).ConfigureAwait(false);
 
                     if (result != null)
                     {
@@ -279,11 +280,11 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                         new TokenExchangeInvokeResponse
                         {
                             Id = null,
-                            ConnectionName = _settings.ConnectionName,
+                            ConnectionName = _settings.AzureBotOAuthConnectionName,
                             FailureDetail = "The bot received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
-                else if (tokenExchangeRequest.ConnectionName != _settings.ConnectionName)
+                else if (tokenExchangeRequest.ConnectionName != _settings.AzureBotOAuthConnectionName)
                 {
                     await SendInvokeResponseAsync(
                         turnContext,
@@ -291,7 +292,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                         new TokenExchangeInvokeResponse
                         {
                             Id = tokenExchangeRequest.Id,
-                            ConnectionName = _settings.ConnectionName,
+                            ConnectionName = _settings.AzureBotOAuthConnectionName,
                             FailureDetail = "The bot received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
@@ -303,7 +304,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                         var userId = turnContext.Activity.From.Id;
                         var channelId = turnContext.Activity.ChannelId;
                         var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
-                        tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.ConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
+                        tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
                     }
 #pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
                     catch
@@ -322,7 +323,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                             new TokenExchangeInvokeResponse
                             {
                                 Id = tokenExchangeRequest.Id,
-                                ConnectionName = _settings.ConnectionName,
+                                ConnectionName = _settings.AzureBotOAuthConnectionName,
                                 FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
                     }
@@ -334,7 +335,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                             new TokenExchangeInvokeResponse
                             {
                                 Id = tokenExchangeRequest.Id,
-                                ConnectionName = _settings.ConnectionName,
+                                ConnectionName = _settings.AzureBotOAuthConnectionName,
                             }, cancellationToken).ConfigureAwait(false);
 
                         result = new TokenResponse
@@ -359,7 +360,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                         // The Token Service doesn't provide any way to determine this though.
                         result = await UserTokenClientWrapper.GetUserTokenAsync(
                             turnContext,
-                            _settings.ConnectionName,
+                            _settings.AzureBotOAuthConnectionName,
                             magicCode: matched.Value,
                             cancellationToken).ConfigureAwait(false);
                     }

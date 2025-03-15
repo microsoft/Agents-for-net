@@ -14,11 +14,12 @@ using Microsoft.Agents.Connector;
 namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
-    /// If the activity name is signin/tokenExchange, this middleware will attempt to
+    /// If the activity name is signin/tokenExchange, this will attempt to
     /// exchange the token, and deduplicate the incoming call, ensuring only one
     /// exchange request is processed.
     /// </summary>
     /// <remarks>
+    /// This is only for Teams or SharePoint channels.
     /// If a user is signed into multiple Teams clients, the Bot could receive a
     /// "signin/tokenExchange" from each client. Each token exchange request for a
     /// specific user login will have an identical Activity.Value.Id.
@@ -31,12 +32,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     /// local development. IStorage's ETag implementation for token exchange activity
     /// deduplication.
     /// </remarks>
-    internal class DedupeTokenExchange
+    internal class ClientTokenExchange
     {
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
 
-        public DedupeTokenExchange(OAuthSettings oauthSettings, IStorage storage)
+        public ClientTokenExchange(OAuthSettings oauthSettings, IStorage storage)
         {
             _settings = oauthSettings;
             _storage = storage;
@@ -55,7 +56,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             if (ShouldExchange(turnContext))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
-                if (!await ExchangedTokenAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false))
+                if (!await ExchangedTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false))
                 {
                     return false;
                 }

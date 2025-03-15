@@ -15,12 +15,12 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "OAuth Authentication",
-    "full": "OAuth Authentication"
+    "short": "User Authorization (OAuth)",
+    "full": "User Authorization (OAuth)"
   },
   "description": {
-    "short": "Sample demonstrating Azure Bot Services user authentication with using a Agent.",
-    "full": "This sample demonstrates how to integrate Azure AD authentication in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
+    "short": "Sample demonstrating Azure Bot Services user authorization with using a Agent.",
+    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
   },
   "accentColor": "#FFFFFF",
   "bots": [

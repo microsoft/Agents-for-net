@@ -66,7 +66,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 var prompt = new OAuthPrompt("abc", new OAuthPromptSettings()
                     {
-                        ConnectionName = "abc",
+                        AzureBotOAuthConnectionName = "abc",
                     });
                 var convoState = new ConversationState(new MemoryStorage());
 
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
-                var prompt = new OAuthPrompt("abc", new OAuthPromptSettings() { ConnectionName = "test" });
+                var prompt = new OAuthPrompt("abc", new OAuthPromptSettings() { AzureBotOAuthConnectionName = "test" });
                 var convoState = new ConversationState(new MemoryStorage());
 
                 var adapter = new TestAdapter()
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -244,7 +244,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
                 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -357,7 +357,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -425,7 +425,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -490,7 +490,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -558,7 +558,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { ConnectionName = ConnectionName }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { AzureBotOAuthConnectionName = ConnectionName }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -594,7 +594,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [InlineData(true, Channels.Msteams, true)] //Override: show link;  ChannelRequiresSingInLink() returns true; Result: show link
         public async Task OAuthPromptSignInLinkSettingsCases(bool? showSignInLinkValue, string channelId, bool shouldHaveSignInLink)
         {
-            var oAuthPromptSettings = new OAuthPromptSettings() { ConnectionName = "test" };
+            var oAuthPromptSettings = new OAuthPromptSettings() { AzureBotOAuthConnectionName = "test" };
             oAuthPromptSettings.ShowSignInLink = showSignInLinkValue;
 
             var convoState = new ConversationState(new MemoryStorage());
@@ -692,7 +692,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -724,7 +724,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var oAuthPromptSettings = new OAuthPromptSettings()
                 {
-                    ConnectionName = "test",
+                    AzureBotOAuthConnectionName = "test",
                 };
 
             var convoState = new ConversationState(new MemoryStorage());
@@ -783,7 +783,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", EndOnInvalidMessage = true }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in", EndOnInvalidMessage = true }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -826,7 +826,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var oauthPromptSettings = new OAuthPromptSettings
             {
-                ConnectionName = ConnectionName,
+                AzureBotOAuthConnectionName = ConnectionName,
                 Text = "Please sign in",
                 Title = "Sign in",
             };
@@ -863,7 +863,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in" }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -917,7 +917,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 var dialogs = new DialogSet(dialogState);
 
                 // Set timeout to zero, so the prompt will end immediately.
-                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", ConnectionName = ConnectionName, Title = "Sign in", Timeout = 0 }));
+                dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in", Timeout = 0 }));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 

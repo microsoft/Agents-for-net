@@ -24,7 +24,10 @@ namespace Microsoft.Agents.CopilotStudio.Client
         //<inheritdoc/>
         public BotType? CopilotBotType { get; set; } 
 
+        public ConnectionSettings()
+        {
 
+        }
 
         /// <summary>
         /// Create ConnectionSettings from a configuration section.

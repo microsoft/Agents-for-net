@@ -256,7 +256,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// the result contains the user's token.</remarks>
         public async Task<TokenResponse> GetUserTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
+            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
         public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)

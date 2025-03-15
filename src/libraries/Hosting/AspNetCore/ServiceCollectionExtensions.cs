@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -46,6 +49,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add the Bot,  this is the primary worker for the bot. 
             builder.Services.AddTransient<IBot, TBot>();
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers AgentApplicationOptions for AgentApplication-based bots.
+        /// </summary>
+        /// <remarks>
+        /// This loads options from IConfiguration and DI.
+        /// </remarks>
+        /// <param name="builder"></param>
+        /// <param name="fileDownloaders"></param>
+        /// <param name="autoSignInSelector"></param>
+        /// <returns></returns>
+        public static IHostApplicationBuilder AddAgentApplicationOptions(
+            this IHostApplicationBuilder builder, 
+            IList<IInputFileDownloader> fileDownloaders = null, 
+            AutoSignInSelectorAsync autoSignInSelector = null)
+        {
+            if (autoSignInSelector != null)
+            {
+                builder.Services.AddSingleton<AutoSignInSelectorAsync>(sp => autoSignInSelector);
+            }
+
+            if (fileDownloaders != null)
+            {
+                builder.Services.AddSingleton(sp => fileDownloaders);
+            }
+
+            builder.Services.AddSingleton<AgentApplicationOptions>();
 
             return builder;
         }

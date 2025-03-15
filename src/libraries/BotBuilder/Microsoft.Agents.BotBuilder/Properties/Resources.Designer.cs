@@ -79,6 +79,15 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to create user Authorization provider for handler name &apos;{0}&apos;.
+        /// </summary>
+        internal static string FailedToCreateUserAuthorizationHandler {
+            get {
+                return ResourceManager.GetString("FailedToCreateUserAuthorizationHandler", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An instance of IAccessTokenProvider not found for {0}.
         /// </summary>
         internal static string IAccessTokenProviderNotFound {
@@ -88,20 +97,92 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The AgentApplication.Authentication property is unavailable because no user authentication handlers were configured..
+        ///   Looks up a localized string similar to No UserAuthorization Handlers were defined..
         /// </summary>
-        internal static string UserAuthenticationNotConfigured {
+        internal static string NoUserAuthorizationHandlers {
             get {
-                return ResourceManager.GetString("UserAuthenticationNotConfigured", resourceCulture);
+                return ResourceManager.GetString("NoUserAuthorizationHandlers", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}..
         /// </summary>
-        internal static string UserAuthenticationRequiresAdapter {
+        internal static string OBOExchangeFailed {
             get {
-                return ResourceManager.GetString("UserAuthenticationRequiresAdapter", resourceCulture);
+                return ResourceManager.GetString("OBOExchangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OBO for &apos;{0}&apos; cannot exchange an application that does not have an api:// audience..
+        /// </summary>
+        internal static string OBONotExchangeableToken {
+            get {
+                return ResourceManager.GetString("OBONotExchangeableToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OBO not supported on &apos;{0}&apos;.
+        /// </summary>
+        internal static string OBONotSupported {
+            get {
+                return ResourceManager.GetString("OBONotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UserAuthorization already has an active handler..
+        /// </summary>
+        internal static string UserAuthorizationAlreadyActive {
+            get {
+                return ResourceManager.GetString("UserAuthorizationAlreadyActive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occurred while trying to authenticate user with &apos;{0}&apos;.
+        /// </summary>
+        internal static string UserAuthorizationFailed {
+            get {
+                return ResourceManager.GetString("UserAuthorizationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handler &apos;{0}&apos; not found in configuration.
+        /// </summary>
+        internal static string UserAuthorizationHandlerNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthorizationHandlerNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The AgentApplication.Authorization property is unavailable because no user Authorization handlers were configured..
+        /// </summary>
+        internal static string UserAuthorizationNotConfigured {
+            get {
+                return ResourceManager.GetString("UserAuthorizationNotConfigured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
+        /// </summary>
+        internal static string UserAuthorizationRequiresAdapter {
+            get {
+                return ResourceManager.GetString("UserAuthorizationRequiresAdapter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type &apos;{0}&apos; not found in Assembly &apos;{1}&apos; or is the wrong type for &apos;{2}&apos;..
+        /// </summary>
+        internal static string UserAuthorizationTypeNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthorizationTypeNotFound", resourceCulture);
             }
         }
     }

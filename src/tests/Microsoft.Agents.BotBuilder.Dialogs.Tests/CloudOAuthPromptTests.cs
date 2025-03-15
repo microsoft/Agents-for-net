@@ -53,7 +53,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             // Add the OAuthPrompt.
             var oauthPromptSettings = new OAuthPromptSettings
             {
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Text = "Please sign in",
                 Title = "Sign in",
             };
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             // Add the OAuthPrompt.
             var oauthPromptSettings = new OAuthPromptSettings
             {
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Text = "Please sign in",
                 Title = "Sign in",
             };
@@ -209,7 +209,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             // Add the OAuthPrompt.
             var oauthPromptSettings = new OAuthPromptSettings
             {
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Text = "Please sign in",
                 Title = "Sign in",
             };
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = "myConnection",
+                AzureBotOAuthConnectionName = "myConnection",
                 Title = "Sign in",
             };
 
@@ -353,7 +353,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Title = "Sign in",
             };
 
@@ -432,7 +432,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Title = "Sign in",
             };
 
@@ -526,7 +526,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Title = "Sign in",
             };
 
@@ -612,7 +612,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Title = "Sign in",
             };
 
@@ -706,7 +706,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var oauthPromptSettings = new OAuthPromptSettings
             {
                 Text = "Please sign in",
-                ConnectionName = connectionName,
+                AzureBotOAuthConnectionName = connectionName,
                 Title = "Sign in",
             };
 
