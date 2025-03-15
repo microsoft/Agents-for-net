@@ -135,6 +135,14 @@
   </data>
   <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
     <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
-    <comment>Raised when when initializing AgentApplication.</comment>
+    <comment>Raised when when initializing the AgentApplication.</comment>
+  </data>
+  <data name="StreamingResponseEnded" xml:space="preserve">
+    <value>StreamingResponse instance has already ended.</value>
+    <comment>Raised when when using the instance after it has been ended, or calling EndStream twice.</comment>
+  </data>
+  <data name="TeamsRequiresInformativeFirst" xml:space="preserve">
+    <value>StreamingResponse in Teams requires QueueInformativeUpdate to be called first.</value>
+    <comment>Raised when trying to use QueueTextChunk, but QueueInformativeUpdate has not been called.</comment>
   </data>
 </root>

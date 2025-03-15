@@ -42,7 +42,9 @@ namespace Microsoft.Agents.BotBuilder.Errors
         internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
 
-        // Application
+        // StreamingMessages
+        internal static AgentErrorDefinition StreamingResponseEnded = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.StreamingResponseEnded, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition TeamsRequiresInformativeFirst = new AgentErrorDefinition(baseBotBuilderErrorCode - 7, Properties.Resources.TeamsRequiresInformativeFirst, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

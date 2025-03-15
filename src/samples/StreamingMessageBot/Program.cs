@@ -1,21 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using IntermediateMessagesBot;
 using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Azure.AI.OpenAI;
-using Azure.Identity;
 using System;
 using System.ClientModel;
+using StreamingMessageBot;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,20 +23,13 @@ builder.Logging.AddConsole();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add ApplicationOptions
-builder.Services.AddTransient(sp =>
-{
-    return new AgentApplicationOptions()
-    {
-        StartTypingTimer = false,
-        TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
-    };
-});
+// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
+builder.Services.AddTransient<AgentApplicationOptions>();
 
 builder.Services.AddTransient<IChatClient>(sp =>
 {
-    return new AzureOpenAIClient(new Uri(builder.Configuration["Endpoint"]), new ApiKeyCredential(builder.Configuration["OpenAIKey"]))
-        .AsChatClient(builder.Configuration["ModelName"]);
+    return new AzureOpenAIClient(new Uri(builder.Configuration["AIServices:AzureOpenAI:Endpoint"]), new ApiKeyCredential(builder.Configuration["AIServices:AzureOpenAI:ApiKey"]))
+        .AsChatClient(builder.Configuration["AIServices:AzureOpenAI:DeploymentName"]);
 });
 
 // Add the bot (which is transient)

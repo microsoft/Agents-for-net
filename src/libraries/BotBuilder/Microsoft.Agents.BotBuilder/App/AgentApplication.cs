@@ -669,6 +669,11 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 // Stop the timer if configured
                 StopTypingTimer();
+
+                if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
+                {
+                    await turnContext.StreamingResponse.EndStreamAsync(30000, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 

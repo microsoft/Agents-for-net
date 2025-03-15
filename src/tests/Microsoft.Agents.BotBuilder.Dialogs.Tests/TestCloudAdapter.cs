@@ -45,6 +45,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             public IActivity Activity => _innerTurnContext.Activity;
 
+            public IStreamingResponse StreamingResponse => _innerTurnContext.StreamingResponse;
+
             public bool Responded => _innerTurnContext.Responded;
 
             public ClaimsIdentity Identity => _innerTurnContext.Identity;

@@ -28,6 +28,7 @@ namespace Microsoft.Agents.BotBuilder
         private readonly IList<DeleteActivityHandler> _onDeleteActivity = new List<DeleteActivityHandler>();
 
         private bool _disposed;
+        private readonly IStreamingResponse _streamingResponse;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TurnContext"/> class.
@@ -45,6 +46,8 @@ namespace Microsoft.Agents.BotBuilder
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
             StackState = new TurnContextStateCollection();
             Services = new TurnContextStateCollection();
+
+            _streamingResponse = new StreamingResponse(this);
         }
 
         /// <summary>
@@ -61,6 +64,7 @@ namespace Microsoft.Agents.BotBuilder
             ArgumentNullException.ThrowIfNull(turnContext);
 
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
+            _streamingResponse = new StreamingResponse(this);
 
             // all properties should be copied over except for activity.
             Adapter = turnContext.Adapter;
@@ -99,6 +103,9 @@ namespace Microsoft.Agents.BotBuilder
         /// </summary>
         /// <value>The activity associated with this turn.</value>
         public IActivity Activity { get; }
+
+        /// <inheritdoc/>
+        public IStreamingResponse StreamingResponse { get { return _streamingResponse; } }
 
         public ClaimsIdentity Identity { get; internal set; }
 

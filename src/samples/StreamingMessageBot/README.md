@@ -1,8 +1,6 @@
-﻿# EchoBot Sample
+﻿# StreamingMessage Sample
 
-This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request and echo the text of the request back to the caller.
-
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK messaging loop. It can also be used as a the base for a custom Agent that you choose to develop.
+This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent is demonstrate the streaming OpenAI streamed responses.
 
 ## Prerequisites
 
@@ -76,7 +74,15 @@ If you type a message and hit enter, or the send arrow, your messages should be 
       1. Replace all **{{ClientId}}** with the AppId of the bot.
       1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      
+
+1. Configure Azure OpenAI settings
+   ```json
+   "AzureOpenAI": {
+     "Endpoint": "",
+     "ModelName": null,
+     "OpenAIKey": null
+   },
+   ```
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:

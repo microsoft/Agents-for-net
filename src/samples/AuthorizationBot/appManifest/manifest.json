@@ -1,0 +1,56 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
+  "manifestVersion": "devPreview",
+  "version": "1.0.0",
+  "id": "060da9be-86da-4c8e-a558-1d7c2dfc3b69",
+  "packageName": "com.microsoft.agents.oauth",
+  "developer": {
+    "name": "Microsoft, Inc.",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "OAuth Authentication",
+    "full": "OAuth Authentication"
+  },
+  "description": {
+    "short": "Sample demonstrating Azure Bot Services user authentication with using a Agent.",
+    "full": "This sample demonstrates how to integrate Azure AD authentication in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
+  },
+  "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "060da9be-86da-4c8e-a558-1d7c2dfc3b69",
+        "type": "bot"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "060da9be-86da-4c8e-a558-1d7c2dfc3b69",
+      "scopes": [
+        "personal"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "token.botframework.com",
+    "qv62606t-3978.use.devtunnels.ms"
+  ],
+  "webApplicationInfo": {
+    "id": "060da9be-86da-4c8e-a558-1d7c2dfc3b69",
+    "resource": "api://botid-060da9be-86da-4c8e-a558-1d7c2dfc3b69"
+  }
+}

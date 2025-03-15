@@ -6,7 +6,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary>
     /// The type of streaming message being sent.
     /// </summary>
-    public enum StreamType
+    public static class StreamTypes
     {
         /// <summary>
         /// An informative update.
@@ -18,16 +18,16 @@ namespace Microsoft.Agents.Core.Models
         ///    TextFormat can be supplied
         ///    Increments the streamSequence
         /// </remarks>
-        Informative,
+        public const string Informative = "informative";
 
         /// <summary>
         /// A chunk of partial message text.
         /// </summary>
-        Streaming,
+        public const string Streaming = "streaming";
 
         /// <summary>
         /// The final message.  Only on final "message" Activity.
         /// </summary>
-        Final
+        public const string Final = "final";
     }
 }

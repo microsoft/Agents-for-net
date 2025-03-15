@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     {
         public StreamInfo() : base(EntityTypes.StreamInfo)
         {
-            StreamType = StreamType.Streaming;
+            StreamType = StreamTypes.Streaming;
         }
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public string StreamId { get; set; }
 
-        public StreamType StreamType { get; set; }
+        public string StreamType { get; set; }
 
         /// <summary>
         /// Required incrementing integer for each Typing Activity sent, and final Message.
@@ -28,6 +28,6 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Optional stream result when StreamType is Final.
         /// </summary>
-        public StreamResult StreamResult { get; set; }
+        public string StreamResult { get; set; }
     }
 }

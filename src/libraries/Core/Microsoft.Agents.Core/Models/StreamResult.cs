@@ -3,10 +3,10 @@
 
 namespace Microsoft.Agents.Core.Models
 {
-    public enum StreamResult
+    public static class StreamResults
     {
-        Success,
-        Timeout,
-        Error
+        public const string Success = "success";
+        public const string Timeout = "timeout";
+        public const string Error = "error";
     }
 }
