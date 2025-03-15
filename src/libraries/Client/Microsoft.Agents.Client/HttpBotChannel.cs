@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -42,11 +41,13 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc />
         public async Task<InvokeResponse<T>> PostActivityAsync<T>(string toBotId, string toBotResource, Uri endpoint, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            toBotId = toBotId ?? string.Empty;
-            _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-            _ = serviceUrl ?? throw new ArgumentNullException(nameof(serviceUrl));
-            _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId));
-            _ = activity ?? throw new ArgumentNullException(nameof(activity));
+            ArgumentNullException.ThrowIfNull(endpoint);
+            ArgumentNullException.ThrowIfNull(serviceUrl);
+            ArgumentNullException.ThrowIfNull(activity);
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(toBotId);
+
+            toBotResource = toBotResource ?? $"api://{toBotId}";
 
             _logger.LogInformation($"post to bot '{toBotId}' at '{endpoint}'");
 

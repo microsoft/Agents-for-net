@@ -45,7 +45,8 @@ namespace Microsoft.Agents.Client
             var botConversationReference = new BotConversationReference
             {
                 ConversationReference = conversationReference,
-                OAuthScope = options.FromBotOAuthScope
+                OAuthScope = options.FromBotOAuthScope,
+                BotName = options.Bot.Id
             };
 
             // Store the BotConversationReference using the conversationId as a key.

@@ -41,7 +41,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
-	  <ProjectReference Include="..\..\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
     <ProjectReference Include="..\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
   </ItemGroup>
 

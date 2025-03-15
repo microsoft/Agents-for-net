@@ -64,6 +64,8 @@ namespace Microsoft.Agents.BotBuilder.App
 
         #region Application Features
 
+        public Func<ITurnContext, ITurnState, Exception, CancellationToken, Task> OnTurnError { get; set; }
+
         /// <summary>
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
@@ -587,80 +589,92 @@ namespace Microsoft.Agents.BotBuilder.App
                 ITurnState turnState = Options.TurnStateFactory!();
                 await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                // Handle user auth
-                if (_authentication != null)
+                try
                 {
-                    // Start sign in for default flow
-                    if (await _authentication.SignUserInAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false))
+                    // Handle user auth
+                    if (_authentication != null)
                     {
-                        return;
-                    }
-                }
-
-                // Call before turn handler
-                foreach (TurnEventHandlerAsync beforeTurnHandler in _beforeTurn)
-                {
-                    if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
-                    {
-                        // Save turn state
-                        // - This lets the bot keep track of why it ended the previous turn. It also
-                        //   allows the dialog system to be used before the AI system is called.
-                        await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                        return;
-                    }
-                }
-
-                // Download any input files
-                IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                if (fileDownloaders != null && fileDownloaders.Count > 0)
-                {
-                    foreach (IInputFileDownloader downloader in fileDownloaders)
-                    {
-                        var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                        turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
-                    }
-                }
-
-                bool eventHandlerCalled = false;
-
-                // Run any Invoke RouteSelectors first if the incoming Teams activity.type is "Invoke".
-                // Invoke Activities from Teams need to be responded to in less than 5 seconds.
-                // This is mostly because the selectors are async and could incur delays, so we need to limit this possibility.
-                if (ActivityTypes.Invoke.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
-                {
-                    foreach (Route route in _routes.Enumerate(true))
-                    {
-                        if (await route.Selector(turnContext, cancellationToken))
+                        // Start sign in for default flow
+                        if (await _authentication.SignUserInAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false))
                         {
-                            await route.Handler(turnContext, turnState, cancellationToken);
-                            eventHandlerCalled = true;
-                            break;
+                            return;
+                        }
+                    }
+
+                    // Call before turn handler
+                    foreach (TurnEventHandlerAsync beforeTurnHandler in _beforeTurn)
+                    {
+                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                        {
+                            // Save turn state
+                            // - This lets the bot keep track of why it ended the previous turn. It also
+                            //   allows the dialog system to be used before the AI system is called.
+                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                            return;
+                        }
+                    }
+
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    {
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        {
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                        }
+                    }
+
+                    bool eventHandlerCalled = false;
+
+                    // Run any Invoke RouteSelectors first if the incoming Teams activity.type is "Invoke".
+                    // Invoke Activities from Teams need to be responded to in less than 5 seconds.
+                    // This is mostly because the selectors are async and could incur delays, so we need to limit this possibility.
+                    if (ActivityTypes.Invoke.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                    {
+                        foreach (Route route in _routes.Enumerate(true))
+                        {
+                            if (await route.Selector(turnContext, cancellationToken))
+                            {
+                                await route.Handler(turnContext, turnState, cancellationToken);
+                                eventHandlerCalled = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // All other ActivityTypes and any unhandled Invokes are run through the remaining routes.
+                    if (!eventHandlerCalled)
+                    {
+                        foreach (Route route in _routes.Enumerate())
+                        {
+                            if (await route.Selector(turnContext, cancellationToken))
+                            {
+                                await route.Handler(turnContext, turnState, cancellationToken);
+                                eventHandlerCalled = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Call after turn handler
+                    foreach (TurnEventHandlerAsync afterTurnHandler in _afterTurn)
+                    {
+                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                        {
+                            return;
                         }
                     }
                 }
-
-                // All other ActivityTypes and any unhandled Invokes are run through the remaining routes.
-                if (!eventHandlerCalled)
+                catch (Exception ex)
                 {
-                    foreach (Route route in _routes.Enumerate())
+                    if (OnTurnError != null)
                     {
-                        if (await route.Selector(turnContext, cancellationToken))
-                        {
-                            await route.Handler(turnContext, turnState, cancellationToken);
-                            eventHandlerCalled = true;
-                            break;
-                        }
+                        await OnTurnError(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
                     }
-                }
 
-                // Call after turn handler
-                foreach (TurnEventHandlerAsync afterTurnHandler in _afterTurn)
-                {
-                    if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
-                    {
-                        return;
-                    }
+                    throw;
                 }
 
                 await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);

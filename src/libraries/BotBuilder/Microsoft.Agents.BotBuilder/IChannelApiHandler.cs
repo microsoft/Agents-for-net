@@ -44,7 +44,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>Activity to send.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnReplyToActivityAsync() API.
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>Activity to send.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnReplyToActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnUpdateActivityAsync() API.
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name='activity'>replacement Activity.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>task for a resource response.</returns>
-        Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, Activity activity, CancellationToken cancellationToken = default);
+        Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// OnDeleteActivityAsync() API.

@@ -22,29 +22,30 @@ namespace Microsoft.Agents.Client.Tests
         private readonly Mock<IChannelFactory> _channelFactory = new();
         private readonly Mock<IAccessTokenProvider> _token = new();
         private readonly Mock<IChannel> _channel = new();
+        private readonly Mock<IConversationIdFactory> _conversationIdFactory = new();
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConfigSection()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel, null));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel, null));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnEmptyConfigSection()
         {
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel, string.Empty));
+            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel, string.Empty));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullServiceProvider()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(null, _connections.Object, _config, _defaultChannel));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(null, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConnections()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, null, _config, _defaultChannel));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, null, _config, _defaultChannel));
         }
 
         [Fact]
@@ -63,7 +64,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, config, channel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, config, channel);
 
             Assert.Single(host.Channels);
             Assert.Equal(botId, host.Channels[botId].Id);
@@ -75,7 +76,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnNullName()
         {
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty ?? null));
         }
@@ -83,7 +84,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnEmptyName()
         {
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty));
         }
@@ -91,7 +92,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnUnknownChannel()
         {
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel("random"));
         }
@@ -99,7 +100,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnNullChannel()
         {
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, null);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
@@ -112,7 +113,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns(() => null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
@@ -126,7 +127,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns(string.Empty)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(_defaultChannel));
@@ -143,7 +144,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns<object>(null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannel));
@@ -163,7 +164,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
@@ -183,7 +184,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(_defaultChannel));
@@ -206,7 +207,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns<IAccessTokenProvider>(null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannel));
@@ -232,7 +233,7 @@ namespace Microsoft.Agents.Client.Tests
                 .Returns(_channel.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _conversationIdFactory.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, _channelInfo.Object);
             var result = host.GetChannel(_defaultChannel);
 
