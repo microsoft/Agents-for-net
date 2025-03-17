@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 }
 
-                if (!string.IsNullOrEmpty(propagateHeaders.UserAgent))
+                if (!string.IsNullOrEmpty(propagateHeaders?.UserAgent))
                 {
                     additionalProductInfo = [new ProductInfoHeaderValue(ProductHeaderValue.Parse(propagateHeaders.UserAgent))];
                 }

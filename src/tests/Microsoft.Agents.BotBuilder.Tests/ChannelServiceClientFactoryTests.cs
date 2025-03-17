@@ -19,6 +19,8 @@ using Microsoft.Agents.Core.Errors;
 using System.Text;
 using Microsoft.Agents.TestSupport;
 using Microsoft.Agents.BotBuilder.Errors;
+using Azure;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Tests
 {
@@ -51,6 +53,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ConnectionMapNotFoundThrowsAsync()
         {
+            //_ = new Core.RequestContext(new TestPropagation());
+                
             var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                         { "ConnectionsMap", string.Empty },
@@ -58,6 +62,9 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new Mock<HttpClient>().Object);
             var traceActivity = Activity.CreateTraceActivity("Test");
             traceActivity.Conversation = new ConversationAccount(id: "1234");
 
@@ -139,6 +146,9 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new Mock<HttpClient>().Object);
             var traceActivity = Activity.CreateTraceActivity("Test");
             traceActivity.Conversation = new ConversationAccount(id: "1234");
 
@@ -242,5 +252,12 @@ namespace Microsoft.Agents.BotBuilder.Tests
             Assert.IsType<RestUserTokenClient>(tokeClient);
             Assert.Equal("https://test.token.endpoint/", ((RestUserTokenClient)tokeClient).BaseUri.ToString());
         }
+    }
+
+    class TestPropagation() : IHeaderPropagation
+    {
+        public Dictionary<string, string> Headers => [];
+
+        public string UserAgent => null;
     }
 }

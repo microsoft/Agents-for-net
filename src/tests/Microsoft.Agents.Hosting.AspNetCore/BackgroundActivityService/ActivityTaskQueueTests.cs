@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
             var claims = new ClaimsIdentity();
             var activity = new Activity();
 
-            queue.QueueBackgroundActivity(claims, activity);
+            queue.QueueBackgroundActivity(claims, activity, null);
             var waited = await queue.WaitForActivityAsync(CancellationToken.None);
 
             Assert.Equal(claims, waited.ClaimsIdentity);

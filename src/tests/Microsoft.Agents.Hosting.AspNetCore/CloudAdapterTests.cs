@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
@@ -126,7 +127,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<IHeaderPropagation>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Throws(new UnauthorizedAccessException())
                 .Verifiable(Times.Once);
 
@@ -155,7 +156,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<IHeaderPropagation>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Verifiable(Times.Once);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);

@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Core
 
         public static IHeaderPropagation GetHeaderPropagation()
         {
-            return _asyncLocal.Value._propagation;
+            return _asyncLocal?.Value?._propagation;
         }
 
         private static readonly AsyncLocal<RequestContext> _asyncLocal = new AsyncLocal<RequestContext>();

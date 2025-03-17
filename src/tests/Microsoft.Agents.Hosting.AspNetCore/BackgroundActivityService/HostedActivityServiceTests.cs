@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
                 .ReturnsAsync(new InvokeResponse())
                 .Verifiable(Times.Once);
 
-            record.Queue.QueueBackgroundActivity(claims, activity);
+            record.Queue.QueueBackgroundActivity(claims, activity, null);
             await record.Service.StartAsync(source.Token).ContinueWith(async e =>
             {
                 // Start and stop the service, waiting for the activity to be processed.
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()))
                 .Verifiable(Times.Once);
 
-            record.Queue.QueueBackgroundActivity(claims, activity);
+            record.Queue.QueueBackgroundActivity(claims, activity, null);
             await record.Service.StartAsync(source.Token).ContinueWith(async e =>
             {
                 // Start and stop the service, waiting for the activity to be processed.
