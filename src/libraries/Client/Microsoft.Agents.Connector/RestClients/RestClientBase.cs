@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
@@ -21,13 +22,31 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 
+            ProductInfoHeaderValue[] additionalProductInfo = null;
+            IHeaderPropagation propagateHeaders = RequestContext.GetHeaderPropagation();
+            if (propagateHeaders != null)
+            {
+                if (propagateHeaders.Headers != null)
+                {
+                    foreach (var header in propagateHeaders.Headers)
+                    {
+                        httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(propagateHeaders.UserAgent))
+                {
+                    additionalProductInfo = [new ProductInfoHeaderValue(ProductHeaderValue.Parse(propagateHeaders.UserAgent))];
+                }
+            }
+
+            httpClient.AddDefaultUserAgent(additionalProductInfo);
+
             if (_tokenProviderFunction != null)
             {
                 var token = await _tokenProviderFunction().ConfigureAwait(false);
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
-
-            httpClient.AddDefaultUserAgent();
 
             return httpClient;
         }

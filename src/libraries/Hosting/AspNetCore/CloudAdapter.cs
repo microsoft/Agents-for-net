@@ -11,9 +11,9 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -29,6 +29,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+        private readonly IHeaderPropagationFilter _headerPropagationFilter;
 
         /// <summary>
         /// 
@@ -38,16 +39,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="logger"></param>
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
+        /// <param name="propagationFilter"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
-            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            BotBuilder.IMiddleware[] middlewares = null,
+            IHeaderPropagationFilter propagationFilter = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
+            _headerPropagationFilter = propagationFilter ?? new HeaderPropagationFilter();
 
             if (middlewares != null)
             {
@@ -122,8 +126,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
+                    var headerPropagation = new AspNetHeaderPropagation(httpRequest.Headers, _headerPropagationFilter);
+
                     if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
+                        _ = new RequestContext(headerPropagation);
+
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot
                         var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
@@ -134,7 +142,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else
                     {
                         // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, headerPropagation);
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
@@ -161,8 +169,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_adapterOptions.Async)
             {
+                // Pass the propagation value to the next async context.
+                var contextHeaderPropagation = RequestContext.GetHeaderPropagation();
+
                 // Queue the activity to be processed by the ActivityBackgroundService
-                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
+                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, contextHeaderPropagation, proactive: true, proactiveAudience: audience);
                 return Task.CompletedTask;
             }
 

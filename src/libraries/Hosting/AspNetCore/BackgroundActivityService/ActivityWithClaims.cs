@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Security.Claims;
@@ -26,6 +27,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <see cref="Activity"/> to be processed.
         /// </summary>
         public IActivity Activity { get; set; }
+
+        public IHeaderPropagation HeaderPropagation { get; set; }
         
         public bool IsProactive { get; set; }
         public string ProactiveAudience { get; set; }

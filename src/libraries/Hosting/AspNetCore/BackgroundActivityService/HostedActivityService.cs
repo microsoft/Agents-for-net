@@ -3,12 +3,15 @@
 //
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -130,6 +133,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 try
                 {
+                    _ = new RequestContext(activityWithClaims.HeaderPropagation);
+
                     // We must go back through DI to get the IBot. This is because the IBot is typically transient, and anything
                     // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
