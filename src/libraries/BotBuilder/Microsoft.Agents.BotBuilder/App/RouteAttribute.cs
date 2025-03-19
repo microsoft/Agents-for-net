@@ -13,8 +13,6 @@ namespace Microsoft.Agents.BotBuilder.App
         Activity,
         Message,
         Conversation,
-        BeforeTurn,
-        AfterTurn,
         HandOff,
         ReactionAdded,
         ReactionRemoved
@@ -28,8 +26,6 @@ namespace Microsoft.Agents.BotBuilder.App
     ///    Activity,       // { ActivityType | RegEx | Selector}, Rank
     ///    Message,        // { ActivityText | RegEx | Selector}, Rank
     ///    Conversation,   // { Event | Selector}, Rank
-    ///    BeforeTurn,     // order added/defined
-    ///    AfterTurn,      // order added/defined
     ///    HandOff,        // Selector, Rank
     ///    ReactionAdded,  // Rank
     ///    ReactionRemoved // Rank
@@ -133,16 +129,6 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
                 app.OnHandoff(delegateHandler, rank: Rank);
-            }
-            else if (Type == RouteType.BeforeTurn)
-            {
-                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnBeforeTurn(delegateHandler);
-            }
-            else if (Type == RouteType.AfterTurn)
-            {
-                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnAfterTurn(delegateHandler);
             }
         }
 
