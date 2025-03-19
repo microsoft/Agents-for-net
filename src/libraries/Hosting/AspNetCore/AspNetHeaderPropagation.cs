@@ -14,6 +14,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly Dictionary<string, string> _filteredHeaders = [];
         private readonly IHeaderPropagationFilter _inner;
 
+        // Filters incoming AspNet HttpRequest headers using registered IHeaderPropagationFilter.
+        // Always includes "x-ms-conversation-id".
         public AspNetHeaderPropagation(IHeaderDictionary headers, IHeaderPropagationFilter propagateFilter)
         {
             _inner = propagateFilter;

@@ -22,6 +22,19 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 
+            SetHeaders(httpClient);
+
+            if (_tokenProviderFunction != null)
+            {
+                var token = await _tokenProviderFunction().ConfigureAwait(false);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            return httpClient;
+        }
+
+        private void SetHeaders(HttpClient httpClient)
+        {
             ProductInfoHeaderValue[] additionalProductInfo = null;
             IHeaderPropagation propagateHeaders = RequestContext.GetHeaderPropagation();
             if (propagateHeaders != null)
@@ -41,14 +54,6 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             httpClient.AddDefaultUserAgent(additionalProductInfo);
-
-            if (_tokenProviderFunction != null)
-            {
-                var token = await _tokenProviderFunction().ConfigureAwait(false);
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-
-            return httpClient;
         }
     }
 }

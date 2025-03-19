@@ -5,6 +5,10 @@ using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core
 {
+    /// <summary>
+    /// Interface to specify request headers that will propagate.  This is used by an
+    /// implementation of <see cref="IHeaderPropagation"/>.
+    /// </summary>
     public interface IHeaderPropagationFilter
     {
         public IList<string> Headers { get; }

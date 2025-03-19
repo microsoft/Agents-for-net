@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core
 {
+    /// <summary>
+    /// Implemented by a Host to propagate request headers.
+    /// </summary>
     public interface IHeaderPropagation
     {
         public Dictionary<string, string> Headers { get; }
