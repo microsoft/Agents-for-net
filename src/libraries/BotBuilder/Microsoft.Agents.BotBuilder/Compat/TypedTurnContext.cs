@@ -28,6 +28,8 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <value>The inner context's activity.</value>
         T ITurnContext<T>.Activity => (T)_innerTurnContext.Activity;
 
+        public IStreamingResponse StreamingResponse => _innerTurnContext.StreamingResponse;
+
         /// <summary>
         /// Gets the bot adapter that created this context object.
         /// </summary>

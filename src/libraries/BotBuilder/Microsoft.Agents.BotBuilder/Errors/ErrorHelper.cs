@@ -35,14 +35,29 @@ namespace Microsoft.Agents.BotBuilder.Errors
 
         internal static AgentErrorDefinition NullIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition NullUserTokenProviderIAccessTokenProvider = new AgentErrorDefinition(baseBotBuilderErrorCode - 1, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition UserAuthenticationNotConfigured = new AgentErrorDefinition(baseBotBuilderErrorCode - 2, Properties.Resources.UserAuthenticationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition UserAuthenticationRequiresAdapter = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.UserAuthenticationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
 
-        // ActivityRouteAttribute
-        internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+        // Application RouteAttribute
+        internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 2, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeHandlerInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeHandlerInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeMissingArgs = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeMissingArgs, "https://aka.ms/AgentsSDK-Error01");
 
-        // Application
+        // StreamingMessages
+        internal static AgentErrorDefinition StreamingResponseEnded = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.StreamingResponseEnded, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition TeamsRequiresInformativeFirst = new AgentErrorDefinition(baseBotBuilderErrorCode - 7, Properties.Resources.TeamsRequiresInformativeFirst, "https://aka.ms/AgentsSDK-Error01");
+
+        // UserAuth (base, not Application)
+        internal static AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(baseBotBuilderErrorCode - 8, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationRequiresAdapter = new AgentErrorDefinition(baseBotBuilderErrorCode - 9, Properties.Resources.UserAuthorizationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationHandlerNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 10, Properties.Resources.UserAuthorizationHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition FailedToCreateUserAuthorizationHandler = new AgentErrorDefinition(baseBotBuilderErrorCode - 11, Properties.Resources.FailedToCreateUserAuthorizationHandler, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition NoUserAuthorizationHandlers = new AgentErrorDefinition(baseBotBuilderErrorCode - 12, Properties.Resources.NoUserAuthorizationHandlers, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationTypeNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 13, Properties.Resources.UserAuthorizationTypeNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationFailed = new AgentErrorDefinition(baseBotBuilderErrorCode - 14, Properties.Resources.UserAuthorizationFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationAlreadyActive = new AgentErrorDefinition(baseBotBuilderErrorCode - 15, Properties.Resources.UserAuthorizationAlreadyActive, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition OBONotExchangeableToken = new AgentErrorDefinition(baseBotBuilderErrorCode - 16, Properties.Resources.OBONotExchangeableToken, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition OBONotSupported = new AgentErrorDefinition(baseBotBuilderErrorCode - 17, Properties.Resources.OBONotSupported, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition OBOExchangeFailed = new AgentErrorDefinition(baseBotBuilderErrorCode - 18, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

@@ -11,7 +11,6 @@ using WeatherBot.Agents;
 using Azure.Identity;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.BotBuilder.App;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,8 +52,8 @@ builder.Services.AddTransient<WeatherForecastAgent>();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
-builder.Services.AddTransient<AgentApplicationOptions>();
+// Add AgentApplicationOptions from config.
+builder.AddAgentApplicationOptions();
 
 // Add the bot (which is transient)
 builder.AddBot<MyBot>();

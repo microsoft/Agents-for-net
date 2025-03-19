@@ -3,10 +3,14 @@
 
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.Teams.App
 {
@@ -14,7 +18,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
     {
         public TeamsApplicationOptions() : base() { }
 
-        public TeamsApplicationOptions(IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, ILoggerFactory loggerFactory = null, string configurationSection = "AgentApplicationOptions") : base(configuration, channelAdapter, storage, loggerFactory, configurationSection)
+        public TeamsApplicationOptions(IServiceProvider sp, IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, UserAuthorizationOptions authOptions = null, AdaptiveCardsOptions cardOptions = null, ILoggerFactory loggerFactory = null, IList<IInputFileDownloader> fileDownloaders = null, string configurationSection = "AgentApplication") 
+            : base(sp, configuration, channelAdapter, storage, authOptions, cardOptions, loggerFactory, fileDownloaders, configurationSection)
         {
         }
 

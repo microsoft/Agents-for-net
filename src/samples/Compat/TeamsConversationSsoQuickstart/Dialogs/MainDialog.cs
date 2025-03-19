@@ -25,7 +25,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
                 nameof(OAuthPrompt),
                 new OAuthPromptSettings
                 {
-                    ConnectionName = ConnectionName,
+                    AzureBotOAuthConnectionName = ConnectionName,
                     Text = "Please Sign In",
                     Title = "Sign In",
                     Timeout = 300000, // User has 5 minutes to login (1000 * 60 * 5)

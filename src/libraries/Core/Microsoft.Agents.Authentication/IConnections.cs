@@ -16,7 +16,11 @@ namespace Microsoft.Agents.Authentication
         /// </summary>
         /// <param name="name"></param>
         /// <returns>IAccessTokenProvider</returns>
+        /// <exception cref="IndexOutOfRangeException">Named connection not found.</exception>
+        /// <exception cref="ArgumentException">Connection name null or empty.</exception>
         IAccessTokenProvider GetConnection(string name);
+
+        bool TryGetConnection(string name, out IAccessTokenProvider connection);
 
         /// <summary>
         /// Gets the default connection.

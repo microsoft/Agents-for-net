@@ -19,7 +19,7 @@ namespace Microsoft.Agents.BotBuilder.State
         /// <summary>
         /// Name of the auth tokens property.
         /// </summary>
-        public const string AuthTokenKey = "authTokens";
+        private const string AuthTokenKey = "authTokens";
 
         public static readonly string ScopeName = "temp";
         private readonly Dictionary<string, object> _state = [];
@@ -34,9 +34,11 @@ namespace Microsoft.Agents.BotBuilder.State
             get => GetValue<IList<InputFile>>(InputFilesKey, () => []);
             set => SetValue(InputFilesKey, value);
         }
+
         /// <summary>
         /// All tokens acquired after sign-in for current activity
         /// </summary>
+        [Obsolete("Use AgentApplication.Authorization.GetToken(handleName)")]
         public Dictionary<string, string> AuthTokens
         {
             get => GetValue<Dictionary<string, string>>(AuthTokenKey, () => []);

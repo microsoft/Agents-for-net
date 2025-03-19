@@ -120,6 +120,11 @@ namespace Microsoft.Agents.BotBuilder
         IActivity Activity { get; }
 
         /// <summary>
+        /// Provides access to the IStreamingResponse to allow streaming of chunked messages (for example, via streaming AI responses).
+        /// </summary>
+        IStreamingResponse StreamingResponse { get; }
+
+        /// <summary>
         /// Gets a value indicating whether at least one response was sent for the current turn.
         /// </summary>
         /// <value><c>true</c> if at least one response was sent for the current turn; otherwise, <c>false</c>.</value>

@@ -121,20 +121,76 @@
     <value>An instance of IAccessTokenProvider not found for {0}</value>
     <comment>Raised when the call get an access token provider returns null.</comment>
   </data>
-  <data name="UserAuthenticationNotConfigured" xml:space="preserve">
-    <value>The AgentApplication.Authentication property is unavailable because no user authentication handlers were configured.</value>
-    <comment>Raised when accessing AgentApplication.Authentication but it hasn't been configured.</comment>
+  <data name="UserAuthorizationNotConfigured" xml:space="preserve">
+    <value>The AgentApplication.Authorization property is unavailable because no user Authorization handlers were configured.</value>
+    <comment>Raised when accessing AgentApplication.Authorization but it hasn't been configured.</comment>
   </data>
   <data name="AttributeSelectorNotFound" xml:space="preserve">
-    <value>The ActivityRouteAttribute.Selector method is not found.</value>
-    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method isn't found on the AgentApplication or subclass.</comment>
+    <value>The RouteAttribute.Selector method '{0}' is not found.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated method isn't found on the AgentApplication or subclass.</comment>
   </data>
   <data name="AttributeSelectorInvalid" xml:space="preserve">
-    <value>The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition.</value>
-    <comment>Raised when accessing ActivityRouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
+    <value>The RouteAttribute.Selector method '{0}' does not match the RouteSelector delegate definition.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated Selector method does not have a valid signature.</comment>
   </data>
   <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
     <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
+    <comment>Raised when when initializing the AgentApplication.</comment>
+  </data>
+  <data name="StreamingResponseEnded" xml:space="preserve">
+    <value>StreamingResponse instance has already ended.</value>
+    <comment>Raised when when using the instance after it has been ended, or calling EndStream twice.</comment>
+  </data>
+  <data name="TeamsRequiresInformativeFirst" xml:space="preserve">
+    <value>StreamingResponse in Teams requires QueueInformativeUpdate to be called first.</value>
+    <comment>Raised when trying to use QueueTextChunk, but QueueInformativeUpdate has not been called.</comment>
+  </data>
+  <data name="AttributeHandlerInvalid" xml:space="preserve">
+    <value>The method does not match the RouteHandler delegate definition.</value>
+    <comment>Raised when accessing RouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
+  </data>
+  <data name="AttributeMissingArgs" xml:space="preserve">
+    <value>A RouteAttribute is missing required arguments.</value>
+    <comment>Raised when a RouteAttribute was specified but missing required values.  </comment>
+  </data>
+  <data name="UserAuthorizationRequiresAdapter" xml:space="preserve">
+    <value>AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing AgentApplication.</comment>
+  </data>
+  <data name="UserAuthorizationTypeNotFound" xml:space="preserve">
+    <value>Type '{0}' not found in Assembly '{1}' or is the wrong type for '{2}'.</value>
+    <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>
+  </data>
+  <data name="UserAuthorizationHandlerNotFound" xml:space="preserve">
+    <value>Handler '{0}' not found in configuration</value>
+    <comment>Rased when IUserAuthorizationDispatcher requests a handler by name that cannot be found</comment>
+  </data>
+  <data name="FailedToCreateUserAuthorizationHandler" xml:space="preserve">
+    <value>Failed to create user Authorization provider for handler name '{0}'</value>
+    <comment>Raised when a handler is found but the constructor cannot be invoked</comment>
+  </data>
+  <data name="NoUserAuthorizationHandlers" xml:space="preserve">
+    <value>No UserAuthorization Handlers were defined.</value>
+    <comment>Raised when creating the UserAuthorizationDispatcher.</comment>
+  </data>
+  <data name="UserAuthorizationFailed" xml:space="preserve">
+    <value>Error occurred while trying to authenticate user with '{0}'</value>
+    <comment>Raised when a User Authorization was initiated and encountered a critical error.</comment>
+  </data>
+  <data name="UserAuthorizationAlreadyActive" xml:space="preserve">
+    <value>UserAuthorization already has an active handler.</value>
+    <comment>Raised when user sign in is already active.</comment>
+  </data>
+  <data name="OBONotExchangeableToken" xml:space="preserve">
+    <value>OBO for '{0}' cannot exchange an application that does not have an api:// audience.</value>
+    <comment>Raised when the Azure Bot OAuth Connection is not configured to return an exchangeable token.</comment>
+  </data>
+  <data name="OBONotSupported" xml:space="preserve">
+    <value>OBO not supported on '{0}'</value>
+    <comment>Raised when User Authorization is using a provider that does not support IOBOExchange</comment>
+  </data>
+  <data name="OBOExchangeFailed" xml:space="preserve">
+    <value>OBO exchange failed for connection '{0}' with scopes {1}.</value>
+    <comment>Raised when an OBO exchange was attempted.</comment>
   </data>
 </root>

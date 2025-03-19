@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
@@ -16,10 +17,13 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         public static readonly TimeSpan DefaultTimeoutValue = TimeSpan.FromMinutes(15);
 
         /// <summary>
-        /// Gets or sets the name of the OAuth connection.
+        /// Gets or sets the name of the OAuth Connection defined on the Azure Bot.
         /// </summary>
         /// <value>The name of the OAuth connection.</value>
-        public string ConnectionName { get; set; }
+        public string AzureBotOAuthConnectionName { get; set; }
+
+        public string OBOConnectionName { get; set; }
+        public IList<string> OBOScopes { get; set; }
 
         /// <summary>
         /// Gets or sets the title of the sign-in card.

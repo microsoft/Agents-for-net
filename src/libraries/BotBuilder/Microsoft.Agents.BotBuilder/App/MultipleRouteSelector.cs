@@ -23,6 +23,6 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <summary>
         /// The RouteSelectorAsync function selectors. 
         /// </summary>
-        public RouteSelectorAsync[]? RouteSelectors { get; set; }
+        public RouteSelector[]? RouteSelectors { get; set; }
     }
 }

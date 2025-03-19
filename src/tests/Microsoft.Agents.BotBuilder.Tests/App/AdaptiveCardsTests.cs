@@ -156,7 +156,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -279,7 +279,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -449,7 +449,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };

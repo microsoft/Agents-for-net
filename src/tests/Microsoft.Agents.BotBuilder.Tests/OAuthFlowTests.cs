@@ -22,7 +22,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             _flow = new OAuthFlow(new OAuthSettings()
             {
-                ConnectionName = "connection name",
+                AzureBotOAuthConnectionName = "connection name",
                 Title = "Test flow", 
                 Text = "testing oauth flow", 
                 Timeout = 1000
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             // Assert
             mockUserTokenClient.Verify(
-                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.Settings.ConnectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
+                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.Settings.AzureBotOAuthConnectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Fact]
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             {
                 Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
-                Value = new TokenResponse(Channels.Msteams, _flow.Settings.ConnectionName, "token", null),
+                Value = new TokenResponse(Channels.Msteams, _flow.Settings.AzureBotOAuthConnectionName, "token", null),
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
                 Text = "invoke",

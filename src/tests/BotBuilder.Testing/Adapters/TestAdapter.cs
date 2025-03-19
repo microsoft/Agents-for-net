@@ -210,6 +210,27 @@ namespace Microsoft.Agents.BotBuilder.Testing
             return null;
         }
 
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        {
+            await ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// The implementation for continue conversation.
+        /// </summary>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="continuationActivity">The continuation <see cref="Activity"/> used to create the <see cref="ITurnContext" />.</param>
+        /// <param name="audience">The audience for the call.</param>
+        /// <param name="callback">The method to call for the resulting bot turn.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="async"></param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+        {
+            var context = CreateTurnContext(continuationActivity);
+            await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Sends activities to the conversation.
         /// </summary>

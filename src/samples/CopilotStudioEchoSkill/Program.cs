@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using CopilotStudioEchoSkill;
-using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
@@ -21,8 +20,8 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
-builder.Services.AddTransient<AgentApplicationOptions>();
+// Add AgentApplicationOptions from config.
+builder.AddAgentApplicationOptions();
 
 // Add the bot (which is transient)
 builder.AddBot<MyBot, BotAdapterWithErrorHandler>();

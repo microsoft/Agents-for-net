@@ -4,9 +4,9 @@ using Microsoft.Agents.BotBuilder.App.UserAuth;
 
 namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
 {
-    internal sealed class TestUserAuthenticationFeature : UserAuthenticationFeature
+    internal sealed class TestUserAuthenticationFeature : UserAuthorizationFeature
     {
-        public TestUserAuthenticationFeature(AgentApplication app, UserAuthenticationOptions options) : base(app, options)
+        public TestUserAuthenticationFeature(AgentApplication app, UserAuthorizationOptions options) : base(app, options)
         {
         }
     }

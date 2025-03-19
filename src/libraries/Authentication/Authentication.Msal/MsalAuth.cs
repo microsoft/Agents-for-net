@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Authentication.Msal
     /// This class is used to acquire access tokens using the Microsoft Authentication Library(MSAL).
     /// </summary>
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
-    public class MsalAuth : IAccessTokenProvider
+    public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
             }
 
-            object msalAuthClient = CreateClientApplication();
+            object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
             ExecuteAuthenticationResults authResultPayload = null; 
@@ -132,7 +132,25 @@ namespace Microsoft.Agents.Authentication.Msal
             return authResultPayload.MsalAuthResult.AccessToken;
         }
 
-        private object CreateClientApplication()
+
+        public async Task<string> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
+        {
+            var msal = InnerCreateClientApplication();
+            if (msal is IConfidentialClientApplication confidentialClient)
+            {
+                var result = await confidentialClient.AcquireTokenOnBehalfOf(scopes, new UserAssertion(token)).ExecuteAsync().ConfigureAwait(false);
+                return result.AccessToken;
+            }
+
+            throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");
+        }
+
+        public IApplicationBase CreateClientApplication()
+        {
+            return (IApplicationBase)InnerCreateClientApplication();
+        }
+
+        private object InnerCreateClientApplication()
         {
             object msalAuthClient = null;
 
