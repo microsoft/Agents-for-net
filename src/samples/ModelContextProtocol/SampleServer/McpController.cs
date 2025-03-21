@@ -54,7 +54,7 @@ public class McpController : Controller
     public Task<IActionResult> SsePost(JsonRpcPayload request, [FromQuery] string sessionId, CancellationToken ct)
     {
         logger.LogInformation($"Received SSE POST request for session {sessionId}.");
-        return DispatchRequest(request, sessionId, ct);
+        return DispatchRequest(request, "sessionId", ct);
     }
 
     [HttpPost("/Mcp/http")]

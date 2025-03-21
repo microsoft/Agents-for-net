@@ -5,7 +5,7 @@ namespace Microsoft.Agents.Mcp.Core.JsonRpc;
 
 public class CallbackJsonRpcPayload : JsonRpcPayload
 {
-    [JsonPropertyName("callbackUrl")]
+    [JsonPropertyName("callbackEndpoint")]
     public required string CallbackUrl { get; init; }
 
 }
