@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Security.Claims;
@@ -22,10 +23,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
         /// activity.</param>
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
+        /// <param name="headerPropagation"></param>
         /// <param name="proactive"></param>
         /// <param name="proactiveAudience"></param>
         /// <param name="bot"></param>
-        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null);
+        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, IHeaderPropagation headerPropagation, bool proactive = false, string proactiveAudience = null, Type bot = null);
 
         /// <summary>
         /// Wait for a signal of an enqueued Activity with Claims to be processed.
