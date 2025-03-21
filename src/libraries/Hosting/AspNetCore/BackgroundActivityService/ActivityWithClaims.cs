@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;
 
@@ -29,6 +30,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         
         public bool IsProactive { get; set; }
         public string ProactiveAudience { get; set; }
+
+        /// <summary>
+        /// Headers used for the current <see cref="Activity"/> request.
+        /// </summary>
+        public IHeaderDictionary Headers { get; set; }
 
     }
 }

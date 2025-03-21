@@ -11,9 +11,9 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using System.Linq;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else
                     {
                         // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, headers: httpRequest.Headers);
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
