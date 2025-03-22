@@ -20,12 +20,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null, Action<InvokeResponse> onComplete = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience });
+            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete });
             _signal.Release();
         }
 

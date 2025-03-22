@@ -11,7 +11,6 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 
@@ -114,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
-                if (!IsValidChannelActivity(activity, httpResponse))
+                if (!IsValidChannelActivity(activity))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
@@ -122,7 +121,27 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    if (activity.DeliveryMode == DeliveryModes.Stream)
+                    {
+                        InvokeResponse invokeResponse = null;
+
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        {
+                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
+
+                        // block until turn is complete
+                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        {
+                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot
@@ -169,7 +188,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
         }
 
-        private bool IsValidChannelActivity(IActivity activity, HttpResponse httpResponse)
+        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            {
+                return false;
+            }
+
+            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+
+            return true;
+        }
+
+        private bool IsValidChannelActivity(IActivity activity)
         {
             if (activity == null)
             {

@@ -23,7 +23,7 @@ builder.Logging.AddDebug();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add AgentApplicationOptions from config.
-builder.AddAgentApplicationOptions(autoSignIn: (context, cancellationToken) => Task.FromResult(true)); // autoSignIn: (context, cancellationToken) => Task.FromResult(context.Activity.Text == "auto"));
+builder.AddAgentApplicationOptions(autoSignIn: (context, cancellationToken) => Task.FromResult(context.Activity.Text == "auto"));
 
 // Add the Agent
 builder.AddAgent<AuthAgent>();

@@ -100,9 +100,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 return EndOfTurn;
             }
 
+            var skillConversationId = dc.ActiveDialog.State[SkillConversationIdStateKey]?.ToString();
+
             // Handle EndOfConversation from the skill (this will be sent to the this dialog by the SkillHandler if received from the Skill)
             if (dc.Context.Activity.Type == ActivityTypes.EndOfConversation)
             {
+                await DialogOptions.AgentHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
                 return await dc.EndDialogAsync(dc.Context.Activity.Value, cancellationToken).ConfigureAwait(false);
             }
 
@@ -110,8 +113,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             var skillActivity = ObjectPath.Clone((Activity) dc.Context.Activity);
 
             skillActivity.DeliveryMode = dc.ActiveDialog.State[DeliverModeStateKey] as string;
-
-            var skillConversationId = dc.ActiveDialog.State[SkillConversationIdStateKey]?.ToString();
 
             // Just forward to the remote skill
             var eocActivity = await SendToSkillAsync(dc.Context, skillActivity, skillConversationId, cancellationToken).ConfigureAwait(false);
@@ -243,13 +244,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // (the dialog stack won't get updated with the skillDialog and things won't work if you don't)
             await DialogOptions.ConversationState.SaveChangesAsync(context, true, cancellationToken).ConfigureAwait(false);
 
-            var skillInfo = DialogOptions.Skill;
-            var response = await DialogOptions.SkillClient.PostActivityAsync<ExpectedReplies>(skillInfo.AppId, skillInfo.ResourceUrl, skillInfo.Endpoint, DialogOptions.SkillHostEndpoint, skillConversationId, (Activity)activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
 
             // Inspect the skill response status
             if (!response.IsSuccessStatusCode())
             {
-                throw new HttpRequestException($"Error invoking the skill id: \"{skillInfo.Id}\" at \"{skillInfo.Endpoint}\" (status is {response.Status}). \r\n {response.Body}");
+                throw new HttpRequestException($"Error invoking the skill id: \"{DialogOptions.Skill}\" (status is {response.Status}). \r\n {response.Body}");
             }
 
             IActivity eocActivity = null;
@@ -267,7 +267,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                         eocActivity = activityFromSkill;
 
                         // The conversation has ended, so cleanup the conversation id.
-                        await DialogOptions.ConversationIdFactory.DeleteConversationReferenceAsync(skillConversationId, cancellationToken).ConfigureAwait(false);
+                        await DialogOptions.AgentHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
                     }
                     else if (!sentInvokeResponse && await InterceptOAuthCardsAsync(context, activityFromSkill, DialogOptions.ConnectionName, cancellationToken).ConfigureAwait(false))
                     {
@@ -367,8 +367,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             };
 
             // route the activity to the skill
-            var skillInfo = DialogOptions.Skill;
-            var response = await DialogOptions.SkillClient.PostActivityAsync<ExpectedReplies>(skillInfo.AppId, skillInfo.ResourceUrl, skillInfo.Endpoint, DialogOptions.SkillHostEndpoint, incomingActivity.Conversation.Id, activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
 
             // Check response status: true if success, false if failure
             return response.IsSuccessStatusCode();
@@ -376,16 +375,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private async Task<string> CreateSkillConversationIdAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken)
         {
-            // Create a conversationId to interact with the skill and send the activity
-            var conversationIdFactoryOptions = new ConversationIdFactoryOptions
-            {
-                FromBotOAuthScope = context.Identity != null ? BotClaims.GetTokenScopes(context.Identity).First() : null,
-                FromBotId = DialogOptions.BotId,
-                Activity = activity,
-                Bot = DialogOptions.Skill
-            };
-            var skillConversationId = await DialogOptions.ConversationIdFactory.CreateConversationIdAsync(conversationIdFactoryOptions, cancellationToken).ConfigureAwait(false);
-            return skillConversationId;
+            return await DialogOptions.AgentHost.GetOrCreateConversationAsync(context, DialogOptions.ConversationState, DialogOptions.Skill, cancellationToken).ConfigureAwait(false);
         }
     }
 }

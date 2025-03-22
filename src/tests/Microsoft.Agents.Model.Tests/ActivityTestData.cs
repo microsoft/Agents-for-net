@@ -4,7 +4,6 @@
 using Microsoft.Agents.Core.Models;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace Microsoft.Agents.Model.Tests
 {

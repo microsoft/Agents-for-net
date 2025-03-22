@@ -19,11 +19,11 @@ namespace Microsoft.Agents.Core.Models
         public const string USGovChannel = "urn:botframework:azureusgov";
 
         /// <summary>
-        /// The caller ID prefix when a bot initiates a request to another bot.
+        /// The caller ID prefix when a bot initiates a request to another Agent.
         /// </summary>
         /// <remarks>
-        /// This prefix will be followed by the Azure Active Directory App ID of the bot that initiated the call.
+        /// This prefix will be followed by the Azure Active Directory App ID of the Agent that initiated the call.
         /// </remarks>
-        public const string BotToBotPrefix = "urn:botframework:aadappid:";
+        public const string AgentPrefix = "urn:botframework:aadappid:";
     }
 }

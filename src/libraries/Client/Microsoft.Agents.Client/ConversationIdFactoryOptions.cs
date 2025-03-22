@@ -8,23 +8,23 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// A class defining the parameters used in <see cref="IConversationIdFactory.CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.
     /// </summary>
-    public class ConversationIdFactoryOptions
+    internal class ConversationIdFactoryOptions
     {
         /// <summary>
-        /// Gets or sets the oauth audience scope, used during token retrieval (either https://api.botframework.com or bot app id).
+        /// Gets or sets the oauth audience scope, used during token retrieval (either https://api.botframework.com or Azure Bot app id).
         /// </summary>
         /// <value>
-        /// The oauth audience scope, used during token retrieval (either https://api.botframework.com or bot app id if this is a bot calling another bot).
+        /// The oauth audience scope, used during token retrieval (either https://api.botframework.com or Azure Bot app id if this is a Agent calling another Agent).
         /// </value>
-        public string FromBotOAuthScope { get; set; }
+        public string FromOAuthScope { get; set; }
 
         /// <summary>
-        /// Gets or sets the id of the parent bot that is messaging the bot.
+        /// Gets or sets the ClientId of the parent Agent that is sending.
         /// </summary>
         /// <value>
-        /// The id of the parent bot that is messaging the bot.
+        /// The ClientId of the Agent that is sending.
         /// </value>
-        public string FromBotId { get; set; }
+        public string FromClientId { get; set; }
 
         /// <summary>
         /// Gets or sets the activity which will be sent to the skill.
@@ -40,6 +40,6 @@ namespace Microsoft.Agents.Client
         /// <value>
         /// The skill to create the conversation Id for.
         /// </value>
-        public IChannelInfo Bot { get; set; }
+        public IAgentInfo Agent { get; set; }
     }
 }

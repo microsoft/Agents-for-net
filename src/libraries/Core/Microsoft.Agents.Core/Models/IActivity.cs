@@ -11,6 +11,8 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> An Activity is the basic communication type for the Azure Bot Service 3.0 protocol. </summary>
     public interface IActivity
     {
+        bool IsType(string type);
+
         /// <summary>
         /// The action field describes the meaning of the contact relation update activity. The value of the Action field
         /// is a string. Only values of add and remove are defined, which denote a relationship between the users/bots in 

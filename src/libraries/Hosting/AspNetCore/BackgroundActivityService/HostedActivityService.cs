@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Extensions.Configuration;
@@ -146,11 +147,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
                     else
                     {
-                        await _adapter.ProcessActivityAsync(
+                        var response = await _adapter.ProcessActivityAsync(
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
                             ((IBot)bot).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
+
+                        activityWithClaims.OnComplete?.Invoke(response);
                     }
                 }
                 catch (Exception ex)

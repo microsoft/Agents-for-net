@@ -18,7 +18,11 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 rwl.AcquireWriterLock(1000);
                 routes.Add(new RouteEntry() { Rank = rank, Route = new(selector, handler), IsInvokeRoute = isInvokeRoute });
-                routes = [.. routes.OrderBy(entry => entry.Rank)];
+
+                // Invoke selectors are first.
+                // Invoke Activities from Teams need to be responded to in less than 5 seconds and the selectors are async
+                // which could incur delays, so we need to limit this possibility.
+                routes = [.. routes.OrderByDescending(entry => entry.IsInvokeRoute).ThenBy(entry => entry.Rank)];
             }
             finally
             {
@@ -26,12 +30,12 @@ namespace Microsoft.Agents.BotBuilder.App
             }
         }
 
-        public IEnumerable<Route> Enumerate(bool isInvokeRoute = false)
+        public IEnumerable<Route> Enumerate()
         {
             try
             {
                 rwl.AcquireReaderLock(1000);
-                return new List<Route>(routes.Where(e => e.IsInvokeRoute == isInvokeRoute).Select(e => e.Route).ToList());
+                return new List<Route>(routes.Select(e => e.Route).ToList());
             }
             finally
             {

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.Compat;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.BotBuilder.Testing
 {
@@ -33,11 +34,15 @@ namespace Microsoft.Agents.BotBuilder.Testing
         /// <param name="initialDialogOptions">(Optional) additional argument(s) to pass to the dialog being started.</param>
         /// <param name="middlewares">(Optional) A list of middlewares to be added to the test adapter.</param>
         /// <param name="conversationState">(Optional) A <see cref="ConversationState"/> to use in the test client.</param>
-        public DialogTestClient(string channelId, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null)
+        /// <param name="contextClaims">(Optional) Claims to use for TurnContext.Identity</param>
+        public DialogTestClient(string channelId, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null, ClaimsIdentity contextClaims = null)
         {
             ConversationState = conversationState ?? new ConversationState(new MemoryStorage());
             _testAdapter = new TestAdapter(channelId)
-                .Use(new AutoSaveStateMiddleware(true, ConversationState));
+            {
+                ClaimsIdentity = contextClaims
+            };
+            _testAdapter.Use(new AutoSaveStateMiddleware(true, ConversationState));
 
             AddUserMiddlewares(middlewares);
 
@@ -52,10 +57,11 @@ namespace Microsoft.Agents.BotBuilder.Testing
         /// <param name="initialDialogOptions">(Optional) additional argument(s) to pass to the dialog being started.</param>
         /// <param name="middlewares">(Optional) A list of middlewares to be added to the test adapter.</param>
         /// <param name="conversationState">(Optional) A <see cref="ConversationState"/> to use in the test client.</param>
-        public DialogTestClient(TestAdapter testAdapter, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null)
+        public DialogTestClient(TestAdapter testAdapter, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null, ClaimsIdentity contextClaims = null)
         {
             ConversationState = conversationState ?? new ConversationState(new MemoryStorage());
             _testAdapter = testAdapter.Use(new AutoSaveStateMiddleware(true, ConversationState));
+            _testAdapter.ClaimsIdentity = contextClaims;
 
             AddUserMiddlewares(middlewares);
 

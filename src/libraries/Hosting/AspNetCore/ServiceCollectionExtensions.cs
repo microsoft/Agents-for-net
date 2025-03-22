@@ -3,9 +3,8 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
-using Microsoft.Agents.Client;
+using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -64,8 +64,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="autoSignIn"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
-            this IHostApplicationBuilder builder, 
-            IList<IInputFileDownloader> fileDownloaders = null, 
+            this IHostApplicationBuilder builder,
+            IList<IInputFileDownloader> fileDownloaders = null,
             AutoSignInSelectorAsync autoSignIn = null)
         {
             if (autoSignIn != null)
@@ -79,52 +79,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             builder.Services.AddSingleton<AgentApplicationOptions>();
-
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds bot-to-bot functionality.
-        /// </summary>
-        /// <typeparam name="THandler"></typeparam>
-        /// <param name="builder"></param>
-        /// <param name="httpBotClientName"></param>
-        /// <param name="storage">Used for ConversationIdFactory.  If null, the registered IStorage will be used.</param>
-        /// <returns></returns>
-        public static IHostApplicationBuilder AddChannelHost<THandler>(this IHostApplicationBuilder builder, string httpBotClientName = "HttpBotClient", IStorage storage = null)
-            where THandler : class, IChannelApiHandler
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
-
-            // Add the bots configuration class.  This loads client info and known bots.
-            builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>(
-                (sp) =>
-                new ConfigurationChannelHost(
-                    sp.GetRequiredService<IServiceProvider>(),
-                    sp.GetRequiredService<IConnections>(),
-                    sp.GetRequiredService<IConfiguration>(),
-                    defaultChannelName: httpBotClientName // this ensures that the default channel name is set to the http bot client name.
-                                                          // Note: if this is overridden in the configuration, the value passed as httpBotClientName must also be updated.
-                                                          //     It is not expected this will be needed for most customers. 
-                    ));
-
-            // Add bot client factory for HTTP
-            // Use the same auth connection as the ChannelServiceFactory for now.
-            builder.Services.AddKeyedSingleton<IChannelFactory>(httpBotClientName, (sp, key) => new HttpBotChannelFactory(
-                sp.GetService<IHttpClientFactory>(),
-                (ILogger<HttpBotChannelFactory>)sp.GetService(typeof(ILogger<HttpBotChannelFactory>))));
-
-            // Add conversation id factory.  
-            // This is a memory only implementation, and for production would require persistence.
-            if (storage != null)
-            {
-                builder.Services.AddSingleton<IConversationIdFactory>(sp => new ConversationIdFactory(storage));
-            }
-
-            // Add bot callback handler.
-            // This is the object that handles callback endpoints for bot responses.
-            builder.Services.AddTransient<THandler>();
-            builder.Services.AddTransient<IChannelApiHandler>((sp) => sp.GetService<THandler>());
 
             return builder;
         }
@@ -152,6 +106,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IBotHttpAdapter>(sp => sp.GetService<CloudAdapter>());
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
+
+
 
         private static void AddCore<TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TAdapter : CloudAdapter

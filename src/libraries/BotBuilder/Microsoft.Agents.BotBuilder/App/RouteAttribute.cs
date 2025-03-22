@@ -12,9 +12,8 @@ namespace Microsoft.Agents.BotBuilder.App
     {
         Activity,
         Message,
+        Event,
         Conversation,
-        BeforeTurn,
-        AfterTurn,
         HandOff,
         ReactionAdded,
         ReactionRemoved
@@ -23,13 +22,12 @@ namespace Microsoft.Agents.BotBuilder.App
     /// <summary>
     /// Adds an AgentApplication Routes
     /// 
-    /// Route Type:
+    /// RouteType:
     /// <code>
-    ///    Activity,       // { ActivityType | RegEx | Selector}, Rank
-    ///    Message,        // { ActivityText | RegEx | Selector}, Rank
-    ///    Conversation,   // { Event | Selector}, Rank
-    ///    BeforeTurn,     // order added/defined
-    ///    AfterTurn,      // order added/defined
+    ///    Activity,       // { Type | RegEx | Selector}, Rank
+    ///    Message,        // { Text | RegEx | Selector}, Rank
+    ///    Event,          // { EventName | RegEx | Selector}, Rank
+    ///    Conversation,   // { EventName | Selector}, Rank
     ///    HandOff,        // Selector, Rank
     ///    ReactionAdded,  // Rank
     ///    ReactionRemoved // Rank
@@ -38,27 +36,27 @@ namespace Microsoft.Agents.BotBuilder.App
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     public class RouteAttribute : Attribute, IRouteAttribute
     {
-        public RouteType Type { get; set; }
+        public RouteType RouteType { get; set; }
 
-        public string ActivityType { get; set; }
-        public string ActivityText { get; set; }
+        public string Type { get; set; }
+        public string Text { get; set; }
 
         public string Regex { get; set; }
 
         public string Selector { get; set; }
 
-        public string Event { get; set; }
+        public string EventName { get; set; }
 
 
         public ushort Rank { get; set; } = RouteRank.Unspecified;
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
-            if (Type == RouteType.Activity)
+            if (RouteType == RouteType.Activity)
             {
-                if (!string.IsNullOrWhiteSpace(ActivityType))
+                if (!string.IsNullOrWhiteSpace(Type))
                 {
-                    app.OnActivity(ActivityType, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnActivity(Type, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
@@ -77,11 +75,11 @@ namespace Microsoft.Agents.BotBuilder.App
                     throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
                 }
             }
-            else if (Type == RouteType.Message)
+            else if (RouteType == RouteType.Message)
             {
-                if (!string.IsNullOrWhiteSpace(ActivityText))
+                if (!string.IsNullOrWhiteSpace(Text))
                 {
-                    app.OnMessage(ActivityText, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
@@ -100,11 +98,34 @@ namespace Microsoft.Agents.BotBuilder.App
                     throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
                 }
             }
-            else if (Type == RouteType.Conversation)
+            else if (RouteType == RouteType.Event)
             {
-                if (!string.IsNullOrWhiteSpace(Event))
+                if (!string.IsNullOrWhiteSpace(EventName))
                 {
-                    app.OnConversationUpdate(Event, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                }
+                else if (!string.IsNullOrWhiteSpace(Regex))
+                {
+                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                }
+                else if (!string.IsNullOrWhiteSpace(Selector))
+                {
+                    GetSelectorMethodInfo(app, Selector, out var selectorMethod);
+                    CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
+                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+
+                    app.OnEvent(delegateSelector, delegateHandler, rank: Rank);
+                }
+                else
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
+                }
+            }
+            else if (RouteType == RouteType.Conversation)
+            {
+                if (!string.IsNullOrWhiteSpace(EventName))
+                {
+                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
@@ -119,30 +140,20 @@ namespace Microsoft.Agents.BotBuilder.App
                     throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
                 }
             }
-            else if (Type == RouteType.ReactionAdded)
+            else if (RouteType == RouteType.ReactionAdded)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
                 app.OnMessageReactionsAdded(delegateHandler, rank: Rank);
             }
-            else if (Type == RouteType.ReactionRemoved)
+            else if (RouteType == RouteType.ReactionRemoved)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
                 app.OnMessageReactionsRemoved(delegateHandler, rank: Rank);
             }
-            else if (Type == RouteType.HandOff)
+            else if (RouteType == RouteType.HandOff)
             {
                 CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
                 app.OnHandoff(delegateHandler, rank: Rank);
-            }
-            else if (Type == RouteType.BeforeTurn)
-            {
-                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnBeforeTurn(delegateHandler);
-            }
-            else if (Type == RouteType.AfterTurn)
-            {
-                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnAfterTurn(delegateHandler);
             }
         }
 

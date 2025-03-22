@@ -12,24 +12,24 @@ namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// A <see cref="ConversationIdFactory"/> that uses <see cref="IStorage"/> for backing.
-    /// and retrieve <see cref="BotConversationReference"/> instances.
+    /// and retrieve <see cref="AgentConversationReference"/> instances.
     /// </summary>
     /// <remarks>
     /// Initializes a new instance of the <see cref="ConversationIdFactory"/> class.
     /// </remarks>
     /// <param name="storage">
-    /// <see cref="IStorage"/> instance to write and read <see cref="BotConversationReference"/> with.
+    /// <see cref="IStorage"/> instance to write and read <see cref="AgentConversationReference"/> with.
     /// </param>
-    public class ConversationIdFactory(IStorage storage) : IConversationIdFactory
+    internal class ConversationIdFactory(IStorage storage) : IConversationIdFactory
     {
         private readonly IStorage _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
         /// <summary>
-        /// Creates a new <see cref="BotConversationReference"/>.
+        /// Creates a new <see cref="AgentConversationReference"/>.
         /// </summary>
-        /// <param name="options">Creation options to use when creating the <see cref="BotConversationReference"/>.</param>
+        /// <param name="options">Creation options to use when creating the <see cref="AgentConversationReference"/>.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>ID of the created <see cref="BotConversationReference"/>.</returns>
+        /// <returns>ID of the created <see cref="AgentConversationReference"/>.</returns>
         public async Task<string> CreateConversationIdAsync(
             ConversationIdFactoryOptions options,
             CancellationToken cancellationToken)
@@ -39,66 +39,67 @@ namespace Microsoft.Agents.Client
             // Create the storage key based on the options.
             var conversationReference = options.Activity.GetConversationReference();
 
-            var botConversationId = Guid.NewGuid().ToString();
+            var channelConversationId = Guid.NewGuid().ToString();
 
-            // Create the BotConversationReference instance.
-            var botConversationReference = new BotConversationReference
+            // Create the ChannelConversationReference instance.
+            var channelConversationReference = new AgentConversationReference
             {
                 ConversationReference = conversationReference,
-                OAuthScope = options.FromBotOAuthScope
+                OAuthScope = options.FromOAuthScope,
+                AgentName = options.Agent.Name
             };
 
-            // Store the BotConversationReference using the conversationId as a key.
-            var botConversationInfo = new Dictionary<string, object>
+            // Store the ChannelConversationReference using the conversationId as a key.
+            var channelConversationInfo = new Dictionary<string, object>
             {
                 {
-                    botConversationId, botConversationReference
+                    channelConversationId, channelConversationReference
                 }
             };
 
-            await _storage.WriteAsync(botConversationInfo, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(channelConversationInfo, cancellationToken).ConfigureAwait(false);
 
-            // Return the generated botConversationId (that will be also used as the conversation ID to call the bot).
-            return botConversationId;
+            // Return the generated channelConversationId (that will be also used as the conversation ID to call the channel).
+            return channelConversationId;
         }
 
         /// <summary>
-        /// Retrieve a <see cref="BotConversationReference"/> with the specified ID.
+        /// Retrieve a <see cref="AgentConversationReference"/> with the specified ID.
         /// </summary>
-        /// <param name="botConversationId">The ID of the <see cref="BotConversationReference"/> to retrieve.</param>
+        /// <param name="channelConversationId">The ID of the <see cref="AgentConversationReference"/> to retrieve.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns><see cref="BotConversationReference"/> for the specified ID; null if not found.</returns>
-        public async Task<BotConversationReference> GetBotConversationReferenceAsync(
-            string botConversationId,
+        /// <returns><see cref="AgentConversationReference"/> for the specified ID; null if not found.</returns>
+        public async Task<AgentConversationReference> GetAgentConversationReferenceAsync(
+            string channelConversationId,
             CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(botConversationId);
+            ArgumentException.ThrowIfNullOrEmpty(channelConversationId);
 
-            // Get the BotConversationReference from storage for the given botConversationId.
-            var botConversationInfo = await _storage
-                .ReadAsync(new[] { botConversationId }, cancellationToken)
+            // Get the ChannelConversationReference from storage for the given channelConversationId.
+            var channelConversationInfo = await _storage
+                .ReadAsync(new[] { channelConversationId }, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (botConversationInfo.TryGetValue(botConversationId, out var botConversationReference))
+            if (channelConversationInfo.TryGetValue(channelConversationId, out var channelConversationReference))
             {
-                return ProtocolJsonSerializer.ToObject<BotConversationReference>(botConversationReference);
+                return ProtocolJsonSerializer.ToObject<AgentConversationReference>(channelConversationReference);
             }
 
             return null;
         }
 
         /// <summary>
-        /// Deletes the <see cref="BotConversationReference"/> with the specified ID.
+        /// Deletes the <see cref="AgentConversationReference"/> with the specified ID.
         /// </summary>
-        /// <param name="botConversationId">The ID of the <see cref="BotConversationReference"/> to be deleted.</param>
+        /// <param name="channelConversationId">The ID of the <see cref="AgentConversationReference"/> to be deleted.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task to complete the deletion operation asynchronously.</returns>
         public async Task DeleteConversationReferenceAsync(
-            string botConversationId,
+            string channelConversationId,
             CancellationToken cancellationToken)
         {
-            // Delete the BotConversationReference from storage.
-            await _storage.DeleteAsync(new[] { botConversationId }, cancellationToken).ConfigureAwait(false);
+            // Delete the ChannelConversationReference from storage.
+            await _storage.DeleteAsync(new[] { channelConversationId }, cancellationToken).ConfigureAwait(false);
         }
     }
 }

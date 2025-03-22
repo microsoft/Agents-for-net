@@ -13,14 +13,27 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
     /// </summary>
     public class SkillDialogOptions
     {
+        [JsonIgnore]
+        public IAgentHost AgentHost { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Channel name the dialog will call.
+        /// </summary>
+        /// <value>
+        /// The <see cref="BotFrameworkSkill"/> that the dialog will call.
+        /// </value>
+        [JsonPropertyName("skill")]
+        public string Skill { get; set; }
+
+
         /// <summary>
         /// Gets or sets the Microsoft app ID of the bot calling the skill.
         /// </summary>
         /// <value>
         /// The the Microsoft app ID of the bot calling the skill.
         /// </value>
-        [JsonPropertyName("botId")]
-        public string BotId { get; set; }
+        [JsonIgnore]
+        public string ClientId => AgentHost?.HostClientId;
 
         /// <summary>
         /// Gets or sets the <see cref="BotFrameworkClient"/> used to call the remote skill.
@@ -29,34 +42,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// The <see cref="BotFrameworkClient"/> used to call the remote skill.
         /// </value>
         [JsonIgnore]
-        public IChannel SkillClient { get; set; }
-
-        /// <summary>
-        /// Gets or sets the callback Url for the skill host.
-        /// </summary>
-        /// <value>
-        /// The callback Url for the skill host.
-        /// </value>
-        [JsonPropertyName("skillHostEndpoint")]
-        public Uri SkillHostEndpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="BotFrameworkSkill"/> that the dialog will call.
-        /// </summary>
-        /// <value>
-        /// The <see cref="BotFrameworkSkill"/> that the dialog will call.
-        /// </value>
-        [JsonPropertyName("skill")]
-        public IChannelInfo Skill { get; set; }
-
-        /// <summary>
-        /// Gets or sets an instance of a <see cref="SkillConversationIdFactoryBase"/> used to generate conversation IDs for interacting with the skill.
-        /// </summary>
-        /// <value>
-        /// An instance of a <see cref="SkillConversationIdFactoryBase"/> used to generate conversation IDs for interacting with the skill.
-        /// </value>
-        [JsonIgnore]
-        public IConversationIdFactory ConversationIdFactory { get; set; }
+        public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
 
         /// <summary>
         /// Gets or sets the <see cref="ConversationState"/> to be used by the dialog.

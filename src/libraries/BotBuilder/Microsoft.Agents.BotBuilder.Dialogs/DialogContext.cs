@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {

@@ -58,15 +58,10 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         }
 
         [Fact]
-        public async Task Test_RouteList_ByInvoke()
+        public async Task Test_RouteList_ByInvokeThenByAddOrder()
         {
             List<string> values = [];
             RouteList routes = new();
-
-            routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; }
-            );
 
             routes.AddRoute(
                 (turnContext, CancellationToken) => { return Task.FromResult(true); },
@@ -75,29 +70,65 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             routes.AddRoute(
                 (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; }
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
                 (turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; },
                 isInvokeRoute: true
             );
 
-            // non-invoke
             foreach (var route in routes.Enumerate())
             {
                 await route.Handler(null, null, CancellationToken.None);
             }
 
-            Assert.Equal(2, values.Count);
-            Assert.Equal("1", values[0]);
+            Assert.Equal(3, values.Count);
+            Assert.Equal("invoke", values[0]);
             Assert.Equal("2", values[1]);
+            Assert.Equal("1", values[2]);
+        }
 
-            // Invoke
-            values.Clear();
-            foreach (var route in routes.Enumerate(true))
+        [Fact]
+        public async Task Test_RouteList_ByInvokeThenByRank()
+        {
+            List<string> values = [];
+            RouteList routes = new();
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; },
+                rank: RouteRank.Unspecified
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; },
+                rank: 0
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; },
+                isInvokeRoute: true, rank: RouteRank.Last
+            );
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; },
+                isInvokeRoute: true, rank: 0
+            );
+
+            foreach (var route in routes.Enumerate())
             {
                 await route.Handler(null, null, CancellationToken.None);
             }
 
-            Assert.Single(values);
-            Assert.Equal("invoke", values[0]);
+            Assert.Equal(4, values.Count);
+            Assert.Equal("invoke2", values[0]);
+            Assert.Equal("invoke1", values[1]);
+            Assert.Equal("1", values[2]);
+            Assert.Equal("2", values[3]);
         }
 
         [Fact]

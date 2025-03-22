@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 using Microsoft.Agents.BotBuilder.State;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +24,9 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <param name="botStates">initial list of <see cref="BotState"/> objects to manage.</param>
         public AutoSaveStateMiddleware(params IBotState[] botStates)
         {
-            _autoLoad = false;
+            // This is really so back-compat bots can use the new BotState methods without having to
+            // Load or use IStatePropertyAccessor.
+            _autoLoad = true;  
             TurnState = new TurnState(botStates);
         }
 

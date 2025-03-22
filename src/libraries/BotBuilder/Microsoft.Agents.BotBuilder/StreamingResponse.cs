@@ -373,7 +373,9 @@ namespace Microsoft.Agents.BotBuilder
             }
             else
             {
-                IsStreamingChannel = false;
+                // Support streaming for DeliveryMode.Stream
+                IsStreamingChannel = string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase);
+                Interval = 100;
             }
         }
 

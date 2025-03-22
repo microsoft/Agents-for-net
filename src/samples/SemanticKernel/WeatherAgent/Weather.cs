@@ -15,7 +15,7 @@ namespace WeatherAgent;
 // This is the core handler for the Bot Message loop. Each new request will be processed by this class.
 public class Weather(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : AgentApplication(options)
 {
-    [Route(Type = RouteType.Activity, ActivityType = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
     protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
@@ -43,7 +43,7 @@ public class Weather(AgentApplicationOptions options, WeatherForecastAgent weath
         await turnContext.SendActivityAsync(response, cancellationToken);
     }
 
-    [Route(Type = RouteType.Conversation, Event = ConversationUpdateEvents.MembersAdded)]
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)

@@ -28,8 +28,10 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\libraries\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
+	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Authentication\Microsoft.Agents.Authentication.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	  <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage\Microsoft.Agents.Storage.csproj" />
+	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>

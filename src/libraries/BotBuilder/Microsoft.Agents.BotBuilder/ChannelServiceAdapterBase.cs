@@ -80,15 +80,18 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                    if (!await StreamedResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
 
@@ -236,6 +239,7 @@ namespace Microsoft.Agents.BotBuilder
         public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
+            audience = audience ?? BotClaims.GetTokenAudience(claimsIdentity);
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, continuationActivity.ServiceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -257,7 +261,7 @@ namespace Microsoft.Agents.BotBuilder
 
             if (BotClaims.IsBotClaim(claimsIdentity))
             {
-                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
+                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
             }
             else
             {
@@ -307,6 +311,11 @@ namespace Microsoft.Agents.BotBuilder
                 new(AuthenticationConstants.AudienceClaim, botAppId),
                 new(AuthenticationConstants.AppIdClaim, botAppId),
             ]);
+        }
+
+        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
         }
 
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
