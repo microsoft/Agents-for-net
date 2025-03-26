@@ -11,14 +11,8 @@ updates:
     - 'dependencies'
   reviewers:
     - 'microsoft/botframework-sdk'    
-  groups:
-    nerdbank-gitversioning:
-      patterns:
-      - nbgv
-      - nerdbank.gitversioning
-    xunit:
-      patterns:
-      - 'xunit*'
+
+  
 - package-ecosystem: dotnet-sdk
   directory: /
   schedule:
