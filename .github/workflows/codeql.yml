@@ -78,7 +78,12 @@ jobs:
 
     - name: Restore
       run: dotnet restore AgentSdk.proj
-  
+    
+    - uses: dotnet/nbgv@master
+      with:
+          setAllVars: true        
+    - run: echo "NuGetPackageVersion $NuGetPackageVersion"      
+    
     - name: Build
       run: dotnet build --no-restore -c debug AgentSdk.proj
 
