@@ -58,6 +58,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     # Add any setup steps before running the `github/codeql-action/init` action.
     # This includes steps like installing compilers or runtimes (`actions/setup-node`
@@ -76,13 +78,13 @@ jobs:
       with:
         dotnet-version: 8.0.x              
 
-    - name: Restore
-      run: dotnet restore AgentSdk.proj
-    
     - uses: dotnet/nbgv@master
       with:
           setAllVars: true        
-    - run: echo "NuGetPackageVersion $NuGetPackageVersion"      
+    - run: echo "NuGetPackageVersion $NuGetPackageVersion"  
+    
+    - name: Restore
+      run: dotnet restore AgentSdk.proj
     
     - name: Build
       run: dotnet build --no-restore -c debug AgentSdk.proj
