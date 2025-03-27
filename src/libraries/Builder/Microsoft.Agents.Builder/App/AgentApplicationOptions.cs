@@ -15,7 +15,7 @@ using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.App
 {
-    public delegate Task<IActivity> AutoWelcomeMessage(ITurnContext turnContext, CancellationToken cancellationToken);
+    public delegate Task<IActivity> AutoWelcomeMessage(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
     /// <summary>
     /// Options for the <see cref="AgentApplication"/> class.
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Builder.App
                 var welcomeMessageSetting = section.GetValue<string>(nameof(WelcomeMessage));
                 if (!string.IsNullOrEmpty(welcomeMessageSetting))
                 {
-                    WelcomeMessage = (turnContext, cancellationToken) => Task.FromResult<IActivity>(new Activity() { Type = ActivityTypes.Message, Text = welcomeMessageSetting });
+                    WelcomeMessage = (turnContext, turnState, cancellationToken) => Task.FromResult<IActivity>(new Activity() { Type = ActivityTypes.Message, Text = welcomeMessageSetting });
                 }
             }
 

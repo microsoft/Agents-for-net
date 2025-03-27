@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 OnConversationUpdate(ConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
                 {
-                    var message = await Options.WelcomeMessage(turnContext, cancellationToken).ConfigureAwait(false);
+                    var message = await Options.WelcomeMessage(turnContext, turnState, cancellationToken).ConfigureAwait(false);
                     foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
                     {
                         if (member.Id != turnContext.Activity.Recipient.Id)
