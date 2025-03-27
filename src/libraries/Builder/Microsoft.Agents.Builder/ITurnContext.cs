@@ -150,13 +150,13 @@ namespace Microsoft.Agents.Builder
         /// channel assigned to the activity.
         /// <para>See the channel's documentation for limits imposed upon the contents of
         /// <paramref name="text"/>.</para>
-        /// <para>To control various characteristics of your bot's speech such as voice,
+        /// <para>To control various characteristics of your Agent's speech such as voice,
         /// rate, volume, pronunciation, and pitch, specify <paramref name="speak"/> in
         /// Speech Synthesis Markup Language (SSML) format.</para>
         /// </remarks>
         /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        ///// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        ///// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
+        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
         Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default);
 
         /// <summary>

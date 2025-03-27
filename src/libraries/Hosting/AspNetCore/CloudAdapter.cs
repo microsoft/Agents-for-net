@@ -89,19 +89,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <remarks>
         /// Note, this is an ImmediateAccept and BackgroundProcessing override of: 
-        /// Task IBotHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default);
+        /// Task IAgentHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
         /// </remarks>
         /// <param name="httpRequest">The HTTP request object, typically in a POST handler by a Controller.</param>
         /// <param name="httpResponse">The HTTP response object.</param>
-        /// <param name="bot">The bot implementation.</param>
+        /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive
         ///     notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent bot, CancellationToken cancellationToken = default)
+        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
             ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(bot);
+            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -144,8 +144,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the bot
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                        // Process the inbound activity with the Agent
+                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
                         // Write the response, potentially serializing the InvokeResponse
                         await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
@@ -172,11 +172,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
-        /// <param name="bot"></param>
+        /// <param name="agent"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
         /// <returns></returns>
-        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken, string audience = null)
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
             if (_adapterOptions.Async)
             {
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return Task.CompletedTask;
             }
 
-            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
+            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
         protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)

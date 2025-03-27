@@ -135,8 +135,8 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Check for change of previously stored hash
             if (current != null && current != dc.ActiveDialog.Version)
             {
-                // Give bot an opportunity to handle the change.
-                // - If bot handles it the changeHash will have been updated as to avoid triggering the 
+                // Give Agent an opportunity to handle the change.
+                // - If Agent handles it the changeHash will have been updated as to avoid triggering the 
                 //   change again.
                 await dc.EmitEventAsync(DialogEvents.VersionChanged, this.Id, true, false, cancellationToken).ConfigureAwait(false);
             }

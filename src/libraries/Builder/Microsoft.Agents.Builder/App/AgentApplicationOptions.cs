@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.App
         ///     "Handlers": {
         ///       "graph": {
         ///         "Settings": {
-        ///           "AzureBotConnectionName": null
+        ///           "AzureBotOAuthConnectionName": null
         ///         }
         ///       }
         ///     }
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.App
         public ILoggerFactory? LoggerFactory { get; set; }
 
         /// <summary>
-        /// Optional. If true, the Agent will automatically remove mentions of the bot's name from incoming
+        /// Optional. If true, the Agent will automatically remove mentions of the Agents name from incoming
         /// messages. Defaults to true.
         /// </summary>
         public bool RemoveRecipientMention { get; set; } = false;

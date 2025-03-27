@@ -342,8 +342,6 @@ namespace Microsoft.Agents.Core.Models
         /// <see cref="ActivityTypes.Message"/>.</remarks>
         bool HasContent();
 
-        bool IsFromStreamingConnection();
-
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
         /// might appear in the serialized REST JSON object.

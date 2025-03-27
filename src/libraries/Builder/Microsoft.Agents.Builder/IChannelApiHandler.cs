@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder
         /// message conversation.  An example of how to do that would be:
         ///
         /// var resource = await connector.conversations.CreateConversation(new
-        /// ConversationParameters(){ Bot = Agent, members = new ChannelAccount[] { new
+        /// ConversationParameters(){ Agent = "agent", members = new ChannelAccount[] { new
         /// ChannelAccount("user1") } );
         /// await connect.Conversations.OnSendToConversationAsync(resource.Id, new
         /// Activity() ... ) ;

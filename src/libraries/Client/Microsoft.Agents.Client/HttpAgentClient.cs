@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Client
             // Clone the activity so we can modify it before sending without impacting the original object.
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
 
-            // Create the HTTP request from the cloned Activity and send it to the bot.
+            // Create the HTTP request from the cloned Activity and send it to the Agent.
             using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
             var content = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
 

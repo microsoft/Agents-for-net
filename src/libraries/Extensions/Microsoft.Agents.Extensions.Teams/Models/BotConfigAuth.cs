@@ -7,7 +7,7 @@ using Microsoft.Agents.Core.Models;
 namespace Microsoft.Agents.Extensions.Teams.Models
 {
     /// <summary>
-    /// Specifies bot config auth, including type and suggestedActions.
+    /// Specifies Agent config auth, including type and suggestedActions.
     /// </summary>
     public class BotConfigAuth
     {

@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder
     /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
     /// </remarks>
     /// <remarks>
-    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Bot Channels require
+    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Channels require
     /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.

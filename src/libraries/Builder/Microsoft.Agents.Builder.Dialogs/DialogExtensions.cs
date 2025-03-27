@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         /// <param name="dialog">The dialog to start.</param>
         /// <param name="turnContext">The context for the current turn of the conversation.</param>
-        /// <param name="state">BotState to use for state.</param>
+        /// <param name="state">AgentState to use for state.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private static async Task<DialogTurnResult> InnerRunAsync(ITurnContext turnContext, string dialogId, DialogContext dialogContext, CancellationToken cancellationToken)
         {
-            // Handle EoC and Reprompt event from a parent bot (can be root bot to skill or skill to skill)
+            // Handle EoC and Reprompt event from a parent Agent (can be root bot to skill or skill to skill)
             if (IsFromParentToSkill(turnContext))
             {
                 // Handle remote cancellation request from parent.
@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
             {
-                // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
+                // EoC Activities returned by skills are bounced back to the Agent by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
                 var skillConversationReference = turnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey);
                 if (skillConversationReference != null)

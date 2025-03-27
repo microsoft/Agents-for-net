@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Auth.Tests
 {
-    public class BotClaimsTests
+    public class AgentClaimsTests
     {
         [Fact]
         public void GetAppId_ThrowIfNull()
@@ -220,13 +220,13 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void IsBotClaim_ThrowOnNullClaimset()
+        public void IsAgentClaim_ThrowOnNullClaimset()
         {
             Assert.Throws<ArgumentNullException>(() => AgentClaims.IsAgentClaim(null));
         }
 
         [Fact]
-        public void IsBotClaim_ValidClaimset()
+        public void IsAgentClaim_ValidClaimset()
         {
             // Setup a valid claim set
             var claims = new ClaimsIdentity(
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void IsBotClaim_InvalidClaimset()
+        public void IsAgentClaim_InvalidClaimset()
         {
             // Setup a valid claim set
             var claims = new ClaimsIdentity(
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void IsBotClaim_InvalidClaimsetByAudiance()
+        public void IsAgentClaim_InvalidClaimsetByAudiance()
         {
             // Setup a valid claim set
             var claims = new ClaimsIdentity(
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void IsBotClaim_ShouldReturnFalseOnNoVersion()
+        public void IsAgentClaim_ShouldReturnFalseOnNoVersion()
         {
             var claims = new ClaimsIdentity(
             [
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void IsBotClaim_ShouldReturnFalseOnNoOutgoingAppId()
+        public void IsAgentClaim_ShouldReturnFalseOnNoOutgoingAppId()
         {
             // Setup an invalid claim set
             var claims = new ClaimsIdentity(

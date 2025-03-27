@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Builder
         /// This is a helper to create the ClaimsIdentity structure from an appId that will be added to the TurnContext.
         /// It is intended for use in proactive and named-pipe scenarios.
         /// </summary>
-        /// <param name="agentAppId">The bot's application id.</param>
+        /// <param name="agentAppId">The Agent's application id.</param>
         /// <returns>A <see cref="ClaimsIdentity"/> with the audience and appId claims set to the appId.</returns>
         protected ClaimsIdentity CreateClaimsIdentity(string agentAppId)
         {

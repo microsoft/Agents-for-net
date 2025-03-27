@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Builder.Compat
         }
 
 
-        private static bool IsSkillBot(ITurnContext turnContext)
+        private static bool IsAgent(ITurnContext turnContext)
         {
             return turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity);
         }
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="turnContext">The context object for this turn.</param>
         private async Task ProcessTypingAsync(ITurnContext turnContext)
         {
-            if (!IsSkillBot(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
+            if (!IsAgent(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
             {
                 // Override the typing background task.
                 await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);

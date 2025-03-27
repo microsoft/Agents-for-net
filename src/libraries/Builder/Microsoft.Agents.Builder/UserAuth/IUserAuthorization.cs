@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <param name="exchangeScopes"></param>
         /// <param name="state">AgentApplication state.</param>
         /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The authentication token if user is signed in. Otherwise returns null. In that case the bot will attempt to sign the user in.</returns>
+        /// <returns>The authentication token if user is signed in. Otherwise returns null. In that case the Agent will attempt to sign the user in.</returns>
         Task<string> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
 
         /// <summary>

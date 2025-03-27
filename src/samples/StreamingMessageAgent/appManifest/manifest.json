@@ -15,12 +15,12 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "Types Of Cards",
-    "full": "Types Of Cards"
+    "short": "Streaming Messages",
+    "full": "Streaming Messages"
   },
   "description": {
-    "short": "Types Of Cards.",
-    "full": "This sample shows the feature where user can send different types of cards using bot."
+    "short": "Streaming Messages",
+    "full": "This sample shows streaming messages from OpenAI."
   },
   "accentColor": "#FFFFFF",
   "bots": [

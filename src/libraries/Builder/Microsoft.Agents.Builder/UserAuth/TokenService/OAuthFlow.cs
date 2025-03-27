@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Creates a new prompt that asks the user to sign in using the Azure Bot Token Service.
+    /// Creates a new prompt that asks the user to sign in using the Token Service.
     /// service.
     /// </summary>
     /// <remarks>
@@ -21,10 +21,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// will send them an `OAuthCard|SigninCard` containing a button they can press to signin. Depending on the
     /// channel, the user will be sent through one of two possible signin flows:
     ///
-    /// - The automatic signin flow where once the user signs in and the SSO service will forward the bot
+    /// - The automatic signin flow where once the user signs in and the SSO service will forward the Agent
     /// the users access token using either an `event` or `invoke` activity.
     /// - The "magic code" flow where once the user signs in they will be prompted by the SSO
-    /// service to send the bot a six digit code confirming their identity. This code will be sent as a
+    /// service to send the Agent a six digit code confirming their identity. This code will be sent as a
     /// standard `message` activity.
     ///
     /// Both flows are automatically supported by the `OAuthFlow` and the only thing you need to be
@@ -281,7 +281,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = null,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The bot received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
+                            FailureDetail = "The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else if (tokenExchangeRequest.ConnectionName != _settings.AzureBotOAuthConnectionName)
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = tokenExchangeRequest.Id,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The bot received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
+                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else
@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             {
                                 Id = tokenExchangeRequest.Id,
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
-                                FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
+                                FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
                     }
                     else

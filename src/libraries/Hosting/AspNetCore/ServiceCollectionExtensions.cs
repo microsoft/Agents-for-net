@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 builder.Services.AddSingleton(storage);
             }
 
-            // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
+            // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             AddCloudAdapter<TAdapter>(builder.Services);
         }
 

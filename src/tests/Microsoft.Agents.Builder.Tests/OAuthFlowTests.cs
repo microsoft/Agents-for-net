@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.Tests
                 var activityValue = (InvokeResponse)activities[0].Value;
                 var messageBody = (TokenExchangeInvokeResponse)activityValue.Body;
                 Assert.Equal((int)HttpStatusCode.PreconditionFailed, activityValue.Status);
-                Assert.Equal("The bot is unable to exchange token. Proceed with regular login.", messageBody.FailureDetail);
+                Assert.Equal("The Agent is unable to exchange token. Proceed with regular login.", messageBody.FailureDetail);
                 responsesSent = true;
             }
 

@@ -20,15 +20,15 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
     /// exchange request is processed.
     /// </summary>
     /// <remarks>
-    /// If a user is signed into multiple Teams clients, the Bot could receive a
+    /// If a user is signed into multiple Teams clients, the Agent could receive a
     /// "signin/tokenExchange" from each client. Each token exchange request for a
     /// specific user login will have an identical Activity.Value.Id.
     /// 
-    /// Only one of these token exchange requests should be processed by the bot.
+    /// Only one of these token exchange requests should be processed by the Agent.
     /// The others return <see cref="System.Net.HttpStatusCode.PreconditionFailed"/>.
-    /// For a distributed bot in production, this requires a distributed storage
+    /// For a distributed Agent in production, this requires a distributed storage
     /// ensuring only one token exchange is processed. This middleware supports
-    /// CosmosDb storage found in Microsoft.Bot.Builder.Azure, or MemoryStorage for
+    /// CosmosDb storage found in Microsoft.Agents.Storage.CosmosDb, or MemoryStorage for
     /// local development. IStorage's ETag implementation for token exchange activity
     /// deduplication.
     /// </remarks>
@@ -160,7 +160,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                 {
                     Id = tokenExchangeRequest.Id,
                     ConnectionName = _oAuthConnectionName,
-                    FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
+                    FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                 };
 
                 await SendInvokeResponseAsync(turnContext, invokeResponse, HttpStatusCode.PreconditionFailed, cancellationToken).ConfigureAwait(false);

@@ -136,7 +136,6 @@ namespace Microsoft.Agents.Builder.Dialogs
             var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
 
             // Increment attempt count
-            // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
             state[AttemptCountKey] = (int) state[AttemptCountKey] + 1;
 
             // Validate the return value

@@ -12,7 +12,7 @@ using WeatherAgent.Agents;
 
 namespace WeatherAgent;
 
-// This is the core handler for the Bot Message loop. Each new request will be processed by this class.
+// This is the core handler for the Agent Message loop. Each new request will be processed by this class.
 public class Weather(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : AgentApplication(options)
 {
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]

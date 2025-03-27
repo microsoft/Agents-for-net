@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Connector.Errors
     /// Method 2: 
     /// 
     ///     throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException&lt;OperationCanceledException&gt;(
-    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
     /// 
     /// </summary>
     internal static partial class ErrorHelper

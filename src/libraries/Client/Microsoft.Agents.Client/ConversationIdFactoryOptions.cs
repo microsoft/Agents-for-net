@@ -11,10 +11,10 @@ namespace Microsoft.Agents.Client
     internal class ConversationIdFactoryOptions
     {
         /// <summary>
-        /// Gets or sets the oauth audience scope, used during token retrieval (either https://api.botframework.com or Azure Bot app id).
+        /// Gets or sets the oauth audience scope, used during token retrieval (either https://api.botframework.com or Agent AppId).
         /// </summary>
         /// <value>
-        /// The oauth audience scope, used during token retrieval (either https://api.botframework.com or Azure Bot app id if this is a Agent calling another Agent).
+        /// The oauth audience scope, used during token retrieval (either https://api.botframework.com or Agent AppId id if this is a Agent calling another Agent).
         /// </value>
         public string FromOAuthScope { get; set; }
 

@@ -208,43 +208,6 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(trace.Name == "test");
         }
 
-        [Fact]
-        public void IsFromStreamingConnectionTests()
-        {
-            var nonStreaming = new List<string>()
-            {
-                "http://yayay.com",
-                "https://yayay.com",
-                "HTTP://yayay.com",
-                "HTTPS://yayay.com",
-            };
-
-            var streaming = new List<string>()
-            {
-                "urn:botframework:WebSocket:wss://beep.com",
-                "urn:botframework:WebSocket:http://beep.com",
-                "URN:botframework:WebSocket:wss://beep.com",
-                "URN:botframework:WebSocket:http://beep.com",
-            };
-
-            var activity = CreateActivity("en-us");
-
-            nonStreaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.False(activity.IsFromStreamingConnection());
-            });
-
-            streaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.True(activity.IsFromStreamingConnection());
-            });
-
-            activity.ServiceUrl = null;
-            Assert.False(activity.IsFromStreamingConnection());
-        }
-
         [Theory]
         [InlineData(nameof(ActivityTypes.EndOfConversation))]
         [InlineData(nameof(ActivityTypes.Event))]

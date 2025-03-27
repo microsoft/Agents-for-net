@@ -38,8 +38,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Gets or sets the result returned by a dialog that was just ended.
         /// This will only be populated in certain cases:
         ///
-        /// - The bot calls `DialogContext.BeginDialogAsync()` to start a new dialog and the dialog ends immediately.
-        /// - The bot calls `DialogContext.ContinueDialogAsync()` and a dialog that was active ends.
+        /// - The Agent calls `DialogContext.BeginDialogAsync()` to start a new dialog and the dialog ends immediately.
+        /// - The Agent calls `DialogContext.ContinueDialogAsync()` and a dialog that was active ends.
         ///
         /// In all cases where it's populated, <see cref="DialogContext.ActiveDialog"/> will be `null`.
         /// </summary>

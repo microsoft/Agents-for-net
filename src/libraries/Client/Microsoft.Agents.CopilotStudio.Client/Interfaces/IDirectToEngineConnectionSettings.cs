@@ -17,16 +17,16 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// </summary>
         string? CustomPowerPlatformCloud { get; set; }
         /// <summary>
-        /// Environment ID for the environment that hosts the bot
+        /// Environment ID for the environment that hosts the Agent
         /// </summary>
         string? EnvironmentId { get; set; }
         /// <summary>
         /// Power Platform Cloud where the environment is hosted
         /// </summary>
         PowerPlatformCloud? Cloud { get; set; }
-        
+
         /// <summary>
-        /// Type of Bot hosted in Copilot Studio
+        /// Type of Agent hosted in Copilot Studio
         /// </summary>
         AgentType? CopilotAgentType { get; set; }
     }

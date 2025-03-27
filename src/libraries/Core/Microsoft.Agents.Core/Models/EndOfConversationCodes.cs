@@ -34,8 +34,8 @@ namespace Microsoft.Agents.Core.Models
         public const string AgentIssuedInvalidMessage = "agentIssuedInvalidMessage";
 
         /// <summary>
-        /// The code value for channel failed end of conversations.
+        /// The code value for a general error.
         /// </summary>
-        public const string ChannelFailed = "channelFailed";
+        public const string Error = "error";
     }
 }

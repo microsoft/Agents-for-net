@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Client
     internal interface IConversationIdFactory
     {
         /// <summary>
-        /// Creates a conversation id for a bot conversation.
+        /// Creates a conversation id for a Agent conversation.
         /// </summary>
         /// <param name="options">A <see cref="ConversationIdFactoryOptions"/> instance containing parameters for creating the conversation ID.</param>
         /// <param name="cancellationToken">A cancellation token.</param>

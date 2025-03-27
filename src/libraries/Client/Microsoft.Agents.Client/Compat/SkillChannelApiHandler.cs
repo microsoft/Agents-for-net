@@ -231,10 +231,10 @@ namespace Microsoft.Agents.Client.Compat
                 {
                     case ActivityTypes.EndOfConversation:
                         await _agentHost.DeleteConversationAsync(turnContext, conversationId, cancellationToken).ConfigureAwait(false);
-                        await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                        await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Event:
-                        await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                        await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Command:
                     case ActivityTypes.CommandResult:
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Client.Compat
                         }
                         else
                         {
-                            await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                            await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         }
 
                         break;
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Client.Compat
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         }
 
-        private async Task SendToBotAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
+        private async Task SendToAgentAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
         {
             ApplySkillActivityToTurnContext(turnContext, activity);
             await _agent.OnTurnAsync(turnContext, ct).ConfigureAwait(false);

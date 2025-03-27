@@ -13,9 +13,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     public class ActivityWithClaims
     {
         /// <summary>
-        /// Optional: Defaults to IBot
+        /// Optional: Defaults to IAgent
         /// </summary>
-        public Type BotType { get; set; }
+        public Type AgentType { get; set; }
 
         /// <summary>
         /// <see cref="ClaimsIdentity"/> retrieved from a call to authentication.

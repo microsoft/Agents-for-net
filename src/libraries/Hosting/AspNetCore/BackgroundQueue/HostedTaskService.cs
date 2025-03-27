@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
                     catch (Exception ex)
                     {
-                        // Bot Errors should be processed in the Adapter.OnTurnError.
+                        // Agent Errors should be processed in the Adapter.OnTurnError.
                         _logger.LogError(ex, "Error occurred executing WorkItem.");
                     }
                 }, stoppingToken);

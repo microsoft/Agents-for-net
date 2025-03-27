@@ -131,10 +131,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 try
                 {
-                    // We must go back through DI to get the IBot. This is because the IBot is typically transient, and anything
-                    // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
+                    // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
+                    // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
-                    var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IAgent));
+                    var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
 
                     if (activityWithClaims.IsProactive)
                     {
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IAgent)bot).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         var response = await _adapter.ProcessActivityAsync(
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
-                            ((IAgent)bot).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
 
                         activityWithClaims.OnComplete?.Invoke(response);
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 catch (Exception ex)
                 {
-                    // Bot Errors should be processed in the Adapter.OnTurnError.
+                    // Agent Errors should be processed in the Adapter.OnTurnError.
                     _logger.LogError(ex, "Error occurred executing WorkItem.");
                 }
             }, stoppingToken);

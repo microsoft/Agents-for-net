@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Base class for bot authentication that handles common logic.
+    /// Base class for Agent authentication that handles common logic.
     /// </summary>
     internal class BotUserAuthorization
     {
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             else
             {
-                // For non-Teams bots, the user sends the "magic code" that will be used to exchange for a token.
+                // For non-Teams Agents, the user sends the "magic code" that will be used to exchange for a token.
                 tokenResponse = await OnContinueFlow(turnContext, cancellationToken);
             }
 

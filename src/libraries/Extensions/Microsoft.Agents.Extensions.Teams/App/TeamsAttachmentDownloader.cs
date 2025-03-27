@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App
 {
     /// <summary>
-    /// Downloads attachments from Teams using the Bot access token.
+    /// Downloads attachments from Teams using the configure Token Provider (from IConnections).
     /// </summary>
     public class TeamsAttachmentDownloader : IInputFileDownloader
     {

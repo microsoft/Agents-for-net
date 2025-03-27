@@ -20,26 +20,26 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Gets or sets the Channel name the dialog will call.
         /// </summary>
         /// <value>
-        /// The <see cref="BotFrameworkSkill"/> that the dialog will call.
+        /// The Agent name that the Dialog will call.
         /// </value>
         [JsonPropertyName("skill")]
         public string Skill { get; set; }
 
 
         /// <summary>
-        /// Gets or sets the Microsoft app ID of the bot calling the skill.
+        /// Gets or sets the Microsoft app ID of the Agent calling the skill.
         /// </summary>
         /// <value>
-        /// The the Microsoft app ID of the bot calling the skill.
+        /// The the Microsoft app ID of the Agent calling the skill.
         /// </value>
         [JsonIgnore]
         public string ClientId => AgentHost?.HostClientId;
 
         /// <summary>
-        /// Gets or sets the <see cref="BotFrameworkClient"/> used to call the remote skill.
+        /// Gets or sets the <see cref="IAgentClient"/> used to call the remote Agent.
         /// </summary>
         /// <value>
-        /// The <see cref="BotFrameworkClient"/> used to call the remote skill.
+        /// The <see cref="IAgentClient"/> used to call the remote Agent.
         /// </value>
         [JsonIgnore]
         public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Gets or sets the OAuth Connection Name, that would be used to perform Single SignOn with a skill.
         /// </summary>
         /// <value>
-        /// The OAuth Connection Name for the Parent Bot.
+        /// The Token Provider Connection Name to use to get tokens.
         /// </value>
         [JsonPropertyName("connectionName")]
         public string ConnectionName { get; set; }

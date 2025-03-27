@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Handles user authentication using The Azure Bot Token Service.
+    /// Handles user authentication using the Token Service.
     /// </summary>
     public class AzureBotUserAuthorization : IUserAuthorization
     {

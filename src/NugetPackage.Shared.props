@@ -4,7 +4,7 @@
     <Company Condition="'$(Company)' == ''">Microsoft</Company>
     <PackageTags Condition="'$(PackageTags)' == ''">Agents BotFramework Copilot</PackageTags>
     <Copyright Condition="'$(Copyright)' == ''">© Microsoft Corporation. All rights reserved.</Copyright>
-    <PackageIcon Condition="'$(PackageIcon)' == ''">bot_icon.png</PackageIcon>
+    <PackageIcon Condition="'$(PackageIcon)' == ''">agent_icon.png</PackageIcon>
     <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/microsoft/agents</PackageProjectUrl>
     <PackageLicenseUrl Condition="'$(PackageLicenseUrl)' == ''">https://github.com/microsoft/Agents-for-net?tab=MIT-1-ov-file#readme</PackageLicenseUrl>
     <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/Microsoft/Agents-for-net</RepositoryUrl>
@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(RepoRoot)\src\images\bot_icon.png" Link="bot_icon.png" Pack="true" PackagePath="" />
+    <None Include="$(RepoRoot)\src\images\agent_icon.png" Link="agent_icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>

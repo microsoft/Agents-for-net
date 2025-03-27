@@ -315,7 +315,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a bot respond anytime a user sends your bot a
+        /// This method provides a simple way to have an Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// <br/>
         /// For example, you can easily clear the current conversation anytime a user sends "/reset":
@@ -344,7 +344,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a bot respond anytime a user sends your bot a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// <br/>
         /// For example, you can easily clear the current conversation anytime a user sends "/reset":
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a bot respond anytime a user sends your bot a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// </summary>
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
@@ -391,7 +391,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a bot respond anytime a user sends your bot a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// </summary>
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelector selectors.</param>
@@ -553,7 +553,7 @@ namespace Microsoft.Agents.Builder.App
         /// Add a handler that will execute before the turn's activity handler logic is processed.
         /// <br/>
         /// Handler returns true to continue execution of the current turn. Handler returning false
-        /// prevents the turn from running, but the bots state is still saved, which lets you
+        /// prevents the turn from running, but the Agents state is still saved, which lets you
         /// track the reason why the turn was not processed. It also means you can use this as
         /// a way to call into the dialog system. For example, you could use the OAuthPrompt to sign the
         /// user in before allowing the AI system to run.
@@ -571,7 +571,7 @@ namespace Microsoft.Agents.Builder.App
         /// Add a handler that will execute after the turn's activity handler logic is processed.
         /// <br/>
         /// Handler returns true to finish execution of the current turn. Handler returning false
-        /// prevents the bots state from being saved.
+        /// prevents the Agents state from being saved.
         /// </summary>
         /// <param name="handler">Function to call after turn execution.</param>
         /// <returns>The application instance for chaining purposes.</returns>
@@ -700,7 +700,7 @@ namespace Microsoft.Agents.Builder.App
                         if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
                         {
                             // Save turn state
-                            // - This lets the bot keep track of why it ended the previous turn. It also
+                            // - This lets the Agent keep track of why it ended the previous turn. It also
                             //   allows the dialog system to be used before the AI system is called.
                             await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 

@@ -7,8 +7,6 @@ Provides the MSAL IAccessTokenProvider implementation to get tokens.
 ```
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "MsalAuth",
       "Settings": {
         "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
         "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -92,8 +90,6 @@ These settings are:
 ```json
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
       "Settings": {
         "AuthType": "ClientSecret",
         "ClientId": "<<ClientID>>",
@@ -120,8 +116,6 @@ These settings are:
 ```json
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
       "Settings": {
         "AuthType": "UserManagedIdentity",
         "ClientId": "<ClientID>",
@@ -145,8 +139,6 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 ```json
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
       "Settings": {
         "AuthType": "SystemManagedIdentity",
         "Scopes": [
@@ -171,8 +163,6 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 ```json
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
       "Settings": {
         "AuthType": "CertificateSubjectName",
         "ClientId": "<ClientID>",
@@ -202,8 +192,6 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 ```json
   "Connections": {
     "ServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
       "Settings": {
         "AuthType": "CertificateSubjectName",
         "ClientId": "<ClientID>",
