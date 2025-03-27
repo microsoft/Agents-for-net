@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
             // Format prompt to send
             IActivity prompt;
-            var channelId = turnContext.Activity.ChannelId;
+            var channelId = turnContext.Activity.ChannelId.ToString();
             var culture = DetermineCulture(turnContext.Activity);
             var defaults = _choiceDefaults[culture];
             var choiceOptions = ChoiceOptions ?? defaults.Item3;

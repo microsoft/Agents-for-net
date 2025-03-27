@@ -162,5 +162,15 @@ namespace Microsoft.Agents.Core.Models
 
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
         }
+
+        public static SubChannelInfo GetSubChannelEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.SubChannelInfo, StringComparison.OrdinalIgnoreCase)) as SubChannelInfo;
+        }
     }
 }

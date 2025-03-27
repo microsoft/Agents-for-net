@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Storage.Transcript
         {
             ArgumentNullException.ThrowIfNull(activity);
 
-            var transcriptFile = GetTranscriptFile(activity.ChannelId, activity.Conversation.Id);
+            var transcriptFile = GetTranscriptFile(activity.ChannelId.ToString(), activity.Conversation.Id);
 
             if (System.Diagnostics.Debugger.IsAttached && activity.Type == ActivityTypes.Message)
             {

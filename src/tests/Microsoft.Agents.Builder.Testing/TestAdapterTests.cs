@@ -215,7 +215,7 @@ namespace Microsoft.Agents.Builder.Testing
             var receivedChannelId = string.Empty;
             async Task TestCallback(ITurnContext context, CancellationToken token)
             {
-                receivedChannelId = context.Activity.ChannelId;
+                receivedChannelId = context.Activity.ChannelId.ToString();
                 await context.SendActivityAsync("test reply from the bot", cancellationToken: token);
             }
 

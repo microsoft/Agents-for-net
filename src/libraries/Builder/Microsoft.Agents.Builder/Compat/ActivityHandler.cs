@@ -805,7 +805,7 @@ namespace Microsoft.Agents.Builder.Compat
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, errorResponse);
             }
 
-            ValidateSearchInvokeValue(invokeValue, activity.ChannelId);
+            ValidateSearchInvokeValue(invokeValue, activity.ChannelId?.ToString());
             return invokeValue;
         }
 

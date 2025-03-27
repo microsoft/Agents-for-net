@@ -388,18 +388,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.TokenExchangeOperationName;
         }
 
-        private static bool ChannelSupportsOAuthCard(string channelId)
+        private static bool ChannelSupportsOAuthCard(ChannelId channelId)
         {
-            return channelId switch
+            return channelId.ToString() switch
             {
                 Channels.Cortana or Channels.Skype or Channels.Skypeforbusiness => false,
                 _ => true,
             };
         }
 
-        public static bool ChannelRequiresSignInLink(string channelId)
+        public static bool ChannelRequiresSignInLink(ChannelId channelId)
         {
-            return channelId switch
+            return channelId.ToString() switch
             {
                 Channels.Msteams => true,
                 _ => false,

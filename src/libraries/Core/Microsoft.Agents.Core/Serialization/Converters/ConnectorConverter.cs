@@ -238,7 +238,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             setter(deserialized);
         }
 
-        private void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, Dictionary<string, PropertyInfo> properties)
+        protected virtual void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, Dictionary<string, PropertyInfo> properties)
         {
             var property = properties[propertyName];
 

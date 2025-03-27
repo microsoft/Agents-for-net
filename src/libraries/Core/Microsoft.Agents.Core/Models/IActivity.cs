@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The ChannelId field establishes the channel and authoritative store for the activity.
         /// </summary>
-        string ChannelId { get; set; }
+        ChannelId ChannelId { get; set; }
 
         /// <summary>
         /// The Code field contains a programmatic value describing why or how the conversation was ended. The value of 

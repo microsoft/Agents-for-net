@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Storage.Tests
                 User = user,
                 Agent = bot,
                 Conversation = activity.Conversation,
-                ChannelId = activity.ChannelId,
+                ChannelId = activity.ChannelId.ToString(),
                 ServiceUrl = activity.ServiceUrl,
             };
         }

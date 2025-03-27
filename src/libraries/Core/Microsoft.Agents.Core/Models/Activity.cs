@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Core.Models
             LocalTimezone = localTimezone;
             CallerId = callerId;
             ServiceUrl = serviceUrl;
-            ChannelId = channelId;
+            ChannelId = new ChannelId(channelId);
             From = @from;
             Conversation = conversation;
             Recipient = recipient;
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Core.Models
         public string ServiceUrl { get; set; }
 
         /// <inheritdoc/>
-        public string ChannelId { get; set; }
+        public ChannelId ChannelId { get; set; }
 
         /// <inheritdoc/>
         public ChannelAccount From { get; set; }
@@ -409,11 +409,11 @@ namespace Microsoft.Agents.Core.Models
         {
             var reference = new ConversationReference
             {
-                ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId,
+                ChannelId = ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
             };
@@ -471,7 +471,7 @@ namespace Microsoft.Agents.Core.Models
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount(id: Recipient?.Id, name: Recipient?.Name),
                 Recipient = new ChannelAccount(id: From?.Id, name: From?.Name),
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = new ConversationAccount(isGroup: Conversation.IsGroup, id: Conversation.Id, name: Conversation.Name),
@@ -492,7 +492,7 @@ namespace Microsoft.Agents.Core.Models
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount { Id = Recipient?.Id, Name = Recipient?.Name },
                 Recipient = new ChannelAccount { Id = From?.Id, Name = From?.Name },
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = Conversation,

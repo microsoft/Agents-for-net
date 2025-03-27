@@ -13,6 +13,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -207,7 +208,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
         private static DefaultHttpContext CreateHttpContext(Activity activity = null)
         {
-            var content = activity == null ? "" : JsonSerializer.Serialize(activity);
+            var content = activity == null ? "" : ProtocolJsonSerializer.ToJson(activity);
             var context = new DefaultHttpContext();
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(content));
             context.Request.Method = HttpMethods.Post;

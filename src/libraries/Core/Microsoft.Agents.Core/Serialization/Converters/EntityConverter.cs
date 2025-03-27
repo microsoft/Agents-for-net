@@ -33,6 +33,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 return JsonSerializer.Deserialize<StreamInfo>(JsonSerializer.Serialize(entity, options), options);
             }
+            else if (string.Equals(EntityTypes.SubChannelInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
+            {
+                return JsonSerializer.Deserialize<SubChannelInfo>(JsonSerializer.Serialize(entity, options), options);
+            }
 
             return entity;
         }

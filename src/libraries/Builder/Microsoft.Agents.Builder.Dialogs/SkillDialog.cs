@@ -330,7 +330,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                         var result = await userTokenClient.ExchangeTokenAsync(
                             turnContext.Activity.From.Id,
                             connectionName,
-                            turnContext.Activity.ChannelId,
+                            turnContext.Activity.ChannelId.ToString(),
                             new TokenExchangeRequest(oauthCard.TokenExchangeResource.Uri),
                             cancellationToken).ConfigureAwait(false);
 

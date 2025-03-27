@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// <inheritdoc/>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
-            if (string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase) 
+            if (turnContext.Activity.ChannelId == Channels.Msteams
                 && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(
                         turnContext.Activity.From.Id,
                         _oAuthConnectionName,
-                        turnContext.Activity.ChannelId,
+                        turnContext.Activity.ChannelId.ToString(),
                         new TokenExchangeRequest { Token = tokenExchangeRequest.Token },
                         cancellationToken).ConfigureAwait(false);
                 }
