@@ -7,14 +7,10 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -62,20 +58,27 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="builder"></param>
         /// <param name="fileDownloaders"></param>
         /// <param name="autoSignIn"></param>
+        /// <param name="welcomeMessage"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
             this IHostApplicationBuilder builder,
             IList<IInputFileDownloader> fileDownloaders = null,
-            AutoSignInSelectorAsync autoSignIn = null)
+            AutoSignInSelector autoSignIn = null,
+            AutoWelcomeMessage welcomeMessage = null)
         {
             if (autoSignIn != null)
             {
-                builder.Services.AddSingleton<AutoSignInSelectorAsync>(sp => autoSignIn);
+                builder.Services.AddSingleton<AutoSignInSelector>(sp => autoSignIn);
             }
 
             if (fileDownloaders != null)
             {
                 builder.Services.AddSingleton(sp => fileDownloaders);
+            }
+
+            if (welcomeMessage != null)
+            {
+                builder.Services.AddSingleton<AutoWelcomeMessage>(sp => welcomeMessage);
             }
 
             builder.Services.AddSingleton<AgentApplicationOptions>();

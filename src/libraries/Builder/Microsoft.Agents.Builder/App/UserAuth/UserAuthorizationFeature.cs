@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// </remarks>
     public class UserAuthorizationFeature
     {
-        private readonly AutoSignInSelectorAsync? _startSignIn;
+        private readonly AutoSignInSelector? _startSignIn;
         private const string IS_SIGNED_IN_KEY = "__InSignInFlow__";
         private const string SIGNIN_ACTIVITY_KEY = "__SignInFlowActivity__";
         private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";

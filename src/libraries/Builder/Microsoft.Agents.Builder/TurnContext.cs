@@ -245,10 +245,18 @@ namespace Microsoft.Agents.Builder
 
             for (var index = 0; index < activities.Length; index++)
             {
+                var activity = activities[index];
+                activity.ApplyConversationReference(conversationReference);
+                if (activity.Type == null && !string.IsNullOrWhiteSpace(activity.Text))
+                {
+                    activity.Type = ActivityTypes.Message;
+                }
+
                 // Buffer the incoming activities into a List<T> since we allow the set to be manipulated by the callbacks
                 // Bind the relevant Conversation Reference properties, such as URLs and
                 // ChannelId's, to the activity we're about to send
-                bufferedActivities.Add(activities[index].ApplyConversationReference(conversationReference));
+                bufferedActivities.Add(activity);
+
             }
 
             // If there are no callbacks registered, bypass the overhead of invoking them and send directly to the adapter

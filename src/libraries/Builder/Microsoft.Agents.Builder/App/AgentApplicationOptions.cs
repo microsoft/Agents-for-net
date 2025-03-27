@@ -9,9 +9,14 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.App
 {
+    public delegate Task<IActivity> AutoWelcomeMessage(ITurnContext turnContext, CancellationToken cancellationToken);
+
     /// <summary>
     /// Options for the <see cref="AgentApplication"/> class.
     /// </summary>
@@ -31,6 +36,7 @@ namespace Microsoft.Agents.Builder.App
         ///   "UserAuthorization": {  // omit to disable User Authorization
         ///     "Default": "graph",
         ///     "AutoSignIn": {true | false},
+        ///     "WelcomeMessage": {optional-string-message},
         ///     "Handlers": {
         ///       "graph": {
         ///         "Settings": {
@@ -52,6 +58,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="cardOptions"></param>
         /// <param name="loggerFactory"></param>
         /// <param name="fileDownloaders"></param>
+        /// <param name="welcomeMessage"></param>
         /// <param name="configKey"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
@@ -62,6 +69,7 @@ namespace Microsoft.Agents.Builder.App
             AdaptiveCardsOptions cardOptions = null,
             ILoggerFactory loggerFactory = null,
             IList<IInputFileDownloader> fileDownloaders = null,
+            AutoWelcomeMessage welcomeMessage = null,
             string configKey = "AgentApplication") 
         { 
             Adapter = channelAdapter;
@@ -72,6 +80,21 @@ namespace Microsoft.Agents.Builder.App
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), false);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), false);
+
+            // Set AutoWelcomeMessage delegate. 
+            if (welcomeMessage != null)
+            {
+                WelcomeMessage = welcomeMessage;
+            }
+            else
+            {
+                // Welcome message (from config)
+                var welcomeMessageSetting = section.GetValue<string>(nameof(WelcomeMessage));
+                if (!string.IsNullOrEmpty(welcomeMessageSetting))
+                {
+                    WelcomeMessage = (turnContext, cancellationToken) => Task.FromResult<IActivity>(new Activity() { Type = ActivityTypes.Message, Text = welcomeMessageSetting });
+                }
+            }
 
             if (authOptions != null)
             {
@@ -139,5 +162,10 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Options used to enable user authorization for the application.
         /// </summary>
         public UserAuthorizationOptions UserAuthorization { get; set; }
+
+        /// <summary>
+        /// If set, AgentApplication will automatically send a welcome message when members join.
+        /// </summary>
+        public AutoWelcomeMessage WelcomeMessage { get; set; }
     }
 }

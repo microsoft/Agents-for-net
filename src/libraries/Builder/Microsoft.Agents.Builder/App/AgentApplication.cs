@@ -64,6 +64,22 @@ namespace Microsoft.Agents.Builder.App
                 _userAuth = new UserAuthorizationFeature(this, options.UserAuthorization);
             }
 
+            // Add AutoWelcomeMessage
+            if (Options.WelcomeMessage != null)
+            {
+                OnConversationUpdate(ConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
+                {
+                    var message = await Options.WelcomeMessage(turnContext, cancellationToken).ConfigureAwait(false);
+                    foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+                    {
+                        if (member.Id != turnContext.Activity.Recipient.Id)
+                        {
+                            await turnContext.SendActivityAsync(message, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                });
+            }
+
             ApplyRouteAttributes();
         }
 
