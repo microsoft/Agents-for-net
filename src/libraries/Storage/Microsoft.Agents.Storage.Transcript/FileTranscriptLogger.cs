@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Storage.Transcript
                         System.Diagnostics.Trace.TraceInformation($"file://{transcriptFile.Replace("\\", "/")}");
                         _started.Add(transcriptFile);
 
-                        using var stream = File.OpenWrite(transcriptFile);
+                        using var stream = File.Open(transcriptFile, FileMode.Append);
                         using var writer = new StreamWriter(stream);
                         await writer.WriteAsync($"[{ProtocolJsonSerializer.ToJson(activity)}]").ConfigureAwait(false);
                         return;
@@ -186,12 +186,7 @@ namespace Microsoft.Agents.Storage.Transcript
         {
             var json = $",\n{ProtocolJsonSerializer.ToJson(activity)}]";
 
-            using var stream = File.Open(transcriptFile, FileMode.OpenOrCreate);
-            if (stream.Length > 0)
-            {
-                stream.Seek(-1, SeekOrigin.End);
-            }
-
+            using var stream = File.Open(transcriptFile, FileMode.Append);
             using var writer = new StreamWriter(stream);
             await writer.WriteAsync(json).ConfigureAwait(false);
         }
@@ -213,7 +208,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     transcript[i] = updatedActivity;
 
                     var json = ProtocolJsonSerializer.ToJson(transcript);
-                    using var stream = File.Open(transcriptFile, FileMode.Create);
+                    using var stream = File.Open(transcriptFile, FileMode.CreateNew);
                     using var writer = new StreamWriter(stream);
                     await writer.WriteAsync(json).ConfigureAwait(false);
                     return;
@@ -249,7 +244,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     };
 
                     var json = ProtocolJsonSerializer.ToJson(transcript);
-                    using var stream = File.OpenWrite(transcriptFile);
+                    using var stream = File.Open(transcriptFile, FileMode.CreateNew);
                     using var writer = new StreamWriter(stream);
                     await writer.WriteAsync(json).ConfigureAwait(false);
                     return;
