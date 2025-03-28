@@ -36,9 +36,10 @@ builder.AddAgent(sp =>
 {
     var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
     var transcriptLogger = new FileTranscriptLogger("./transcripts");
+    var traceTranscript = new TraceTranscriptLogger();
     var transcript = new ConcurrentQueue<IActivity>();
 
-    app.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
+    app.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
     {
         static void LogActivity(ConcurrentQueue<IActivity> transcript, IActivity activity)
         {
@@ -60,6 +61,7 @@ builder.AddAgent(sp =>
             if (!(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
             {
                 LogActivity(transcript,turnContext.Activity.Clone());
+                await traceTranscript.LogActivityAsync(turnContext.Activity);
             }
         }
 
@@ -72,6 +74,7 @@ builder.AddAgent(sp =>
             foreach (var activity in activities)
             {
                 LogActivity(transcript, activity.Clone());
+                await traceTranscript.LogActivityAsync(activity);
             }
 
             return responses;
@@ -87,6 +90,7 @@ builder.AddAgent(sp =>
             var updateActivity = activity.Clone();
             updateActivity.Type = ActivityTypes.MessageUpdate;
             LogActivity(transcript, updateActivity);
+            await traceTranscript.LogActivityAsync(updateActivity);
             return response;
         });
 
@@ -105,9 +109,10 @@ builder.AddAgent(sp =>
                 .ApplyConversationReference(reference, isIncoming: false);
 
             LogActivity(transcript, deleteActivity);
+            await traceTranscript.LogActivityAsync(deleteActivity);
         });
 
-        return Task.FromResult(true);
+        return true;
     });
 
     // FLush the transcript logger
