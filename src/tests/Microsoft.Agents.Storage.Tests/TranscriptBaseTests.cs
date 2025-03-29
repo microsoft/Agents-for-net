@@ -85,10 +85,12 @@ namespace Microsoft.Agents.Storage.Tests
 
             // modify first record
             var updateActivity = ProtocolJsonSerializer.ToObject<Activity>(ProtocolJsonSerializer.ToJson(activities[0]));
+            var type = updateActivity.Type;
             updateActivity.Text = "updated";
             updateActivity.Type = ActivityTypes.MessageUpdate;
             await Store.LogActivityAsync(updateActivity);
             activities[0].Text = "updated";
+            activities[0].Type = type;
 
             // modify delete second record
             var deleteActivity = new Activity()

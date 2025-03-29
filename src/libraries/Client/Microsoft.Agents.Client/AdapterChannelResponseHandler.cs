@@ -11,6 +11,7 @@ using Microsoft.Agents.Connector.Types;
 using System;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Agents.Client
 {
@@ -61,7 +62,7 @@ namespace Microsoft.Agents.Client
                 // Received a conversationId that isn't known.
                 var sanitizedConversationId = conversationId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
                 _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", sanitizedConversationId, AgentClaims.GetAppId(claimsIdentity));
-                return null;
+                throw new KeyNotFoundException(sanitizedConversationId);
             }
 
             // Need to get this over to the calling Agents identity.  We will do it by packaging it in a custom event
@@ -93,56 +94,67 @@ namespace Microsoft.Agents.Client
             return OnSendToConversationAsync(claimsIdentity, conversationId, activity, cancellationToken);
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task OnDeleteActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<IList<ChannelAccount>> OnGetActivityMembersAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ConversationResourceResponse> OnCreateConversationAsync(ClaimsIdentity claimsIdentity, ConversationParameters parameters, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ConversationsResult> OnGetConversationsAsync(ClaimsIdentity claimsIdentity, string conversationId, string continuationToken = null, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<IList<ChannelAccount>> OnGetConversationMembersAsync(ClaimsIdentity claimsIdentity, string conversationId, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ChannelAccount> OnGetConversationMemberAsync(ClaimsIdentity claimsIdentity, string userId, string conversationId, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<PagedMembersResult> OnGetConversationPagedMembersAsync(ClaimsIdentity claimsIdentity, string conversationId, int? pageSize = null, string continuationToken = null, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task OnDeleteConversationMemberAsync(ClaimsIdentity claimsIdentity, string conversationId, string memberId, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ResourceResponse> OnSendConversationHistoryAsync(ClaimsIdentity claimsIdentity, string conversationId, Transcript transcript, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
 
+        [ExcludeFromCodeCoverage]
         public Task<ResourceResponse> OnUploadAttachmentAsync(ClaimsIdentity claimsIdentity, string conversationId, AttachmentData attachmentUpload, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();

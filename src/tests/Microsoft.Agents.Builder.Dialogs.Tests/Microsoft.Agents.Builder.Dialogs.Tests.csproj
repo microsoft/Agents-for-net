@@ -38,6 +38,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
 		<ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Transcript\Microsoft.Agents.Storage.Transcript.csproj" />
-		<ProjectReference Include="..\Microsoft.Agents.Builder.TestBot.Tests\Microsoft.Agents.Builder.TestBot.Tests.csproj" />
+		<ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
 	</ItemGroup>
 </Project>

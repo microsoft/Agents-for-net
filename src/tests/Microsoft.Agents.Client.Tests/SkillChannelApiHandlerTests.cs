@@ -465,27 +465,4 @@ namespace Microsoft.Agents.Client.Tests
             }
         }
     }
-
-    class TestHttpMessageHandler : HttpMessageHandler
-    {
-        private int _sendRequest = 0;
-
-        public HttpResponseMessage HttpResponseMessage { get; set; }
-
-        public Action<IActivity, int> SendAssert { get; set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            _sendRequest++;
-
-            if (SendAssert != null)
-            {
-                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
-                SendAssert(activity, _sendRequest);
-            }
-
-            return Task.FromResult(HttpResponseMessage);
-        }
-    }
-
 }

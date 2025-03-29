@@ -74,9 +74,16 @@ namespace Microsoft.Agents.Storage.Transcript
                         System.Diagnostics.Trace.TraceInformation($"file://{transcriptFile.Replace("\\", "/")}");
                         _started.Add(transcriptFile);
 
-                        using var stream = File.OpenWrite(transcriptFile);
+                        using var stream = File.Open(transcriptFile, FileMode.OpenOrCreate);
+                        stream.Seek(0, SeekOrigin.End);
+                        var position = stream.Position;
+                        if (position > 0)
+                        {
+                            stream.Seek(-1, SeekOrigin.End);
+                        }
+
                         using var writer = new StreamWriter(stream);
-                        await writer.WriteAsync($"[{ProtocolJsonSerializer.ToJson(activity)}]").ConfigureAwait(false);
+                        await writer.WriteAsync($"{(position == 0 ? "[" : ",")}{ProtocolJsonSerializer.ToJson(activity)}]").ConfigureAwait(false);
                         return;
                     }
 
@@ -167,7 +174,7 @@ namespace Microsoft.Agents.Storage.Transcript
             return Task.CompletedTask;
         }
 
-        private static async Task<Activity[]> LoadTranscriptAsync(string transcriptFile)
+        private static async Task<IActivity[]> LoadTranscriptAsync(string transcriptFile)
         {
             if (File.Exists(transcriptFile))
             {
@@ -185,7 +192,9 @@ namespace Microsoft.Agents.Storage.Transcript
             var json = $",\n{ProtocolJsonSerializer.ToJson(activity)}]";
 
             using var stream = File.Open(transcriptFile, FileMode.OpenOrCreate);
-            if (stream.Length > 0)
+            stream.Seek(0, SeekOrigin.End);
+            var position = stream.Position;
+            if (position > 0)
             {
                 stream.Seek(-1, SeekOrigin.End);
             }
@@ -204,7 +213,7 @@ namespace Microsoft.Agents.Storage.Transcript
                 var originalActivity = transcript[i];
                 if (originalActivity.Id == activity.Id)
                 {
-                    var updatedActivity = ProtocolJsonSerializer.ToObject<Activity>(ProtocolJsonSerializer.ToJson(activity));
+                    var updatedActivity = activity.Clone();
                     updatedActivity.Type = originalActivity.Type; // fixup original type (should be Message)
                     updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
                     updatedActivity.Timestamp = originalActivity.Timestamp;
@@ -247,7 +256,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     };
 
                     var json = ProtocolJsonSerializer.ToJson(transcript);
-                    using var stream = File.OpenWrite(transcriptFile);
+                    using var stream = File.Open(transcriptFile, FileMode.Create);
                     using var writer = new StreamWriter(stream);
                     await writer.WriteAsync(json).ConfigureAwait(false);
                     return;
