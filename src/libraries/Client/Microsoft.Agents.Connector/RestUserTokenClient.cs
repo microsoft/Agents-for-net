@@ -146,6 +146,16 @@ namespace Microsoft.Agents.Connector
             }
         }
 
+        /// <inheritdoc />
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, nameof(GetTokenOrSignInResourceAsync));
+            ArgumentException.ThrowIfNullOrEmpty(userId);
+            ArgumentException.ThrowIfNullOrEmpty(connectionName);
+            _logger.LogInformation($"GetTokenOrSignInResourceAsync ConnectionName: {connectionName}");
+            return await _userTokenClient.GetTokenOrSignInResourceAsync(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Helper function to create the base64 encoded token exchange state used in GetSignInResourceAsync calls.
         /// </summary>

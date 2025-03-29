@@ -27,6 +27,9 @@ namespace Microsoft.Agents.Connector.Tests
         private readonly string[] AadResourceUrls = ["resource-url"];
         private readonly TokenExchangeRequest TokenExchangeRequest = new();
         private static readonly Mock<HttpClient> MockHttpClient = new();
+        private const string FwdUrl = "fwd-url";
+        private const string State = "state";
+        private const string FinalRedirect = "final-redirect";
 
         [Fact]
         public void Constructor_ShouldInstantiateCorrectly()
@@ -397,6 +400,46 @@ namespace Microsoft.Agents.Connector.Tests
 
             var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
             Assert.Null(response);
+        }
+
+
+        [Fact]
+        public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullUserId()
+        {
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(null, ConnectionName, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullConnectionName()
+        {
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(UserId, null, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetTokenOrSignInResourceAsync_ShouldReturnTokenOrSignInResourceResponse()
+        {
+            var responseContent = new TokenOrSignInResourceResponse
+            {
+                TokenResponse = new TokenResponse { Token = "test-token" },
+                SignInResource = new SignInResource { SignInLink = "test-link" }
+            };
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(responseContent))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            var client = UseClient();
+
+            var result = await client.GetTokenOrSignInResourceAsync(UserId, ConnectionName, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal(responseContent.TokenResponse.Token, result.TokenResponse.Token);
+            Assert.Equal(responseContent.SignInResource.SignInLink, result.SignInResource.SignInLink);
         }
 
         private static RestUserTokenClient UseClient()
