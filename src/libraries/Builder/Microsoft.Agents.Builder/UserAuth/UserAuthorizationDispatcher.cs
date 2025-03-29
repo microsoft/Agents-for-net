@@ -151,26 +151,44 @@ namespace Microsoft.Agents.Builder.UserAuth
             await Get(handlerName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
-        public IUserAuthorization Get(string name)
+        public IUserAuthorization Get(string handleName)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(handleName))
             {
                 return Default;
             }
 
-            return GetHandlerInstance(name);
+            return GetHandlerInstance(handleName);
         }
 
-        private IUserAuthorization GetHandlerInstance(string name)
+        public bool TryGet(string handlerName, out IUserAuthorization handler)
         {
-            if (!_userAuthHandlers.TryGetValue(name, out UserAuthorizationDefinition handlerDefinition))
+            if (string.IsNullOrEmpty(handlerName))
             {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationHandlerNotFound, null, name);
+                handler = Default;
+                return true;
             }
-            return GetHandlerInstance(name, handlerDefinition);
+
+            if (_userAuthHandlers.TryGetValue(handlerName, out UserAuthorizationDefinition handlerDefinition))
+            {
+                handler = GetHandlerInstance(handlerName, handlerDefinition);
+                return true;
+            }
+
+            handler = default;
+            return false;
         }
 
-        private IUserAuthorization GetHandlerInstance(string name, UserAuthorizationDefinition handlerDefinition)
+        private IUserAuthorization GetHandlerInstance(string handlerName)
+        {
+            if (!_userAuthHandlers.TryGetValue(handlerName, out UserAuthorizationDefinition handlerDefinition))
+            {
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationHandlerNotFound, null, handlerName);
+            }
+            return GetHandlerInstance(handlerName, handlerDefinition);
+        }
+
+        private IUserAuthorization GetHandlerInstance(string handlerName, UserAuthorizationDefinition handlerDefinition)
         {
             if (handlerDefinition.Instance != null)
             {
@@ -181,7 +199,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

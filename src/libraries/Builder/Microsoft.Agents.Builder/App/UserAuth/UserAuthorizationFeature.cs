@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -55,7 +56,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         private AuthorizationFailure _userSignInFailureHandler;
 
-        public string Default { get; private set; }
+        public string DefaultHandlerName { get; private set; }
 
         public UserAuthorizationFeature(AgentApplication app, UserAuthorizationOptions options)
         {
@@ -78,7 +79,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 _startSignIn = (context, cancellationToken) => Task.FromResult(true);
             }
 
-            Default = _options.Default ?? _dispatcher.Default.Name;
+            DefaultHandlerName = _options.DefaultHandlerName ?? _dispatcher.Default.Name;
+
+            if (!_dispatcher.TryGet(DefaultHandlerName, out _))
+            {
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationDefaultHandlerNotFound, null, DefaultHandlerName);
+            }
+
             AddManualSignInCompletionHandler();
         }
 
@@ -111,9 +118,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             ArgumentException.ThrowIfNullOrWhiteSpace(handlerName);
 
             // Only one active flow allowed
-            if (!string.IsNullOrEmpty(UserInSignInFlow(turnState)))
+            var activeFlow = UserInSignInFlow(turnState);
+            if (!string.IsNullOrEmpty(activeFlow))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationAlreadyActive, null);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationAlreadyActive, null, activeFlow);
             }
 
             // Handle the case where we already have a token for this handler and the Agent is calling this again.
@@ -180,7 +188,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
         {
-            var flow = flowName ?? Default;
+            var flow = flowName ?? DefaultHandlerName;
             await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
             DeleteCachedToken(flow);
         }
@@ -195,7 +203,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <returns></returns>
         public async Task ResetStateAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
         {
-            handlerName ??= Default;
+            handlerName ??= DefaultHandlerName;
             
             await SignOutUserAsync(turnContext, turnState, handlerName, cancellationToken).ConfigureAwait(false);
 
@@ -255,7 +263,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (autoSignIn || flowContinuation)
             {
                 // Auth flow hasn't start yet.
-                activeFlowName ??= handlerName ?? Default;
+                activeFlowName ??= handlerName ?? DefaultHandlerName;
 
                 string exchangeConnection = null;
                 IList<string> exchangeScopes = null;
