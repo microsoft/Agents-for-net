@@ -96,11 +96,10 @@ namespace Microsoft.Agents.Builder
     /// <summary>
     /// Provides context for a turn of an Agent.
     /// </summary>
-    /// <remarks>Context provides information needed to process an incoming activity.
+    /// <remarks>Context provides information needed to process an incoming <see cref="IActivity"/>.
     /// The context object is created by a <see cref="IChannelAdapter"/> and persists for the
     /// length of the turn.</remarks>
     /// <seealso cref="IAgent"/>
-    /// <seealso cref="IMiddleware"/>
     public interface ITurnContext
     {
         /// <summary>
@@ -113,7 +112,7 @@ namespace Microsoft.Agents.Builder
         TurnContextStateCollection StackState { get; }
 
         /// <summary>
-        /// Gets the activity for this turn of the Agent.
+        /// Gets the Activity for this Turn.  This is the incoming <see cref="IActivity"/>.
         /// </summary>
         /// <value>The activity for this turn of the Agent.</value>
         IActivity Activity { get; }
@@ -144,16 +143,14 @@ namespace Microsoft.Agents.Builder
         /// Default is <see cref="InputHints.AcceptingInput"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activity is successfully sent, the task result contains
+        /// <returns>If the activity is successfully sent, the task result contains
         /// a <see cref="ResourceResponse"/> object that contains the ID that the receiving
         /// channel assigned to the activity.
         /// <para>See the channel's documentation for limits imposed upon the contents of
         /// <paramref name="text"/>.</para>
         /// <para>To control various characteristics of your Agent's speech such as voice,
         /// rate, volume, pronunciation, and pitch, specify <paramref name="speak"/> in
-        /// Speech Synthesis Markup Language (SSML) format.</para>
-        /// </remarks>
+        /// Speech Synthesis Markup Language (SSML) format.</para></returns>
         /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
         /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
@@ -165,10 +162,9 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">The activity to send.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activity is successfully sent, the task result contains
+        /// <returns>If the activity is successfully sent, the task result contains
         /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
-        /// channel assigned to the activity.</remarks>
+        /// channel assigned to the activity.</returns>
         /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
         /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
@@ -180,10 +176,9 @@ namespace Microsoft.Agents.Builder
         /// <param name="activities">The activities to send.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activities are successfully sent, the task result contains
+        /// <returns>If the activities are successfully sent, the task result contains
         /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
-        /// the receiving channel assigned to the activities.</remarks>
+        /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
         /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
         /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
@@ -195,13 +190,12 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">New replacement activity.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activity is successfully sent, the task result contains
+        /// <returns>If the activity is successfully sent, the task result contains
         /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
         /// channel assigned to the activity.
         /// <para>Before calling this, set the ID of the replacement activity to the ID
         /// of the activity to replace.</para>
-        /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></remarks>
+        /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></returns>
         /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
         /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
@@ -213,8 +207,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="activityId">The ID of the activity to delete.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <para>Not all channels support this operation. For channels that don\'t, this call may throw an exception.</para>
+        /// <remarks>Not all channels support this operation. For channels that don\'t, this call may throw an exception.</remarks>
         /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
         /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
@@ -227,10 +220,9 @@ namespace Microsoft.Agents.Builder
         /// <param name="conversationReference">The conversation containing the activity to delete.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>The conversation reference's <see cref="ConversationReference.ActivityId"/>
+        /// <returns>The conversation reference's <see cref="ConversationReference.ActivityId"/>
         /// indicates the activity in the conversation to delete.
-        /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></remarks>
+        /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></returns>
         /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
         /// <seealso cref="DeleteActivityAsync(string, CancellationToken)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
@@ -241,12 +233,12 @@ namespace Microsoft.Agents.Builder
         /// Adds a response handler for send activity operations.
         /// </summary>
         /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
         /// <remarks>When the context's <see cref="SendActivityAsync(IActivity, CancellationToken)"/>
         /// or <see cref="SendActivitiesAsync(IActivity[], CancellationToken)"/> method is called,
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
+        /// <returns>The updated context object.</returns>
         /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
         /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
         /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
@@ -296,11 +288,10 @@ namespace Microsoft.Agents.Builder
         /// <param name="label">The value to assign to the activity's <see cref="Activity.Label"/> property.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the adapter is being hosted in the Emulator, the task result contains
+        /// <returns>If the adapter is being hosted in the Emulator, the task result contains
         /// a <see cref="ResourceResponse"/> object with the original trace activity's ID; otherwise,
         /// it contains a <see cref="ResourceResponse"/> object containing the ID that the receiving
-        /// channel assigned to the activity.</remarks>
+        /// channel assigned to the activity.</returns>
         Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default);
     }
 }

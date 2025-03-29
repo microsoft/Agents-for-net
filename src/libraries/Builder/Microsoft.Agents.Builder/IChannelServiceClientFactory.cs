@@ -12,6 +12,8 @@ namespace Microsoft.Agents.Builder
     /// <summary>
     /// Handles creation of IConnectorClient and IUserTokenClient objects for use when handling incoming Activities.
     /// </summary>
+    /// <remarks>This is not something normally used or implemented by an Agent developer.  Rather it is used
+    /// internally by the IChannelAdapter to create the clients need to communicate back the sender.</remarks>
     public interface IChannelServiceClientFactory
     {
         /// <summary>

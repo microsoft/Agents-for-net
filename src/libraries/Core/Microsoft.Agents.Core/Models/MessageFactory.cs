@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Core.Models
         {
             attachment = attachment ?? throw new ArgumentNullException(nameof(attachment));
 
-            return Attachment(new List<Attachment> { attachment }, text, ssml, inputHint);
+            return Attachment([attachment], text, ssml, inputHint);
         }
 
         /// <summary>
@@ -378,15 +378,15 @@ namespace Microsoft.Agents.Core.Models
                 Name = !string.IsNullOrWhiteSpace(name) ? name : string.Empty,
             };
 
-            return AttachmentActivity(AttachmentLayoutTypes.List.ToString(), new List<Attachment> { a }, text, ssml, inputHint);
+            return AttachmentActivity(AttachmentLayoutTypes.List.ToString(), [a], text, ssml, inputHint);
         }
         public static IActivity CreateMessageActivity()
         {
             return new Activity()
             {
                 Type = ActivityTypes.Message,
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
         }
 

@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of HeroCard. </summary>
         public HeroCard()
         {
-            Images = new List<CardImage>();
-            Buttons = new List<CardAction>();
+            Images = [];
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of HeroCard. </summary>
@@ -29,8 +29,8 @@ namespace Microsoft.Agents.Core.Models
             Title = title;
             Subtitle = subtitle;
             Text = text;
-            Images = images ?? new List<CardImage>();
-            Buttons = buttons ?? new List<CardAction>();
+            Images = images ?? [];
+            Buttons = buttons ?? [];
             Tap = tap;
         }
 

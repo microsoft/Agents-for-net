@@ -29,9 +29,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// The instance's persisted state.
         /// </value>
         [JsonPropertyName("state")]
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
         public IDictionary<string, object> State { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets a stack index. Positive values are indexes within the current DC and negative values are 

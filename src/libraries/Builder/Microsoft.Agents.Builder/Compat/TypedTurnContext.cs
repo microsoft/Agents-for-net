@@ -95,6 +95,5 @@ namespace Microsoft.Agents.Builder.Compat
         /// <inheritdoc/>
         public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
             => _innerTurnContext.TraceActivityAsync(name, value, valueType, label, cancellationToken);
-
     }
 }

@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='code'> Code.</param>
         /// <param name='cancellationToken'> The cancellation token.</param>
         /// <returns>A Task representing the <see cref="TokenResponse"/> of the HTTP operation.</returns>
-        Task<TokenResponse> GetTokenAsync(string userId, string connectionName, string channelId = default(string), string code = default(string), CancellationToken cancellationToken = default(CancellationToken));
+        Task<TokenResponse> GetTokenAsync(string userId, string connectionName, string channelId = default, string code = default, CancellationToken cancellationToken = default);
 
         /// <summary>Get AAD token with HTTP message.</summary>
         /// <param name='userId'> User ID.</param>
@@ -29,14 +29,14 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='channelId'>The channel ID. </param>
         /// <param name='cancellationToken'> The cancellation token.</param>
         /// <returns>A Task representing the <see cref="TokenResponse"/> of the HTTP operation.</returns>
-        Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, string channelId = default(string), CancellationToken cancellationToken = default(CancellationToken));
+        Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, string channelId = default, CancellationToken cancellationToken = default);
         
         /// <summary>Sign out with HTTP message.</summary>
         /// <param name='userId'> User ID.</param>
         /// <param name='connectionName'>Connection name. </param>
         /// <param name='channelId'> Channel ID. </param>
         /// <param name='cancellationToken'> The cancellation token. </param>
-        Task<object> SignOutAsync(string userId, string connectionName = default(string), string channelId = default(string), CancellationToken cancellationToken = default(CancellationToken));
+        Task<object> SignOutAsync(string userId, string connectionName = default, string channelId = default, CancellationToken cancellationToken = default);
 
         /// <summary>Get the token status with HTTP message. </summary>
         /// <param name='userId'> User ID.</param>
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='include'> Include.</param>
         /// <param name='cancellationToken'> The cancellation token. </param>
         /// <returns>A task representing an IList of <see cref="TokenStatus"/> from the HTTP operation.</returns>
-        Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, string channelId = default(string), string include = default(string), CancellationToken cancellationToken = default(CancellationToken));
+        Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, string channelId = default, string include = default, CancellationToken cancellationToken = default);
 
         /// <summary> Exchange. </summary>
         /// <param name='operations'>
@@ -56,6 +56,6 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='exchangeRequest'> Exchange request. </param>
         /// <param name='cancellationToken'> The cancellation token. </param>
         /// <returns> A task that represents the work queued to execute. </returns>
-        Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default(CancellationToken));
+        Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default);
     }
 }

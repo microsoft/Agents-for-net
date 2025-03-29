@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>This middleware persists state after the Agent logic completes and before the turn ends.</remarks>
-        public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
             // before turn
             if (_autoLoad)

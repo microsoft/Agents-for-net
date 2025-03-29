@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             ArgumentNullException.ThrowIfNull(changes);
 
-            Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
+            Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)
             {
                 changesAsObject.Add(change.Key, change.Value);

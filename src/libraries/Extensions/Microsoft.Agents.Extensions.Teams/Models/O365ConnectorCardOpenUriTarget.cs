@@ -38,8 +38,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets target URL.
         /// </summary>
         /// <value>The target URL.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string Uri { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
     }
 }

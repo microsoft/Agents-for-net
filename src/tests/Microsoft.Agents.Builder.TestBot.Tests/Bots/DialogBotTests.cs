@@ -71,8 +71,8 @@ namespace Microsoft.BuilderSamples.Tests.Bots
             await testFlow.Send("Hi").StartTestAsync();
 
             // Assert that SaveChangesAsync was called
-            mockConversationState.Verify(x => x.SaveChangesAsync(It.IsAny<TurnContext>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-            mockUserState.Verify(x => x.SaveChangesAsync(It.IsAny<TurnContext>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            mockConversationState.Verify(x => x.SaveChangesAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            mockUserState.Verify(x => x.SaveChangesAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact(Skip = "Need to figure out how to implement this version of the test")]

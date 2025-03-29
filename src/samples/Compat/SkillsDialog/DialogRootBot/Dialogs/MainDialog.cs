@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.Dialogs.Choices;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;

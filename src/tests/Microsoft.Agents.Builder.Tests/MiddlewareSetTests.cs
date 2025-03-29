@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Tests
             MiddlewareSet outer = new MiddlewareSet();
             outer.Use(inner);
 
-            await outer.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await outer.ReceiveActivityWithStatusAsync(null, null, default);
 
             Assert.True(innerOnReceiveCalled, "Inner Middleware Receive was not called.");
         }
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.Tests
             MiddlewareSet m = new MiddlewareSet();
 
             // No middleware. Should not explode.
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.Tests
             }
 
             // No middleware. Should not explode.
-            await m.ReceiveActivityWithStatusAsync(null, CallMe, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, CallMe, default);
             Assert.True(wasCalled, "Delegate was not called");
         }
 
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.Tests
             m.Use(simple);
 
             Assert.False(simple.Called);
-            await m.ReceiveActivityWithStatusAsync(null, CallMe, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, CallMe, default);
             Assert.True(simple.Called);
             Assert.True(wasCalled, "Delegate was not called");
         }
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.Tests
             m.Use(simple);
 
             Assert.False(simple.Called);
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(simple.Called);
         }
 
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Builder.Tests
             }));
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken)));
+                m.ReceiveActivityWithStatusAsync(null, null, default));
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Builder.Tests
             m.Use(one);
             m.Use(two);
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(one.Called);
             Assert.True(two.Called);
         }
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Tests
             m.Use(one);
             m.Use(two);
 
-            await m.ReceiveActivityWithStatusAsync(null, CallMe, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, CallMe, default);
             Assert.True(one.Called);
             Assert.True(two.Called);
             Assert.True(called == 1, "Incorrect number of calls to Delegate");
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Builder.Tests
             m.Use(one);
             m.Use(two);
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(called1);
             Assert.True(called2);
         }
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder.Tests
                     didAllRun = true;
                     return Task.CompletedTask;
                 },
-                default(CancellationToken));
+                default);
 
             Assert.True(called1);
             Assert.True(didAllRun);
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Builder.Tests
                     didAllRun = true;
                     return Task.CompletedTask;
                 },
-                default(CancellationToken));
+                default);
             Assert.True(didAllRun);
         }
 
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Builder.Tests
                     didAllRun = true;
                     return Task.CompletedTask;
                 },
-                default(CancellationToken));
+                default);
             Assert.True(called1);
             Assert.True(called2);
 
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Builder.Tests
                     didAllRun = true;
                     return Task.CompletedTask;
                 },
-                default(CancellationToken));
+                default);
 
             Assert.True(called1);
 
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Builder.Tests
             }));
 
             Assert.False(didRun);
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun);
         }
 
@@ -312,7 +312,7 @@ namespace Microsoft.Agents.Builder.Tests
                 await next(cancellationToken);
             }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun1);
             Assert.True(didRun2);
         }
@@ -337,7 +337,7 @@ namespace Microsoft.Agents.Builder.Tests
                 await next(cancellationToken);
             }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun1);
             Assert.True(didRun2);
         }
@@ -367,7 +367,7 @@ namespace Microsoft.Agents.Builder.Tests
                     didRun2 = true;
                 }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun1);
             Assert.True(didRun2);
         }
@@ -395,7 +395,7 @@ namespace Microsoft.Agents.Builder.Tests
                 await next(cancellationToken);
             }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun1);
             Assert.True(didRun2);
         }
@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Tests
                 await next(cancellationToken);
             }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(didRun1);
             Assert.True(didRun2);
             Assert.True(codeafter2run);
@@ -450,7 +450,7 @@ namespace Microsoft.Agents.Builder.Tests
                 throw new Exception("test");
             }));
 
-            await m.ReceiveActivityWithStatusAsync(null, null, default(CancellationToken));
+            await m.ReceiveActivityWithStatusAsync(null, null, default);
             Assert.True(caughtException);
         }
 

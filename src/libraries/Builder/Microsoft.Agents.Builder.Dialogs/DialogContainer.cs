@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// 
         /// This should be called at the start of `beginDialog()`, `continueDialog()`, and `resumeDialog()`.
         /// </remarks>
-        protected virtual async Task CheckForVersionChangeAsync(DialogContext dc, CancellationToken cancellationToken = default(CancellationToken))
+        protected virtual async Task CheckForVersionChangeAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
             var current = dc.ActiveDialog.Version;
             dc.ActiveDialog.Version = this.GetInternalVersion();

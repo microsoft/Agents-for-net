@@ -11,6 +11,6 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
     /// <param name="cancellationToken">The task cancellation token.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <seealso cref="IAgent.OnTurnAsync(ITurnContext, CancellationToken)"/>
     public delegate Task AgentCallbackHandler(ITurnContext turnContext, CancellationToken cancellationToken);
 }

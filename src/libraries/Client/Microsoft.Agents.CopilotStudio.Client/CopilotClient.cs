@@ -108,7 +108,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             ArgumentNullException.ThrowIfNull(req);
 
-            HttpClient? httpClient = null;
+            HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
             {
                 httpClient = _httpClientFactory.CreateClient(); // Get the default client. 

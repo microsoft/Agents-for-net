@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new ArgumentException("Invalid instance URL");
             }
 
-            Uri instanceUri = new Uri(resourceUrl);
+            Uri instanceUri = new(resourceUrl);
             var localScopes = ResolveScopesList(instanceUri, scopes);
 
             // Get or create existing token. 

@@ -7,14 +7,10 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Bots
 
         protected ILogger Logger { get; }
 
-        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await ConversationState.LoadAsync(turnContext, false, cancellationToken);
             await UserState.LoadAsync(turnContext, false, cancellationToken);

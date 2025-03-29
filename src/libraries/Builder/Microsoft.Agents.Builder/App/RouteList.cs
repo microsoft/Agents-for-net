@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.App
             try
             {
                 rwl.AcquireReaderLock(1000);
-                return new List<Route>(routes.Select(e => e.Route).ToList());
+                return [.. routes.Select(e => e.Route).ToList()];
             }
             finally
             {

@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(string verb, ActionExecuteHandlerAsync handler)
+        public AgentApplication OnActionExecute(string verb, ActionExecuteHandler handler)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verb);
             ArgumentNullException.ThrowIfNull(handler);
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandlerAsync handler)
+        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandlerAsync handler)
+        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandlerAsync handler)
+        public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="dataset">The dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(string dataset, SearchHandlerAsync handler)
+        public AgentApplication OnSearch(string dataset, SearchHandler handler)
         {
             ArgumentNullException.ThrowIfNull(dataset);
             ArgumentNullException.ThrowIfNull(handler);
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="datasetPattern">Regular expression to match against the dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(Regex datasetPattern, SearchHandlerAsync handler)
+        public AgentApplication OnSearch(Regex datasetPattern, SearchHandler handler)
         {
             ArgumentNullException.ThrowIfNull(datasetPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandlerAsync handler)
+        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -365,7 +365,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(MultipleRouteSelector routeSelectors, SearchHandlerAsync handler)
+        public AgentApplication OnSearch(MultipleRouteSelector routeSelectors, SearchHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);

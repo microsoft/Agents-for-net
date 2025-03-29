@@ -137,7 +137,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId)
         {
-            string agentPathName = "";
+            string agentPathName;
             if (AgentType.Published == agentType)
             {
                 agentPathName = "dataverse-backed";

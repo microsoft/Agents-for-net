@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.App
         {
             if (_timer != null)
             {
-                foreach (Activity activity in activities)
+                foreach (IActivity activity in activities)
                 {
                     if (activity.Type == ActivityTypes.Message)
                     {

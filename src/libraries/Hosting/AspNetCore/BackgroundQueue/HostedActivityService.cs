@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Extensions.Configuration;
@@ -23,9 +22,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     internal class HostedActivityService : BackgroundService
     {
         private readonly ILogger<HostedActivityService> _logger;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new ConcurrentDictionary<ActivityWithClaims, Task>();
-        private IActivityTaskQueue _activityQueue;
+        private readonly ReaderWriterLockSlim _lock = new();
+        private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
+        private readonly IActivityTaskQueue _activityQueue;
         private readonly IChannelAdapter _adapter;
         private readonly int _shutdownTimeoutSeconds;
         private readonly IServiceProvider _serviceProvider;
@@ -71,7 +70,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)));
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
             }
 
             await base.StopAsync(stoppingToken);
@@ -79,7 +78,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation($"Queued Hosted Service is running.{Environment.NewLine}");
+            _logger.LogInformation("Queued Hosted Service is running.");
 
             await BackgroundProcessing(stoppingToken);
         }

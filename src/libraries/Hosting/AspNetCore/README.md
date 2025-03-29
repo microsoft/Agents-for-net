@@ -1,7 +1,7 @@
 # Microsoft.Agents.Hosting.AspNetCore
 
-- Required package for a hosting an Agent is AspNet.
-- Provides extension methods to add an Agents to DI.
+- Required package for a hosting an Agent in AspNet.
+- Provides extension methods to add an Agents using DI.
 
 ## How-to use
 

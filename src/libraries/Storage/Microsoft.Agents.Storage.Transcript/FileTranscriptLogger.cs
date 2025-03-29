@@ -103,9 +103,7 @@ namespace Microsoft.Agents.Storage.Transcript
                             return;
                     }
                 }
-#pragma warning disable CA1031 // Do not catch general exception types (we ignore the exception and we retry)
                 catch (Exception e)
-#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // try again
                     System.Diagnostics.Trace.TraceError($"Try {i + 1} - Failed to log activity because: {e.GetType()} : {e.Message}");

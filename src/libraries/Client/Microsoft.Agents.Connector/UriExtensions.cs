@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Connector
         {
             if (uri == null) throw new ArgumentNullException(nameof(uri));
             string uriString = uri.ToString();
-            if (!uriString.EndsWith("/"))
+            if (!uriString.EndsWith('/'))
             {
                 uriString += "/";
             }

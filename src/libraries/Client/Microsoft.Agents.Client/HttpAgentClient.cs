@@ -84,14 +84,14 @@ namespace Microsoft.Agents.Client
             ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _logger.LogInformation($"SendActivityAsync: '{_settings.ConnectionSettings.ClientId}' at '{_settings.ConnectionSettings.Endpoint.ToString()}'");
+            _logger.LogInformation("SendActivityAsync: '{AgentClientId}' at '{AgentEndpoint}'", _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString());
 
             // Clone the activity so we can modify it before sending without impacting the original object.
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
 
             // Create the HTTP request from the cloned Activity and send it to the Agent.
             using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
-            var content = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
+            var content = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : null;
 
             // On success assuming either JSON that can be deserialized to T or empty.
             return new InvokeResponse<T>

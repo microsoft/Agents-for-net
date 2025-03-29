@@ -8,5 +8,8 @@ Contains the implementation for building an Agent with Agents SDK.
 
 The main types provided by this library are:
 
-- `Microsoft.Agents.Builder.App.AgentApplication`
-- `Microsoft.Agents.Builder.State.ITurnState`
+- `AgentApplication`
+- `IAgent`
+- `ITurnContext`
+- `ITurnState`
+- `AzureBotUserAuthorization`

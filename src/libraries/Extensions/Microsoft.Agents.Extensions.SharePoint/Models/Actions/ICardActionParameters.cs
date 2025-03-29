@@ -7,9 +7,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     /// <summary>
     /// Interface for card action parameters.
     /// </summary>
-#pragma warning disable CA1040 // Avoid empty interfaces
     public interface ICardActionParameters
-#pragma warning restore CA1040 // Avoid empty interfaces
     {
         // This interface has no common methods.
     }

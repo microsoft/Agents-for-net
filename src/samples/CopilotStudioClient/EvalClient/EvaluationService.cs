@@ -38,7 +38,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
         Console.WriteLine("\nRunning evaluation on Agent");
         // Attempt to connect to the copilot studio hosted Agent here
         // if successful, this will loop though all events that the Copilot Studio Agent sends to the client setup the conversation.
-        await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+        await foreach (IActivity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
         {
             if (act is null)
             {
@@ -200,7 +200,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
     /// <param name="act"></param>
     /// <returns name="response"></returns>
     
-    static string GetActivity(Activity act)
+    static string GetActivity(IActivity act)
     {
         var response = "";
         

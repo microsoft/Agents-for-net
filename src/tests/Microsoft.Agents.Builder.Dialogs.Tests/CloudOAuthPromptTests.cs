@@ -15,6 +15,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Recognizers.Text;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

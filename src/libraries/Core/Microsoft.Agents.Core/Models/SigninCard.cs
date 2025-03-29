@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Core.Models
     {
         public SigninCard() 
         {
-            Buttons = new List<CardAction>();
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of SigninCard. </summary>
@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Core.Models
         public SigninCard(string text = default, IList<CardAction> buttons = default)
         {
             Text = text;
-            Buttons = buttons ?? new List<CardAction>();
+            Buttons = buttons ?? [];
         }
 
         /// <summary>
@@ -60,15 +60,15 @@ namespace Microsoft.Agents.Core.Models
             return new SigninCard
             {
                 Text = text,
-                Buttons = new List<CardAction>
-                {
+                Buttons =
+                [
                     new CardAction
                     {
                        Title = buttonLabel,
                        Type = ActionTypes.Signin,
                        Value = url,
                     },
-                },
+                ],
             };
         }
 

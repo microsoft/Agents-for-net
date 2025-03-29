@@ -50,8 +50,6 @@ namespace Microsoft.Agents.Builder
         /// </remarks>
         /// <seealso cref="ITurnContext"/>
         /// <seealso cref="Activity"/>
-#pragma warning disable CA1716 // Identifiers should not match keywords (we can't change this without breaking binary compat)
         Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default);
-#pragma warning restore CA1716 // Identifiers should not match keywords
     }
 }

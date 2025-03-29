@@ -45,17 +45,13 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// the file contents.
         /// </summary>
         /// <value>The URL to an upload session that the bot can use to set the file contents.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string UploadUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets URL to file.
         /// </summary>
         /// <value>The URL to the file content.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string ContentUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets ID that uniquely identifies the file.

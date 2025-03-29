@@ -12,55 +12,43 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <summary>
     /// Parameters passed to AdaptiveCards.OnSearch() handler.
     /// </summary>
-    public class AdaptiveCardsSearchParams
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="AdaptiveCardsSearchParams"/> class.
+    /// </remarks>
+    /// <param name="queryText">The query text.</param>
+    /// <param name="dataset">The dataset to search.</param>
+    public class AdaptiveCardsSearchParams(string queryText, string dataset)
     {
         /// <summary>
         /// The query text.
         /// </summary>
-        public string QueryText { get; set; }
+        public string QueryText { get; set; } = queryText;
 
         /// <summary>
         /// The dataset to search.
         /// </summary>
-        public string Dataset { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AdaptiveCardsSearchParams"/> class.
-        /// </summary>
-        /// <param name="queryText">The query text.</param>
-        /// <param name="dataset">The dataset to search.</param>
-        public AdaptiveCardsSearchParams(string queryText, string dataset)
-        {
-            this.QueryText = queryText;
-            this.Dataset = dataset;
-        }
+        public string Dataset { get; set; } = dataset;
     }
 
     /// <summary>
     /// Individual result returned from AdaptiveCards.OnSearch() handler.
     /// </summary>
-    public class AdaptiveCardsSearchResult
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="AdaptiveCardsSearchResult"/> class.
+    /// </remarks>
+    /// <param name="title">The title of the result.</param>
+    /// <param name="value">The subtitle of the result.</param>
+    public class AdaptiveCardsSearchResult(string title, string value)
     {
         /// <summary>
         /// The title of the result.
         /// </summary>
-        public string Title { get; set; }
+        public string Title { get; set; } = title;
 
         /// <summary>
         /// The subtitle of the result.
         /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AdaptiveCardsSearchResult"/> class.
-        /// </summary>
-        /// <param name="title">The title of the result.</param>
-        /// <param name="value">The subtitle of the result.</param>
-        public AdaptiveCardsSearchResult(string title, string value)
-        {
-            this.Title = title;
-            this.Value = value;
-        }
+        public string Value { get; set; } = value;
     }
 
     /// <summary>
@@ -72,7 +60,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="AdaptiveCardInvokeResponseFactory"/>.</returns>
-    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
+    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Adaptive Card Action.Submit events.
@@ -94,5 +82,5 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A list of AdaptiveCardsSearchResult.</returns>
-    public delegate Task<IList<AdaptiveCardsSearchResult>> SearchHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken);
+    public delegate Task<IList<AdaptiveCardsSearchResult>> SearchHandler(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken);
 }

@@ -90,14 +90,14 @@ namespace Microsoft.Agents.Core.Models
                             // if first char of followingText is not whitespace
                             if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
                             {
-                                // insert space because teams does => <at>Tom</at>is cool => Tomis cool
+                                // insert space because teams does => <at>Tom</at> is cool => Tom is cool
                                 followingText = $" {followingText}";
                             }
 
-                            text = text.Substring(0, iAtClose) + followingText;
+                            text = string.Concat(text.AsSpan(0, iAtClose), followingText);
 
                             // replace <at ...>
-                            text = text.Substring(0, iAtStart) + text.Substring(iAtEnd + 1);
+                            text = string.Concat(text.AsSpan(0, iAtStart), text.AsSpan(iAtEnd + 1));
 
                             // we found one, try again, there may be more.
                             foundTag = true;

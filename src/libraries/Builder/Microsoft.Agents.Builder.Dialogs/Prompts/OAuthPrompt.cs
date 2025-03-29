@@ -11,7 +11,7 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Creates a new prompt that asks the user to sign in using the Single Sign On (SSO)

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
         }
 
-        public async Task OnPromptNullContext(object options, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task OnPromptNullContext(object options, CancellationToken cancellationToken = default)
         {
             var opt = (PromptOptions)options;
 
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             await OnPromptAsync(turnContext: null, state: null, options: opt, isRetry: false);
         }
 
-        public async Task OnPromptNullOptions(DialogContext dc, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task OnPromptNullOptions(DialogContext dc, CancellationToken cancellationToken = default)
         {
             // should throw ArgumentNullException
             await OnPromptAsync(dc.Context, state: null, options: null, isRetry: false);

@@ -25,9 +25,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="attachmentId">id of the attachment.</param>
         /// <param name="viewId">default is "original".</param>
         /// <returns>uri.</returns>
-#pragma warning disable CA1055 // Uri return values should not be strings (we can't change this without breaking binary compat)
         public string GetAttachmentUri(string attachmentId, string viewId = "original")
-#pragma warning restore CA1055 // Uri return values should not be strings
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(attachmentId);
 

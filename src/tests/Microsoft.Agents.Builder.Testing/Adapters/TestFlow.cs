@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Builder.Testing
                 {
                     await _testTask.ConfigureAwait(false);
 
-                    await _adapter.SendTextToBotAsync(userSays, _callback, default(CancellationToken)).ConfigureAwait(false);
+                    await _adapter.SendTextToBotAsync(userSays, _callback, default).ConfigureAwait(false);
                 },
                 this);
         }
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Testing
 
                     var cu = Activity.CreateConversationUpdateActivity();
                     cu.MembersAdded.Add(this._adapter.Conversation.User);
-                    await _adapter.ProcessActivityAsync((Activity)cu, _callback, default(CancellationToken)).ConfigureAwait(false);
+                    await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
                 },
                 this);
         }
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder.Testing
                     // NOTE: See details code in above method.
                     await _testTask.ConfigureAwait(false);
 
-                    await _adapter.ProcessActivityAsync((Activity)userActivity, _callback, default(CancellationToken)).ConfigureAwait(false);
+                    await _adapter.ProcessActivityAsync((Activity)userActivity, _callback, default).ConfigureAwait(false);
                 },
                 this);
         }

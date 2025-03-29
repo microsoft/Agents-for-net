@@ -8,6 +8,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

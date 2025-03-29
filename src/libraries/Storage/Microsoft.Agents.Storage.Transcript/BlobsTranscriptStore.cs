@@ -110,15 +110,8 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(Uri blobServiceUri, TokenCredential tokenCredential, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializer = null)
         {
-            if (blobServiceUri == null)
-            {
-                throw new ArgumentNullException(nameof(blobServiceUri));
-            }
-
-            if (tokenCredential == null)
-            {
-                throw new ArgumentNullException(nameof(tokenCredential));
-            }
+            ArgumentNullException.ThrowIfNull(blobServiceUri);
+            ArgumentNullException.ThrowIfNull(tokenCredential);
 
             if (string.IsNullOrEmpty(containerName))
             {
@@ -317,7 +310,7 @@ namespace Microsoft.Agents.Storage.Transcript
             }
 
             string token = null;
-            List<TranscriptInfo> conversations = new List<TranscriptInfo>();
+            List<TranscriptInfo> conversations = [];
             do
             {
                 var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/")

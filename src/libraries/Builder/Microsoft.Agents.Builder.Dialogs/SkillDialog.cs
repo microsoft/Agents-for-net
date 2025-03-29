@@ -341,9 +341,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                             return await SendTokenExchangeInvokeToSkillAsync(activity, oauthCard.TokenExchangeResource.Id, oauthCard.ConnectionName, result.Token, cancellationToken).ConfigureAwait(false);
                         }
                     }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
                     catch
-#pragma warning restore CA1031 // Do not catch general exception types
                     {
                         // Failures in token exchange are not fatal. They simply mean that the user needs to be shown the OAuth card.
                         return false;

@@ -26,7 +26,8 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
     {
         private static readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
 
-        private static readonly Dictionary<string, string> _configSettings = new Dictionary<string, string> {
+        private static readonly Dictionary<string, string> _configSettings = new()
+        {
             { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
             { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
             { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },

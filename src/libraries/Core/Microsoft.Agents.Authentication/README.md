@@ -6,7 +6,7 @@ Defines core Authentication and token retrieval functionality.
 
 - IAccessTokenProvider
 - IConnections: Returns an IAccessTokenProvider based on name or matching criteria.
-- ConfigurationConnections: Implements IConnections using configuration.
+- ConfigurationConnections: Loads IConnections using configuration.
 
 ## ConfigurationConnections
 

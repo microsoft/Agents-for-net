@@ -8,6 +8,6 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Services
 {
     public class FlightBookingService : IFlightBookingService
     {
-        public Task<bool> BookFlight(BookingDetails booking, CancellationToken cancellationToken = default(CancellationToken)) => Task.FromResult(true);
+        public Task<bool> BookFlight(BookingDetails booking, CancellationToken cancellationToken = default) => Task.FromResult(true);
     }
 }

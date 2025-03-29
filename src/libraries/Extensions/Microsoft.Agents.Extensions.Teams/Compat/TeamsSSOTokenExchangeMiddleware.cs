@@ -142,9 +142,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                     throw new NotSupportedException("Token Exchange is not supported by the current adapter.");
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 // Ignore Exceptions
                 // If token exchange failed for any reason, tokenExchangeResponse above stays null,

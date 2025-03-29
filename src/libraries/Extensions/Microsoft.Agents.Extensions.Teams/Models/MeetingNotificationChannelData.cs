@@ -21,8 +21,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets the OnBehalfOf list for user attribution.
         /// </summary>
         /// <value>The Teams Bot meeting notification's OnBehalfOf list.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)>
         public IList<OnBehalfOf> OnBehalfOfList { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

@@ -11,11 +11,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Builder
 {
-    /// <inheritdoc/>
     /// <summary>
-    /// Initializes a new instance of the <see cref="IChannelAdapter"/> class.
+    /// This is the base implementation of an <see cref="IChannelAdapter"/>.
     /// </summary>
-    public abstract class ChannelAdapter(ILogger logger = null) : IChannelAdapter
+    /// <remarks>This would not normally be used by the creator of an Agent except
+    /// in cases where a custom Adapter is being implemented.</remarks>
+    public abstract class ChannelAdapter : IChannelAdapter
     {
         /// <summary>
         /// The key value for any InvokeResponseActivity that would be on the TurnState.
@@ -25,7 +26,12 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Logger for the Adapter. 
         /// </summary>
-        private readonly ILogger? _logger = logger ?? NullLogger.Instance;
+        private readonly ILogger? _logger;
+
+        public ChannelAdapter(ILogger logger = null)
+        {
+            _logger = logger ?? NullLogger.Instance;
+        }
 
         /// <inheritdoc/>
         public Func<ITurnContext, Exception, Task> OnTurnError { get; set; }
@@ -62,10 +68,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public virtual Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            using (var context = new TurnContext(this, reference.GetContinuationActivity()))
-            {
-                return RunPipelineAsync(context, callback, cancellationToken);
-            }
+            using var context = new TurnContext(this, reference.GetContinuationActivity());
+            return RunPipelineAsync(context, callback, cancellationToken);
         }
 
         /// <inheritdoc/>

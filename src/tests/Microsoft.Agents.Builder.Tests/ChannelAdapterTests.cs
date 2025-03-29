@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Builder.Tests
                 return Task.CompletedTask;
             }
 
-            await a.ProcessRequest(activity, SimpleCallback, default(CancellationToken));
+            await a.ProcessRequest(activity, SimpleCallback, default);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.Tests
                 return Task.CompletedTask;
             }
 
-            await adapter.ContinueConversationAsync("MyBot", cr, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync("MyBot", cr, ContinueCallback, default);
             Assert.True(callbackInvoked);
         }
     }

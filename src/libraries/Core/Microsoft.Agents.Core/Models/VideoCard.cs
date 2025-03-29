@@ -31,8 +31,8 @@ namespace Microsoft.Agents.Core.Models
             Subtitle = subtitle;
             Text = text;
             Image = image;
-            Media = media ?? new List<MediaUrl>();
-            Buttons = buttons ?? new List<CardAction>();
+            Media = media ?? [];
+            Buttons = buttons ?? [];
             Shareable = shareable;
             Autoloop = autoloop;
             Autostart = autostart;

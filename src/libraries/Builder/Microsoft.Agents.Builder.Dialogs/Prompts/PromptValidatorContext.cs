@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Contains context information for a <see cref="PromptValidator{T}"/>.

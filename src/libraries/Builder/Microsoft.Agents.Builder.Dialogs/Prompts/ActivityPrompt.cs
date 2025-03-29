@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Defines the core behavior of a prompt dialog that waits for an activity to be received.

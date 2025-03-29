@@ -44,7 +44,7 @@ namespace TeamsConversationSsoQuickstart.Bots
         /// </remarks>
         public override async Task OnTurnAsync(
             ITurnContext turnContext,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             await base.OnTurnAsync(turnContext, cancellationToken);
 

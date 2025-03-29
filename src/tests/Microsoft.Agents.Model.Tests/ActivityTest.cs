@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Model.Tests
         [InlineData("TestTrace", null, "TestValue", null)]
         public void TestCreateTraceActivity(string name, string valueType, object value, string label)
         {
-            var activity = Activity.CreateTraceActivity(name, valueType, value, label);
+            var activity = Activity.CreateTraceActivity(name, value, valueType, label);
 
             Assert.NotNull(activity);
             Assert.True(activity.Type == ActivityTypes.Trace);
@@ -369,15 +369,6 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.IsType<Mention[]>(mentions);
             Assert.True(mentions.Length == 0);
-        }
-
-        [Theory]
-        [ClassData(typeof(HasContentData))]
-        public void HasContent(Activity activity, bool expected)
-        {
-            var hasContent = activity.HasContent();
-
-            Assert.Equal(expected, hasContent);
         }
 
         [Theory]

@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.CopilotStudio.Client;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using Microsoft.Identity.Client.Extensions.Msal;
 using Microsoft.Identity.Client;
 
-namespace CopilotStudioClientSample
+namespace CopilotStudioClient
 {
     /// <summary>
     /// This sample uses an HttpClientHandler to add an authentication token to the request.

@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Agents.CopilotStudio.Client;
-using Microsoft.Agents.CopilotStudio.Client.Discovery;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-namespace CopilotStudioClientSample
+using Microsoft.Agents.CopilotStudio.Client;
+
+namespace CopilotStudioClient
 {
     /// <summary>
-    /// Connection Settings extension for the sample to include appID and TeantId for creating authentication token.
+    /// Connection Settings extension for the sample to include appID and TenantId for creating authentication token.
     /// </summary>
     internal class SampleConnectionSettings : ConnectionSettings
     {

@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Represents an Agent that can operate on incoming activities.
+    /// Represents an Agent that can receive incoming Activities.
     /// </summary>
     /// <remarks>
-    /// A <see cref="IChannelAdapter"/> passes incoming activities from the channel
-    /// to the Agent's <see cref="OnTurnAsync(ITurnContext, CancellationToken)"/> method.
+    /// A <see cref="IChannelAdapter"/> passes incoming Activities from the channel
+    /// to the Agent's <see cref="OnTurnAsync(ITurnContext, CancellationToken)"/> method
+    /// after the Middleware registered with the Adapter have executed.
     /// </remarks>
     /// <seealso cref="AgentCallbackHandler"/>
     public interface IAgent
@@ -21,10 +22,10 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>The <paramref name="turnContext"/> provides information about the
-        /// incoming activity, and other data needed to process the activity.</remarks>
+        /// incoming Activity, and other data needed to process the activity.</remarks>
         /// <seealso cref="ITurnContext"/>
+        /// <seealso cref="ITurnContext.SendActivityAsync(Core.Models.IActivity, CancellationToken)"/>
         Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
     }
 }

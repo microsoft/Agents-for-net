@@ -68,9 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         }
 
         /// <inheritdoc/>
-#pragma warning disable CA1801 // Review unused parameters - cannot change without breaking backwards compat.
         public async Task<TeamsMeetingParticipant> FetchParticipantAsync(string meetingId, string participantId, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
-#pragma warning restore CA1801 // Review unused parameters
         {
             ArgumentNullException.ThrowIfNull(meetingId);
             ArgumentNullException.ThrowIfNull(participantId);

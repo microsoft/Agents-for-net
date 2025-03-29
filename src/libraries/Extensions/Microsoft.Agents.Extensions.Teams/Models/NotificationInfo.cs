@@ -43,8 +43,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets the value of the notification's external resource URL.
         /// </summary>
         /// <value>The value of the notification's external resource URL.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string ExternalResourceUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
     }
 }

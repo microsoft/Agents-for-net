@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using CopilotStudioClientSample;
+using CopilotStudioClient;
 using Microsoft.Agents.CopilotStudio.Client;
 
 // Setup the Direct To Engine client example. 

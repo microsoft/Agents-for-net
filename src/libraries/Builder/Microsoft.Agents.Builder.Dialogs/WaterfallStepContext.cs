@@ -102,7 +102,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>In the next step of the waterfall, the <see cref="Result"/> property of the
         /// waterfall step context will contain the value of the <paramref name="result"/>.</remarks>
-        public async Task<DialogTurnResult> NextAsync(object result = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<DialogTurnResult> NextAsync(object result = null, CancellationToken cancellationToken = default)
         {
             if (result is CancellationToken)
             {
