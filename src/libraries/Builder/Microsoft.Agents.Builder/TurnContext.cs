@@ -23,9 +23,9 @@ namespace Microsoft.Agents.Builder
     /// <seealso cref="IAgent"/>
     public class TurnContext : ITurnContext, IDisposable
     {
-        private readonly IList<SendActivitiesHandler> _onSendActivities = new List<SendActivitiesHandler>();
-        private readonly IList<UpdateActivityHandler> _onUpdateActivity = new List<UpdateActivityHandler>();
-        private readonly IList<DeleteActivityHandler> _onDeleteActivity = new List<DeleteActivityHandler>();
+        private readonly IList<SendActivitiesHandler> _onSendActivities = [];
+        private readonly IList<UpdateActivityHandler> _onUpdateActivity = [];
+        private readonly IList<DeleteActivityHandler> _onDeleteActivity = [];
 
         private bool _disposed;
         private readonly IStreamingResponse _streamingResponse;
@@ -44,8 +44,8 @@ namespace Microsoft.Agents.Builder
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
-            StackState = new TurnContextStateCollection();
-            Services = new TurnContextStateCollection();
+            StackState = [];
+            Services = [];
 
             _streamingResponse = new StreamingResponse(this);
         }
@@ -123,19 +123,9 @@ namespace Microsoft.Agents.Builder
         /// Gets a list of activities to send when `context.Activity.DeliveryMode == 'expectReplies'.
         /// </summary>
         /// <value>A list of activities.</value>
-        public List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
+        internal List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
 
-        /// <summary>
-        /// Adds a response handler for send activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// or <see cref="SendActivitiesAsync(IActivity[], CancellationToken)"/> methods are called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnSendActivities(SendActivitiesHandler handler)
         {
             ObjectDisposedException.ThrowIf(_disposed, nameof(OnSendActivities));
@@ -145,16 +135,7 @@ namespace Microsoft.Agents.Builder
             return this;
         }
 
-        /// <summary>
-        /// Adds a response handler for update activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="UpdateActivityAsync(IActivity, CancellationToken)"/> is called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
         {
             ObjectDisposedException.ThrowIf(_disposed, nameof(OnUpdateActivity));
@@ -164,17 +145,7 @@ namespace Microsoft.Agents.Builder
             return this;
         }
 
-        /// <summary>
-        /// Adds a response handler for delete activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// or <see cref="DeleteActivityAsync(string, CancellationToken)"/> is called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
         {
             ObjectDisposedException.ThrowIf(_disposed, nameof(OnDeleteActivity));

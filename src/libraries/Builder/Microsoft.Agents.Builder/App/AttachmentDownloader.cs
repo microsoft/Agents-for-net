@@ -57,32 +57,30 @@ namespace Microsoft.Agents.Builder.App
                 // Determine where the file is hosted.
                 var remoteFileUrl = attachment.ContentUrl;
 
-                using (HttpRequestMessage request = new(HttpMethod.Get, remoteFileUrl))
+                using HttpRequestMessage request = new(HttpMethod.Get, remoteFileUrl);
+                HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
+
+                // Failed to download file
+                if (!response.IsSuccessStatusCode)
                 {
-                    HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
-
-                    // Failed to download file
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        return null;
-                    }
-
-                    // Convert to a buffer
-                    byte[] content = await response.Content.ReadAsByteArrayAsync();
-
-                    // Fixup content type
-                    string contentType = response.Content.Headers.ContentType.MediaType;
-                    if (contentType.StartsWith("image/"))
-                    {
-                        contentType = "image/png";
-                    }
-
-                    return new InputFile(new BinaryData(content), contentType)
-                    {
-                        ContentUrl = attachment.ContentUrl,
-                        Filename = name
-                    };
+                    return null;
                 }
+
+                // Convert to a buffer
+                byte[] content = await response.Content.ReadAsByteArrayAsync();
+
+                // Fixup content type
+                string contentType = response.Content.Headers.ContentType.MediaType;
+                if (contentType.StartsWith("image/"))
+                {
+                    contentType = "image/png";
+                }
+
+                return new InputFile(new BinaryData(content), contentType)
+                {
+                    ContentUrl = attachment.ContentUrl,
+                    Filename = name
+                };
             }
             else
             {

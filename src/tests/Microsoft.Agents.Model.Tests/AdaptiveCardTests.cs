@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Model.Tests
             var connectionName = "myConnectionName";
             var token = "mySpecialToken";
 
-            var authSpecs = new AdaptiveCardAuthentication()
+            var authSpecs = new TokenExchangeInvokeRequest()
             {
                 Id = id,
                 ConnectionName = connectionName,
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Model.Tests
                 Verb = "stupefy",
                 Data = new { }
             };
-            var auth = new AdaptiveCardAuthentication()
+            var auth = new TokenExchangeInvokeRequest()
             {
                 Id = "authId",
                 ConnectionName = "myConnectionName",

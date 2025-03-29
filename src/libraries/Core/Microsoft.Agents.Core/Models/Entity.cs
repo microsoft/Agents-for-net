@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.
         /// </summary>
-        /// <param name="other">The other object to compair against.</param>
+        /// <param name="other">The other object to compare against.</param>
         /// <returns>true if the current object is equal to the other parameter, otherwise false.</returns>
         public bool Equals(Entity other)
         {

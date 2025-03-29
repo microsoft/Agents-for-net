@@ -12,13 +12,13 @@ namespace Microsoft.Agents.Core.Models
     {
         public Transcript()
         {
-            Activities = new List<Activity>();
+            Activities = [];
         }
 
         /// <summary> Initializes a new instance of Transcript. </summary>
         public Transcript(IList<Activity> activities = default)
         {
-            Activities = activities ?? new List<Activity>();
+            Activities = activities ?? [];
         }
 
         /// <summary> A collection of Activities that conforms to the Transcript schema. </summary>

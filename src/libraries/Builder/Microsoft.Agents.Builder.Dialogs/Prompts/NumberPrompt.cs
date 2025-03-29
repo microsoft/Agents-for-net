@@ -13,7 +13,7 @@ using Microsoft.Recognizers.Text.Number;
 using Microsoft.Recognizers.Text.NumberWithUnit;
 using static Microsoft.Recognizers.Text.Culture;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Prompts a user to enter a number.
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default(CancellationToken))
+        protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default)
         {
             if (turnContext == null)
             {
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
-        protected override Task<PromptRecognizerResult<T>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default(CancellationToken))
+        protected override Task<PromptRecognizerResult<T>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {
             if (turnContext == null)
             {

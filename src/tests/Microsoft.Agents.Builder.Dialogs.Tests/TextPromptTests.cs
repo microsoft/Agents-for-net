@@ -12,6 +12,7 @@ using Xunit;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

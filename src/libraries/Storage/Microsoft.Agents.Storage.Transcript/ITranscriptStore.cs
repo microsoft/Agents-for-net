@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <param name="startDate">A cutoff date. Activities older than this date are not included.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task completes successfully, the result contains the matching activities.</remarks>
-        Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default(DateTimeOffset));
+        Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default);
 
         /// <summary>
         /// Gets the conversations on a channel from the store.

@@ -54,9 +54,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets the url of the attachment, in case of an external link.
         /// </summary>
         /// <value>The URL of the attachment, in case of an external link.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string ContentUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets the content of the attachment, in case of a code
@@ -76,8 +74,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// the attachment, in case of a card.
         /// </summary>
         /// <value>The URL of the thumbnail image that might be embedded in the attachment.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string ThumbnailUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
     }
 }

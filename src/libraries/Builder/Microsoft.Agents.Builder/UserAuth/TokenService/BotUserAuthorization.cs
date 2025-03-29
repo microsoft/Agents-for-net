@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            TokenResponse tokenResponse = null;
+            TokenResponse tokenResponse;
 
             _state.ContinueCount++;
 

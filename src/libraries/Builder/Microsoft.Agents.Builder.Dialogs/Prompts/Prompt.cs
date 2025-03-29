@@ -10,7 +10,7 @@ using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Defines the core behavior of prompt dialogs.

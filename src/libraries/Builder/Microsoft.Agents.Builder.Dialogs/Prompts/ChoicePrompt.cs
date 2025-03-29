@@ -10,7 +10,7 @@ using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core.Models;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Prompts a user to select from a list of choices.

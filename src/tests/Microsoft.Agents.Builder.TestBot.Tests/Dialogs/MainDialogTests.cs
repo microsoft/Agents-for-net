@@ -4,6 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.TestBot.Shared;
 using Microsoft.Agents.Builder.TestBot.Shared.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared.Services;

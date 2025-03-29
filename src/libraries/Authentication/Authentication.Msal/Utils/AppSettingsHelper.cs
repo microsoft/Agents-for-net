@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 			}
 			catch(Exception ex)
 			{
-				logSink?.LogWarning($"Failed to read {key} from AppSettings, failed with message: {ex.Message}.  Using default value");
+				logSink?.LogWarning("Failed to read {SettingKey} from AppSettings, failed with message: {SettingException}.  Using default value", key, ex.Message);
 				System.Diagnostics.Trace.TraceWarning($"Failed to read {key} from AppSettings, failed with message: {ex.Message}.  Using default value");
 				return defaultValue; 
 			}
@@ -75,15 +75,14 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 					return defaultValue;
 				}
 
-				double incomingValue;
-				if (!double.TryParse(value, out incomingValue))
-				{
-					logSink?.LogWarning($"Failed to read {key} from AppSettings, Value {incomingValue} cannot be parsed to a double.  Using default value");
+                if (!double.TryParse(value, out double incomingValue))
+                {
+                    logSink?.LogWarning("Failed to read {SettingKey} from AppSettings, Value {SettingValue} cannot be parsed to a double.  Using default value", key, incomingValue);
                     System.Diagnostics.Trace.TraceWarning($"Failed to read {key} from AppSettings, Value {incomingValue} cannot be parsed to a double.  Using default value");
                     return defaultValue;
-				}
+                }
 
-				switch (format)
+                switch (format)
 				{
 					case TimeSpanFromKey.Minutes:
 						return TimeSpan.FromMinutes(incomingValue);
@@ -101,7 +100,7 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 			}
             catch (Exception ex)
             {
-                logSink?.LogWarning($"Failed to read {key} from AppSettings, failed with message: {ex.Message}.  Using default value");
+                logSink?.LogWarning("Failed to read {SettingKey} from AppSettings, failed with message: {SettingException}.  Using default value", key, ex.Message);
                 System.Diagnostics.Trace.TraceWarning($"Failed to read {key} from AppSettings, failed with message: {ex.Message}.  Using default value");
                 return defaultValue;
             }

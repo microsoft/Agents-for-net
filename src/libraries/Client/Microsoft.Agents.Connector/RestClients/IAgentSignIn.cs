@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='customHeaders'>The headers that will be added to request.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task<string> GetSignInUrlAsync(string state, string codeChallenge = default(string), string emulatorUrl = default(string), string finalRedirect = default(string), CancellationToken cancellationToken = default(CancellationToken));
+        Task<string> GetSignInUrlAsync(string state, string codeChallenge = default, string emulatorUrl = default, string finalRedirect = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get the raw signin link to be sent to the user for signin for a connection name.

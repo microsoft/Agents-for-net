@@ -11,7 +11,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.Choice;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Prompts a user to confirm something with a yes/no response.

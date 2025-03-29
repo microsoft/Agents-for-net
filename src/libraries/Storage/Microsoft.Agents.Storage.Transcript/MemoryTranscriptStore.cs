@@ -35,13 +35,13 @@ namespace Microsoft.Agents.Storage.Transcript
             {
                 if (!_channels.TryGetValue(activity.ChannelId, out var channel))
                 {
-                    channel = new Dictionary<string, List<IActivity>>();
+                    channel = [];
                     _channels[activity.ChannelId] = channel;
                 }
 
                 if (!channel.TryGetValue(activity.Conversation.Id, out var transcript))
                 {
-                    transcript = new List<IActivity>();
+                    transcript = [];
                     channel[activity.Conversation.Id] = transcript;
                 }
 
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <param name="startDate">A cutoff date. Activities older than this date are not included.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task completes successfully, the result contains a page of matching activities.</remarks>
-        public Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default(DateTimeOffset))
+        public Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
             ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Storage.Transcript
                         {
                             ChannelId = channelId,
                             Id = c.Key,
-                            Created = c.Value.FirstOrDefault()?.Timestamp ?? default(DateTimeOffset),
+                            Created = c.Value.FirstOrDefault()?.Timestamp ?? default,
                         })
                         .OrderBy(c => c.Created)
                         .SkipWhile(c => c.Id != continuationToken)
@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Storage.Transcript
                             {
                                 ChannelId = channelId,
                                 Id = c.Key,
-                                Created = c.Value.FirstOrDefault()?.Timestamp ?? default(DateTimeOffset),
+                                Created = c.Value.FirstOrDefault()?.Timestamp ?? default,
                             })
                             .OrderBy(c => c.Created)
                             .Take(20)

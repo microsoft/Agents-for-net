@@ -237,8 +237,6 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="channelId">The Channel to determine Maximum Action Title Length.</param>
         /// <returns>The total number of characters allowed for an Action Title on a specific Channel.</returns>
-#pragma warning disable CA1801 // Review unused parameters (we can't remove the channelId parameter without breaking binary compatibility)
         public static int MaxActionTitleLength(string channelId) => 20;
-#pragma warning restore CA1801 // Review unused parameters
     }
 }

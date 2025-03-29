@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Contains settings to pass to a <see cref="Prompt{T}"/> when the prompt is started.
@@ -32,9 +32,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Gets or sets a list of choices for the user to choose from, for use with a <see cref="ChoicePrompt"/>.
         /// </summary>
         /// <value>The list of available choices.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
         public IList<Choice> Choices { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets the <see cref="ListStyle"/> for a <see cref="ChoicePrompt"/>.

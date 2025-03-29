@@ -52,10 +52,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <returns>A Task representing the work to be executed.</returns>
         public static async Task WriteResponseAsync(HttpResponse response, InvokeResponse invokeResponse)
         {
-            if (response == null)
-            {
-                throw new ArgumentNullException(nameof(response));
-            }
+            ArgumentNullException.ThrowIfNull(response);
 
             if (invokeResponse == null)
             {
@@ -70,10 +67,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     response.ContentType = "application/json";
 
                     var json = ProtocolJsonSerializer.ToJson(invokeResponse.Body);
-                    using (var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json)))
-                    {
-                        await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
-                    }
+                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json));
+                    await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
                 }
             }
         }

@@ -34,9 +34,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
         /// Gets or sets card view title area (card bar) components.
         /// </summary>
         /// <value>Card bar area components.</value>
-#pragma warning disable CA2227
         public IList<CardBarComponent> CardBar { get; set; }
-#pragma warning restore CA2227
 
         /// <summary>
         /// Gets or sets card view header area components.

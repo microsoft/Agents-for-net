@@ -261,9 +261,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         await SendInvokeResponseAsync(turnContext, HttpStatusCode.NotFound, null, cancellationToken).ConfigureAwait(false);
                     }
                 }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring exception for now and send internal server error, see comment above)
                 catch
-#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     await SendInvokeResponseAsync(turnContext, HttpStatusCode.InternalServerError, null, cancellationToken).ConfigureAwait(false);
                 }
@@ -306,9 +304,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
                         tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
                     }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
                     catch
-#pragma warning restore CA1031 // Do not catch general exception types
                     {
                         // Ignore Exceptions
                         // If token exchange failed for any reason, tokenExchangeResponse above stays null , and hence we send back a failure invoke response to the caller.

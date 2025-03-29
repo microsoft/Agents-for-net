@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return request;
         }
 
-        public async Task<ResourceResponse> SendToConversationAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ResourceResponse> SendToConversationAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             return await SendToConversationAsync(activity.Conversation.Id, activity, cancellationToken).ConfigureAwait(false);
         }
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return request;
         }
 
-        public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             return await UpdateActivityAsync(activity.Conversation.Id, activity.Id, activity, cancellationToken).ConfigureAwait(false);
         }
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return request;
         }
 
-        public async Task<ResourceResponse> ReplyToActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ResourceResponse> ReplyToActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             return activity == null
                 ? throw new ArgumentNullException(nameof(activity))

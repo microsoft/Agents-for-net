@@ -107,9 +107,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
                     }
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types (we shouldn't do this but it is hard to tell what the original dev had in mind for this case, ignoring for now)
             catch (Exception)
-#pragma warning restore CA1031 // Do not catch general exception types
             {
             }
         }

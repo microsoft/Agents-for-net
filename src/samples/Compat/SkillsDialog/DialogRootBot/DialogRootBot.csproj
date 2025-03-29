@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>Microsoft.BuilderSamples.DialogRootBot</AssemblyName>
-    <RootNamespace>Microsoft.BuilderSamples.DialogRootBot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

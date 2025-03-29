@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.Equal("test.id", ids[0]);
         }
 
-        private static TurnContext[] CreateMeetingTurnContext(string activityName, ChannelAdapter adapter)
+        private static ITurnContext[] CreateMeetingTurnContext(string activityName, ChannelAdapter adapter)
         {
             return new TurnContext[]
             {

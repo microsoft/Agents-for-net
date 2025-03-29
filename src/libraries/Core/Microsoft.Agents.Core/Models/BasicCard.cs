@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of BasicCard. </summary>
         public BasicCard()
         {
-            Images = new List<CardImage>();
-            Buttons = new List<CardAction>();
+            Images = [];
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of BasicCard. </summary>

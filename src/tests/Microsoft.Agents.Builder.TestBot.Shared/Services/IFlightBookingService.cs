@@ -8,6 +8,6 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Services
 {
     public interface IFlightBookingService
     {
-        Task<bool> BookFlight(BookingDetails booking, CancellationToken cancellationToken = default(CancellationToken));
+        Task<bool> BookFlight(BookingDetails booking, CancellationToken cancellationToken = default);
     }
 }

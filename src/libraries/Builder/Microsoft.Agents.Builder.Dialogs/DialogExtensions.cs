@@ -88,9 +88,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                         // fire error event, bubbling from the leaf.
                         handled = await dialogContext.EmitEventAsync(DialogEvents.Error, err, bubble: true, fromLeaf: true, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
-#pragma warning disable CA1031 // Do not catch general exception types (capture the error in case it's not handled properly)
                     catch (Exception emitErr)
-#pragma warning restore CA1031 // Do not catch general exception types
                     {
                         innerExceptions.Add(emitErr);
                     }

@@ -11,15 +11,13 @@ namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Represents an Adapter that can connect an Agent to a service endpoint.
-    /// This class is abstract.
     /// </summary>
-    /// <remarks>The Adapter encapsulates authentication processes and sends
-    /// activities to and receives activities from the Azure Bot Service. When your
-    /// Agent receives an activity, the adapter creates a context object, passes it to your
-    /// Agent's application logic, and sends responses back to the user's channel.
+    /// <remarks>The Adapter encapsulates processing a received Activity, creates an
+    /// <see cref="ITurnContext"/> and calls <see cref="IAgent.OnTurnAsync(ITurnContext, CancellationToken)"/>. 
+    /// When your Agent receives an activity, response are sent to the caller via <see cref="ITurnContext.SendActivityAsync(IActivity, CancellationToken)"/>.
     /// </remarks>
     /// <seealso cref="ITurnContext"/>
-    /// <seealso cref="Activity"/>
+    /// <seealso cref="IActivity"/>
     /// <seealso cref="IAgent"/>
     public interface IChannelAdapter
     {
@@ -30,7 +28,7 @@ namespace Microsoft.Agents.Builder
         Func<ITurnContext, Exception, Task> OnTurnError { get; set; }
 
         /// <summary>
-        /// Gets the collection of middleware in the adapter's pipeline.
+        /// Gets the collection of middleware in the Adapter's pipeline.
         /// </summary>
         /// <value>The middleware collection for the pipeline.</value>
         public IMiddlewareSet MiddlewareSet { get; }
@@ -39,7 +37,7 @@ namespace Microsoft.Agents.Builder
         /// Adds middleware to the adapter's pipeline.
         /// </summary>
         /// <param name="middleware">The middleware to add.</param>
-        /// <returns>The updated adapter object.</returns>
+        /// <returns>The updated IChannelAdapter object.</returns>
         /// <remarks>Middleware is added to the adapter at initialization time.
         /// For each turn, the adapter calls middleware in the order in which you added it.
         /// </remarks>
@@ -57,12 +55,11 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>To start a conversation, your Agent must know its account information
         /// and the user's account information on that channel.
-        /// Most _channels only support initiating a direct message (non-group) conversation.
+        /// Most channels only support initiating a direct message (non-group) conversation.
         /// <para>The adapter attempts to create a new conversation on the channel, and
-        /// then sends a <c>conversationUpdate</c> activity through its middleware pipeline
+        /// then sends a <c>conversationUpdate</c> Activity through its middleware pipeline
         /// to the <paramref name="callback"/> method.</para>
         /// <para>If the conversation is established with the
         /// specified users, the ID of the activity's <see cref="Activity.Conversation"/>
@@ -80,7 +77,7 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
+        /// Most channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
@@ -93,7 +90,6 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
         /// Most _channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
@@ -107,9 +103,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
+        /// Most channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
@@ -122,9 +117,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
+        /// Most channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
@@ -136,9 +130,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
+        /// Most channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
         Task ContinueConversationAsync(string agentId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
@@ -150,7 +143,6 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Call this method to proactively send a message to a conversation.
         /// Most _channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
@@ -164,12 +156,11 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">New replacement activity.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activity is successfully sent, the task result contains
+        /// <returns>If the activity is successfully sent, the task result contains
         /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
         /// channel assigned to the activity.
         /// <para>Before calling this, set the ID of the replacement activity to the ID
-        /// of the activity to replace.</para></remarks>
+        /// of the activity to replace.</para></returns>
         /// <seealso cref="ITurnContext.OnUpdateActivity(UpdateActivityHandler)"/>
         Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken);
 
@@ -181,7 +172,6 @@ namespace Microsoft.Agents.Builder
         /// <param name="reference">Conversation reference for the activity to delete.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>The <see cref="ConversationReference.ActivityId"/> of the conversation
         /// reference identifies the activity to delete.</remarks>
         /// <seealso cref="ITurnContext.OnDeleteActivity(DeleteActivityHandler)"/>
@@ -195,7 +185,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="callback">The code to run at the end of the adapter's middleware pipeline.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <returns>If an Invoke Activity was received, an <see cref="InvokeResponse"/>, otherwise null.</returns>
         Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -206,7 +196,6 @@ namespace Microsoft.Agents.Builder
         /// <param name="audience">The audience for the call.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
         Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
         Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null);
 
@@ -217,10 +206,9 @@ namespace Microsoft.Agents.Builder
         /// <param name="activities">The activities to send.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the activities are successfully sent, the task result contains
+        /// <returns>If the activities are successfully sent, the task result contains
         /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
-        /// the receiving channel assigned to the activities.</remarks>
+        /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
     }

@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return false;
         }
 
-        private async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
+        private static async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity
@@ -154,9 +154,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                     throw new NotSupportedException("Token Exchange is not supported by the current adapter.");
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 // Ignore Exceptions
                 // If token exchange failed for any reason, tokenExchangeResponse above stays null,

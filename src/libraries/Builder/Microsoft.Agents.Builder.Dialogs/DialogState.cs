@@ -39,8 +39,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         /// <value>State information for a dialog stack.</value>
         [JsonPropertyName("dialogStack")]
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
         public List<DialogInstance> DialogStack { get; set; } = new List<DialogInstance>();
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

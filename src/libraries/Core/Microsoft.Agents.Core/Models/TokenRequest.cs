@@ -36,8 +36,6 @@ namespace Microsoft.Agents.Core.Models
         /// this request.
         /// </summary>
         /// <value>The collection of settings for the specific provider for this request.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IDictionary<string, object> Settings { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

@@ -251,9 +251,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
-#pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
         protected T GetPropertyValue<T>(string propertyName)
-#pragma warning restore CA1801 // Review unused parameters
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
@@ -272,7 +270,7 @@ namespace Microsoft.Agents.Builder.State
 
                 if (result == null)
                 {
-                    return default(T);
+                    return default;
                 }
 
                 // If types are not used by storage serialization try to convert the object to the type expected
@@ -287,7 +285,7 @@ namespace Microsoft.Agents.Builder.State
                 throw new KeyNotFoundException(propertyName);
             }
 
-            return default(T);
+            return default;
         }
 
         /// <summary>
@@ -351,9 +349,7 @@ namespace Microsoft.Agents.Builder.State
             /// <value>
             /// The state as a dictionary of key value pairs.
             /// </value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
             public IDictionary<string, object> State { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
             internal string Hash { get; set; }
 

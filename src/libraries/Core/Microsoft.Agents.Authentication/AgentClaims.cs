@@ -19,10 +19,7 @@ namespace Microsoft.Agents.Authentication
             // unauthenticated requests we have anonymous claimsIdentity provided auth is disabled.
             // For Activities coming from Emulator AppId claim contains the Agent's AAD AppId.
             var appIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim);
-            if (appIdClaim == null)
-            {
-                appIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
-            }
+            appIdClaim ??= claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
 
             return appIdClaim?.Value;
         }

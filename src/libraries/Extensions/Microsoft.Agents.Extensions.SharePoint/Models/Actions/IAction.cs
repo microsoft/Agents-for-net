@@ -6,9 +6,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     /// <summary>
     /// Interface for actions.
     /// </summary>
-#pragma warning disable CA1040 // Avoid empty interfaces
     public interface IAction
-#pragma warning restore CA1040 // Avoid empty interfaces
     {
         // This interface has no common methods.
     }

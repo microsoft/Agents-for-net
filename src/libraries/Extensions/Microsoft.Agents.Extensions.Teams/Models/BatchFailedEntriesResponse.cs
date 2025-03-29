@@ -28,6 +28,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets the list of failed entries result of a batch operation.
         /// </summary>
         /// <value>The list of failed entries result of a batch operation.</value>
-        public IList<BatchFailedEntry> FailedEntries { get; set; } = new List<BatchFailedEntry>();
+        public IList<BatchFailedEntry> FailedEntries { get; set; } = [];
     }
 }

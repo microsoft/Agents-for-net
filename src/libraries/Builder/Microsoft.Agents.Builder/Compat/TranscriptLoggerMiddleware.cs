@@ -119,9 +119,7 @@ namespace Microsoft.Agents.Builder.Compat
                     await logger.LogActivityAsync(activity).ConfigureAwait(false);
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types (this should probably be addressed later, but for now we just log the error and continue the execution)
             catch (Exception ex)
-#pragma warning restore CA2008 // Do not create tasks without passing a TaskScheduler
             {
                 System.Diagnostics.Trace.TraceError($"Transcript logActivity failed with {ex}");
             }

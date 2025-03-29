@@ -42,9 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets parameters for the query.
         /// </summary>
         /// <value>The parameters for the query.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<MessagingExtensionParameter> Parameters { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets the query options.

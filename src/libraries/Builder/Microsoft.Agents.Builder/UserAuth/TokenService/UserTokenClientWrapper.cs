@@ -38,11 +38,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static IUserTokenClient GetUserTokenClient(ITurnContext context)
         {
             IUserTokenClient userTokenClient = context.Services.Get<IUserTokenClient>();
-            if (userTokenClient == null)
-            {
-                throw new NotSupportedException("IUserTokenClient is not supported by the current adapter");
-            }
-            return userTokenClient;
+            return userTokenClient ?? throw new NotSupportedException("IUserTokenClient is not supported by the current adapter");
         }
     }
 }

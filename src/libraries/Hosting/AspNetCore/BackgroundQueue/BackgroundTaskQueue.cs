@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     internal class BackgroundTaskQueue : IBackgroundTaskQueue
     {
-        private readonly ConcurrentQueue<Func<CancellationToken, Task>> _workItems = new ConcurrentQueue<Func<CancellationToken, Task>>();
+        private readonly ConcurrentQueue<Func<CancellationToken, Task>> _workItems = new();
         private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);
 
         /// <summary>
@@ -39,8 +39,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             await _signal.WaitAsync(cancellationToken);
 
-            Func<CancellationToken, Task> dequeued;
-            _workItems.TryDequeue(out dequeued);
+            _workItems.TryDequeue(out Func<CancellationToken, Task> dequeued);
             return dequeued;
         }
     }

@@ -58,9 +58,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets (Only when type is result) Attachments.
         /// </summary>
         /// <value>The attachments.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<MessagingExtensionAttachment> Attachments { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets the suggested actions.

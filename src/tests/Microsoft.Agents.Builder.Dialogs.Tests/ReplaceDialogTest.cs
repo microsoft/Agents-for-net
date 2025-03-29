@@ -10,6 +10,7 @@ using Moq;
 using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -128,7 +129,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                 }
 
-                public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default(CancellationToken))
+                public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default)
                 {
                     await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"), cancellationToken);
                     await base.EndDialogAsync(turnContext, instance, reason, cancellationToken);

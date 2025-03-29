@@ -335,7 +335,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
                     && context.Activity?.Text != null
-                    && context.Activity.Text.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0
+                    && context.Activity.Text.Contains(text, StringComparison.OrdinalIgnoreCase)
                 );
             OnMessage(routeSelector, handler, rank: rank);
             return this;
@@ -442,7 +442,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     string.Equals(ActivityTypes.Event, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
                     && context.Activity?.Name != null
-                    && context.Activity.Text.IndexOf(eventName, StringComparison.OrdinalIgnoreCase) >= 0
+                    && context.Activity.Text.Contains(eventName, StringComparison.OrdinalIgnoreCase)
                 );
             OnEvent(routeSelector, handler, rank: rank);
             return this;

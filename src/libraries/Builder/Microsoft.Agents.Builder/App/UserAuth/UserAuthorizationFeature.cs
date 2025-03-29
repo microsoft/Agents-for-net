@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <returns></returns>
         public string GetTurnToken(string handlerName)
         {
-            return _authTokens.TryGetValue(handlerName, out var token) ? token : default(string);
+            return _authTokens.TryGetValue(handlerName, out var token) ? token : default;
         }
 
         /// <summary>
