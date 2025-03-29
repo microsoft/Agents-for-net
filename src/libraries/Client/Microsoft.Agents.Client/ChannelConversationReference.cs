@@ -24,5 +24,7 @@ namespace Microsoft.Agents.Client
         /// The name of the Agent.
         /// </summary>
         public string AgentName { get; set; }
+
+        public string AgentConversationId { get; set; }
     }
 }
