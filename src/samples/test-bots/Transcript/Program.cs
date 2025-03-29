@@ -5,16 +5,18 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,18 +147,35 @@ builder.AddAgent(sp =>
     return app;
 });
 
-var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// Add AspNet token validation
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+
+var app = builder.Build();
+
 app.UseRouting();
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+app.UseAuthentication();
+app.UseAuthorization();
+
+var route = app.MapPost(
+    "/api/messages",
+    async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+    {
+        await adapter.ProcessAsync(request, response, agent, cancellationToken);
+    })
+    .RequireAuthorization(new AuthorizeAttribute("AllowedCallers"));
+
 
 // Setup port and listening address.
-var port = args.Length > 0 ? args[0] : "3978";
-app.Urls.Add($"http://localhost:{port}");
+
+if (app.Environment.IsDevelopment())
+{
+    route.AllowAnonymous();
+    var port = args.Length > 0 ? args[0] : "3978";
+    app.Urls.Add($"http://localhost:{port}");
+}
 
 // Start listening. 
 await app.RunAsync();
