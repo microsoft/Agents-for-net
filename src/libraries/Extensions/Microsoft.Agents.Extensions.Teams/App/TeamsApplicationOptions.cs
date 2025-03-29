@@ -18,8 +18,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
     {
         public TeamsApplicationOptions() : base() { }
 
-        public TeamsApplicationOptions(IServiceProvider sp, IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, UserAuthorizationOptions authOptions = null, AdaptiveCardsOptions cardOptions = null, ILoggerFactory loggerFactory = null, IList<IInputFileDownloader> fileDownloaders = null, string configurationSection = "AgentApplication") 
-            : base(sp, configuration, channelAdapter, storage, authOptions, cardOptions, loggerFactory, fileDownloaders, configurationSection)
+        public TeamsApplicationOptions(IServiceProvider sp, IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, UserAuthorizationOptions authOptions = null, AdaptiveCardsOptions cardOptions = null, ILoggerFactory loggerFactory = null, IList<IInputFileDownloader> fileDownloaders = null, AutoWelcomeMessage welcomeMessage = null, string configurationSection = "AgentApplication") 
+            : base(sp, configuration, channelAdapter, storage, authOptions, cardOptions, loggerFactory, fileDownloaders, welcomeMessage, configurationSection)
         {
         }
 
