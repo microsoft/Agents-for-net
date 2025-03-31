@@ -4,6 +4,12 @@
   "type": "AdaptiveCard",
   "body": [
     {
+      "type": "TextBlock",
+      "size": "medium",
+      "weight": "bolder",
+      "text": "Dynamic Adaptive Card"
+    },
+    {
       "text": "Select from the list, or start typing a package name.",
       "wrap": true,
       "type": "TextBlock"
