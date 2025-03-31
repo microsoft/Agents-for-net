@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using AdaptiveCardsBot.Model;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
-using Microsoft.Agents.BotBuilder.State;
+using HandlingCards.Model;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -15,80 +15,107 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace AdaptiveCardsBot
+namespace HandlingCards
 {
     /// <summary>
     /// Defines the activity handlers.
     /// </summary>
-    public class TypeAheadBot : AgentApplication
+    public class CardsAgent : AgentApplication
     {
-        private readonly string _staticSearchCardFilePath = Path.Combine(".", "Resources", "StaticSearchCard.json");
-        private readonly string _dynamicSearchCardFilePath = Path.Combine(".", "Resources", "DynamicSearchCard.json");
-
         private readonly HttpClient _httpClient;
+        private readonly IList<Command> _cardCommands;
 
-        public TypeAheadBot(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
+        public CardsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
         {
-            _httpClient = httpClientFactory.CreateClient("WebClient");
+            _httpClient = httpClientFactory.CreateClient();
 
-            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-            OnMessage(new Regex(@"static", RegexOptions.IgnoreCase), StaticMessageHandlerAsync);
-            OnMessage(new Regex(@"dynamic", RegexOptions.IgnoreCase), DynamicMessageHandlerAsync);
+            _cardCommands = 
+                [
+                    new Command("static", StaticCardHandlerAsync),
+                    new Command("dynamic", DynamicCardHandlerAsync),
+                ];
+
+            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, OnWelcomeMessageAsync);
 
             // Listen for query from dynamic search card
             AdaptiveCards.OnSearch("nugetpackages", SearchHandlerAsync);
-            // Listen for submit buttons
+
+            // Listen for submit buttons from Adaptive Cards
             AdaptiveCards.OnActionSubmit("StaticSubmit", StaticSubmitHandlerAsync);
             AdaptiveCards.OnActionSubmit("DynamicSubmit", DynamicSubmitHandlerAsync);
 
             // Listen for ANY message to be received. MUST BE AFTER ANY OTHER HANDLERS
-            OnActivity(ActivityTypes.Message, MessageHandlerAsync);
+            OnActivity(ActivityTypes.Message, OnMessageHandlerAsync);
         }
 
         /// <summary>
         /// Handles members added events.
         /// </summary>
-        protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        protected async Task OnWelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync("Hello and welcome! With this sample you can see the functionality of static and dynamic search in adaptive card.", cancellationToken: cancellationToken);
-                    await turnContext.SendActivityAsync("Send `static` or `dynamic`", cancellationToken: cancellationToken);
+                    await turnContext.SendActivityAsync("Hello and welcome! With this sample you can see the functionality cards in an Agent.", cancellationToken: cancellationToken);
+                    await turnContext.SendActivityAsync(CommandCardActivity(), cancellationToken: cancellationToken);
                 }
             }
         }
 
         /// <summary>
-        /// Handles "static" message.
+        /// Handles displaying card types.
         /// </summary>
-        protected async Task StaticMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        protected async Task OnMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            Attachment attachment = CreateAdaptiveCardAttachment(_staticSearchCardFilePath);
+            var cardCommand = _cardCommands.Where(c => c.Name == turnContext.Activity.Text).FirstOrDefault();
+            if (cardCommand == null)
+            {
+                await turnContext.SendActivityAsync(CommandCardActivity(), cancellationToken);
+                return;
+            }
+
+            if (cardCommand.Name.Equals("dynamic") && !turnContext.Activity.ChannelId.Equals(Channels.Msteams))
+            {
+                await turnContext.SendActivityAsync("Only Teams channels support `dynamic`", cancellationToken: cancellationToken);
+                return;
+            }
+
+            await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
+        }
+
+        /// <summary>
+        /// Handles "static" card.
+        /// </summary>
+        protected async Task StaticCardHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "StaticSearchCard.json"));
             await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
 
         /// <summary>
-        /// Handles "dynamic" message.
+        /// Handles "dynamic" card.
         /// </summary>
-        protected async Task DynamicMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        protected async Task DynamicCardHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            Attachment attachment = CreateAdaptiveCardAttachment(_dynamicSearchCardFilePath);
+            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "DynamicSearchCard.json"));
             await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
 
-        /// <summary>
-        /// Handles messages except "static" and "dynamic".
-        /// </summary>
-        protected async Task MessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        // Displays a HeroCard to display card types to show.
+        private Activity CommandCardActivity()
         {
-            await turnContext.SendActivityAsync(MessageFactory.Text("Try saying `static` or `dynamic`."), cancellationToken);
+            var commandCard = new HeroCard
+            {
+                Title = "Types of cards",
+                Buttons = [.. _cardCommands.Select(c => new CardAction() { Title = c.Name, Type = ActionTypes.ImBack, Value = c.Name.ToLowerInvariant() })],
+            };
+
+            return new Activity() { Type = ActivityTypes.Message, Attachments = [commandCard.ToAttachment()] };
         }
 
         /// <summary>
@@ -111,7 +138,7 @@ namespace AdaptiveCardsBot
         protected async Task StaticSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             AdaptiveCardSubmitData submitData = ProtocolJsonSerializer.ToObject<AdaptiveCardSubmitData>(data);
-            await turnContext.SendActivityAsync(MessageFactory.Text($"Statically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"({nameof(CardsAgent)}) Statically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
         }
 
         /// <summary>
@@ -120,7 +147,7 @@ namespace AdaptiveCardsBot
         protected async Task DynamicSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             AdaptiveCardSubmitData submitData = ProtocolJsonSerializer.ToObject<AdaptiveCardSubmitData>(data);
-            await turnContext.SendActivityAsync(MessageFactory.Text($"Dynamically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"({nameof(CardsAgent)}) Dynamically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
         }
 
         private async Task<Package[]> SearchPackages(string text, int size, CancellationToken cancellationToken)
@@ -163,5 +190,11 @@ namespace AdaptiveCardsBot
             };
             return adaptiveCardAttachment;
         }
+    }
+
+    class Command(string name, RouteHandler routeHandler)
+    {
+        public string Name { get; set; } = name;
+        public RouteHandler CardHandler { get; set; } = routeHandler;
     }
 }

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 
-namespace AdaptiveCardsBot.Model
+namespace HandlingCards.Model
 {
     public class AdaptiveCardSubmitData
     {
