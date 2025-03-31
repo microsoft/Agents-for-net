@@ -243,6 +243,37 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 
 
         /// <summary>
+        /// Used only when DirectConnectUrl is provided.
+        /// </summary>
+        /// <param name="baseaddress"></param>
+        /// <param name="conversationId"></param>
+        /// <returns></returns>
+        private static Uri CreateUri(string baseaddress, string? conversationId)
+        {
+            var builder = new UriBuilder(baseaddress);
+            builder.Query = $"api-version={ApiVersion}";
+
+            // if builder.path ends with /, remove it
+            if (builder.Path.EndsWith('/'))
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
+            }
+            // if builder.path has /conversations, remove it
+            if (builder.Path.Contains("/conversations"))
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.IndexOf("/conversations"));
+            }
+
+            if (string.IsNullOrEmpty(conversationId))
+                builder.Path = $"{builder.Path}/conversations";
+            else
+                builder.Path = $"{builder.Path}/conversations/{conversationId}";
+
+            return builder.Uri;
+        }
+
+
+        /// <summary>
         /// Gets the environment endpoint for the Power Platform API.
         /// </summary>
         /// <param name="cloud"></param>
