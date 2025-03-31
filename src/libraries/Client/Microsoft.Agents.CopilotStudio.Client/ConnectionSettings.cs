@@ -11,7 +11,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
     /// <summary>
     /// Configuration object for the DirectToEngine client.
     /// </summary>
-    public class ConnectionSettings : IDirectToEngineConnectionSettings
+    public class ConnectionSettings : ICopilotStudioClientConnectionSettings
     {
         //<inheritdoc/>
         public string? EnvironmentId { get; set; }
@@ -22,8 +22,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
         //<inheritdoc/>
         public string? BotIdentifier { get; set; }
         //<inheritdoc/>
-        public BotType? CopilotBotType { get; set; } 
-
+        public BotType? CopilotBotType { get; set; }
+        //<inheritdoc/>
+        public string? DirectConnectUrl { get; set; } = null;
+        //<inheritdoc/>
+        public bool UseExperimentalEndpoint { get; set; } = false;
+        //<inheritdoc/>
+        public bool EnableDiagnostics { get; set; } = false;
 
 
         /// <summary>
@@ -36,11 +41,17 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             if (config != null && config.Exists())
             {
-                EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
-                BotIdentifier = config[nameof(BotIdentifier)] ?? throw new ArgumentException($"{nameof(BotIdentifier)} not found in config");
-                Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Unknown);
+                DirectConnectUrl = config[nameof(DirectConnectUrl)];
+                Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Prod);
                 CopilotBotType = config.GetValue(nameof(CopilotBotType), BotType.Published);
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
+                UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint),false);
+                EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);
+                if (string.IsNullOrEmpty(DirectConnectUrl))
+                {
+                    EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
+                    BotIdentifier = config[nameof(BotIdentifier)] ?? throw new ArgumentException($"{nameof(BotIdentifier)} not found in config");
+                }
             }
         }
     }

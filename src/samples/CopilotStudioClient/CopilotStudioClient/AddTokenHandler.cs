@@ -11,6 +11,8 @@ namespace CopilotStudioClientSample
 {
     /// <summary>
     /// This sample uses an HttpClientHandler to add an authentication token to the request.
+    /// This is used for the interactive authentication flow. 
+    /// For more information on how to setup various authentication flows, see the Microsoft Identity documentation at https://aka.ms/msal.
     /// </summary>
     /// <param name="settings">Direct To engine connection settings.</param>
     internal class AddTokenHandler(SampleConnectionSettings settings) : DelegatingHandler(new HttpClientHandler())
@@ -22,9 +24,10 @@ namespace CopilotStudioClientSample
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            string[] scopes = ["https://api.powerplatform.com/.default"];
-            //string[] scopes = ["https://api.gov.powerplatform.microsoft.us/CopilotStudio.Copilots.Invoke"];
+            // Gets the correct scope for connecting to Copilot Studio based on the settings provided. 
+            string[] scopes = [CopilotClient.ScopeFromSettings(settings)];
 
+            // Setup a Public Client application for authentication.
             IPublicClientApplication app = PublicClientApplicationBuilder.Create(settings.AppClientId)
                  .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
                  .WithTenantId(settings.TenantId)

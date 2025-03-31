@@ -11,54 +11,50 @@ namespace CopilotStudioClientSample
 {
     /// <summary>
     /// This sample uses an HttpClientHandler to add an authentication token to the request.
+    /// In this case its using client secret for the request. 
     /// </summary>
     /// <param name="settings">Direct To engine connection settings.</param>
     internal class AddTokenHandlerS2S(SampleConnectionSettings settings) : DelegatingHandler(new HttpClientHandler())
     {
         private static readonly string _keyChainServiceName = "copilot_studio_client_app";
         private static readonly string _keyChainAccountName = "copilot_studio_client";
-        
+
+        private IConfidentialClientApplication? _confidentialClientApplication;
+        private string[]? _scopes;
+
         private async Task<AuthenticationResult> AuthenticateAsync(CancellationToken ct = default!)
         {
-            ArgumentNullException.ThrowIfNull(settings);
-
-            string[] scopes = ["https://api.powerplatform.com/.default"];
-            //string[] scopes = ["https://api.gov.powerplatform.microsoft.us/CopilotStudio.Copilots.Invoke"];
-
-            IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(settings.AppClientId)
-                .WithAuthority(AzureCloudInstance.AzurePublic, settings.TenantId)
-                .Build();
-
-            string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
-
-            if (!Directory.Exists(currentDir))
+            if (_confidentialClientApplication == null)
             {
-                Directory.CreateDirectory(currentDir);
-            }
+                ArgumentNullException.ThrowIfNull(settings);
+                _scopes = [CopilotClient.ScopeFromSettings(settings)];
+                _confidentialClientApplication = ConfidentialClientApplicationBuilder.Create(settings.AppClientId)
+                    .WithAuthority(AzureCloudInstance.AzurePublic, settings.TenantId)
+                    .WithClientSecret(settings.AppClientSecret)
+                    .Build();
 
-            StorageCreationPropertiesBuilder storageProperties = new("AppTokenCache", currentDir);
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                storageProperties.WithLinuxUnprotectedFile();
-            }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
-            }
-            MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
-            tokenCacheHelper.RegisterCache(app.AppTokenCache);
+                string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
 
-            IAccount? account = (await app.GetAccountsAsync()).FirstOrDefault();
+                if (!Directory.Exists(currentDir))
+                {
+                    Directory.CreateDirectory(currentDir);
+                }
+
+                StorageCreationPropertiesBuilder storageProperties = new("AppTokenCache", currentDir);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    storageProperties.WithLinuxUnprotectedFile();
+                }
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
+                }
+                MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
+                tokenCacheHelper.RegisterCache(_confidentialClientApplication.AppTokenCache);
+            }
 
             AuthenticationResult authResponse;
-            try
-            {
-                authResponse = await app.AcquireTokenSilent(scopes, account).ExecuteAsync(ct);
-            }
-            catch (MsalUiRequiredException)
-            {
-                authResponse = await app.AcquireTokenInteractive(scopes).ExecuteAsync(ct);
-            }
+            authResponse = await _confidentialClientApplication.AcquireTokenForClient(_scopes).ExecuteAsync(ct);
             return authResponse;
         }
 
