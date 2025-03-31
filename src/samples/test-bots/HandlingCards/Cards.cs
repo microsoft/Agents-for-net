@@ -7,17 +7,67 @@ using Microsoft.Agents.Builder;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Agents.Builder.App;
 
 namespace HandlingCards
 {
     internal static class Cards
     {
-        public static async Task SendStaticSearchCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        static IList<CardCommand> _cardCommands = _cardCommands =
+                [
+                    new CardCommand("static_submit", SendStaticSubmitCardAsync),
+                    new CardCommand("dynamic_search", SendDynamicSearchCardAsync),
+                    new CardCommand("hero", SendHeroCardAsync),
+                    new CardCommand("thumbnail", SendThumbnailCardAsync),
+                    new CardCommand("audio", SendAudioCardAsync),
+                    new CardCommand("video", SendVideoCardAsync),
+                    new CardCommand("animation", SendAnimationCardAsync),
+                    new CardCommand("receipt", SendReceiptCardAsync)
+                ];
+
+        public static async Task SendCardCommandsAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            var commandCard = new HeroCard
+            {
+                Title = "Types of cards",
+                Buttons = [.. _cardCommands.Select(c => new CardAction() { Title = c.Name, Type = ActionTypes.ImBack, Value = c.Name.ToLowerInvariant() })],
+            };
+
+            var activity = new Activity() { Type = ActivityTypes.Message, Attachments = [commandCard.ToAttachment()] };
+            await turnContext.SendActivityAsync(activity, cancellationToken);
+        }
+
+        public static async Task<bool> OnCardCommandsAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            var cardCommand = _cardCommands.Where(c => c.Name == turnContext.Activity.Text).FirstOrDefault();
+            if (cardCommand == null)
+            {
+                await SendCardCommandsAsync(turnContext, turnState, cancellationToken);
+                return false;
+            }
+
+            if (cardCommand.Name.Equals("dynamic_search") && !turnContext.Activity.ChannelId.Equals(Channels.Msteams))
+            {
+                await turnContext.SendActivityAsync("Only Teams channels support `Search`", cancellationToken: cancellationToken);
+                return true;
+            }
+
+            await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
+            return true;
+        }
+
+        // This will send an Adaptive Care where "StaticSubmit" is sent when the Submit button is clicked.
+        public static async Task SendStaticSubmitCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "StaticSearchCard.json"));
             await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
 
+        // This will send an Adaptive Care where "DynamicSubmit" is sent when the Submit button is clicked.  It also supports the
+        // Teams "Search" functionality, which gets send with the value of "nugetpackages" to the AgentApplication.AdaptiveCards.OnSearch 
+        // handler.
         public static async Task SendDynamicSearchCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "DynamicSearchCard.json"));
@@ -81,6 +131,12 @@ namespace HandlingCards
             return thumbnailCard;
         }
 
+        public static async Task SendReceiptCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            Attachment attachment = GetReceiptCard().ToAttachment();
+            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
+        }
+
         public static ReceiptCard GetReceiptCard()
         {
             var receiptCard = new ReceiptCard
@@ -115,15 +171,17 @@ namespace HandlingCards
             return receiptCard;
         }
 
+        public static async Task SendAnimationCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            Attachment attachment = GetAnimationCard().ToAttachment();
+            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
+        }
+
         public static AnimationCard GetAnimationCard()
         {
             var animationCard = new AnimationCard
             {
                 Title = "Animation Card",
-                Image = new ThumbnailUrl
-                {
-                    Url = "https://docs.microsoft.com/en-us/bot-framework/media/how-it-works/architecture-resize.png",
-                },
                 Media =
                 [
                     new MediaUrl()
@@ -134,6 +192,12 @@ namespace HandlingCards
             };
 
             return animationCard;
+        }
+
+        public static async Task SendVideoCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            Attachment attachment = GetVideoCard().ToAttachment();
+            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
 
         public static VideoCard GetVideoCard()
@@ -197,7 +261,7 @@ namespace HandlingCards
                 [
                     new MediaUrl()
                     {
-                        Url = "https://www.drodd.com/star-wars-soundboard/vader_father.wav",
+                        Url = "https://www.mediacollege.com/downloads/sound-effects/star-wars/darthvader/darthvader_yourfather.wav",
                     },
                 ],
                 Buttons =
@@ -213,5 +277,11 @@ namespace HandlingCards
 
             return audioCard;
         }
+    }
+
+    class CardCommand(string name, RouteHandler routeHandler)
+    {
+        public string Name { get; set; } = name;
+        public RouteHandler CardHandler { get; set; } = routeHandler;
     }
 }

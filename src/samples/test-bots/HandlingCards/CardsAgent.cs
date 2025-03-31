@@ -26,29 +26,53 @@ namespace HandlingCards
     public class CardsAgent : AgentApplication
     {
         private readonly HttpClient _httpClient;
-        private readonly IList<CardCommand> _cardCommands;
 
         public CardsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
         {
             _httpClient = httpClientFactory.CreateClient();
 
-            _cardCommands = 
-                [
-                    new CardCommand("static", Cards.SendStaticSearchCardAsync),
-                    new CardCommand("dynamic", Cards.SendDynamicSearchCardAsync),
-                    new CardCommand("hero", Cards.SendHeroCardAsync),
-                    new CardCommand("thumbnail", Cards.SendThumbnailCardAsync),
-                    new CardCommand("audio", Cards.SendAudioCardAsync)
-                ];
-
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, OnWelcomeMessageAsync);
 
-            // Listen for query from dynamic search card
-            AdaptiveCards.OnSearch("nugetpackages", SearchHandlerAsync);
-
-            // Listen for submit buttons from Adaptive Cards
+            // Listen for submit actions from Adaptive Cards.
+            // Adaptive Cards that contain a submit action will call back to the Agent with the `value`
+            // of a selection and the indicated Action.Submit `verb`.  The value of `verb` can be anything, but
+            // a handler for the verb needs to be added using `AdaptiveCards.OnActionSubmit`.
+            //
+            // "items": [
+            //   {
+            //     "choices": [
+            //     {
+            //       "title": "Visual studio",
+            //       "value": "visual_studio"
+            //     }
+            //   }
+            // ],
+            // "actions": [
+            //   {
+            //     "type": "Action.Submit",
+            //     "title": "Submit",
+            //      "data": {
+            //        "verb": "StaticSubmit"
+            //      }
+            //   }
+            // ]
+            //
+            // // See Resources/StaticSearchCard.json
             AdaptiveCards.OnActionSubmit("StaticSubmit", StaticSubmitHandlerAsync);
             AdaptiveCards.OnActionSubmit("DynamicSubmit", DynamicSubmitHandlerAsync);
+
+            // Listen for Search query an Adaptive Cards.
+            // Adaptive Cards `items` that contain the following will triggers a callback to the Agent
+            // when the user types in the field.  The value of `dataset` can be a value of your your
+            // your choosing, but you must add an `AdaptiveCards.OnSearch` handler for that value.
+            // 
+            // "choices.data": {
+            //   "type": "Data.Query",
+            //   "dataset": "nugetpackages"
+            // }
+            //
+            // See Resources/DynamicSearchCard.json
+            AdaptiveCards.OnSearch("nugetpackages", SearchHandlerAsync);
 
             // Listen for ANY message to be received. MUST BE AFTER ANY OTHER HANDLERS
             OnActivity(ActivityTypes.Message, OnMessageHandlerAsync);
@@ -64,7 +88,7 @@ namespace HandlingCards
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
                     await turnContext.SendActivityAsync("Hello and welcome! With this sample you can see the functionality cards in an Agent.", cancellationToken: cancellationToken);
-                    await turnContext.SendActivityAsync(CommandCardActivity(), cancellationToken: cancellationToken);
+                    await Cards.SendCardCommandsAsync(turnContext, turnState, cancellationToken);
                 }
             }
         }
@@ -74,20 +98,8 @@ namespace HandlingCards
         /// </summary>
         private async Task OnMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var cardCommand = _cardCommands.Where(c => c.Name == turnContext.Activity.Text).FirstOrDefault();
-            if (cardCommand == null)
-            {
-                await turnContext.SendActivityAsync(CommandCardActivity(), cancellationToken);
-                return;
-            }
-
-            if (cardCommand.Name.Equals("dynamic") && !turnContext.Activity.ChannelId.Equals(Channels.Msteams))
-            {
-                await turnContext.SendActivityAsync("Only Teams channels support `dynamic`", cancellationToken: cancellationToken);
-                return;
-            }
-
-            await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
+            // For this sample, just let the Cards handle sending the selected card.
+            await Cards.OnCardCommandsAsync(turnContext, turnState, cancellationToken);
         }
 
         /// <summary>
@@ -151,24 +163,5 @@ namespace HandlingCards
                 return Array.Empty<Package>();
             }
         }
-
-        // Displays a HeroCard to display card types to show.
-        private Activity CommandCardActivity()
-        {
-            var commandCard = new HeroCard
-            {
-                Title = "Types of cards",
-                Buttons = [.. _cardCommands.Select(c => new CardAction() { Title = c.Name, Type = ActionTypes.ImBack, Value = c.Name.ToLowerInvariant() })],
-            };
-
-            return new Activity() { Type = ActivityTypes.Message, Attachments = [commandCard.ToAttachment()] };
-        }
-
-    }
-
-    class CardCommand(string name, RouteHandler routeHandler)
-    {
-        public string Name { get; set; } = name;
-        public RouteHandler CardHandler { get; set; } = routeHandler;
     }
 }

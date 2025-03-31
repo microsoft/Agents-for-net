@@ -61,5 +61,7 @@ if (app.Environment.IsDevelopment())
     app.Urls.Add($"http://localhost:{port}");
 }
 
+app.MapControllers();
+
 // Start listening. 
 await app.RunAsync();
