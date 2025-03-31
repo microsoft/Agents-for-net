@@ -11,7 +11,6 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Nodes;
@@ -22,12 +21,12 @@ using System.Web;
 namespace HandlingCards
 {
     /// <summary>
-    /// Defines the activity handlers.
+    /// Displays the various card types available in Agents SDK.
     /// </summary>
     public class CardsAgent : AgentApplication
     {
         private readonly HttpClient _httpClient;
-        private readonly IList<Command> _cardCommands;
+        private readonly IList<CardCommand> _cardCommands;
 
         public CardsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
         {
@@ -35,8 +34,11 @@ namespace HandlingCards
 
             _cardCommands = 
                 [
-                    new Command("static", StaticCardHandlerAsync),
-                    new Command("dynamic", DynamicCardHandlerAsync),
+                    new CardCommand("static", Cards.SendStaticSearchCardAsync),
+                    new CardCommand("dynamic", Cards.SendDynamicSearchCardAsync),
+                    new CardCommand("hero", Cards.SendHeroCardAsync),
+                    new CardCommand("thumbnail", Cards.SendThumbnailCardAsync),
+                    new CardCommand("audio", Cards.SendAudioCardAsync)
                 ];
 
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, OnWelcomeMessageAsync);
@@ -55,7 +57,7 @@ namespace HandlingCards
         /// <summary>
         /// Handles members added events.
         /// </summary>
-        protected async Task OnWelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        private async Task OnWelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
             {
@@ -70,7 +72,7 @@ namespace HandlingCards
         /// <summary>
         /// Handles displaying card types.
         /// </summary>
-        protected async Task OnMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        private async Task OnMessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             var cardCommand = _cardCommands.Where(c => c.Name == turnContext.Activity.Text).FirstOrDefault();
             if (cardCommand == null)
@@ -89,39 +91,9 @@ namespace HandlingCards
         }
 
         /// <summary>
-        /// Handles "static" card.
-        /// </summary>
-        protected async Task StaticCardHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "StaticSearchCard.json"));
-            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
-        }
-
-        /// <summary>
-        /// Handles "dynamic" card.
-        /// </summary>
-        protected async Task DynamicCardHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "DynamicSearchCard.json"));
-            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
-        }
-
-        // Displays a HeroCard to display card types to show.
-        private Activity CommandCardActivity()
-        {
-            var commandCard = new HeroCard
-            {
-                Title = "Types of cards",
-                Buttons = [.. _cardCommands.Select(c => new CardAction() { Title = c.Name, Type = ActionTypes.ImBack, Value = c.Name.ToLowerInvariant() })],
-            };
-
-            return new Activity() { Type = ActivityTypes.Message, Attachments = [commandCard.ToAttachment()] };
-        }
-
-        /// <summary>
         /// Handles Adaptive Card dynamic search events.
         /// </summary>
-        protected async Task<IList<AdaptiveCardsSearchResult>> SearchHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
+        private async Task<IList<AdaptiveCardsSearchResult>> SearchHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
         {
             string queryText = query.Parameters.QueryText;
             int count = query.Count;
@@ -135,7 +107,7 @@ namespace HandlingCards
         /// <summary>
         /// Handles Adaptive Card Action.Submit events with verb "StaticSubmit".
         /// </summary>
-        protected async Task StaticSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        private async Task StaticSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             AdaptiveCardSubmitData submitData = ProtocolJsonSerializer.ToObject<AdaptiveCardSubmitData>(data);
             await turnContext.SendActivityAsync(MessageFactory.Text($"({nameof(CardsAgent)}) Statically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
@@ -144,7 +116,7 @@ namespace HandlingCards
         /// <summary>
         /// Handles Adaptive Card Action.Submit events with verb "DynamicSubmit".
         /// </summary>
-        protected async Task DynamicSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        private async Task DynamicSubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             AdaptiveCardSubmitData submitData = ProtocolJsonSerializer.ToObject<AdaptiveCardSubmitData>(data);
             await turnContext.SendActivityAsync(MessageFactory.Text($"({nameof(CardsAgent)}) Dynamically selected option is: {submitData!.ChoiceSelect}"), cancellationToken);
@@ -180,19 +152,21 @@ namespace HandlingCards
             }
         }
 
-        private static Attachment CreateAdaptiveCardAttachment(string filePath)
+        // Displays a HeroCard to display card types to show.
+        private Activity CommandCardActivity()
         {
-            var adaptiveCardJson = File.ReadAllText(filePath);
-            var adaptiveCardAttachment = new Attachment()
+            var commandCard = new HeroCard
             {
-                ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = adaptiveCardJson
+                Title = "Types of cards",
+                Buttons = [.. _cardCommands.Select(c => new CardAction() { Title = c.Name, Type = ActionTypes.ImBack, Value = c.Name.ToLowerInvariant() })],
             };
-            return adaptiveCardAttachment;
+
+            return new Activity() { Type = ActivityTypes.Message, Attachments = [commandCard.ToAttachment()] };
         }
+
     }
 
-    class Command(string name, RouteHandler routeHandler)
+    class CardCommand(string name, RouteHandler routeHandler)
     {
         public string Name { get; set; } = name;
         public RouteHandler CardHandler { get; set; } = routeHandler;
