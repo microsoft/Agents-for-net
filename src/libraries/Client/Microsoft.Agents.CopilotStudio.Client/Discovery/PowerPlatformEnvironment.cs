@@ -70,9 +70,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                         }
                     }
                 }
-                if (settings.CopilotBotType != null)
+                if (settings.CopilotAgentType != null)
                 {
-                    agentType = settings.CopilotBotType.Value;
+                    agentType = settings.CopilotAgentType.Value;
                 }
 
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";

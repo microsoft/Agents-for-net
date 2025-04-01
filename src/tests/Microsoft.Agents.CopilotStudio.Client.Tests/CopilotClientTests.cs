@@ -115,7 +115,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             {
                 EnvironmentId = "A47151CF-4F34-488F-B377-EBE84E17B478",
                 Cloud = cloud,
-                SchemaName = "Bot01",
+                SchemaName = "Bot01", 
                 CopilotAgentType = AgentType.Published,
                 CustomPowerPlatformCloud = cloudBaseAddress
             };

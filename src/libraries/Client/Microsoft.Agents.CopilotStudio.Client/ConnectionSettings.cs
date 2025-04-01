@@ -22,7 +22,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         //<inheritdoc/>
         public string? SchemaName { get; set; }
         //<inheritdoc/>
-        public AgentType? CopilotBotType { get; set; }
+        public AgentType? CopilotAgentType { get; set; }
         //<inheritdoc/>
         public string? DirectConnectUrl { get; set; } = null;
         //<inheritdoc/>
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             {
                 DirectConnectUrl = config[nameof(DirectConnectUrl)];
                 Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Prod);
-                CopilotBotType = config.GetValue(nameof(CopilotBotType), AgentType.Published);
+                CopilotAgentType = config.GetValue(nameof(CopilotAgentType), AgentType.Published);
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
                 UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint),false);
                 EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);

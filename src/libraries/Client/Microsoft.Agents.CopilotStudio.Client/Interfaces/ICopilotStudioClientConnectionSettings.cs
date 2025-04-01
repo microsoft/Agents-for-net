@@ -31,7 +31,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// <summary>
         /// Type of Agent hosted in Copilot Studio
         /// </summary>
-        AgentType? CopilotBotType { get; set; }
+        AgentType? CopilotAgentType { get; set; }
 
         /// <summary>
         /// URL provided to connect direclty to Copilot Studio endpoint,  When provided all other settings are ignored. 
