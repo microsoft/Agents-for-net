@@ -59,33 +59,16 @@ builder.AddAgent(sp =>
     }
 
     // Since Auto SignIn is enabled, by the time this is called the sign in has already happened.
-    app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
-    {
-        var mcsConversationId = turnState.GetValue<string>(MCSConversationPropertyName);
-        if (string.IsNullOrEmpty(mcsConversationId))
-        {
-            var cpsClient = GetClient(app);
-
-            await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
-            {
-                if (activity.IsType(ActivityTypes.Message))
-                {
-                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
-
-                    // Record the conversationId MCS is sending. It will be used this for subsequent messages.
-                    turnState.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
-                }
-            }
-        }
-    });
-
-    app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+    // NOTE:  This is a slightly unusual way to handle incoming Activities (but perfectly) valid.  For this sample,
+    // we just want to proxy messages to/from a Copilot Studio Agent.
+    app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
     {
         var mcsConversationId = turnState.GetValue<string>(MCSConversationPropertyName);
         var cpsClient = GetClient(app);
 
         if (string.IsNullOrEmpty(mcsConversationId))
         {
+            // Regardless of the Activity  Type, start the conversation.
             await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
             {
                 if (activity.IsType(ActivityTypes.Message))
@@ -97,8 +80,9 @@ builder.AddAgent(sp =>
                 }
             }
         }
-        else
+        else if (turnContext.Activity.IsType(ActivityTypes.Message))
         {
+            // Send the Copilot Studio Agent whatever the sent and send the responses back.
             await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
             {
                 if (activity.IsType(ActivityTypes.Message))
