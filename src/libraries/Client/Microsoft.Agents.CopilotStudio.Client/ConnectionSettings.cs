@@ -29,14 +29,19 @@ namespace Microsoft.Agents.CopilotStudio.Client
         public bool UseExperimentalEndpoint { get; set; } = false;
         //<inheritdoc/>
         public bool EnableDiagnostics { get; set; } = false;
-        
+
 
         /// <summary>
-        /// Create ConnectionSettings from a configuration section.
+        /// Default constructor for the ConnectionSettings class.
+        /// </summary>
+        public ConnectionSettings()
+        {}
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionSettings"/> class.
         /// </summary>
         /// <param name="config">Configuration Section containing DirectToEngine Connection settings</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown when required configuration values are missing</exception>
         public ConnectionSettings(IConfigurationSection config)
         {
             if (config != null && config.Exists())

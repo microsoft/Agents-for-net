@@ -9,7 +9,9 @@
  To use this library, you will need the following:
  
  1. An Agent Created in Microsoft Copilot Studio.
- 1. Ability to Create a Application Identity in Azure for a Public Client/Native App Registration Or access to an existing Public Client/Native App registration with the **CopilotStudio.Copilot.Invoke API Permission assigned**.
+ 1. Ability to Create or Edit an Application Identity in Azure 
+    1. (option 1) for a Public Client/Native App Registration Or access to an existing Public Client/Native App registration with the **CopilotStudio.Copilot.Invoke API Delegated Permission assigned**.
+    1. (option 2) for a Confidential Client/Service Principal App Registration Or access to an existing Confidential Client/Service Principal App Registration App registration with the **CopilotStudio.Copilot.Invoke API Application Permission assigned**.
  
  ### Create a Agent in Copilot Studio
  
@@ -21,48 +23,103 @@
  
  ### Create an Application Registration in Entra ID to support user authentication to Copilot Studio
  
- This is used when you are creating an application soly for the purpose of user interactive login and will be using a client that will surface an Entra ID MultiFactor Authentication Prompt.    
- 
  > [!IMPORTANT]
  > If you are using this client from a service, you will need to exchange the user token used to login to your service for a token for your agent hosted in copilot studio. This is called a On Behalf Of authentication token.  You can find more information about this authentication flow in [Entra Documentation](https://learn.microsoft.com/entra/msal/dotnet/acquiring-tokens/web-apps-apis/on-behalf-of-flow). 
+ > 
+ > When using this method, you will need to add the `CopilotStudio.Copilots.Invoke` *delegated* API permision to your application registration's API privialges.
+  
+### Add the CopilotStudio.Copilots.Invoke permissions to your Application Registration in Entra ID to support user authentication to Copilot Studio
  
- This step will require permissions to Create application identities in your Azure tenant. For user authentication, you will be creating a Native Client Application Identity, which does not have secrets.
- 
- 1. Open <https://portal.azure.com>
- 1. Navigate to Entra Id
- 1. Create an new App Registration in Entra ID
-     1. Provide an Name
-     1. Choose "Accounts in this organization directory only"
-     1. In the "Select a Platform" list, Choose "Public Client/native (mobile & desktop)
-     1. In the Redirect URI url box, type in `http://localhost` (**note: use HTTP, not HTTPS**)
-     1. Then click register.
- 1. In your newly created application
-     1. On the Overview page, Note down for use later when configuring the example application:
-         1. the Application (client) ID
-         1. the Directory (tenant) ID
+ This step will require permissions to edit application identities in your Azure tenant.
+
+ 1. In your azure application
      1. Goto Manage
      1. Goto API Permissions
      1. Click Add Permission
          1. In the side pannel that appears, Click the tab `API's my organization uses`
          1. Search for `Power Platform API`.
              1. *If you do not see `Power Platform API` see the note at the bottom of this section.*
-         1. In the permissions list choose `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
-         1. Click `Add Permissions`
-     1. (Optional) Click `Grant Admin consent for copilotsdk`
+         1. For *User Interactive Permisions*, choose `Delegated Permissions`
+            1. In the permissions list choose `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
+            1. Click `Add Permissions`
+         1. For *Service Principal/Confidential Client*, choose `Application Permissions`
+            1. In the permissions list choose `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
+            1. Click `Add Permissions`
+            1. A appropiate administrator must then `Grant Admin consent for copilotsdk` before the permissions will be available to the application.
      1. Close Azure Portal
  
  > [!TIP]
  > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
  
- ### Add the CopilotStudio.Copilots.Invoke permissions to your Application Registration in Entra ID to support user authentication to Copilot Studio
  
  ## How-to use
-  
- ### User Based auth flows
  
- User based authentication flows are the only currently supported flow for this client.
+ ### Setting up configuraiton for the CopilotStudio Client
+
+ The Copilot Client is configured using the `CopilotClientSettings` class.
+ The `ConnectionSettings` class can be configured using either the default constructor or a parameterized constructor that accepts an `IConfigurationSection`. Below are the steps to configure an instance of the `ConnectionSettings` class.
+
+ #### Using the Default Constructor
  
- Your code will need to create a User Token ( via MSAL Public Client or an OBO flow for a User access token) to call this service.
+ You can create an instance of the `ConnectionSettings` class with default values using the default constructor. You can create the settings object using the the default constructor or via an IConfiguraition entry.
+
+ There are a few options for configuring the `ConnectionSettings` class. The following are the most *common* options:
+
+ Using Envrionment ID and Copilot Studio Agent Schema Name:
+ ```csharp
+var connectionSettings = new ConnectionSettings 
+{ 
+    EnvironmentId = "your-environment-id", 
+    SchemaName = "your-agent-schema-name", 
+};
+ ```
+
+ Using the DirectConnectUrl:
+ ```csharp
+var connectionSettings = new ConnectionSettings 
+{
+    DirectConnectUrl = "https://direct.connect.url", 
+};
+ ```
+
+ > [!NOTE]
+ > By default, its asumed your agent is in the Microsoft Public Cloud. If you are using a different cloud, you will need to set the `Cloud` property to the appropriate value. See the `PowerPlatformCloud` enum for the supported values
+ > 
+
+ #### Using an IConfigurationSection
+
+ You can create an instance of the `ConnectionSettings` class using an `IConfigurationSection` object. 
+
+ The following are the most *common* options:
+ 
+ Using Envrionment ID and Copilot Studio Agent Schema Name:
+ 
+```json
+{
+    "ConnectionSettings": {
+        "EnvironmentId": "your-environment-id",
+        "SchemaName": "your-agent-schema-name",
+    }
+}
+ ```
+ Using the DirectConnectUrl:
+
+ ```json
+{
+    "ConnectionSettings": {
+        "DirectConnectUrl": "https://direct.connect.url",
+    }
+}
+```
+ > [!NOTE]
+ > By default, its asumed your agent is in the Microsoft Public Cloud. If you are using a different cloud, you will need to set the `Cloud` property to the appropriate value. See the `PowerPlatformCloud` enum for the supported values
+ > 
+
+ ### Getting an AccessToken for the Copilot Studio Client API
+ 
+ >[!Important] User based authentication flows are currently supported for this client, Service Prinipal Flows are in private prieview and not documented in this release. 
+ 
+ Your code will need to create a User Token ( via MSAL Public Client or an OBO flow for a User access token) to call this service, the application you use to do this must have the `CopilotStudio.Copilots.Invoke` permission assigned to it.
  
  There are currently two ways to pass auth to the CopilotClient.
  
@@ -101,3 +158,6 @@
  
  }
  ```
+
+
+
