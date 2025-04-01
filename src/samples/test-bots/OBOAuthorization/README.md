@@ -14,7 +14,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 
 1. Create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
    1. Publish your newly created Copilot
-   1. Goto Settings => Advanced => Metadata and copy the following values, You will need them later:
+   1. Go to Settings => Advanced => Metadata and copy the following values. You will need them later:
       1. Schema name
       1. Environment Id
        
@@ -32,6 +32,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
          1. **Dynamics CRM** with **user_impersonation**
          1. **Graph** with **User.Read**
          1. **Power Platform API** with **CopilotStudio.Copilots.Invoke**
+         1. Grant Admin Consent for your tenant.
       1. **Expose an API** tab
          1. Click **Add a Scope**
          1. **Application ID URI** should be: app://botid-{{appid}}
@@ -123,12 +124,15 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 ## Running this Agent in Teams
 
 1. There are two version of the manifest provided.  One for M365 Copilot and one for Teams.
-   1. Copy the desired version to manifest.json
+   1. Copy the desired version to `manifest.json`.  This will typically be `teams-manifest.json` for Teams.
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
      - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
      - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
    - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
+     - `manifest.json`
+     - `outline.png`
+     - `color.png`
 1. Upload the `manifest.zip` to Teams
    - Select **Developer Portal** in the Teams left sidebar
    - Select **Apps** (top row)
