@@ -10,25 +10,25 @@
  
  1. An Agent Created in Microsoft Copilot Studio.
  1. Ability to Create or Edit an Application Identity in Azure 
-    1. (option 1) for a Public Client/Native App Registration Or access to an existing Public Client/Native App registration with the **CopilotStudio.Copilot.Invoke API Delegated Permission assigned**.
-    1. (option 2) for a Confidential Client/Service Principal App Registration Or access to an existing Confidential Client/Service Principal App Registration App registration with the **CopilotStudio.Copilot.Invoke API Application Permission assigned**.
+    1. (Option 1) for a Public Client/Native App Registration or access to an existing registration (Public Client/Native App) that has the **CopilotStudio.Copilot.Invoke API Delegated Permission assigned**.
+    1. (Option 2) for a Confidential Client/Service Principal App Registration or access to an existing App Registration (Confidential Client/Service Principal) with the **CopilotStudio.Copilot.Invoke API Application Permission assigned**.
  
  ### Create a Agent in Copilot Studio
  
  1. Create or open an Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
      1. Make sure that the Copilot is Published
-     1. Goto Settings => Advanced => Metadata and copy the following values, You will need them later:
+     1. Goto Settings => Advanced => Metadata and copy the following values. You will need them later:
          1. Schema name - this is the 'unique name' of your agent inside this environment.
          1. Environment Id - this is the ID of the environment that contains the agent.
  
  ### Create an Application Registration in Entra ID to support user authentication to Copilot Studio
  
  > [!IMPORTANT]
- > If you are using this client from a service, you will need to exchange the user token used to login to your service for a token for your agent hosted in copilot studio. This is called a On Behalf Of authentication token.  You can find more information about this authentication flow in [Entra Documentation](https://learn.microsoft.com/entra/msal/dotnet/acquiring-tokens/web-apps-apis/on-behalf-of-flow). 
+ > If you are using this client from a service, you will need to exchange the user token used to login to your service for a token for your agent hosted in copilot studio. This is called a On Behalf Of (OBO) authentication token.  You can find more information about this authentication flow in [Entra Documentation](https://learn.microsoft.com/entra/msal/dotnet/acquiring-tokens/web-apps-apis/on-behalf-of-flow). 
  > 
- > When using this method, you will need to add the `CopilotStudio.Copilots.Invoke` *delegated* API permision to your application registration's API privialges.
+ > When using this method, you will need to add the `CopilotStudio.Copilots.Invoke` *delegated* API permision to your application registration's API privilages
   
-### Add the CopilotStudio.Copilots.Invoke permissions to your Application Registration in Entra ID to support user authentication to Copilot Studio
+### Add the CopilotStudio.Copilots.Invoke permissions to your Application Registration in Entra ID to support User or Service Principal authentication to Copilot Studio
  
  This step will require permissions to edit application identities in your Azure tenant.
 
@@ -39,7 +39,7 @@
          1. In the side pannel that appears, Click the tab `API's my organization uses`
          1. Search for `Power Platform API`.
              1. *If you do not see `Power Platform API` see the note at the bottom of this section.*
-         1. For *User Interactive Permisions*, choose `Delegated Permissions`
+         1. For *User Interactive Permissions*, choose `Delegated Permissions`
             1. In the permissions list choose `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
             1. Click `Add Permissions`
          1. For *Service Principal/Confidential Client*, choose `Application Permissions`
@@ -54,7 +54,7 @@
  
  ## How-to use
  
- ### Setting up configuraiton for the CopilotStudio Client
+ ### Setting up configuration for the CopilotStudio Client
 
  The Copilot Client is configured using the `CopilotClientSettings` class.
  The `ConnectionSettings` class can be configured using either the default constructor or a parameterized constructor that accepts an `IConfigurationSection`. Below are the steps to configure an instance of the `ConnectionSettings` class.
