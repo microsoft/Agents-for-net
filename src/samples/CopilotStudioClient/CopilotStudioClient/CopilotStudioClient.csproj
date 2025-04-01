@@ -20,10 +20,4 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Update="appsettings.Development.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
 </Project>
