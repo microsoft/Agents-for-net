@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.CopilotStudio.Client;
 
-namespace CopilotStudioClient
+namespace CopilotStudioClientSample
 {
     /// <summary>
     /// Connection Settings extension for the sample to include appID and TenantId for creating authentication token.

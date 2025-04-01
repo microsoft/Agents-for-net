@@ -11,7 +11,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// <summary>
         /// Schema name for the Copilot Studio Hosted Copilot. 
         /// </summary>
-        string? BotIdentifier { get; set; }
+        string? SchemaName { get; set; }
         
         /// <summary>
         /// if PowerPlatformCloud is set to Other, this is the url for the power platform API endpoint.
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// <summary>
         /// Type of Agent hosted in Copilot Studio
         /// </summary>
-        BotType? CopilotBotType { get; set; }
+        AgentType? CopilotBotType { get; set; }
 
         /// <summary>
         /// URL provided to connect direclty to Copilot Studio endpoint,  When provided all other settings are ignored. 

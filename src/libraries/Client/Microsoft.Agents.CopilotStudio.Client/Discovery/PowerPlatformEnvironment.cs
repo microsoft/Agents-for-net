@@ -43,9 +43,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
                 }
-                if (string.IsNullOrEmpty(settings.BotIdentifier))
+                if (string.IsNullOrEmpty(settings.SchemaName))
                 {
-                    throw new ArgumentException("BotIdentifier must be provided", nameof(settings.BotIdentifier));
+                    throw new ArgumentException("BotIdentifier must be provided", nameof(settings.SchemaName));
                 }
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
@@ -72,13 +72,13 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 }
                 if (settings.CopilotBotType != null)
                 {
-                    botType = settings.CopilotBotType.Value;
+                    agentType = settings.CopilotBotType.Value;
                 }
 
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
                 var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId, cloudBaseAddress);
-                return CreateUri(settings.BotIdentifier, host, botType, conversationId);
+                return CreateUri(settings.SchemaName, host, agentType, conversationId);
             }
             else
             {
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                     {
                         // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
                         settings.DirectConnectUrl = string.Empty; 
-                        return GetCopilotStudioConnectionUrl(settings, conversationId, botType, cloud, cloudBaseAddress);
+                        return GetCopilotStudioConnectionUrl(settings, conversationId, agentType, cloud, cloudBaseAddress);
                     }
                     return CreateUri(directConnectUrl, conversationId);
                 }
@@ -240,38 +240,6 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 
             return builder.Uri;
         }
-
-
-        /// <summary>
-        /// Used only when DirectConnectUrl is provided.
-        /// </summary>
-        /// <param name="baseaddress"></param>
-        /// <param name="conversationId"></param>
-        /// <returns></returns>
-        private static Uri CreateUri(string baseaddress, string? conversationId)
-        {
-            var builder = new UriBuilder(baseaddress);
-            builder.Query = $"api-version={ApiVersion}";
-
-            // if builder.path ends with /, remove it
-            if (builder.Path.EndsWith('/'))
-            {
-                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
-            }
-            // if builder.path has /conversations, remove it
-            if (builder.Path.Contains("/conversations"))
-            {
-                builder.Path = builder.Path.Substring(0, builder.Path.IndexOf("/conversations"));
-            }
-
-            if (string.IsNullOrEmpty(conversationId))
-                builder.Path = $"{builder.Path}/conversations";
-            else
-                builder.Path = $"{builder.Path}/conversations/{conversationId}";
-
-            return builder.Uri;
-        }
-
 
         /// <summary>
         /// Gets the environment endpoint for the Power Platform API.

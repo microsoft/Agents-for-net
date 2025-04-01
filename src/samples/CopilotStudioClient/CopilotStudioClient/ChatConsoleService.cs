@@ -4,7 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.CopilotStudio.Client;
 
-namespace CopilotStudioClient;
+namespace CopilotStudioClientSample;
 
 /// <summary>
 /// This class is responsible for handling the Chat Console service and managing the conversation between the user and the Copilot Studio hosted Agent.

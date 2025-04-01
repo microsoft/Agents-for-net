@@ -5,8 +5,9 @@ using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using Microsoft.Identity.Client.Extensions.Msal;
 using Microsoft.Identity.Client;
+using Microsoft.Agents.CopilotStudio.Client;
 
-namespace CopilotStudioClient
+namespace CopilotStudioClientSample
 {
     /// <summary>
     /// This sample uses an HttpClientHandler to add an authentication token to the request.

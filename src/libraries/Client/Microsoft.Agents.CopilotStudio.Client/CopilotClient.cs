@@ -154,41 +154,6 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Used to start a conversation with MCS. 
-        /// </summary>
-        /// <param name="emitStartConversationEvent">Should ask remote bot to emit start event</param>
-        /// <param name="cancellationToken">Event Cancelation Token</param>
-        /// <returns></returns>
-        public IAsyncEnumerable<IActivity> StartConversationAsync(bool emitStartConversationEvent = true, CancellationToken cancellationToken = default)
-        {
-            using (_logger.BeginScope("D2E:StartConversationAsync"))
-            {
-                _logger.LogTrace("Starting conversation");
-                Uri uriStart = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, null);
-                var body = new { EmitStartConversationEvent = emitStartConversationEvent };
-
-                HttpRequestMessage req = new()
-                {
-                    Method = HttpMethod.Post,
-                    RequestUri = uriStart,
-                    Headers =
-                    {
-                        Accept = { s_EventStream },
-                        UserAgent = { UserAgentHelper.UserAgentHeader }
-                    },
-                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(body)))
-                    {
-                        Headers =
-                        {
-                            ContentType = s_ApplicationJson,
-                        }
-                    }
-                };
-                return PostRequestAsync(req, cancellationToken);
-            }
-        }
-
-        /// <summary>
         /// Sends a String question to the remote bot and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="question">String Question to send to copilot</param>
