@@ -83,11 +83,28 @@ builder.AddAgent(sp =>
     {
         var mcsConversationId = turnState.GetValue<string>(MCSConversationPropertyName);
         var cpsClient = GetClient(app);
-        await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
+
+        if (string.IsNullOrEmpty(mcsConversationId))
         {
-            if (activity.IsType(ActivityTypes.Message))
+            await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
             {
-                await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                if (activity.IsType(ActivityTypes.Message))
+                {
+                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+
+                    // Record the conversationId MCS is sending. It will be used this for subsequent messages.
+                    turnState.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+                }
+            }
+        }
+        else
+        {
+            await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
+            {
+                if (activity.IsType(ActivityTypes.Message))
+                {
+                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                }
             }
         }
     });
