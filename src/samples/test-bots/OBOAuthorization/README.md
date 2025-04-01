@@ -1,10 +1,9 @@
-﻿# OAuth OBO Authorization
+﻿# OBO OAuth
 
 This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use authorization in your Agent using OAuth.
 
 - The sample uses the bot authorization capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authenticates users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
-- The samples demonstrates performing OAuth without using the Dialogs package.
-- This sample shows how to use the OBO Exchange to communicate with Microsoft Copilot Studio
+- This sample shows how to use an OBO Exchange to communicate with Microsoft Copilot Studio
 
 - ## Prerequisites
 
@@ -13,18 +12,47 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 
 ## Running this sample
 
-1. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
-   - Record the Application ID, the Tenant ID, and the Client Secret for use below
+1. Create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
+   1. Publish your newly created Copilot
+   1. Goto Settings => Advanced => Metadata and copy the following values, You will need them later:
+      1. Schema name
+      1. Environment Id
+       
+2. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
+   - Record the Application ID, the Tenant ID, and the Client Secret for use in the "ServiceConnection" settings below.
 
-1. **This needs documented to account for exchangeable tokens**  
-   1. Create App Registration
-      1. authorization
-      1. API Permissions
-      1. Expose API
-   1. Create Azure Bot **OAuth Connection**
+3. Setting up OAuth for an exchangeable token 
+   1. Create a new App Registration
+      1. SingleTenant
+      1. Give it a name and click **Register**
+      1. **Authentication** tab
+         1. **Add Platform**, then **Web**, Set `Redirect URI` to `Web` and `https://token.botframework.com/.auth/web/redirect`
+         1. **Add Platform**, then **Mobile and desktop applications**, and add an additional `http:localhost` Uri.
+      1. **API Permissions** tab
+         1. **Dynamics CRM** with **user_impersonation**
+         1. **Graph** with **User.Read**
+         1. **Power Platform API** with **CopilotStudio.Copilots.Invoke**
+      1. **Expose an API** tab
+         1. Click **Add a Scope**
+         1. **Application ID URI** should be: app://botid-{{appid}}
+         1. **Scope Name** is "defaultScope"
+         1. **Who can consent** is **Admins and users**
+         1. Enter values for the required Consent fields
+      1. **Certificates & secrets**
+         1. Create a new secret and record the value.  This will be used later.
+         
+4. Create Azure Bot **OAuth Connection**
+   1. On the Azure Bot created in Step #2, Click **Configuration** tab then the **Add OAuth Connection Settings** button.
+   1. Enter a **Name**.  This will be used later.
+   1. For **Service Provider** select **Azure Active Directory v2**
+   1. **Client id** and **Client Secret** are the values created in step #3.
+   1. Enter the **Tenant ID**
+   1. **Scopes** is "app://{{appid}}/defaultScope"
 
-1. Configuring the token connection in the Agent settings
+1. Configuring the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL authorization provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
+
+   > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
    1. Open the `appsettings.json` file in the root of the sample project.
 
@@ -39,9 +67,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       },
 
       "Connections": {
-          "BotServiceConnection": {
-          "Assembly": "Microsoft.Agents.authorization.Msal",
-          "Type":  "MsalAuth",
+          "ServiceConnection": {
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.authorization.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -58,10 +84,31 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       
-      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
+   1. In the same section, edit the **MCSConnection**
+      ```json
+        "MCSConnection": {
+        "Settings": {
+          "AuthType": "ClientSecret",
+          "AuthorityEndpoint": "https://login.microsoftonline.com/{{OAuthTenantId}}",
+          "ClientId": "{{OAuthClientId}}", // this is the Client ID created in Step #3
+          "ClientSecret": "{{OAuthClientSecret}}" // this is the Client Secret created in Step #3
+        }
+      ```
+      1. Set **{{OAuthTenantId}}** to the AppId created in Step #3
+      1. Set **{{OAuthClientSecret}}** to the secret created in Step #3
+      1. Set **{{OAuthTenantId}}**
+      
+   1. In appsettings, replace **{{AzureBotOAuthConnectionName}}** with the OAuth Connection Name created in Step #4.
 
+   1. Setup the Copilot Studio Agent information
+      ```json
+      "CopilotStudioAgent": {
+        "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
+        "SchemaName": "", // Schema Name of the Copilot to use
+      }
+      ```
+   
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and update it to match your DevTunnel port. If `./Properties/launchSettings.json`not fount Close and re-open the solution.launchSettings.json have been re-created.
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous
@@ -89,10 +136,6 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 
 1. Select **Preview in Teams** in the upper right corner
 
-## Interacting with the Agent
-
-Type anything to sign-in, or `logout` to sign-out.  
-
 ## Further reading
-To learn more about building Bots and Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
 

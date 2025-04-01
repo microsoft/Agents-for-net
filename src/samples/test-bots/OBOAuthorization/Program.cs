@@ -18,7 +18,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
-using Microsoft.Agents.CopilotStudio.Client.Discovery;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,23 +37,17 @@ builder.AddAgentApplicationOptions();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Add the bot (which is transient)
+// Add the Agent
 builder.AddAgent(sp =>
 {
     const string MCSConversationPropertyName = "conversation.MCSConversationId";
 
     var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
 
-    var mcsSettings = new ConnectionSettings(builder.Configuration.GetSection("CopilotStudioAgent"))
-    {
-        CopilotAgentType = AgentType.Published,
-        Cloud = PowerPlatformCloud.Prod,
-    };
-
     CopilotClient GetClient(AgentApplication app)
     {
         return new CopilotClient(
-            mcsSettings,
+            new ConnectionSettings(builder.Configuration.GetSection("CopilotStudioAgent")),
             sp.GetService<IHttpClientFactory>(),
             tokenProviderFunction: (s) =>
             {
