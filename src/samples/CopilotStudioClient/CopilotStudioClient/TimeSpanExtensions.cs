@@ -5,11 +5,11 @@
         /// <summary>
         /// Returns a duration in the format hh:mm:ss:fff
         /// </summary>
-        /// <param name="timspan"></param>
+        /// <param name="timeSpan"></param>
         /// <returns></returns>
-        internal static string ToDurationString(this TimeSpan timspan)
+        internal static string ToDurationString(this TimeSpan timeSpan)
         {
-            return timspan.ToString(@"hh\:mm\:ss\.fff");
+            return timeSpan.ToString(@"hh\:mm\:ss\.fff");
         }
     }
 }
