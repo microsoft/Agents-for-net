@@ -26,7 +26,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
 #pragma warning disable CS8601 // Possible null reference assignment.
                     try
                     {
-                        ClientFileVersion = typeof(CopilotClient).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version ?? FileVersionInfo.GetVersionInfo(typeof(CopilotClient).Assembly.Location).FileVersion;
+                        Version.TryParse(ThisAssembly.AssemblyFileVersion, out Version? fileVersion);
+                        ClientFileVersion = fileVersion != null ? fileVersion.ToString(3) : "0.0.0.0";
                     }
                     catch (Exception ex)
                     {
