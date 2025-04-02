@@ -1,4 +1,4 @@
-# Direct To Engine Sample
+# Copilot Studio Client Console Sample
 
 ## Instructions - Setup
 
