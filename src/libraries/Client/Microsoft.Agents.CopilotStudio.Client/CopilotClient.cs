@@ -64,7 +64,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <summary>
         /// Island Experimental URL for Copilot Studio
         /// </summary>
-        private string _IslandExpermentalUrl = string.Empty; 
+        private string _IslandExperimentalUrl = string.Empty; 
         /// <summary>
         /// Connection Settings for Copilot Studio
         /// </summary>
