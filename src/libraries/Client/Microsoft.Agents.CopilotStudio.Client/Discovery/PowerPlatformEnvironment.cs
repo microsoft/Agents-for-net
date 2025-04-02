@@ -45,7 +45,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 }
                 if (string.IsNullOrEmpty(settings.SchemaName))
                 {
-                    throw new ArgumentException("BotIdentifier must be provided", nameof(settings.SchemaName));
+                    throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
                 }
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
