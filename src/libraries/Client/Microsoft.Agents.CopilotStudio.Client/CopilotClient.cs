@@ -285,9 +285,9 @@ namespace Microsoft.Agents.CopilotStudio.Client
             {
                 if (Settings.UseExperimentalEndpoint && string.IsNullOrEmpty(Settings.DirectConnectUrl))
                 {
-                    _IslandExpermentalUrl = values.FirstOrDefault() ?? string.Empty;
-                    Settings.DirectConnectUrl = _IslandExpermentalUrl; 
-                    _logger.LogTrace("Island Experimental URL: {IslandExperimentalUrl}", _IslandExpermentalUrl);
+                    _IslandExperimentalUrl = values.FirstOrDefault() ?? string.Empty;
+                    Settings.DirectConnectUrl = _IslandExperimentalUrl; 
+                    _logger.LogTrace("Island Experimental URL: {IslandExperimentalUrl}", _IslandExperimentalUrl);
                 }
             }
 
