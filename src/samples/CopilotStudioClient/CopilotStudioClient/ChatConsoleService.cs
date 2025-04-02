@@ -21,9 +21,9 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
-        Console.Write("\nbot> ");
-        // Attempt to connect to the copilot studio hosted bot here
-        // if successful, this will loop though all events that the Copilot Studio bot sends to the client setup the conversation. 
+        Console.Write("\nagent> ");
+        // Attempt to connect to the copilot studio hosted agent here
+        // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
         await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent:true, cancellationToken:cancellationToken))
         {
             System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
@@ -41,9 +41,9 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
         {
             Console.Write("\nuser> ");
             string question = Console.ReadLine()!; // Get user input from the console to send. 
-            Console.Write("\nbot> ");
-            // Send the user input to the Copilot Studio bot and await the response.
-            // In this case we are not sending a conversation ID, as the bot is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
+            Console.Write("\nagent> ");
+            // Send the user input to the Copilot Studio agent and await the response.
+            // In this case we are not sending a conversation ID, as the agent is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
             sw.Restart();
             await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
             {
