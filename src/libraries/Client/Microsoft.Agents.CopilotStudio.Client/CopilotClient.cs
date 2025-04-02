@@ -26,7 +26,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
     public class CopilotClient
     {
         /// <summary>
-        /// Header key for conversaytion ID. 
+        /// Header key for conversation ID. 
         /// </summary>
         private static readonly string _conversationIdHeaderKey = "x-ms-conversationid"; 
         /// <summary>
