@@ -160,6 +160,16 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             });
         }
 
+        public Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
+        {
+            var tokenResponse = GetUserTokenAsync(userId, connectionName, channelId, code, cancellationToken).Result;
+            if (tokenResponse is not null)
+            {
+                return Task.FromResult(new TokenOrSignInResourceResponse { TokenResponse = tokenResponse });
+            }
+            return Task.FromResult(new TokenOrSignInResourceResponse { SignInResource = new SignInResource { SignInLink = fwdUrl } });
+        }
+
         public Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)
         {
             var records = _userTokens.ToArray();
