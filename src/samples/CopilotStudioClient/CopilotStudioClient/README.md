@@ -6,14 +6,14 @@
 
 To setup for this sample, you will need the following:
 
-1. An Agent Created in Microsoft Copilot Studio, or access to an existing Agent.
+1. An Agent Created in Microsoft Copilot Studio
 1. Ability to Create a Application Identity in Azure for a Public Client/Native App Registration Or access to an existing Public Client/Native App registration with the CopilotStudio.Copilot.Invoke API Permission assigned. 
 
 ### Create a Agent in Copilot Studio
 
 1. Create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
-    1. Publish your newly created Copilot
-    1. Goto Settings => Advanced => Metadata and copy the following values, You will need them later:
+    1. Publish your newly created Agent
+    1. In Copilot Studio, go to Settings => Advanced => Metadata and copy the following values, You will need them later:
         1. Schema name
         1. Environment Id
 
@@ -24,7 +24,7 @@ This step will require permissions to Create application identities in your Azur
 1. Open https://portal.azure.com 
 1. Navigate to Entra Id
 1. Create an new App Registration in Entra ID 
-    1. Provide an Name
+    1. Provide a Name
     1. Choose "Accounts in this organization directory only"
     1. In the "Select a Platform" list, Choose "Public Client/native (mobile & desktop) 
     1. In the Redirect URI url box, type in `http://localhost` (**note: use HTTP, not HTTPS**)
@@ -52,7 +52,7 @@ This step will require permissions to Create application identities in your Azur
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
 1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
-1. Configured the values for the various key's based on what was recorded during the setup phase.
+1. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
 
 ```json
   "CopilotStudioClientSettings": {
@@ -104,7 +104,7 @@ This step will require permissions to Create application identities in your Azur
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
 1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
-1. Configured the values for the various key's based on what was recorded during the setup phase.
+1. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
 
 ```json
   "CopilotStudioClientSettings": {
@@ -121,7 +121,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 
 3. Run the CopilotStudioClientSample.exe program.
 
-This should challenge you for login and connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
+This should challenge you for login in a new browser window or tab and once completed, connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
 
 ## Authentication
 
