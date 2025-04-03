@@ -3,6 +3,7 @@
 
 using Azure;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
@@ -62,6 +63,31 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var options = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object);
                 var authManager = new TestUserAuthenticationFeature(app, options);
             });
+        }
+
+        [Fact]
+        public void Test_DefaultHandlerNameNotFound()
+        {
+            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions() 
+            { 
+                Adapter = MockChannelAdapter.Object,
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) 
+                { 
+                    DefaultHandlerName = "notfound" 
+                } 
+            }));
+        }
+
+        [Fact]
+        public void Test_DefaultHandlerFirst()
+        {
+            var app = new AgentApplication(new AgentApplicationOptions()
+            {
+                Adapter = MockChannelAdapter.Object,
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
+            });
+
+            Assert.Equal(GraphName, app.Authorization.DefaultHandlerName);
         }
 
         [Fact]

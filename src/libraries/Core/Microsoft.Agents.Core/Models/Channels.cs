@@ -238,5 +238,79 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="channelId">The Channel to determine Maximum Action Title Length.</param>
         /// <returns>The total number of characters allowed for an Action Title on a specific Channel.</returns>
         public static int MaxActionTitleLength(string channelId) => 20;
+
+        /// <summary>
+        /// Returns channel support for CreateConversation.
+        /// </summary>
+        /// <param name="channelId"></param>
+        public static bool SupportsCreateConversation(string channelId)
+        {
+            switch (channelId)
+            {
+                case Webchat:
+                case Directline:
+                case Alexa:
+                    return false;
+
+                case Email:
+                case Facebook:
+                case Groupme:
+                case Kik:
+                case Line:
+                case Msteams:
+                case Slack:
+                case Sms:
+                case Telegram:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns channel support for UpdateActivity.
+        /// </summary>
+        /// <param name="channelId"></param>
+        public static bool SupportsUpdateActivity(string channelId)
+        {
+            switch (channelId)
+            {
+                case Msteams:
+                    return true;
+
+                default: 
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns channel support for DeleteActivity.
+        /// </summary>
+        /// <param name="channelId"></param>
+        public static bool SupportsDeleteActivity(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Directline:
+                case Email:
+                case Facebook:
+                case Groupme:
+                case Kik:
+                case Line:
+                case Sms:
+                case Webchat:
+                    return false;
+
+                case Msteams:
+                case Slack:
+                case Telegram:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
     }
 }

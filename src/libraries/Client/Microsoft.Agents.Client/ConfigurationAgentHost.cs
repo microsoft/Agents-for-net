@@ -244,7 +244,8 @@ namespace Microsoft.Agents.Client
             {
                 ConversationReference = conversationReference,
                 OAuthScope = turnContext.Identity == null ? null : AgentClaims.GetTokenScopes(turnContext.Identity)?.FirstOrDefault(),
-                AgentName = agentName
+                AgentName = agentName,
+                AgentConversationId = agentConversationId,
             };
 
             agentConversations.Add(agentName, new AgentConversation() { AgentConversationId = agentConversationId, AgentName = agentName });

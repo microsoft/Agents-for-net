@@ -178,11 +178,20 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to UserAuthorization already has an active handler..
+        ///   Looks up a localized string similar to UserAuthorization sign in for &apos;{0}&apos; is already in progress..
         /// </summary>
         internal static string UserAuthorizationAlreadyActive {
             get {
                 return ResourceManager.GetString("UserAuthorizationAlreadyActive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
+        /// </summary>
+        internal static string UserAuthorizationDefaultHandlerNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthorizationDefaultHandlerNotFound", resourceCulture);
             }
         }
         
@@ -196,7 +205,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Handler &apos;{0}&apos; not found in configuration.
+        ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
         /// </summary>
         internal static string UserAuthorizationHandlerNotFound {
             get {
@@ -205,7 +214,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The AgentApplication.Authorization property is unavailable because no user Authorization handlers were configured..
+        ///   Looks up a localized string similar to The AgentApplication.Authorization feature is unavailable because no user Authorization handlers were configured in AgentApplication:UserAuthorization:Handlers..
         /// </summary>
         internal static string UserAuthorizationNotConfigured {
             get {

@@ -65,26 +65,16 @@ public class HostAgent : AgentApplication
     // Handles responses from Agent2.
     protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
     {
-        var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
-        if (!string.Equals(echoConversationId, agentActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
-        {
-            // This sample only deals with one active Agent at a time.
-            // We don't think we have an active conversation with this Agent.  Ignore it.
-            // For an AgentApplication that is handling replies from more that one Agent channel, then the AgentConversationReference.AgentName
-            // can be used to determine which Agent it's from. 
-            return;
-        }
-         
         // Agents can send an EndOfConversation Activity.  This Activity can optionally contain a result value.
         if (agentActivity.IsType(ActivityTypes.EndOfConversation))
         {
-            // Remove the conversation because we're done with it.
-            await _agentHost.DeleteConversationAsync(turnContext, echoConversationId,cancellationToken);
+            // Agent2 signaled that the conversation is over.  Remove the conversation because we're done with it.
+            await _agentHost.DeleteConversationAsync(turnContext, reference.AgentConversationId, cancellationToken);
 
             // In this sample, the Agent2 will send an EndOfConversation with a result when "end" is sent.
             if (agentActivity.Value != null)
             {
-                var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
+                var resultMessage = $"The '{reference.AgentName}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
                 await turnContext.SendActivityAsync(resultMessage, cancellationToken: cancellationToken);
             }
 
