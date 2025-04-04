@@ -17,7 +17,7 @@ To setup for this sample, you will need the following:
         1. Schema name
         1. Environment Id
 
-### Create an Application Registration in Entra ID - User Interactive Login
+## Create an Application Registration in Entra ID - User Interactive Login
 
 This step will require permissions to Create application identities in your Azure tenant. For this sample, you will be creating a Native Client Application Identity, which does not have secrets.
 
@@ -47,7 +47,7 @@ This step will require permissions to Create application identities in your Azur
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
-## Instructions - Configure the Example Application
+### Instructions - Configure the Example Application - User Interactive Login
 
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
@@ -63,7 +63,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
   }
 ```
 
-### Create an Application Registration in Entra ID - Service Principal Login
+## Create an Application Registration in Entra ID - Service Principal Login
 
 > [!Warning]
 > The Service Principal login method is not generally supported in the current version of the CopilotStudioClient. 
@@ -99,7 +99,7 @@ This step will require permissions to Create application identities in your Azur
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
-## Instructions - Configure the Example Application
+### Instructions - Configure the Example Application - Service Principal Login
 
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
@@ -128,4 +128,3 @@ This should challenge you for login in a new browser window or tab and once comp
 The CopilotStudio Client requires a Token provided by the developer to operate. For this sample, by default, we are using a user interactive flow to get the user token for the application ID created above. 
 
 The Copilot client will use a named `HttpClient` retrieved from the `IHttpClientFactory` as `mcs` injected in DI. This client needs to be configured with a `DelegatingHandler` to apply a valid Entra ID Token. In this sample using MSAL.
-
