@@ -43,7 +43,7 @@
 	<PackageVersion Include="System.Text.Json" Version="9.0.2" />
     <PackageVersion Include="System.Memory.Data" Version="8.0.1" />
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-    <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.2" />
+    <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 	<!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft_AspNetCore_PkgVer)" />
 	<PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="$(Microsoft_AspNetCore_PkgVer)" />
