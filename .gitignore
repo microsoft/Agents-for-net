@@ -217,6 +217,7 @@ appsettings.Development.json
 appsettings.Production.json
 **/[Aa]ppManifest/*.zip
 .deployment
+*.transcript
 
 # JetBrains Rider
 *.sln.iml
