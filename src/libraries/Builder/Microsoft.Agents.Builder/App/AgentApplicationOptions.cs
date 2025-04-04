@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <code>
         /// "AgentApplication": {
-        ///   "StartTypingTimer": true,
+        ///   "StartTypingTimer": false,
         ///   "RemoveRecipientMention": true,
         ///   "NormalizeMentions": true,
         ///   
@@ -70,8 +70,8 @@ namespace Microsoft.Agents.Builder.App
 
             var section = configuration.GetSection(configKey);
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
-            RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), false);
-            NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), false);
+            RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), true);
+            NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), true);
 
             if (authOptions != null)
             {
@@ -120,13 +120,13 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. If true, the Agent will automatically remove mentions of the Agents name from incoming
         /// messages. Defaults to true.
         /// </summary>
-        public bool RemoveRecipientMention { get; set; } = false;
+        public bool RemoveRecipientMention { get; set; } = true;
 
         /// <summary>
         /// Optional. If true, the Agent will automatically normalize mentions across channels.
         /// Defaults to true.
         /// </summary>
-        public bool NormalizeMentions { get; set; } = false;
+        public bool NormalizeMentions { get; set; } = true;
 
         /// <summary>
         /// Optional. If true, the Agent will automatically start a typing timer when messages are received.
