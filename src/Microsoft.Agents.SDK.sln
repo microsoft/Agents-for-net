@@ -122,6 +122,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DialogSkillBot", "samples\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentication.Tests", "tests\Microsoft.Agents.Authentication.Tests\Microsoft.Agents.Authentication.Tests.csproj", "{2D522479-7808-6236-5B86-F9653C2F2D0A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiAgentHost", "samples\test-bots\MultiAgentHost\MultiAgentHost.csproj", "{7994CBC3-7886-887B-835B-3CEB6D57987F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -296,6 +298,10 @@ Global
 		{2D522479-7808-6236-5B86-F9653C2F2D0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D522479-7808-6236-5B86-F9653C2F2D0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D522479-7808-6236-5B86-F9653C2F2D0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7994CBC3-7886-887B-835B-3CEB6D57987F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7994CBC3-7886-887B-835B-3CEB6D57987F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7994CBC3-7886-887B-835B-3CEB6D57987F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7994CBC3-7886-887B-835B-3CEB6D57987F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -356,6 +362,7 @@ Global
 		{087CEF80-A51A-77C6-227D-7AF40A1E0770} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{AD401416-D318-1F5D-AD79-EEF717EF8155} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{2D522479-7808-6236-5B86-F9653C2F2D0A} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+		{7994CBC3-7886-887B-835B-3CEB6D57987F} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else
                     {
                         // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, agent: agent.GetType());
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;

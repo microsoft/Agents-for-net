@@ -6,7 +6,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -16,32 +15,32 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     public static class ServiceCollectionExtensions
     {
-        public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
         {
-            return AddAgent<CloudAdapter>(builder, implementationFactory, storage);
+            return AddAgent(builder, implementationFactory);
         }
 
-        public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
             where TAdapter : CloudAdapter
         {
-            AddCore<TAdapter>(builder, storage);
+            AddAgentCore<TAdapter>(builder);
 
             builder.Services.AddTransient<IAgent>(implementationFactory);
 
             return builder;
         }
 
-        public static IHostApplicationBuilder AddAgent<TAgent>(this IHostApplicationBuilder builder, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent<TAgent>(this IHostApplicationBuilder builder)
             where TAgent : class, IAgent
         {
-            return AddAgent<TAgent, CloudAdapter>(builder, storage);
+            return AddAgent<TAgent, CloudAdapter>(builder);
         }
 
-        public static IHostApplicationBuilder AddAgent<TAgent, TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent<TAgent, TAdapter>(this IHostApplicationBuilder builder)
             where TAgent : class, IAgent
             where TAdapter : CloudAdapter
         {
-            AddCore<TAdapter>(builder, storage);
+            AddAgentCore<TAdapter>(builder);
 
             // Add the Agent 
             builder.Services.AddTransient<IAgent, TAgent>();
@@ -103,9 +102,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
 
+        public static void AddAgentCore(this IHostApplicationBuilder builder)
+        {
+            AddAgentCore<CloudAdapter>(builder);
+        }
 
-
-        private static void AddCore<TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
+        public static void AddAgentCore<TAdapter>(this IHostApplicationBuilder builder)
             where TAdapter : CloudAdapter
         {
             // Add Connections object to access configured token connections.
@@ -113,12 +115,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add factory for ConnectorClient and UserTokenClient creation
             builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
-
-            // Add IStorage for turn state persistence
-            if (storage != null)
-            {
-                builder.Services.AddSingleton(storage);
-            }
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             AddCloudAdapter<TAdapter>(builder.Services);
