@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
                         // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, agent: agent.GetType(), onComplete: (response) =>
                         {
                             StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
