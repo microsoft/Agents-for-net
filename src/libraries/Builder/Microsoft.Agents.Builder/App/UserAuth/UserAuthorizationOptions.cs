@@ -82,6 +82,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
+            AutoSignIn = AutoSignInOn;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
