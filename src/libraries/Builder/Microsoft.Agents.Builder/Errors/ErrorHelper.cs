@@ -50,6 +50,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(baseBuilderErrorCode - 8, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationRequiresAdapter = new AgentErrorDefinition(baseBuilderErrorCode - 9, Properties.Resources.UserAuthorizationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationHandlerNotFound = new AgentErrorDefinition(baseBuilderErrorCode - 10, Properties.Resources.UserAuthorizationHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthorizationDefaultHandlerNotFound = new AgentErrorDefinition(baseBuilderErrorCode - 10, Properties.Resources.UserAuthorizationDefaultHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition FailedToCreateUserAuthorizationHandler = new AgentErrorDefinition(baseBuilderErrorCode - 11, Properties.Resources.FailedToCreateUserAuthorizationHandler, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition NoUserAuthorizationHandlers = new AgentErrorDefinition(baseBuilderErrorCode - 12, Properties.Resources.NoUserAuthorizationHandlers, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationTypeNotFound = new AgentErrorDefinition(baseBuilderErrorCode - 13, Properties.Resources.UserAuthorizationTypeNotFound, "https://aka.ms/AgentsSDK-Error01");
@@ -58,6 +59,8 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition OBONotExchangeableToken = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.OBONotExchangeableToken, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBONotSupported = new AgentErrorDefinition(baseBuilderErrorCode - 17, Properties.Resources.OBONotSupported, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBOExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
+
+        internal static AgentErrorDefinition AnonymousNotAllowed = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.AnonymousNotAllowed, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

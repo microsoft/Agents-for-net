@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public class AgentApplication : IAgent
     {
-        private readonly UserAuthorizationFeature _userAuth;
+        private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
 
@@ -36,8 +36,6 @@ namespace Microsoft.Agents.Builder.App
         /// Creates a new AgentApplication instance.
         /// </summary>
         /// <param name="options">Optional. Options used to configure the application.</param>
-        /// <param name="userAuthFeature"></param>
-        /// <param name="state"></param>
         public AgentApplication(AgentApplicationOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
@@ -57,11 +55,11 @@ namespace Microsoft.Agents.Builder.App
 
             // Application Features
 
-            AdaptiveCards = new AdaptiveCardsFeature(this);
+            AdaptiveCards = new AdaptiveCard(this);
 
             if (options.UserAuthorization != null)
             {
-                _userAuth = new UserAuthorizationFeature(this, options.UserAuthorization);
+                _userAuth = new UserAuthorization(this, options.UserAuthorization);
             }
 
             ApplyRouteAttributes();
@@ -72,7 +70,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
-        public AdaptiveCardsFeature AdaptiveCards { get; }
+        public AdaptiveCard AdaptiveCards { get; }
 
         /// <summary>
         /// The application's configured options.
@@ -82,7 +80,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Accessing user authorization features.
         /// </summary>
-        public UserAuthorizationFeature Authorization
+        public UserAuthorization UserAuthorization
         {
             get
             {

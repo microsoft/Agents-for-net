@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
@@ -256,9 +257,18 @@ namespace Microsoft.Agents.Builder
                 //activity.CallerId = ???
             }
 
-            bool useAnonymousAuthCallback = false; 
-            if (!claimsIdentity.IsAuthenticated && activity.ChannelId == Channels.Emulator)
-                useAnonymousAuthCallback = true;
+            bool useAnonymousAuthCallback = false;
+            if (!claimsIdentity.IsAuthenticated)
+            {
+                if (activity.ChannelId == Channels.Emulator)
+                {
+                    useAnonymousAuthCallback = true;
+                }
+                else
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AnonymousNotAllowed, null);
+                }
+            }
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(

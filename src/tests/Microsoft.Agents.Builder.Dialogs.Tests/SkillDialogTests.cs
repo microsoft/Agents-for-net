@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             _httpMessageHandler = new TestHttpMessageHandler()
             {
-                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
             };
 
             _httpFactory = new Mock<IHttpClientFactory>();

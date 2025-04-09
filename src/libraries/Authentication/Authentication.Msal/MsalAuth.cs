@@ -38,16 +38,25 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="msalConfigurationSection"></param>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
+        /// <param name="msalConfigurationSection"></param>
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+            : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
-            ArgumentNullException.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
-            ArgumentNullException.ThrowIfNull(msalConfigurationSection, nameof(msalConfigurationSection));
+        }
 
-            _systemServiceProvider = systemServiceProvider;
+        /// <summary>
+        /// Creates a MSAL Authentication Instance. 
+        /// </summary>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="settings">Settings for this instance.</param>
+        public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
+        {
+            ArgumentNullException.ThrowIfNull(systemServiceProvider);
+
+            _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
-            _connectionSettings = new ConnectionSettings(msalConfigurationSection);
+            _connectionSettings = settings ?? throw new ArgumentNullException(nameof(settings));
             _logger = (ILogger)systemServiceProvider.GetService(typeof(ILogger<MsalAuth>));
             _certificateProvider = systemServiceProvider.GetService<ICertificateProvider>() ?? new X509StoreCertificateProvider(_connectionSettings, _logger);
         }

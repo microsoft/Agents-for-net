@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <code>
         /// "UserAuthorization": {
-        ///   "Default": "graph",
+        ///   "DefaultHandlerName": "graph",
         ///   "AutoSignIn": true,
         ///   "Assembly": null,    // Optional
         ///   "Type": null,        // Optional, defaults to OAuthAuthentication
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             string configKey = "UserAuthorization")
         {
             var section = configuration.GetSection(configKey);
-            Default = section.GetValue<string>(nameof(Default));
+            DefaultHandlerName = section.GetValue<string>(nameof(DefaultHandlerName));
             Dispatcher = new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelectorAsync>();
@@ -82,6 +82,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
+            AutoSignIn = AutoSignInOn;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
@@ -90,7 +91,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is
         /// used if Auto SignIn is enabled.
         /// </summary>
-        public string Default { get; set; }
+        public string DefaultHandlerName { get; set; }
 
         /// <summary>
         /// Indicates whether the Agent should start the sign in flow when the user sends a message to the Agent or triggers a message extension.
@@ -98,12 +99,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// If the selector is not provided, the default selector returns true.
         /// </summary>
         /// <remarks>
-        /// Auto SignIn will use the value of <see cref="Default"/> for the UserAuthorization handler to use.
+        /// Auto SignIn will use the value of <see cref="DefaultHandlerName"/> for the UserAuthorization handler to use.
         /// </remarks>
         public AutoSignInSelectorAsync? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}", flowName, response.Cause))];

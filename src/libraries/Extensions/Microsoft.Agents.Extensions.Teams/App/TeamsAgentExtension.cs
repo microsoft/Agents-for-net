@@ -38,9 +38,9 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
             AgentApplication = agentApplication;
 
-            Meetings = new MeetingsFeature(agentApplication);
-            MessageExtensions = new MessageExtensionsFeature(agentApplication);
-            TaskModules = new TaskModulesFeature(agentApplication, options);
+            Meetings = new Meeting(agentApplication);
+            MessageExtensions = new MessageExtension(agentApplication);
+            TaskModules = new TaskModule(agentApplication, options);
 
             Options = options;
         }
@@ -50,17 +50,17 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <summary>
         /// Fluent interface for accessing Meetings' specific features.
         /// </summary>
-        public MeetingsFeature Meetings { get; }
+        public Meeting Meetings { get; }
 
         /// <summary>
         /// Fluent interface for accessing Message Extensions' specific features.
         /// </summary>
-        public MessageExtensionsFeature MessageExtensions { get; }
+        public MessageExtension MessageExtensions { get; }
 
         /// <summary>
         /// Fluent interface for accessing Task Modules' specific features.
         /// </summary>
-        public TaskModulesFeature TaskModules { get; }
+        public TaskModule TaskModules { get; }
 
         protected AgentApplication AgentApplication { get; init;}
 

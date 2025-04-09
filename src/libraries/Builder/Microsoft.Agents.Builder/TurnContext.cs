@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Builder
                         // is not being sent through the adapter, where it would be added to TurnState.
                         if (activity.Type == ActivityTypes.InvokeResponse)
                         {
-                            StackState.Add(ChannelAdapter.InvokeResponseKey, activity);
+                            StackState[ChannelAdapter.InvokeResponseKey] = activity;
                         }
 
                         responses[index] = new ResourceResponse();
