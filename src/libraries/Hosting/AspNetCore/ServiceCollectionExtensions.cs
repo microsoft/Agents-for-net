@@ -50,6 +50,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add the Agent 
             builder.Services.AddTransient<IAgent, TAgent>();
+            builder.Services.AddTransient<TAgent>();
 
             return builder;
         }
