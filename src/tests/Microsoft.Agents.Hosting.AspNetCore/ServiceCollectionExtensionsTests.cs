@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public void AddBot_ShouldSetServices()
+        public void AddAgent_ShouldSetServices()
         {
             var builder = new Mock<IHostApplicationBuilder>();
             builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
@@ -60,7 +60,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(CloudAdapter),
                 typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
-                typeof(ActivityHandler), // Type passed to AddBot.
+                typeof(ActivityHandler), // Type passed to AddAgent.
+                typeof(ActivityHandler), // Type passed to AddAgent.
             };
 
             Assert.Equal(expected, services);
