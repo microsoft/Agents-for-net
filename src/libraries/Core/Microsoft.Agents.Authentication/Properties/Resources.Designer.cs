@@ -70,6 +70,24 @@ namespace Microsoft.Agents.Authentication.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Authentication configuration section &apos;{0}&apos; not Found..
+        /// </summary>
+        internal static string Error_ConfigurationSectionNotFound {
+            get {
+                return ResourceManager.GetString("Error_ConfigurationSectionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No configuration section provided. An authentication configuration section is required to create a connection settings object..
+        /// </summary>
+        internal static string Error_ConfigurationSectionNotProvided {
+            get {
+                return ResourceManager.GetString("Error_ConfigurationSectionNotProvided", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connection &apos;{0}&apos; not found in configuration.
         /// </summary>
         internal static string Error_ConnectionNotFoundByName {

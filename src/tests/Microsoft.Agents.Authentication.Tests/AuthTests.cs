@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Auth.Tests
 
             //Check for broken configuration.
             TestAuthConfig(serviceProvider, config, "SystemManagedIdentityAuthFFFFF", "SystemManagedIdentityAuthFFFFF", false);
-            TestAuthConfig(serviceProvider, null, "msalConfigurationSection", "msalConfigurationSection", false);
+            TestAuthConfig(serviceProvider, null, "msalConfigurationSection", "Value cannot be null", false);
 
             // Check for valid config but good and bad values.
             TestAuthConfig(serviceProvider, config, "CertAuth", "ClientId");
