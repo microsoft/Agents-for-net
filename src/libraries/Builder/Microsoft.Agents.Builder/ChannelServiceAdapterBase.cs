@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Builder
                 }
                 else
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AnonymousNotAllowed, null);
+                    Logger.LogWarning("Anonymous access is not allowed for channel: {ChannelId}.", activity.ChannelId);
                 }
             }
 
