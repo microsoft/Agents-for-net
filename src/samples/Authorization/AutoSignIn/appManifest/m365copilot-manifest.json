@@ -15,12 +15,12 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "M365 Copilot User Authorization (OAuth)",
-    "full": "M365 Copilot User Authorization (OAuth)"
+    "short": "AgentSDK Auto SignIn (OAuth)",
+    "full": "AgentSDK Automatic User Sign-in Authorization (OAuth)"
   },
   "description": {
-    "short": "Sample demonstrating Azure Bot Services user authorization with using a Agent.",
-    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
+    "short": "Sample demonstrating AgentSDK + Azure Bot Services for user authorization.",
+    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the AgentSDK"
   },
   "accentColor": "#FFFFFF",
   "copilotAgents": {

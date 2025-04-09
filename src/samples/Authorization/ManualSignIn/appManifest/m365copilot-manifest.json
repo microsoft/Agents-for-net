@@ -1,9 +1,9 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
+  "manifestVersion": "devPreview",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.oauth",
+  "packageName": "com.microsoft.agents.copilotoauth",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -15,14 +15,22 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "User Authorization (OAuth)",
-    "full": "User Authorization (OAuth)"
+    "short": "AgentSDK Manual (OAuth)",
+    "full": "AgentSDK Manual User Authorization (OAuth)"
   },
   "description": {
-    "short": "Sample demonstrating Azure Bot Services user authorization with using a Agent.",
-    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
+    "short": "Sample demonstrating AgentSDK + Azure Bot Services for user authorization.",
+    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the AgentSDK"
   },
   "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "${{AAD_APP_CLIENT_ID}}",
+        "type": "bot"
+      }
+    ]
+  },
   "bots": [
     {
       "botId": "${{AAD_APP_CLIENT_ID}}",
