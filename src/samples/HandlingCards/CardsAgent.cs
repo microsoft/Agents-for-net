@@ -87,7 +87,7 @@ namespace HandlingCards
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync("Hello and welcome! With this sample you can see the functionality cards in an Agent.", cancellationToken: cancellationToken);
+                    await turnContext.SendActivityAsync("Hello and welcome! With this sample you can see the functionality of cards in an Agent.", cancellationToken: cancellationToken);
                     await Cards.SendCardCommandsAsync(turnContext, turnState, cancellationToken);
                 }
             }
@@ -103,7 +103,7 @@ namespace HandlingCards
         }
 
         /// <summary>
-        /// Handles Adaptive Card dynamic search events.
+        /// Handles Adaptive Card dynamic search events.  This is only supported on Teams channels.
         /// </summary>
         private async Task<IList<AdaptiveCardsSearchResult>> SearchHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
         {

@@ -54,6 +54,18 @@ namespace HandlingCards
                 return true;
             }
 
+            if (cardCommand.Name.Equals("audio") && !Channels.SupportsAudioCard(turnContext.Activity.ChannelId))
+            {
+                await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support audio cards.", cancellationToken: cancellationToken);
+                return true;
+            }
+
+            if (cardCommand.Name.Equals("video") && !Channels.SupportsAudioCard(turnContext.Activity.ChannelId))
+            {
+                await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support video cards.", cancellationToken: cancellationToken);
+                return true;
+            }
+
             await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
             return true;
         }
@@ -210,6 +222,7 @@ namespace HandlingCards
                        " part of the Blender Foundation. Like the foundation's previous film Elephants Dream," +
                        " the film was made using Blender, a free software application for animation made by the same foundation." +
                        " It was released as an open-source film under Creative Commons License Attribution 3.0.",
+                Aspect = "4:3",
                 Image = new ThumbnailUrl
                 {
                     Url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/220px-Big_buck_bunny_poster_big.jpg",
