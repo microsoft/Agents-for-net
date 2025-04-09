@@ -60,9 +60,15 @@ namespace HandlingCards
                 return true;
             }
 
-            if (cardCommand.Name.Equals("video") && !Channels.SupportsAudioCard(turnContext.Activity.ChannelId))
+            if (cardCommand.Name.Equals("video") && !Channels.SupportsVideoCard(turnContext.Activity.ChannelId))
             {
                 await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support video cards.", cancellationToken: cancellationToken);
+                return true;
+            }
+
+            if (cardCommand.Name.Equals("thumbnail") && !Channels.SupportsThumbnailCard(turnContext.Activity.ChannelId))
+            {
+                await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support thumbnail cards.", cancellationToken: cancellationToken);
                 return true;
             }
 
@@ -201,6 +207,7 @@ namespace HandlingCards
                         Url = "http://i.giphy.com/Ki55RUbOV5njy.gif",
                     },
                 ],
+                Aspect = "4:3"
             };
 
             return animationCard;
