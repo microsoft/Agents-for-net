@@ -1,4 +1,4 @@
-﻿# HandlingCards Sample
+﻿# Cards Sample
 
 This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent demonstrates the use of cards from an AgentApplication.
 
@@ -24,7 +24,7 @@ Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
 
 ### QuickStart using Bot Framework Emulator
 
-1. Open the EchoAgent Sample in Visual Studio 2022
+1. Open the Cards Sample in Visual Studio 2022
 1. Run it in Debug Mode (F5)
 1. A blank web page will open, note down the URL which should be similar too `https://localhost:65349/`
 1. Open the [BotFramework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
@@ -49,13 +49,6 @@ If you type a message and hit enter, or the send arrow, your messages should be 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId":  "{{TenantId}}"
-      },
-
       "Connections": {
         "ServiceConnection": {
           "Settings": {
