@@ -76,5 +76,19 @@ namespace Microsoft.Agents.Connector
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
         Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Get the token or sign in resource for a user.
+        /// </summary>
+        /// <param name="userId">The user id that will be associated with the token.</param>
+        /// <param name="connectionName">Name of the auth connection to use.</param>
+        /// <param name="channelId">The channel Id that will be associated with the token.</param>
+        /// <param name="code">(Optional) Optional user entered code to validate.</param>
+        /// <param name="state">State.</param>
+        /// <param name="finalRedirect">The final URL that the OAuth flow will redirect to.</param>
+        /// <param name="fwdUrl">The URL to forward the user to after sign in.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl, CancellationToken cancellationToken);
     }
 }
