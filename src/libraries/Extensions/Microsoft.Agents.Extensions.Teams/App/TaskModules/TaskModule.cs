@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
     /// <summary>
     /// TaskModules class to enable fluent style registration of handlers related to Task Modules.
     /// </summary>
-    public class TaskModulesFeature
+    public class TaskModule
     {
         private static readonly string FETCH_INVOKE_NAME = "task/fetch";
         private static readonly string SUBMIT_INVOKE_NAME = "task/submit";
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// </summary>
         /// <param name="app"> The top level application class to register handlers with.</param>
         /// <param name="taskModulesOptions"></param>
-        public TaskModulesFeature(AgentApplication app, TaskModulesOptions? taskModulesOptions = null)
+        public TaskModule(AgentApplication app, TaskModulesOptions? taskModulesOptions = null)
         {
             this._app = app;
             this._taskModulesOptions = taskModulesOptions;

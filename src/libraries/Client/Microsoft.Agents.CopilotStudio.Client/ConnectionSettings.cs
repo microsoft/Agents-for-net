@@ -11,7 +11,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
     /// <summary>
     /// Configuration object for the DirectToEngine client.
     /// </summary>
-    public class ConnectionSettings : IDirectToEngineConnectionSettings
+    public class ConnectionSettings : ICopilotStudioClientConnectionSettings
     {
         //<inheritdoc/>
         public string? EnvironmentId { get; set; }
@@ -22,28 +22,41 @@ namespace Microsoft.Agents.CopilotStudio.Client
         //<inheritdoc/>
         public string? SchemaName { get; set; }
         //<inheritdoc/>
-        public AgentType? CopilotAgentType { get; set; } 
+        public AgentType? CopilotAgentType { get; set; }
+        //<inheritdoc/>
+        public string? DirectConnectUrl { get; set; } = null;
+        //<inheritdoc/>
+        public bool UseExperimentalEndpoint { get; set; } = false;
+        //<inheritdoc/>
+        public bool EnableDiagnostics { get; set; } = false;
 
-        public ConnectionSettings()
-        {
-
-        }
 
         /// <summary>
-        /// Create ConnectionSettings from a configuration section.
+        /// Default constructor for the ConnectionSettings class.
+        /// </summary>
+        public ConnectionSettings()
+        {}
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionSettings"/> class.
         /// </summary>
         /// <param name="config">Configuration Section containing DirectToEngine Connection settings</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown when required configuration values are missing</exception>
         public ConnectionSettings(IConfigurationSection config)
         {
             if (config != null && config.Exists())
             {
-                EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
-                SchemaName = config[nameof(SchemaName)] ?? throw new ArgumentException($"{nameof(SchemaName)} not found in config");
-                Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Unknown);
+                DirectConnectUrl = config[nameof(DirectConnectUrl)];
+                Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Prod);
                 CopilotAgentType = config.GetValue(nameof(CopilotAgentType), AgentType.Published);
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
+                UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint),false);
+                EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);
+                if (string.IsNullOrEmpty(DirectConnectUrl))
+                {
+                    EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
+                    SchemaName = config[nameof(SchemaName)] ?? throw new ArgumentException($"{nameof(SchemaName)} not found in config");
+                }
             }
         }
     }

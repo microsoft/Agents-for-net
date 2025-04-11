@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
     /// <summary>
     /// Meetings class to enable fluent style registration of handlers related to Microsoft Teams Meetings.
     /// </summary>
-    public class MeetingsFeature
+    public class Meeting
     {
         private readonly AgentApplication _app;
 
@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// Creates a new instance of the Meetings class.
         /// </summary>
         /// <param name="app"></param> The top level application class to register handlers with.
-        public MeetingsFeature(AgentApplication app)
+        public Meeting(AgentApplication app)
         {
             this._app = app;
         }

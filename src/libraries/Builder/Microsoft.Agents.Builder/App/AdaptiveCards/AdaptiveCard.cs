@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <summary>
     /// AdaptiveCards class to enable fluent style registration of handlers related to Adaptive Cards.
     /// </summary>
-    public class AdaptiveCardsFeature
+    public class AdaptiveCard
     {
         private static readonly string ACTION_EXECUTE_TYPE = "Action.Execute";
         private static readonly string SEARCH_INVOKE_NAME = "application/search";
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Creates a new instance of the AdaptiveCards class.
         /// </summary>
         /// <param name="app"></param> The top level application class to register handlers with.
-        public AdaptiveCardsFeature(AgentApplication app)
+        public AdaptiveCard(AgentApplication app)
         {
             this._app = app;
         }

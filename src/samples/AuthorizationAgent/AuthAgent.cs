@@ -20,8 +20,8 @@ public class AuthAgent : AgentApplication
         OnMessage("/signin", SignInAsync);
         OnMessage("/signout", SignOutAsync);
         OnMessage("/reset", ResetAsync);
-        Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
-        Authorization.OnUserSignInFailure(OnUserSignInFailure);
+        UserAuthorization.OnUserSignInSuccess(OnUserSignInSuccess);
+        UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
@@ -39,12 +39,12 @@ public class AuthAgent : AgentApplication
 
     private async Task SignInAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await Authorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken: cancellationToken);
+        await UserAuthorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken: cancellationToken);
     }
 
     private async Task SignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await Authorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
     }
 
@@ -59,7 +59,7 @@ public class AuthAgent : AgentApplication
     {
         if (turnContext.Activity.Text == "auto")
         {
-            await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authorization.DefaultHandlerName}', token length: {Authorization.GetTurnToken(Authorization.DefaultHandlerName).Length}", cancellationToken: cancellationToken);
+            await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{UserAuthorization.DefaultHandlerName}', token length: {UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName).Length}", cancellationToken: cancellationToken);
         }
         else
         {

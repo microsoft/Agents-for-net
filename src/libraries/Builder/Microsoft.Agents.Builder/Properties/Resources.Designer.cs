@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Raised when JWT authentication has not been enabled for the sending channel..
+        /// </summary>
+        internal static string AnonymousNotAllowed {
+            get {
+                return ResourceManager.GetString("AnonymousNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
         /// </summary>
         internal static string AttributeHandlerInvalid {
@@ -169,7 +178,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {
             get {
@@ -214,7 +223,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The AgentApplication.Authorization feature is unavailable because no user Authorization handlers were configured in AgentApplication:UserAuthorization:Handlers..
+        ///   Looks up a localized string similar to The AgentApplication.UserAuthorization feature is unavailable because no user Authorization handlers were configured in AgentApplication:UserAuthorization:Handlers..
         /// </summary>
         internal static string UserAuthorizationNotConfigured {
             get {

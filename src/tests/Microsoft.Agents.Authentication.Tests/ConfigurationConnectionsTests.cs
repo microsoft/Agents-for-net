@@ -3,6 +3,9 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Errors;
+using Microsoft.Agents.Authentication.Model;
+using Microsoft.Agents.Authentication.Msal.Model;
+using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Agents.TestSupport;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +16,7 @@ using System.Runtime.Loader;
 using System.Security.Claims;
 using Xunit;
 using Xunit.Abstractions;
+using Moq;
 
 namespace Microsoft.Agents.Auth.Tests
 {
@@ -304,6 +308,27 @@ namespace Microsoft.Agents.Auth.Tests
                 return;
             }
             throw new Exception("Should not reach this point");
+        }
+
+        [Fact]
+        public void ManualConstruction()
+        {
+            var sp = new Mock<IServiceProvider>();
+            var providers = new Dictionary<string, IAccessTokenProvider>
+            {
+                {
+                    "ServiceConnection", new MsalAuth(sp.Object, new ConnectionSettings()
+                    {
+                        ClientId = "12345",
+                        AuthType = AuthTypes.ClientSecret,
+                    }
+                )}
+            };
+
+            List<ConnectionMapItem> mapItems = new List<ConnectionMapItem> { new ConnectionMapItem { ServiceUrl = "*", Connection = "ServiceConnection" } };
+            var connection = new ConfigurationConnections(providers, mapItems);
+            Assert.True(connection.TryGetConnection("ServiceConnection", out var provider));
+            Assert.NotNull(provider);
         }
     }
 }

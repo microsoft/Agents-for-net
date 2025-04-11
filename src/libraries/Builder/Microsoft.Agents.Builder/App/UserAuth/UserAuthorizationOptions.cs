@@ -23,25 +23,24 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>True if authorization should be enabled. Otherwise, False.</returns>
-    public delegate Task<bool> AutoSignInSelectorAsync(ITurnContext turnContext, CancellationToken cancellationToken);
+    public delegate Task<bool> AutoSignInSelector(ITurnContext turnContext, CancellationToken cancellationToken);
 
     /// <summary>
     /// Options for user authorization.
     /// </summary>
     public class UserAuthorizationOptions
     {
-        public readonly static AutoSignInSelectorAsync AutoSignInOn = (context, cancellationToken) => Task.FromResult(true);
-        public readonly static AutoSignInSelectorAsync AutoSignInOff = (context, cancellationToken) => Task.FromResult(false);
+        public readonly static AutoSignInSelector AutoSignInOn = (context, cancellationToken) => Task.FromResult(true);
+        public readonly static AutoSignInSelector AutoSignInOff = (context, cancellationToken) => Task.FromResult(false);
 
         /// <summary>
         /// Creates UserAuthorizationOptions from IConfiguration and DI.
         /// </summary>
+        /// <remarks>
         /// <code>
         /// "UserAuthorization": {
         ///   "DefaultHandlerName": "graph",
         ///   "AutoSignIn": true,
-        ///   "Assembly": null,    // Optional
-        ///   "Type": null,        // Optional, defaults to OAuthAuthentication
         ///   "Handlers": {
         ///     "graph": {
         ///     "Settings": {      // Settings are IUserAuthorization specific
@@ -49,9 +48,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         ///   }
         /// }
         /// </code>
-        /// <remarks>
-        /// The "AuthSignIn" property will map to <see cref="AutoSignInOn"/> or <see cref="AutoSignInOff"/>.  To provide a
-        /// a custom selector, DI a <see cref="AutoSignInSelectorAsync"/>.
+        /// The "AutoSignIn" property will map to <see cref="AutoSignInOn"/> or <see cref="AutoSignInOff"/>.  To provide a
+        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.
         /// </remarks>
         /// <remarks>
         /// The "Handlers" property is mapped to <see cref="UserAuthorizationDispatcher"/> using the key of `UserAuthorization:Handlers.  
@@ -67,21 +65,53 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             IServiceProvider sp, 
             IConfiguration configuration, 
             IStorage storage = null,
-            AutoSignInSelectorAsync autoSignInSelector = null, 
+            AutoSignInSelector autoSignInSelector = null, 
             string configKey = "UserAuthorization")
         {
             var section = configuration.GetSection(configKey);
             DefaultHandlerName = section.GetValue<string>(nameof(DefaultHandlerName));
             Dispatcher = new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
 
-            var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelectorAsync>();
+            var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelector>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
             AutoSignIn = selectorInstance ?? (autoSignIn ? AutoSignInOn : AutoSignInOff);
         }
 
+        /// <summary>
+        /// Create UserAuthorizationOptions programmatically.
+        /// </summary>
+        /// <remarks>
+        /// <code>
+        ///   services.AddTransient&lt;IAgent&gt;(sp =>
+        ///   {
+        ///     var connections = sp.GetService&lt;IConnections&gt;();
+        ///     var storage = sp.GetService&lt;IStorage&gt;();
+        ///     
+        ///     var options = new AgentApplicationOptions()
+        ///     {
+        ///       TurnStateFactory = () => new TurnState(storage),
+        ///     
+        ///       UserAuthorization = new UserAuthorizationOptions(connections, new AzureBotUserAuthorization("graph", storage, connections, new OAuthSettings())
+        ///       {
+        ///          DefaultHandlerName = "graph",
+        ///          AutoSignin = AutoSignInOn
+        ///       };
+        ///     }
+        ///     
+        ///     var app = new AgentApplication(options);
+        ///     
+        ///     ...
+        ///     
+        ///     return app;
+        ///   };
+        /// </code>
+        /// </remarks>
+        /// <param name="connections"></param>
+        /// <param name="userAuthHandlers"></param>
         public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
+            AutoSignIn = AutoSignInOn;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
@@ -100,10 +130,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <remarks>
         /// Auto SignIn will use the value of <see cref="DefaultHandlerName"/> for the UserAuthorization handler to use.
         /// </remarks>
-        public AutoSignInSelectorAsync? AutoSignIn { get; set; }
+        public AutoSignInSelector? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}", flowName, response.Cause))];

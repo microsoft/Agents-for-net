@@ -49,10 +49,10 @@ namespace Microsoft.Agents.Authentication
                 type = assembly.GetType($"{assemblyName}.{typeName}");
                 if (!IsValidProviderType(type))
                 {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AuthProviderTypeNotFound, null, typeName, assemblyName, name);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AuthProviderTypeNotFound, null, typeName, assemblyName, name);
                 }
             }
-            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, null, typeName, assemblyName); 
+            return GetConstructor(type) ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, null, typeName, assemblyName); 
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -12,24 +13,26 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     public abstract class ConnectionSettingsBase : IConnectionSettings
     {
-        protected ConnectionSettingsBase(IConfigurationSection configurationSection)
+        protected ConnectionSettingsBase() { }
+
+        protected ConnectionSettingsBase(IConfigurationSection msalConfigurationSection)
         {
-            if (configurationSection != null && configurationSection.Exists())
+            if (msalConfigurationSection != null && msalConfigurationSection.Exists())
             {
-                ClientId = configurationSection.GetValue<string>("ClientId", null);
-                Authority = configurationSection.GetValue<string>("AuthorityEndpoint", null);
-                TenantId = configurationSection.GetValue<string>("TenantId", null);
-                Scopes = configurationSection.GetSection("Scopes")?.Get<List<string>>();
+                ClientId = msalConfigurationSection.GetValue<string>("ClientId", null);
+                Authority = msalConfigurationSection.GetValue<string>("AuthorityEndpoint", null);
+                TenantId = msalConfigurationSection.GetValue<string>("TenantId", null);
+                Scopes = msalConfigurationSection.GetSection("Scopes")?.Get<List<string>>();
             }
             else
             {
-                if (configurationSection != null)
+                if (msalConfigurationSection != null)
                 {
-                    throw new ArgumentException($"Authentication configuration section {configurationSection.Key}, not Found.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ConfigurationSectionNotFound, null, msalConfigurationSection.Key);
                 }
                 else
                 {
-                    throw new ArgumentNullException(nameof(configurationSection), "No configuration section provided. An authentication configuration section is required to create a connection settings object.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ConfigurationSectionNotProvided, null);
                 }
             }
         }

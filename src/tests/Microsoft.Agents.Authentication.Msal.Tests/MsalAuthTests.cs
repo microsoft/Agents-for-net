@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullConfiguration()
         {
-            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, (IConfigurationSection) null));
         }
 
         [Fact]

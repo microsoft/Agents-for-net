@@ -59,7 +59,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
-                var app = new TestApplication(new TestApplicationOptions());
+                var storage = new MemoryStorage();
+                var app = new TestApplication(new TestApplicationOptions(storage));
                 var options = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object);
                 var authManager = new TestUserAuthenticationFeature(app, options);
             });
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void Test_DefaultHandlerNameNotFound()
         {
-            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions() 
+            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions((IStorage) null) 
             { 
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) 
@@ -81,20 +82,20 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void Test_DefaultHandlerFirst()
         {
-            var app = new AgentApplication(new AgentApplicationOptions()
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage) null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
             });
 
-            Assert.Equal(GraphName, app.Authorization.DefaultHandlerName);
+            Assert.Equal(GraphName, app.UserAuthorization.DefaultHandlerName);
         }
 
         [Fact]
         public async Task Test_AutoSignIn_Default()
         {
             // arrange
-            var options = new TestApplicationOptions() 
+            var options = new TestApplicationOptions((IStorage)null) 
             { 
                 Adapter = MockChannelAdapter.Object, 
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object) 
@@ -105,19 +106,19 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var response = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            var response = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
-            Assert.Equal(GraphToken, app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.Equal(GraphToken, app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
         public async Task Test_AutoSignIn_Named()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -128,12 +129,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            var signInComplete = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
-            Assert.Equal(SharePointToken, app.Authorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.Equal(SharePointToken, app.UserAuthorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
@@ -143,7 +144,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((string)null));
 
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
@@ -153,7 +154,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            var signInComplete = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.False(signInComplete);
@@ -163,7 +164,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_SignOut_DefaultHandler()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -173,20 +174,20 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
-            await app.Authorization.SignOutUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(app.Authorization.GetTurnToken(GraphName));
-            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
+            Assert.Null(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
         public async Task Test_SignOut_SpecificHandler()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -196,13 +197,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
-            await app.Authorization.SignOutUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(app.Authorization.GetTurnToken(SharePointName));
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.Null(app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -222,10 +223,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -235,10 +235,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
             {
-                await app.Authorization.SignInUserAsync(turnContext, turnState, GraphName);
+                await app.UserAuthorization.SignInUserAsync(turnContext, turnState, GraphName);
             });
 
-            app.Authorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
+            app.UserAuthorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
             {
                 await turnContext.SendActivityAsync($"sign in success for '{handlerName}' and you said '{activity.Text}'", cancellationToken: CancellationToken.None);
             });
@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -281,10 +281,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -294,10 +293,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
             {
-                await app.Authorization.SignInUserAsync(turnContext, turnState, GraphName);
+                await app.UserAuthorization.SignInUserAsync(turnContext, turnState, GraphName);
             }); 
 
-            app.Authorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
+            app.UserAuthorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
             {
                 await turnContext.SendActivityAsync($"sign in success for '{handlerName}' and you said '{activity.Text}'", cancellationToken: CancellationToken.None);
             });
@@ -313,7 +312,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -332,10 +331,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn
@@ -358,7 +356,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -386,10 +384,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn
@@ -413,7 +410,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         private static TurnContext MockTurnContext()

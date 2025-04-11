@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <summary>
     /// MessageExtensions class to enable fluent style registration of handlers related to Message Extensions.
     /// </summary>
-    public class MessageExtensionsFeature
+    public class MessageExtension
     {
         private static readonly string SUBMIT_ACTION_INVOKE_NAME = "composeExtension/submitAction";
         private static readonly string SELECT_ITEM_INVOKE_NAME = "composeExtension/selectItem";
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// Creates a new instance of the MessageExtensions class.
         /// </summary>
         /// <param name="app"></param> The top level application class to register handlers with.
-        public MessageExtensionsFeature(AgentApplication app)
+        public MessageExtension(AgentApplication app)
         {
             this._app = app;
         }

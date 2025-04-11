@@ -2,14 +2,14 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Values persisted for the lifetime of the turn as part of the <see cref="ITurnContext"/>.
     /// </summary>
-    public class TurnContextStateCollection : Dictionary<string, object>, IDisposable
+    public class TurnContextStateCollection : ConcurrentDictionary<string, object>, IDisposable
     {
         private bool _disposed;
 

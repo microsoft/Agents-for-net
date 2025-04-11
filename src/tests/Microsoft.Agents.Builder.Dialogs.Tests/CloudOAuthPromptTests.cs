@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
             string magicCode = null;
 
             // Arrange the Adapter.
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
             string magicCode = null;
 
             // Arrange the Adapter.
@@ -238,8 +238,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 ChannelId = channelId,
             };
 
+            var claims = new ClaimsIdentity("pretend");
+
             // Act
-            var invokeResponse = await adapter.ProcessAsync(new ClaimsIdentity(), activity, callback);
+            var invokeResponse = await adapter.ProcessAsync(claims, activity, callback);
 
             // Assert
             Assert.Equal(DialogTurnStatus.Waiting, dialogTurnResult.Status);
@@ -309,7 +311,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 From = new ChannelAccount { Id = "from-id" },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
-                ChannelId = "channel-id"
+                ChannelId = Channels.Emulator
             };
 
             // Act
@@ -326,7 +328,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
             var magicCode = "123456";
 
             // Arrange the Adapter.
@@ -410,7 +412,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
 
             // Arrange the Adapter.
             var mockConnector = new Mock<IConnectorClient>();
@@ -499,7 +501,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
             var magicCode = "123456";
 
             // Arrange the Adapter.
@@ -584,7 +586,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
             var tokenExchangeRequestToken = "123456";
             var tokenExchangeInvokeRequestId = "tokenExchangeInvokeRequest-id";
 
@@ -684,7 +686,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Arrange
             var userId = "user-id";
             var connectionName = "connection-name";
-            var channelId = "channel-id";
+            var channelId = Channels.Emulator;
 
             // Arrange the Adapter.
             var mockConnector = new Mock<IConnectorClient>();

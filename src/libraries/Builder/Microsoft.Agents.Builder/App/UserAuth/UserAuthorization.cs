@@ -35,9 +35,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// <remarks>
     /// This is always executed in the context of a turn for the user in <see cref="ITurnContext.Activity.From"/>.
     /// </remarks>
-    public class UserAuthorizationFeature
+    public class UserAuthorization
     {
-        private readonly AutoSignInSelectorAsync? _startSignIn;
+        private readonly AutoSignInSelector? _startSignIn;
         private const string IS_SIGNED_IN_KEY = "__InSignInFlow__";
         private const string SIGNIN_ACTIVITY_KEY = "__SignInFlowActivity__";
         private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public string DefaultHandlerName { get; private set; }
 
-        public UserAuthorizationFeature(AgentApplication app, UserAuthorizationOptions options)
+        public UserAuthorization(AgentApplication app, UserAuthorizationOptions options)
         {
             _app = app ?? throw new ArgumentNullException(nameof(app));
             _options = options ?? throw new ArgumentNullException(nameof(options));

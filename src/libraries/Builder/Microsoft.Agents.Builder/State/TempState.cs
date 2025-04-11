@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.State
         /// <summary>
         /// All tokens acquired after sign-in for current activity
         /// </summary>
-        [Obsolete("Use AgentApplication.Authorization.GetToken(handleName)")]
+        [Obsolete("Use AgentApplication.UserAuthorization.GetTurnToken(handleName)")]
         public Dictionary<string, string> AuthTokens
         {
             get => GetValue<Dictionary<string, string>>(AuthTokenKey, () => []);
