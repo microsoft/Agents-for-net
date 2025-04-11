@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.UserAuth;
-using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
@@ -80,7 +79,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="turnContext">The turn context</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The token response if available.</returns>
-        public async Task<TokenResponse> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (await ShouldDedupeAsync(turnContext).ConfigureAwait(false))
             {
@@ -103,7 +102,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 
             await SaveFlowStateAsync(turnContext, _state, cancellationToken).ConfigureAwait(false);
 
-            return tokenResponse;
+            return tokenResponse?.Token;
         }
 
         private async Task<TokenResponse> OnGetOrStartFlowAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -267,7 +266,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             SignInResource signInResource = GetSignInResource();
 
             // Ensure prompt initialized
-            IMessageActivity prompt = Activity.CreateMessageActivity();
+            IActivity prompt = Activity.CreateMessageActivity();
             prompt.Attachments =
             [
                 new Attachment

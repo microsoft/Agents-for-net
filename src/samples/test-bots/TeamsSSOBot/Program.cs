@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.App.UserAuth;
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
@@ -25,7 +26,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 builder.Services.AddSingleton(sp =>
 {
@@ -46,23 +47,16 @@ builder.Services.AddTransient(sp =>
     IConfidentialClientApplication msal = sp.GetService<IConfidentialClientApplication>();
     string signInLink = $"https://{config.BOT_DOMAIN}/auth-start.html";
 
-    var authOptions = new UserAuthenticationOptions()
+    var authOptions = new UserAuthorizationOptions(
+        sp.GetService<IConnections>(), 
+        new TeamsSsoAuthentication(
+            "graph",
+            new TeamsSsoSettings(["User.Read"], signInLink, msal),
+            storage))
     {
         // Auto-SignIn will use this OAuth flow
-        Default = "graph",
-
-        AutoSignIn = (context, cancellationToken) =>
-        {
-            return Task.FromResult(context.Activity.Text == "auto");
-        },
-
-        Handlers =
-        [
-            new TeamsSsoAuthentication(
-                "graph",
-                new TeamsSsoSettings(["User.Read"], signInLink, msal),
-                storage)
-        ]
+        DefaultHandlerName = "graph",
+        AutoSignIn = UserAuthorizationOptions.AutoSignInOn
     };
 
     return new AgentApplicationOptions()
@@ -70,10 +64,10 @@ builder.Services.AddTransient(sp =>
         Adapter = adapter,
         StartTypingTimer = false,
         TurnStateFactory = () => new TurnState(storage),
-        UserAuthentication = authOptions
+        UserAuthorization = authOptions
     };
 });
 
 // Add the bot (which is transient)
-builder.AddBot<AuthBot>();
+builder.AddAgent<AuthBot>();
 

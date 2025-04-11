@@ -1,20 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.UserAuth;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
     /// Handles authentication based on Teams SSO.
     /// </summary>
-    public class TeamsSsoAuthentication : IUserAuthentication
+    public class TeamsSsoAuthentication : IUserAuthorization
     {
         private IConfidentialClientApplicationAdapter _msalAdapter;
         private readonly TeamsSsoBotAuthentication _botAuth;
@@ -46,15 +47,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// Sign in current user
         /// </summary>
         /// <param name="context">The turn context</param>
+        /// <param name="forceSignIn"></param>
+        /// <param name="exchangeConnection"></param>
+        /// <param name="exchangeScopes"></param>
         /// <param name="state">The turn state</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in response</returns>
-        public async Task<TokenResponse> SignInUserAsync(ITurnContext context, CancellationToken cancellationToken = default)
+        public async Task<string> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             var token = await _msalAdapter.TryGetUserToken(context, _name, _settings).ConfigureAwait(false);
             if (token != null)
             {
-                return token;
+                return token.Token;
             }
 
             if ((_botAuth != null && _botAuth.IsValidActivity(context)))
@@ -69,7 +73,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             }
             */
 
-            throw new AuthException("Incoming activity is not a valid activity to initiate authentication flow.", AuthExceptionReason.InvalidActivity);
+            return null;
         }
 
         /// <summary>
