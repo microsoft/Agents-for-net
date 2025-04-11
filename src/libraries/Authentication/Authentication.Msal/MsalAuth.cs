@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.AppConfig;
+using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
@@ -215,10 +216,20 @@ namespace Microsoft.Agents.Authentication.Msal
                 {
                     cAppBuilder.WithClientSecret(_connectionSettings.ClientSecret);
                 }
+                else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
+                {
+                    async Task<String> FetchExternalTokenAsync()
+                    {
+                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
+                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
+                    }
+                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                }
                 else
                 {
                     throw new System.NotImplementedException();
                 }
+
                 msalAuthClient = cAppBuilder.Build();
             }
 
