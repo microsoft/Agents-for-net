@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -28,12 +29,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>Initializes a new instance of the <see cref="ConversationReference"/> class.</summary>
         /// <param name="activityId">(Optional) ID of the activity to refer to.</param>
         /// <param name="user">(Optional) User participating in this conversation.</param>
-        /// <param name="bot">Bot participating in this conversation.</param>
+        /// <param name="agent">Agent participating in this conversation.</param>
         /// <param name="conversation">Conversation reference.</param>
         /// <param name="channelId">Channel ID.</param>
         /// <param name="serviceUrl">Service endpoint where operations concerning the referenced conversation may be performed.</param>
-        public ConversationReference(string activityId = default, ChannelAccount user = default, ChannelAccount bot = default, ConversationAccount conversation = default, string channelId = default, string serviceUrl = default)
-                : this(default, activityId, user, bot, conversation, channelId, serviceUrl)
+        public ConversationReference(string activityId = default, ChannelAccount user = default, ChannelAccount agent = default, ConversationAccount conversation = default, string channelId = default, string serviceUrl = default)
+                : this(default, activityId, user, agent, conversation, channelId, serviceUrl)
         {
         }
 
@@ -46,15 +47,15 @@ namespace Microsoft.Agents.Core.Models
         /// </param>
         /// <param name="activityId">(Optional) ID of the activity to refer to.</param>
         /// <param name="user">(Optional) User participating in this conversation.</param>
-        /// <param name="bot">Bot participating in this conversation.</param>
+        /// <param name="agent">Agent participating in this conversation.</param>
         /// <param name="conversation">Conversation reference.</param>
         /// <param name="channelId">Channel ID.</param>
         /// <param name="serviceUrl">Service endpoint where operations concerning the referenced conversation may be performed.</param>
-        public ConversationReference(CultureInfo locale, string activityId = default, ChannelAccount user = default, ChannelAccount bot = default, ConversationAccount conversation = default, string channelId = default, string serviceUrl = default)
+        public ConversationReference(CultureInfo locale, string activityId = default, ChannelAccount user = default, ChannelAccount agent = default, ConversationAccount conversation = default, string channelId = default, string serviceUrl = default)
         {
             ActivityId = activityId;
             User = user;
-            Bot = bot;
+            Agent = agent;
             Conversation = conversation;
             ChannelId = channelId;
             Locale = locale?.ToString();
@@ -62,7 +63,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates <see cref="Activity"/> from conversation reference as it is posted to bot.
+        /// Creates <see cref="Activity"/> from conversation reference as it is posted to an Agent.
         /// </summary>
         /// <returns>Continuation activity.</returns>
         public Activity GetContinuationActivity()
@@ -76,7 +77,7 @@ namespace Microsoft.Agents.Core.Models
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 Conversation = Conversation,
-                Recipient = Bot,
+                Recipient = Agent,
                 From = User,
                 RelatesTo = this
             };
@@ -84,16 +85,23 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> (Optional) ID of the activity to refer to. </summary>
         public string ActivityId { get; set; }
+
         /// <summary> Channel account information needed to route a message. </summary>
         public ChannelAccount User { get; set; }
+
         /// <summary> Channel account information needed to route a message. </summary>
-        public ChannelAccount Bot { get; set; }
+        [JsonPropertyName("bot")]
+        public ChannelAccount Agent { get; set; }
+
         /// <summary> Conversation account represents the identity of the conversation within a channel. </summary>
         public ConversationAccount Conversation { get; set; }
+
         /// <summary> ID of the channel in which the referenced conversation exists. </summary>
         public string ChannelId { get; set; }
+
         /// <summary> (Optional) Service endpoint where operations concerning the referenced conversation may be performed. </summary>
         public string ServiceUrl { get; set; }
+
         /// <summary> (Optional) A BCP-47 locale name for the referenced conversation. </summary>
         public string Locale { get; set; }
     }

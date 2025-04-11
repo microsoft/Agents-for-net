@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.SharePoint.Models;
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Compat
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>
-        /// Invoke activities communicate programmatic commands from a client or channel to a bot.
+        /// Invoke activities communicate programmatic commands from a client or channel to a Agent.
         /// The meaning of an invoke activity is defined by the property,
         /// which is meaningful within the scope of a channel.
         /// </remarks>

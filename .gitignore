@@ -36,6 +36,7 @@ Drop/
 target/
 Symbols/
 objd/
+.config/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -226,3 +227,4 @@ appsettings.Production.json
 
 # VS Code files
 .vscode
+src/samples/ModelContextProtocol/GitHubMCPServer/Properties/ServiceDependencies/GitHubMCPServer20250311143114 - Web Deploy/profile.arm.json

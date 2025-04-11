@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Connector
 {
-    public static class HttpClientExtensions
+    internal static class HttpClientExtensions
     {
         /// <summary>
         /// The product info header value for the SDK. Stored as Static for performance.

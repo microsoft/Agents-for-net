@@ -14,9 +14,9 @@ namespace Microsoft.Agents.Core.Models
         public const string User = "user";
 
         /// <summary>
-        /// The type for bot roles.
+        /// The type for Agent roles.
         /// </summary>
-        public const string Bot = "bot";
+        public const string Agent = "agent";
 
         /// <summary>
         /// The type for skill roles.

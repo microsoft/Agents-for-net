@@ -12,7 +12,7 @@ using Microsoft.Agents.Core.Models;
 namespace EvalClient;
 
 /// <summary>
-/// This class is responsible for handling the Evaluation service and managing the conversation with the Copilot Studio hosted bot and Azure OpenAI.
+/// This class is responsible for handling the Evaluation service and managing the conversation with the Copilot Studio hosted Agent and Azure OpenAI.
 /// </summary>
 /// <param name="copilotClient">Connection Settings for connecting to Copilot Studio</param>
 /// <param name="chatClient">Connection Settings for connecting to Azure OpenAI</param>
@@ -20,12 +20,12 @@ namespace EvalClient;
 internal class EvaluationService(EvalClientConfig settings, CopilotClient copilotClient, IChatClient chatClient) : IHostedService
 {
     /// <summary>
-    /// This is the main thread loop that manages the back and forth communication with the Copilot Studio Bot. 
+    /// This is the main thread loop that manages the back and forth communication with the Copilot Studio Agent. 
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var inputEvalDataset = $"./Data/{settings.EvaluationDataset}";
@@ -36,9 +36,9 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
 
         
         Console.WriteLine("\nRunning evaluation on Agent");
-        // Attempt to connect to the copilot studio hosted bot here
-        // if successful, this will loop though all events that the Copilot Studio bot sends to the client setup the conversation.
-        await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+        // Attempt to connect to the copilot studio hosted Agent here
+        // if successful, this will loop though all events that the Copilot Studio Agent sends to the client setup the conversation.
+        await foreach (IActivity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
         {
             if (act is null)
             {
@@ -54,7 +54,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
             Console.WriteLine($"Evaluating dataset {count + 1}/{evalDataset.Count()}...");
             var question = evalDataset[count].TestUtterance;
 
-            // Send the evaluation question to the Copilot Studio bot and await the response.
+            // Send the evaluation question to the Copilot Studio Agent and await the response.
             var response = String.Empty;
             await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
             {
@@ -200,7 +200,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
     /// <param name="act"></param>
     /// <returns name="response"></returns>
     
-    static string GetActivity(Activity act)
+    static string GetActivity(IActivity act)
     {
         var response = "";
         

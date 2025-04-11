@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <ComponentAreaName>CplTests.BuilderTesting</ComponentAreaName>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <Import Project="..\..\Build.Common.core.props" />
+
+  <PropertyGroup>
+    <PackageId>Microsoft.Agents.Builder.Testing</PackageId>
+    <Description>Library for building bot tests using Microsoft Bot Framework Connector</Description>
+    <Summary>Library for building bot tests using Microsoft Bot Framework Connector</Summary>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit.extensibility.core" />
+	  <PackageReference Include="xunit" />
+	  <PackageReference Include="xunit.runner.visualstudio">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
+  </ItemGroup>
+</Project>

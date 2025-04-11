@@ -25,7 +25,7 @@ We are in preview with this codebase right now.
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**
 
 ### Nightly Nuget feed.
-We also provide nightly build packages via a public Nuget feed here: [AgentSdkNightly](https://pkgs.dev.azure.com/ConversationalAI/BotFramework/_packaging/SDK/nuget/v3/index.json).  They will all begin with **Microsoft.Agents**
+**Updated March 11 2025** :  Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-alpha.**
 - This feed is updated overnight (PT) whenever commits occur in our repo. 
 - This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
 
@@ -65,7 +65,7 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 - agents-for-net Repository: **You are here.**
 - [agents-for-js Repository](https://github.com/Microsoft/Agents-for-js)
 - [agents-for-python Repository]( https://github.com/Microsoft/Agents-for-python)
-- [Official Agents Documentation](https://aka.ms/AgentsFramework)
-- [.NET Documentation](https://aka.ms/Agents-net-docs)
-- [JavaScript Documentation](https://aka.ms/agents-js-docs)
-- [Python Documentation](https://aka.ms/agents-python-docs)
+- [Official Agents Documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [.NET Documentation](https://learn.microsoft.com/en-us/dotnet/api/?view=m365-agents-sdk&preserve-view=true)
+- [JavaScript Documentation - Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Python Documentation- Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)

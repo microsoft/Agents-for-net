@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.Equal(activity.Id, conversationReference.ActivityId);
             Assert.Equal(activity.From.Id, conversationReference.User.Id);
-            Assert.Equal(activity.Recipient.Id, conversationReference.Bot.Id);
+            Assert.Equal(activity.Recipient.Id, conversationReference.Agent.Id);
             Assert.Equal(activity.Conversation.Id, conversationReference.Conversation.Id);
             Assert.Equal(activity.ChannelId, conversationReference.ChannelId);
             Assert.Equal(activity.Locale, conversationReference.Locale);
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.Equal(reply.Id, conversationReference.ActivityId);
             Assert.Equal(activity.From.Id, conversationReference.User.Id);
-            Assert.Equal(activity.Recipient.Id, conversationReference.Bot.Id);
+            Assert.Equal(activity.Recipient.Id, conversationReference.Agent.Id);
             Assert.Equal(activity.Conversation.Id, conversationReference.Conversation.Id);
             Assert.Equal(activity.ChannelId, conversationReference.ChannelId);
             Assert.Equal(activity.Locale, conversationReference.Locale);
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Model.Tests
                 {
                     Id = "cr_abc",
                 },
-                Bot = new ChannelAccount
+                Agent = new ChannelAccount
                 {
                     Id = "cr_def",
                 },
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(conversationReference.Conversation.Id, activity.Conversation.Id);
 
             Assert.Equal(conversationReference.User.Id, activity.From.Id);
-            Assert.Equal(conversationReference.Bot.Id, activity.Recipient.Id);
+            Assert.Equal(conversationReference.Agent.Id, activity.Recipient.Id);
             Assert.Equal(conversationReference.ActivityId, activity.Id);
             Assert.Equal(activity.Locale, activityToSend.Locale);
         }
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Model.Tests
                 {
                     Id = "abc",
                 },
-                Bot = new ChannelAccount
+                Agent = new ChannelAccount
                 {
                     Id = "def",
                 },
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(conversationReference.ServiceUrl, activity.ServiceUrl);
             Assert.Equal(conversationReference.Conversation.Id, activity.Conversation.Id);
 
-            Assert.Equal(conversationReference.Bot.Id, activity.From.Id);
+            Assert.Equal(conversationReference.Agent.Id, activity.From.Id);
             Assert.Equal(conversationReference.User.Id, activity.Recipient.Id);
             Assert.Equal(conversationReference.ActivityId, activity.ReplyToId);
 
@@ -208,43 +208,6 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(trace.Name == "test");
         }
 
-        [Fact]
-        public void IsFromStreamingConnectionTests()
-        {
-            var nonStreaming = new List<string>()
-            {
-                "http://yayay.com",
-                "https://yayay.com",
-                "HTTP://yayay.com",
-                "HTTPS://yayay.com",
-            };
-
-            var streaming = new List<string>()
-            {
-                "urn:botframework:WebSocket:wss://beep.com",
-                "urn:botframework:WebSocket:http://beep.com",
-                "URN:botframework:WebSocket:wss://beep.com",
-                "URN:botframework:WebSocket:http://beep.com",
-            };
-
-            var activity = CreateActivity("en-us");
-
-            nonStreaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.False(activity.IsFromStreamingConnection());
-            });
-
-            streaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.True(activity.IsFromStreamingConnection());
-            });
-
-            activity.ServiceUrl = null;
-            Assert.False(activity.IsFromStreamingConnection());
-        }
-
         [Theory]
         [InlineData(nameof(ActivityTypes.EndOfConversation))]
         [InlineData(nameof(ActivityTypes.Event))]
@@ -274,7 +237,7 @@ namespace Microsoft.Agents.Model.Tests
         [InlineData("TestTrace", null, "TestValue", null)]
         public void TestCreateTraceActivity(string name, string valueType, object value, string label)
         {
-            var activity = Activity.CreateTraceActivity(name, valueType, value, label);
+            var activity = Activity.CreateTraceActivity(name, value, valueType, label);
 
             Assert.NotNull(activity);
             Assert.True(activity.Type == ActivityTypes.Trace);
@@ -406,15 +369,6 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.IsType<Mention[]>(mentions);
             Assert.True(mentions.Length == 0);
-        }
-
-        [Theory]
-        [ClassData(typeof(HasContentData))]
-        public void HasContent(Activity activity, bool expected)
-        {
-            var hasContent = activity.HasContent();
-
-            Assert.Equal(expected, hasContent);
         }
 
         [Theory]

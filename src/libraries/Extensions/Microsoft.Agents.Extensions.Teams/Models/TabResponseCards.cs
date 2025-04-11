@@ -23,8 +23,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <value>
         /// Cards for this <see cref="TabResponse"/>.
         /// </value>
-#pragma warning disable CA2227 // Collection properties should be read only
         public IList<TabResponseCard> Cards { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

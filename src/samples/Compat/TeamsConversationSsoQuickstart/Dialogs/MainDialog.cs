@@ -1,17 +1,17 @@
-﻿// <copyright file="MainDialog.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace BotConversationSsoQuickstart.Dialogs
+namespace TeamsConversationSsoQuickstart.Dialogs
 {
     public class MainDialog : LogoutDialog
     {
@@ -26,7 +26,7 @@ namespace BotConversationSsoQuickstart.Dialogs
                 nameof(OAuthPrompt),
                 new OAuthPromptSettings
                 {
-                    ConnectionName = ConnectionName,
+                    AzureBotOAuthConnectionName = ConnectionName,
                     Text = "Please Sign In",
                     Title = "Sign In",
                     Timeout = 300000, // User has 5 minutes to login (1000 * 60 * 5)

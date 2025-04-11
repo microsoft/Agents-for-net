@@ -1,5 +1,7 @@
 # Teams Conversation Bot SSO quick-start
 
+This samples demonstrates a Bot Framework SDK bot migrating to Agents SDK.
+
 This sample demonstrates how to integrate Azure AD authentication in Microsoft Teams using a bot with Single Sign-On (SSO) capabilities. Built with the Co-Pilot SDK, it showcases OAuth SSO, Adaptive Cards, and Microsoft Graph API interactions. The sample includes reusable components, like the TeamsActivityHandler, for handling Invoke Activity in Teams. It provides a step-by-step setup guide to authenticate users with identity providers such as Microsoft Entra ID, GitHub, and others.
 
 This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/microsoft/agents), it shows how to get started with SSO in a bot for Microsoft Teams.
@@ -40,31 +42,30 @@ The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botfr
       ```json
       "TokenValidation": {
         "Audiences": [
-          "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-        ]
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
+        ],
+        "TenantId": "{{TenantId}}"
       },
 
       "Connections": {
-          "BotServiceConnection": {
+          "ServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
           "Type":  "MsalAuth",
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+              "ClientId": "{{ClientId}}", // this is the Client ID used for the Azure Bot
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
-              ],
-              "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+              ]
           }
       }
       ```
 
-      1. Set the **ClientId** to the AppId of the bot identity.
+      1. Replace all **{{ClientId}}** to the AppId of the Agent.
+      1. Repalce all **{{TenantId}}** to the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
-      1. Set the **Audience** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
@@ -73,7 +74,7 @@ The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botfr
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
      -  Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
-     - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
+     - Replace `<<AGENT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
    - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
 1. Upload the `manifest.zip` to Teams
    - Select **Developer Portal** in the Teams left sidebar
@@ -102,4 +103,4 @@ The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botfr
 ![token](Images/4.Your_Token.png)
 
 ## Further reading
-To learn more about building Bots and Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

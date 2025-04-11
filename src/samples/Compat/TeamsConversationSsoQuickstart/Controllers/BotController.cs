@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
-namespace BotConversationSsoQuickstart.Controllers
+namespace TeamsConversationSsoQuickstart.Controllers
 {
     // ASP.Net Controller that receives incoming HTTP requests from the Azure Bot Service or other configured event activity protocol sources.
     // When called, the request has already been authorized and credentials and tokens validated.
     [Authorize]
     [ApiController]
     [Route("api/messages")]
-    public class BotController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
+    public class BotController(IAgentHttpAdapter adapter, IAgent bot) : ControllerBase
     {
         [HttpPost]
         public Task PostAsync(CancellationToken cancellationToken)

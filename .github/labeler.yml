@@ -17,3 +17,7 @@
 "ML: Tests":
 - changed-files:
   - any-glob-to-any-file: ['src/tests/**']
+
+"ML: Packages":
+- changed-files:
+  - any-glob-to-any-file: ['Directory.Packages.props']

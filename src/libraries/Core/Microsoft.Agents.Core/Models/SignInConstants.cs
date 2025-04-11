@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Core.Models
         public const string TokenExchangeOperationName = "signin/tokenExchange";
 
         /// <summary>
-        /// The EventActivity name when a token is sent to the bot.
+        /// The EventActivity name when a token is sent to the Agent.
         /// </summary>
         public const string TokenResponseEventName = "tokens/response";
 

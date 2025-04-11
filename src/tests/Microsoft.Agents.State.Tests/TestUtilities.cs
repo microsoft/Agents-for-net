@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.State.Tests
 {
     public class TestUtilities
     {
-        public static TurnContext CreateEmptyContext()
+        public static ITurnContext CreateEmptyContext()
         {
             var b = new TestAdapter();
             var a = new Activity

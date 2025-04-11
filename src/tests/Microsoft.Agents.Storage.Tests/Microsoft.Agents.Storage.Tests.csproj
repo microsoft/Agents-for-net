@@ -23,11 +23,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
+      <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Blobs\Microsoft.Agents.Storage.Blobs.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.CosmosDb\Microsoft.Agents.Storage.CosmosDb.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Transcript\Microsoft.Agents.Storage.Transcript.csproj" />
-      <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
+      <ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
     </ItemGroup>
 
 	<ItemGroup>

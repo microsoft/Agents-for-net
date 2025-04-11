@@ -78,7 +78,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 ```json
 "DirectToEngineSettings": {
   "EnvironmentId":         "", // Environment ID of environment with the CopilotStudio App.
-  "BotIdentifier":         "", // Schema Name of the Copilot to use
+  "SchemaName":            "", // Schema Name of the Copilot to use
   "TenantId":              "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
   "AppClientId":           "", // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
   "AzureOpenAiEndpoint":   "", // Azure OpenAI Endpoint
@@ -91,7 +91,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 
 4. Build and run the EvalClient.exe program.
 
-This should challenge you for login and connect ot the Copilot Studio Hosted bot. Then, it runs all the evaluations in the evaluation dataset and stores the results in the `.\bin\net9.0\Data\Evaluation Dataset Results.csv` file.
+This should challenge you for login and connect ot the Copilot Studio Hosted Agent. Then, it runs all the evaluations in the evaluation dataset and stores the results in the `.\bin\net9.0\Data\Evaluation Dataset Results.csv` file.
 
 ## Sample Evaluation
 

@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Tests.App.TestUtils;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
@@ -23,17 +24,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingStart", adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new TeamsApplication(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
             var ids = new List<string>();
-            app.Meetings.OnStart((context, _, _, _) =>
-            {
-                ids.Add(context.Activity.Id);
-                return Task.CompletedTask;
+            var extension = new TeamsAgentExtension(app);
+            app.RegisterExtension(extension, (ext) => {
+                ext.Meetings.OnStart((context, _, _, _) =>
+                {
+                    ids.Add(context.Activity.Id);
+                    return Task.CompletedTask;
+                });
             });
 
             // Act
@@ -55,17 +59,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingEnd", adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new TeamsApplication(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
+            var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.Meetings.OnEnd((context, _, _, _) =>
-            {
-                ids.Add(context.Activity.Id);
-                return Task.CompletedTask;
+            app.RegisterExtension(extension, (ext) => {
+                ext.Meetings.OnEnd((context, _, _, _) =>
+                {
+                    ids.Add(context.Activity.Id);
+                    return Task.CompletedTask;
+                });
             });
 
             // Act
@@ -87,17 +94,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantJoin", adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new TeamsApplication(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
+            var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.Meetings.OnParticipantsJoin((context, _, _, _) =>
-            {
-                ids.Add(context.Activity.Id);
-                return Task.CompletedTask;
+            app.RegisterExtension(extension, (ext) => {
+                ext.Meetings.OnParticipantsJoin((context, _, _, _) =>
+                {
+                    ids.Add(context.Activity.Id);
+                    return Task.CompletedTask;
+                });
             });
 
             // Act
@@ -119,17 +129,21 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantLeave", adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new TeamsApplication(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
+            var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.Meetings.OnParticipantsLeave((context, _, _, _) =>
-            {
-                ids.Add(context.Activity.Id);
-                return Task.CompletedTask;
+
+            app.RegisterExtension(extension, (ext) => {
+                ext.Meetings.OnParticipantsLeave((context, _, _, _) =>
+                {
+                    ids.Add(context.Activity.Id);
+                    return Task.CompletedTask;
+                });
             });
 
             // Act
@@ -143,7 +157,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.Equal("test.id", ids[0]);
         }
 
-        private static TurnContext[] CreateMeetingTurnContext(string activityName, ChannelAdapter adapter)
+        private static ITurnContext[] CreateMeetingTurnContext(string activityName, ChannelAdapter adapter)
         {
             return new TurnContext[]
             {

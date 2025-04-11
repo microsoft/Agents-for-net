@@ -23,7 +23,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
-		<ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
+		<ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 		<ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	</ItemGroup>
 

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
         /*
         /// <summary>
-        /// Creates a new thread in a team chat and sends an activity to that new thread. Use this method if you are using BotFrameworkAdapter and are handling credentials in your code.
+        /// Creates a new thread in a team chat and sends an activity to that new thread. Use this method if you are using Adapter and are handling credentials in your code.
         /// </summary>
         /// <param name="turnContext"> Turn context. </param>
         /// <param name="activity"> The activity to send on starting the new thread. </param>
@@ -234,10 +234,10 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="turnContext"> Turn context. </param>
         /// <param name="activity"> The activity to send on starting the new thread. </param>
         /// <param name="teamsChannelId"> The Team's Channel ID, note this is distinct from the Activity property with same name. </param>
-        /// <param name="botAppId"> The bot's appId. </param>
+        /// <param name="agentAppId"> The Agent's appId. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns>Team Details.</returns>
-        public static async Task<Tuple<ConversationReference, string>> SendMessageToTeamsChannelAsync(ITurnContext turnContext, IActivity activity, string teamsChannelId, string botAppId, CancellationToken cancellationToken = default)
+        public static async Task<Tuple<ConversationReference, string>> SendMessageToTeamsChannelAsync(ITurnContext turnContext, IActivity activity, string teamsChannelId, string agentAppId, CancellationToken cancellationToken = default)
         {
             if (turnContext == null)
             {
@@ -265,7 +265,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             };
 
             await turnContext.Adapter.CreateConversationAsync(
-                botAppId,
+                agentAppId,
                 Channels.Msteams,
                 serviceUrl,
                 null,

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
@@ -14,7 +14,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class HostedActivityServiceTests
     {
@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
             var activity = new Activity();
             var source = new CancellationTokenSource();
 
-            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new InvokeResponse())
                 .Verifiable(Times.Once);
 
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
             var activity = new Activity();
             var source = new CancellationTokenSource();
 
-            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception())
                 .Verifiable(Times.Once);
             record.Logger.Setup(e => e.Log(LogLevel.Error,
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
             var record = UseRecord();
             var source = new CancellationTokenSource();
 
-            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new InvokeResponse())
                 .Verifiable(Times.Never);
 

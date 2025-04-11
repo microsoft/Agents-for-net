@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Models;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +31,7 @@ namespace Microsoft.Agents.Connector
         /// The cancellation token.
         /// </param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task<AttachmentInfo> GetAttachmentInfoAsync(string attachmentId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<AttachmentInfo> GetAttachmentInfoAsync(string attachmentId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get the named view as binary content.
@@ -47,6 +46,6 @@ namespace Microsoft.Agents.Connector
         /// The cancellation token.
         /// </param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task<Stream> GetAttachmentAsync(string attachmentId, string viewId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> GetAttachmentAsync(string attachmentId, string viewId, CancellationToken cancellationToken = default);
     }
 }

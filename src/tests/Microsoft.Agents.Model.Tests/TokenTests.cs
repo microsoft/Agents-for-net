@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -135,7 +136,7 @@ namespace Microsoft.Agents.Model.Tests
                 ConnectionName = connectionName,
                 Conversation = convo,
                 RelatesTo = relatesTo,
-                BotUrl = botUrl,
+                AgentUrl = botUrl,
                 MsAppId = msAppId,
             };
 
@@ -144,7 +145,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(connectionName, tokenExchangeState.ConnectionName);
             Assert.Equal(convo, tokenExchangeState.Conversation);
             Assert.Equal(relatesTo, tokenExchangeState.RelatesTo);
-            Assert.Equal(botUrl, tokenExchangeState.BotUrl);
+            Assert.Equal(botUrl, tokenExchangeState.AgentUrl);
             Assert.Equal(msAppId, tokenExchangeState.MsAppId);
         }
         
@@ -255,6 +256,25 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(tokenStatus);
             Assert.IsType<TokenStatus>(tokenStatus);
+        }
+
+        [Fact]
+        public void TokenExchangeStateRoundTrip()
+        {
+            var outTokenState = new TokenExchangeState()
+            {
+                AgentUrl = "theUrl"
+            };
+
+            var outJson = ProtocolJsonSerializer.ToJson(outTokenState);
+
+            // Specifically, should include: "botUrl" and not "agentUrl"
+            var outExpected = "{\"botUrl\":\"theUrl\"}";
+
+            Assert.Equal(outExpected, outJson);
+
+            var inTokenState = ProtocolJsonSerializer.ToObject<TokenExchangeState>(outJson);
+            Assert.Equal(outTokenState.AgentUrl, inTokenState.AgentUrl);
         }
     }
 }

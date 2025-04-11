@@ -26,13 +26,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
     {
         private static readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
 
-        private static readonly Dictionary<string, string> _configSettings = new Dictionary<string, string> {
-            { "Connections:BotServiceConnection:Settings:AuthType", "ClientSecret" },
-            { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-            { "Connections:BotServiceConnection:Settings:ClientSecret", "test-secret" },
-            { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+        private static readonly Dictionary<string, string> _configSettings = new()
+        {
+            { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+            { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+            { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+            { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
         };
-        private const string SettingsSection = "Connections:BotServiceConnection:Settings";
+        private const string SettingsSection = "Connections:ServiceConnection:Settings";
 
         IConfiguration _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(_configSettings)
@@ -58,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullConfiguration()
         {
-            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, (IConfigurationSection) null));
         }
 
         [Fact]
@@ -200,11 +201,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var token = "token";
 
             var configSettings = new Dictionary<string, string> {
-                { "Connections:BotServiceConnection:Settings:AuthType", "Certificate" },
-                { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-                { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "https://botframework/test.com" },
-                { "Connections:BotServiceConnection:Settings:CertThumbprint", "thumbprint" },
-                { "Connections:BotServiceConnection:Settings:Scopes:scope1", "{instance}" }
+                { "Connections:ServiceConnection:Settings:AuthType", "Certificate" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://botframework/test.com" },
+                { "Connections:ServiceConnection:Settings:CertThumbprint", "thumbprint" },
+                { "Connections:ServiceConnection:Settings:Scopes:scope1", "{instance}" }
             };
 
             IConfiguration configuration = new ConfigurationBuilder()
@@ -246,6 +247,85 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
             Assert.Equal(token, result);
             Mock.Verify(options, service, certificate);
+        }
+
+        [Fact]
+        public void MSALProvider_ClientSecretShouldReturnConfidentialClient()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+                { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+            var msalProvider = msal as IMSALProvider;
+            Assert.NotNull(msalProvider);
+            Assert.IsAssignableFrom<IConfidentialClientApplication>(msalProvider.CreateClientApplication());
+        }
+
+        [Fact]
+        public void MSALProvider_UserManagedIdentityShouldReturnManagedIdentityApplication()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "UserManagedIdentity" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+            var msalProvider = msal as IMSALProvider;
+            Assert.NotNull(msalProvider);
+            Assert.IsAssignableFrom<IManagedIdentityApplication>(msalProvider.CreateClientApplication());
         }
 
         private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)

@@ -25,10 +25,7 @@ namespace Microsoft.Agents.Core.Serialization
             foreach (var type in GetLoadOnInitTypes(assembly))
             {
                 var init = type.GetMethod("Init", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-                if (init != null)
-                {
-                    init.Invoke(assembly, null);
-                }
+                init?.Invoke(assembly, null);
             }
         }
 

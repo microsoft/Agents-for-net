@@ -25,7 +25,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
-      <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
+      <ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Models
         public const string Search = "search";
 
         /// <summary>
-        /// The type for bot SearchAnswer.
+        /// The type for Agent SearchAnswer.
         /// Implies a simpler search that does not include pagination,
         /// and most typically only returns a single search result.
         /// </summary>

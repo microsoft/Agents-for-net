@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 using CopilotStudioEchoSkill;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
@@ -21,24 +19,23 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
-// Add ApplicationOptions
-builder.Services.AddTransient(sp =>
-{
-    return new AgentApplicationOptions()
-    {
-        StartTypingTimer = false,
-        TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
-    };
-});
+// Add AgentApplicationOptions from config.
+builder.AddAgentApplicationOptions();
 
-// Add the bot (which is transient)
-builder.AddBot<MyBot, BotAdapterWithErrorHandler>();
+// Add the Agent
+builder.AddAgent<EchoSkill>();
+
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-// Required for providing the bot manifest.
+// Required for providing the Agent manifest.
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

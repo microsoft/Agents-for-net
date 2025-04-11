@@ -23,7 +23,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <value>
         /// The collection of recipients of the targeted meeting notification.
         /// </value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking binary compat)
         public IList<string> Recipients { get; set; }
 
         /// <summary>
@@ -35,6 +34,5 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// The collection of surfaces on which to show the notification.
         /// </value>
         public IList<Surface> Surfaces { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

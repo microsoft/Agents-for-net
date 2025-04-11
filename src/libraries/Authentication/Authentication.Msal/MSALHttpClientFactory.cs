@@ -22,11 +22,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <returns></returns>
         public HttpClient GetHttpClient()
         {
-            var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
-            if (httpClientFactory == null)
-            {
-                throw new InvalidOperationException("IHttpClientFactory for MSAL service is not registered.");
-            }
+            var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>() ?? throw new InvalidOperationException("IHttpClientFactory for MSAL service is not registered.");
             HttpClient msalClient = httpClientFactory.CreateClient("MSALClientFactory");
             return msalClient;
         }

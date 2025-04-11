@@ -10,5 +10,6 @@ namespace Microsoft.Agents.Core.Models
         public const string Thing = "Thing";
         public const string GeoCoordinates = "GeoCoordinates";
         public const string StreamInfo = "streaminfo";
+        public const string ActivityTreatment = "activityTreatment";
     }
 }

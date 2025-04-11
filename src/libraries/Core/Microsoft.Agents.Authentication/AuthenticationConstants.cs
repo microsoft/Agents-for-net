@@ -100,11 +100,6 @@ namespace Microsoft.Agents.Authentication
         public const string AppIdClaim = "appid";
 
         /// <summary>
-        /// Service URL claim name. As used in Activity Protocol v3.1 auth.
-        /// </summary>
-        public const string ServiceUrlClaim = "serviceurl";
-
-        /// <summary>
         /// Tenant Id claim name. As used in Microsoft AAD tokens.
         /// </summary>
         public const string TenantIdClaim = "tid";

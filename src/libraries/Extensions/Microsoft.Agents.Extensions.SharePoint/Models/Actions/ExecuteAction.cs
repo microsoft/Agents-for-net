@@ -23,7 +23,6 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         /// Gets or Sets the action parameters of type <see cref="Dictionary{TKey, TValue}"/>.
         /// </summary>
         /// <value>This value is the parameters of the action.</value>
-        #pragma warning disable CA2227
         public Dictionary<string, object> Parameters { get; set; }
 
         /// <summary>

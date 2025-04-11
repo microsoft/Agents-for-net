@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Connector
         /// GetConversations.
         /// </summary>
         /// <remarks>
-        /// List the Conversations in which this bot has participated.
+        /// List the Conversations in which this Agent has participated.
         ///
         /// GET from this method with a skip token
         ///
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Connector
         /// Create a new Conversation.
         ///
         /// POST to this method with a
-        /// * Bot being the bot creating the conversation
+        /// * Agent being the Agent creating the conversation
         /// * IsGroup set to true if this is not a direct message (default is
         /// false)
         /// * Array containing the members to include in the conversation
@@ -56,13 +56,13 @@ namespace Microsoft.Agents.Connector
         /// conversation id which is suitable for use
         /// in the message payload and REST API uris.
         ///
-        /// Most channels only support the semantics of bots initiating a
+        /// Most channels only support the semantics of Agents initiating a
         /// direct message conversation.  An example of how to do that would
         /// be:
         ///
         /// ```
         /// var resource = await connector.conversations.CreateConversation(new
-        /// ConversationParameters(){ Bot = bot, members = new ChannelAccount[]
+        /// ConversationParameters(){ Agent = agent, members = new ChannelAccount[]
         /// { new ChannelAccount("user1") } );
         /// await connect.Conversations.SendToConversationAsync(resource.Id,
         /// new Activity() ... ) ;
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Connector
         /// Edit an existing activity.
         ///
         /// Some channels allow you to edit an existing activity to reflect the
-        /// new state of a bot conversation.
+        /// new state of an Agent conversation.
         ///
         /// For example, you can remove buttons after someone has clicked
         /// "Approve" button.

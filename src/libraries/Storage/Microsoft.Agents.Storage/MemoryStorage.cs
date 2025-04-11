@@ -5,6 +5,7 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -76,7 +77,9 @@ namespace Microsoft.Agents.Storage
                     {
                         if (state.GetTypeInfo(out var type))
                         {
+                            var typeProps = state.RemoveTypeInfoProperties();
                             storeItems.Add(key, state.Deserialize(type, _stateJsonSerializer));
+                            state.SetTypeInfoProperties(typeProps);
                         }
                         else
                         {

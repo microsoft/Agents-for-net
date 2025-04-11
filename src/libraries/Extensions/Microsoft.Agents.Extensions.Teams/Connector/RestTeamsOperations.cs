@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -67,9 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         }
 
         /// <inheritdoc/>
-#pragma warning disable CA1801 // Review unused parameters - cannot change without breaking backwards compat.
         public async Task<TeamsMeetingParticipant> FetchParticipantAsync(string meetingId, string participantId, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
-#pragma warning restore CA1801 // Review unused parameters
         {
             ArgumentNullException.ThrowIfNull(meetingId);
             ArgumentNullException.ThrowIfNull(participantId);
@@ -208,7 +207,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 milliseconds).
             var result = await RetryAction.RunAsync(
-                task: () => GetResponseAsync<BatchOperationState>("GetOperationState", apiUrl, HttpMethod.Post, customHeaders: customHeaders, cancellationToken: cancellationToken),
+                task: () => GetResponseAsync<BatchOperationState>("GetOperationState", apiUrl, HttpMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken),
                 retryExceptionHandler: (ex, ct) => HandleThrottlingException(ex, ct)).ConfigureAwait(false);
 
             return result;
@@ -287,27 +286,29 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
             try
             {
-                using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
+                var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
                 using var httpResponse = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 switch ((int)httpResponse.StatusCode)
                 {
                     case 200:
                     case 201:
                     case 202:
+                    case 207:
                         {
-                            if (typeof(T) == typeof(string))
+                            if (httpResponse.Content != null)
                             {
                                 var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                                return ProtocolJsonSerializer.ToObject<T>(responseContent);
-                            }
 
-                            var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            if (!string.IsNullOrWhiteSpace(json))
-                            {
-                                return ProtocolJsonSerializer.ToObject<T>(json);
+                                if (!string.IsNullOrEmpty(responseContent))
+                                {
+                                    if (typeof(T) == typeof(string))
+                                    {
+                                        return ProtocolJsonSerializer.ToObject<T>(responseContent);
+                                    }
+                                    return ProtocolJsonSerializer.ToObject<T>(httpResponse.Content.ReadAsStream(cancellationToken));
+                                }
                             }
-
-                            return default(T);
+                            return default;
                         }
                     case 429:
                         {

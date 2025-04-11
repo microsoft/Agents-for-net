@@ -7,13 +7,12 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -25,7 +24,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// Invoke and ExpectReplies are always handled synchronously.
     /// </remarks>
     public class CloudAdapter
-        : ChannelServiceAdapterBase, IBotHttpAdapter
+        : ChannelServiceAdapterBase, IAgentHttpAdapter
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
@@ -42,9 +41,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IBotHttpAdapter> logger = null,
+            ILogger<IAgentHttpAdapter> logger = null,
             AdapterOptions options = null,
-            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            Builder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
@@ -90,19 +89,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <remarks>
         /// Note, this is an ImmediateAccept and BackgroundProcessing override of: 
-        /// Task IBotHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default);
+        /// Task IAgentHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
         /// </remarks>
         /// <param name="httpRequest">The HTTP request object, typically in a POST handler by a Controller.</param>
         /// <param name="httpResponse">The HTTP response object.</param>
-        /// <param name="bot">The bot implementation.</param>
+        /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive
         ///     notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default)
+        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
             ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(bot);
+            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -114,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
-                if (!IsValidChannelActivity(activity, httpResponse))
+                if (!IsValidChannelActivity(activity))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
@@ -122,11 +121,31 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    if (activity.DeliveryMode == DeliveryModes.Stream)
+                    {
+                        InvokeResponse invokeResponse = null;
+
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        {
+                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
+
+                        // block until turn is complete
+                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        {
+                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the bot
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                        // Process the inbound activity with the Agent
+                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
                         // Write the response, potentially serializing the InvokeResponse
                         await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
@@ -153,11 +172,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
-        /// <param name="bot"></param>
+        /// <param name="agent"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
         /// <returns></returns>
-        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
             if (_adapterOptions.Async)
             {
@@ -166,10 +185,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return Task.CompletedTask;
             }
 
-            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
+            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
-        private bool IsValidChannelActivity(IActivity activity, HttpResponse httpResponse)
+        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            {
+                return false;
+            }
+
+            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+
+            return true;
+        }
+
+        private bool IsValidChannelActivity(IActivity activity)
         {
             if (activity == null)
             {

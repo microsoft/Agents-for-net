@@ -1,6 +1,6 @@
 ﻿#pragma warning disable SA1402
 
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;

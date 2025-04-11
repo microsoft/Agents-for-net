@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Connector.Types
         /// <summary> Initializes a new instance of AttachmentInfo. </summary>
         public AttachmentInfo()
         {
-            Views = new List<AttachmentView>();
+            Views = [];
         }
 
         /// <summary> Initializes a new instance of AttachmentInfo. </summary>

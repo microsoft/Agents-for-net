@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Contains utility methods for various message types a bot can return.
+    /// Contains utility methods for various message types a Agent can return.
     /// </summary>
     /// <example>
     /// <code>
@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Core.Models
     /// <remarks>The following apply to message actions in general.
     /// <para>See the channel's documentation for limits imposed upon the contents of
     /// the text of the message to send.</para>
-    /// <para>To control various characteristics of your bot's speech such as voice,
+    /// <para>To control various characteristics of your Agent's speech such as voice,
     /// rate, volume, pronunciation, and pitch, specify test to speak in
     /// Speech Synthesis Markup Language (SSML) format.</para>
     /// <para>
@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Core.Models
         /// </code>
         /// </example>
         /// <param name="text">The text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -78,9 +78,9 @@ namespace Microsoft.Agents.Core.Models
         /// The text of the actions to create.
         /// </param>
         /// <param name="text">The text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -116,9 +116,9 @@ namespace Microsoft.Agents.Core.Models
         /// The text of the actions to create.
         /// </param>
         /// <param name="text">The text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -174,9 +174,9 @@ namespace Microsoft.Agents.Core.Models
         /// The card actions to include.
         /// </param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -210,9 +210,9 @@ namespace Microsoft.Agents.Core.Models
         /// The card actions to include.
         /// </param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -237,9 +237,9 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="attachment">Attachment to include in the message.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Core.Models
         {
             attachment = attachment ?? throw new ArgumentNullException(nameof(attachment));
 
-            return Attachment(new List<Attachment> { attachment }, text, ssml, inputHint);
+            return Attachment([attachment], text, ssml, inputHint);
         }
 
         /// <summary>
@@ -260,9 +260,9 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="attachments">The attachments to include in the message.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -283,9 +283,9 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="attachments">The attachments to include in the message.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
@@ -343,9 +343,9 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="contentType">The MIME type of the image or video.</param>
         /// <param name="name">Optional, the name of the image or video file.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="ssml">Optional, text to be spoken by your bot on a speech-enabled
+        /// <param name="ssml">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
-        /// <param name="inputHint">Optional, indicates whether your bot is accepting,
+        /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is null.</param>
@@ -378,15 +378,15 @@ namespace Microsoft.Agents.Core.Models
                 Name = !string.IsNullOrWhiteSpace(name) ? name : string.Empty,
             };
 
-            return AttachmentActivity(AttachmentLayoutTypes.List.ToString(), new List<Attachment> { a }, text, ssml, inputHint);
+            return AttachmentActivity(AttachmentLayoutTypes.List.ToString(), [a], text, ssml, inputHint);
         }
         public static IActivity CreateMessageActivity()
         {
             return new Activity()
             {
                 Type = ActivityTypes.Message,
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
         }
 

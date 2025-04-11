@@ -14,8 +14,8 @@ namespace Microsoft.Agents.Core.Models
     {
         public SuggestedActions() 
         {
-            To = new List<string>();
-            Actions = new List<CardAction>();
+            To = [];
+            Actions = [];
         }
 
         /// <summary> Initializes a new instance of SuggestedActions. </summary>
@@ -23,8 +23,8 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="actions"> Actions that can be shown to the user. </param>
         public SuggestedActions(IList<string> to = default, IList<CardAction> actions = default)
         {
-            To = to ?? new List<string>();
-            Actions = actions ?? new List<CardAction>();
+            To = to ?? [];
+            Actions = actions ?? [];
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="actions">Actions that can be shown to the user.</param>
         /// <exception cref="ArgumentNullException">ArgumentNullException.</exception>
         public SuggestedActions(IEnumerable<string> to, IEnumerable<CardAction> actions)
-            : this(to.ToArray(), actions.ToArray())
+            : this([.. to], [.. actions])
         {
         }
 

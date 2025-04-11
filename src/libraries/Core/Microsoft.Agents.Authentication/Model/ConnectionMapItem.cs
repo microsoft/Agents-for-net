@@ -1,6 +1,9 @@
-﻿namespace Microsoft.Agents.Authentication.Model
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Authentication.Model
 {
-    internal class ConnectionMapItem
+    public class ConnectionMapItem
     {
         public string ServiceUrl { get; set; }
         public string Audience { get; set; }

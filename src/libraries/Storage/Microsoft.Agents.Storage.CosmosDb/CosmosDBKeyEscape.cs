@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
     /// <summary>
     /// Helper methods for escaping keys used for Cosmos DB.
     /// </summary>
-    public static class CosmosDbKeyEscape
+    internal static class CosmosDbKeyEscape
     {
         /// <summary>
         /// Older libraries had a max key length of 255.

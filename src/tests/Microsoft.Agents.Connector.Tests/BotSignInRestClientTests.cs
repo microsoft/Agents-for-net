@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Connector.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullTransport()
         {
-            Assert.Throws<ArgumentNullException>(() => new BotSignInRestClient(null));
+            Assert.Throws<ArgumentNullException>(() => new AgentSignInRestClient(null));
         }
 
         [Fact]
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal(content.TokenPostResource.SasUrl, result.TokenPostResource.SasUrl);
         }
 
-        private static BotSignInRestClient UseClient()
+        private static AgentSignInRestClient UseClient()
         {
             var transport = new Mock<IRestTransport>();
             transport.Setup(x => x.Endpoint)
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Connector.Tests
             transport.Setup(a => a.GetHttpClientAsync())
                 .Returns(Task.FromResult(MockHttpClient.Object));
 
-            return new BotSignInRestClient(transport.Object);
+            return new AgentSignInRestClient(transport.Object);
         }
     }
 }

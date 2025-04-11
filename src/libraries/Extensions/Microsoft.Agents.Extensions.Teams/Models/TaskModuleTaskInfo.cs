@@ -65,9 +65,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// module. One of url or card is required.
         /// </summary>
         /// <value>The URL of what is loaded as an iframe inside the task module.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string Url { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets the JSON for the Adaptive card to appear in the task
@@ -81,9 +79,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// this URL is opened in a browser tab.
         /// </summary>
         /// <value>The fallback URL to open in a browser tab if the client does not support the task module feature.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string FallbackUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets Specifies a bot App ID to send the result of the user's

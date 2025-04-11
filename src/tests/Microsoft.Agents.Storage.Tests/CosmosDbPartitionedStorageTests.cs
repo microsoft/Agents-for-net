@@ -14,7 +14,7 @@ using Moq;
 using Xunit;
 using static Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
 
 namespace Microsoft.Agents.Storage.Tests
 {

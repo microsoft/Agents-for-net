@@ -156,25 +156,19 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets attachments in the message - card, image, file, etc.
         /// </summary>
         /// <value>The attachments in the message.</value>
-#pragma warning disable CA2227 // Collection properties should be read only  (we can't change this without breaking compat)
         public IList<MessageActionsPayloadAttachment> Attachments { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets list of entities mentioned in the message.
         /// </summary>
         /// <value>The entities mentioned in the message.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat)
         public IList<MessageActionsPayloadMention> Mentions { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets reactions for the message.
         /// </summary>
         /// <value>The reactions for the message.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat)
         public IList<MessageActionsPayloadReaction> Reactions { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets the link back to the message.

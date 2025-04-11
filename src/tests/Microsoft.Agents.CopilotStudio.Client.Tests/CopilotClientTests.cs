@@ -28,7 +28,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             _settings = new ConnectionSettings(null)
             {
                 EnvironmentId = "test-env",
-                BotIdentifier = "test-bot"
+                SchemaName = "test-bot"
             };
         }
 
@@ -69,14 +69,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         }
 
         [Theory]
-        [InlineData(PowerPlatformCloud.Other, BotType.Published, "Bot01" , "A47151CF-4F34-488F-B377-EBE84E17B478", "foo.api.com" , "" , "https://a47151cf4f34488fb377ebe84e17b47.8.environment.foo.api.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.Preprod, BotType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.api.preprod.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.Prod, BotType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.FirstRelease, BotType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.FirstRelease, BotType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.Prod, BotType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.Other, BotType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "Blah+1_ Blah", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview", true)]
-        public void VerifyConnectionUrl( PowerPlatformCloud cloud, BotType botType, string botId, string envId, string customCloud, string conversationId , string expectedResult,bool shouldthrow = false )
+        [InlineData(PowerPlatformCloud.Other, AgentType.Published, "Bot01" , "A47151CF-4F34-488F-B377-EBE84E17B478", "foo.api.com" , "" , "https://a47151cf4f34488fb377ebe84e17b47.8.environment.foo.api.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Preprod, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.api.preprod.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Prod, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.FirstRelease, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.FirstRelease, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Prod, AgentType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Other, AgentType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "Blah+1_ Blah", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview", true)]
+        public void VerifyConnectionUrl( PowerPlatformCloud cloud, AgentType botType, string botId, string envId, string customCloud, string conversationId , string expectedResult,bool shouldthrow = false )
         {
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
@@ -84,8 +84,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
                                 { "ConnectionTest:EnvironmentId", envId },
                                 { "ConnectionTest:Cloud", cloud.ToString() },
                                 { "ConnectionTest:CustomPowerPlatformCloud", customCloud },
-                                { "ConnectionTest:BotIdentifier", botId },
-                                { "ConnectionTest:CopilotBotType", botType.ToString() }
+                                { "ConnectionTest:SchemaName", botId },
+                                { "ConnectionTest:CopilotAgentType", botType.ToString() }
                 })
                 .Build();
             ConnectionSettings settings = new ConnectionSettings(configuration.GetSection("ConnectionTest"));
@@ -115,8 +115,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             {
                 EnvironmentId = "A47151CF-4F34-488F-B377-EBE84E17B478",
                 Cloud = cloud,
-                BotIdentifier = "Bot01",
-                CopilotBotType = BotType.Published,
+                SchemaName = "Bot01", 
+                CopilotAgentType = AgentType.Published,
                 CustomPowerPlatformCloud = cloudBaseAddress
             };
 

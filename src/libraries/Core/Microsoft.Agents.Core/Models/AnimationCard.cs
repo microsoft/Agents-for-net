@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of AnimationCard. </summary>
         public AnimationCard()
         {
-            Media = new List<MediaUrl>();
-            Buttons = new List<CardAction>();
+            Media = [];
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of AnimationCard. </summary>
@@ -36,8 +36,8 @@ namespace Microsoft.Agents.Core.Models
             Subtitle = subtitle;
             Text = text;
             Image = image;
-            Media = media ?? new List<MediaUrl>();
-            Buttons = buttons ?? new List<CardAction>();
+            Media = media ?? [];
+            Buttons = buttons ?? [];
             Shareable = shareable;
             Autoloop = autoloop;
             Autostart = autostart;

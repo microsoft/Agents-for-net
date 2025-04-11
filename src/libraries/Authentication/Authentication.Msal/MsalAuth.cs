@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Authentication.Msal
     /// This class is used to acquire access tokens using the Microsoft Authentication Library(MSAL).
     /// </summary>
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
-    public class MsalAuth : IAccessTokenProvider
+    public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
@@ -38,16 +38,25 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="msalConfigurationSection"></param>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
+        /// <param name="msalConfigurationSection"></param>
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+            : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
-            ArgumentNullException.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
-            ArgumentNullException.ThrowIfNull(msalConfigurationSection, nameof(msalConfigurationSection));
+        }
 
-            _systemServiceProvider = systemServiceProvider;
+        /// <summary>
+        /// Creates a MSAL Authentication Instance. 
+        /// </summary>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="settings">Settings for this instance.</param>
+        public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
+        {
+            ArgumentNullException.ThrowIfNull(systemServiceProvider);
+
+            _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
-            _connectionSettings = new ConnectionSettings(msalConfigurationSection);
+            _connectionSettings = settings ?? throw new ArgumentNullException(nameof(settings));
             _logger = (ILogger)systemServiceProvider.GetService(typeof(ILogger<MsalAuth>));
             _certificateProvider = systemServiceProvider.GetService<ICertificateProvider>() ?? new X509StoreCertificateProvider(_connectionSettings, _logger);
         }
@@ -59,7 +68,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new ArgumentException("Invalid instance URL");
             }
 
-            Uri instanceUri = new Uri(resourceUrl);
+            Uri instanceUri = new(resourceUrl);
             var localScopes = ResolveScopesList(instanceUri, scopes);
 
             // Get or create existing token. 
@@ -87,7 +96,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
             }
 
-            object msalAuthClient = CreateClientApplication();
+            object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
             ExecuteAuthenticationResults authResultPayload = null; 
@@ -132,7 +141,25 @@ namespace Microsoft.Agents.Authentication.Msal
             return authResultPayload.MsalAuthResult.AccessToken;
         }
 
-        private object CreateClientApplication()
+
+        public async Task<string> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
+        {
+            var msal = InnerCreateClientApplication();
+            if (msal is IConfidentialClientApplication confidentialClient)
+            {
+                var result = await confidentialClient.AcquireTokenOnBehalfOf(scopes, new UserAssertion(token)).ExecuteAsync().ConfigureAwait(false);
+                return result.AccessToken;
+            }
+
+            throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");
+        }
+
+        public IApplicationBase CreateClientApplication()
+        {
+            return (IApplicationBase)InnerCreateClientApplication();
+        }
+
+        private object InnerCreateClientApplication()
         {
             object msalAuthClient = null;
 

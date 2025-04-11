@@ -23,7 +23,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             var settings = new ConnectionSettings(null)
             {
                 EnvironmentId = "envId",
-                BotIdentifier = "botId",
+                SchemaName = "botId",
                 Cloud = Discovery.PowerPlatformCloud.Prod,
                 CustomPowerPlatformCloud = "custom"
             };
@@ -42,16 +42,16 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
                                 { "ConnectionTest:EnvironmentId", "envId" },
                                 { "ConnectionTest:Cloud", PowerPlatformCloud.Prod.ToString() },
                                 { "ConnectionTest:CustomPowerPlatformCloud", "foo.com" },
-                                { "ConnectionTest:BotIdentifier", "botId" },
-                                { "ConnectionTest:CopilotBotType", BotType.Prebuilt.ToString() }
+                                { "ConnectionTest:SchemaName", "agentSchema" },
+                                { "ConnectionTest:CopilotAgentType", AgentType.Prebuilt.ToString() }
                 })
                 .Build();
             ConnectionSettings settings = new ConnectionSettings(configuration.GetSection("ConnectionTest"));
             Assert.Equal("envId", settings.EnvironmentId);
-            Assert.Equal("botId", settings.BotIdentifier);
+            Assert.Equal("agentSchema", settings.SchemaName);
             Assert.Equal("foo.com", settings.CustomPowerPlatformCloud);
             Assert.Equal(PowerPlatformCloud.Prod, settings.Cloud);
-            Assert.Equal(BotType.Prebuilt, settings.CopilotBotType);
+            Assert.Equal(AgentType.Prebuilt, settings.CopilotAgentType);
         }
     }
 }

@@ -30,8 +30,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets the conversations.
         /// </summary>
         /// <value>The conversations.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat)
         public IList<ChannelInfo> Conversations { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

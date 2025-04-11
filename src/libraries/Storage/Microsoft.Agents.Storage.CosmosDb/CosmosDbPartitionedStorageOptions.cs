@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         public int ContainerThroughput { get; set; } = 400;
 
         /// <summary>
-        /// Gets or sets the suffix to be added to every key. <see cref="CosmosDbKeyEscape.EscapeKey(string)"/>.
+        /// Gets or sets the suffix to be added to every key.
         /// 
         /// Note: <see cref="CompatibilityMode"/> must be set to 'false' to use a KeySuffix.
         /// When KeySuffix is used, keys will NOT be truncated but an exception will be thrown if
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <summary>
         /// Gets or sets a value indicating whether or not to run in Compatibility Mode.
         /// Early versions of CosmosDb had a key length limit of 255.  Keys longer than this were
-        /// truncated in <see cref="CosmosDbKeyEscape"/>.  This remains the default behavior, but
+        /// truncated.  This remains the default behavior, but
         /// can be overridden by setting CompatibilityMode to false.  This setting will also allow
         /// for using older collections where no PartitionKey was specified.
         /// 

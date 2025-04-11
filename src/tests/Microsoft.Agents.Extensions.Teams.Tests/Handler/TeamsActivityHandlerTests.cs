@@ -9,9 +9,14 @@ using Xunit;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Globalization;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
+using Microsoft.Agents.Connector;
+using Moq;
+using System.Net.Http;
+using System.Threading;
+using System.Net;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
@@ -64,158 +69,90 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
         }
 
-        //[Fact]
-        //public async Task TestConversationUpdateTeamsMemberAdded()
-        //{
-        //    // Arrange
-        //    var baseUri = new Uri("https://test.coffee");
-        //    var customHttpClient = new HttpClient(new RosterHttpMessageHandler());
+        [Fact]
+        public async Task TestConversationUpdateTeamsMemberAddedNoTeam()
+        {
+            // Arrange 
+            var conversationsMock = new Mock<IConversations>();
+            conversationsMock.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ChannelAccount { Id = "id-1" });
 
-        //    // Set a special base address so then we can make sure the connector client is honoring this http client
-        //    customHttpClient.BaseAddress = baseUri;
-        //    var connectorClient = new ConnectorClient(new Uri("http://localhost/"), new MicrosoftAppCredentials(string.Empty, string.Empty), customHttpClient);
+            var connectorMock = new Mock<IConnectorClient>();
+            connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.ConversationUpdate,
-        //        MembersAdded = new List<ChannelAccount>
-        //        {
-        //            new ChannelAccount { Id = "id-1" },
-        //        },
-        //        Recipient = new ChannelAccount { Id = "b" },
-        //        ChannelData = new TeamsChannelData
-        //        {
-        //            EventType = "teamMemberAdded",
-        //            Team = new TeamInfo
-        //            {
-        //                Id = "team-id",
-        //            },
-        //        },
-        //        ChannelId = Channels.Msteams,
-        //    };
+            var activity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                MembersAdded =
+                [
+                    new ChannelAccount { Id = "id-1" },
+                ],
+                Recipient = new ChannelAccount { Id = "bot" },
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                ChannelId = Channels.Msteams,
+            };
 
-        //    var turnContext = new TurnContext(new SimpleAdapter(), activity);
-        //    turnContext.TurnState.Add<IConnectorClient>(connectorClient);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set(connectorMock.Object);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
-        //}
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
+        }
 
-        //[Fact]
-        //public async Task TestConversationUpdateTeamsMemberAddedNoTeam()
-        //{
-        //    // Arrange
-        //    var baseUri = new Uri("https://test.coffee");
-        //    var customHttpClient = new HttpClient(new RosterHttpMessageHandler());
+        [Fact]
+        public async Task TestConversationUpdateTeamsMemberAddedFullDetailsInEvent()
+        {
+            var conversationsMock = new Mock<IConversations>();
+            conversationsMock.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ChannelAccount { Id = "id-1" });
 
-        //    // Set a special base address so then we can make sure the connector client is honoring this http client
-        //    customHttpClient.BaseAddress = baseUri;
-        //    var connectorClient = new ConnectorClient(new Uri("http://localhost/"), new MicrosoftAppCredentials(string.Empty, string.Empty), customHttpClient);
+            var connectorMock = new Mock<IConnectorClient>();
+            connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.ConversationUpdate,
-        //        MembersAdded = new List<ChannelAccount>
-        //        {
-        //            new ChannelAccount { Id = "id-1" },
-        //        },
-        //        Recipient = new ChannelAccount { Id = "b" },
-        //        Conversation = new ConversationAccount { Id = "conversation-id" },
-        //        ChannelId = Channels.Msteams,
-        //    };
+            var activity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                MembersAdded =
+                [
+                    new TeamsChannelAccount
+                    {
+                        Id = "id-1",
+                        Name = "name-1",
+                        AadObjectId = "aadobject-1",
+                        Email = "test@microsoft.com",
+                        GivenName = "given-1",
+                        Surname = "surname-1",
+                        UserPrincipalName = "t@microsoft.com",
+                    },
+                ],
+                Recipient = new ChannelAccount { Id = "b" },
+                ChannelData = new TeamsChannelData
+                {
+                    EventType = "teamMemberAdded",
+                    Team = new TeamInfo
+                    {
+                        Id = "team-id",
+                    },
+                },
+                ChannelId = Channels.Msteams,
+            };
 
-        //    var turnContext = new TurnContext(new SimpleAdapter(), activity);
-        //    turnContext.TurnState.Add<IConnectorClient>(connectorClient);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set(connectorMock.Object);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
-        //}
-
-        //[Fact]
-        //public async Task TestConversationUpdateTeamsMemberAddedFullDetailsInEvent()
-        //{
-        //    // Arrange
-        //    var baseUri = new Uri("https://test.coffee");
-        //    var customHttpClient = new HttpClient(new RosterHttpMessageHandler());
-
-        //    // Set a special base address so then we can make sure the connector client is honoring this http client
-        //    customHttpClient.BaseAddress = baseUri;
-        //    var connectorClient = new ConnectorClient(new Uri("http://localhost/"), new MicrosoftAppCredentials(string.Empty, string.Empty), customHttpClient);
-
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.ConversationUpdate,
-        //        MembersAdded = new List<ChannelAccount>
-        //        {
-        //            new TeamsChannelAccount
-        //            {
-        //                Id = "id-1",
-        //                Name = "name-1",
-        //                AadObjectId = "aadobject-1",
-        //                Email = "test@microsoft.com",
-        //                GivenName = "given-1",
-        //                Surname = "surname-1",
-        //                UserPrincipalName = "t@microsoft.com",
-        //            },
-        //        },
-        //        Recipient = new ChannelAccount { Id = "b" },
-        //        ChannelData = new TeamsChannelData
-        //        {
-        //            EventType = "teamMemberAdded",
-        //            Team = new TeamInfo
-        //            {
-        //                Id = "team-id",
-        //            },
-        //        },
-        //        ChannelId = Channels.Msteams,
-        //    };
-
-        //    // code taken from connector - i.e. the send or serialize side
-        //    var serializationSettings = new JsonSerializerSettings();
-        //    serializationSettings.ContractResolver = new DefaultContractResolver();
-        //    var json = Rest.Serialization.SafeJsonConvert.SerializeObject(activity, serializationSettings);
-
-        //    // code taken from integration layer - i.e. the receive or deserialize side
-        //    var botMessageSerializer = JsonSerializer.Create(new JsonSerializerSettings
-        //    {
-        //        NullValueHandling = NullValueHandling.Ignore,
-        //        Formatting = Formatting.Indented,
-        //        DateFormatHandling = DateFormatHandling.IsoDateFormat,
-        //        DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-        //        ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-        //        ContractResolver = new ReadOnlyJsonContractResolver(),
-        //        Converters = new List<JsonConverter> { new Iso8601TimeSpanConverter() },
-        //    });
-
-        //    using (var bodyReader = new JsonTextReader(new StringReader(json)))
-        //    {
-        //        activity = botMessageSerializer.Deserialize<Activity>(bodyReader);
-        //    }
-
-        //    var turnContext = new TurnContext(new SimpleAdapter(), activity);
-        //    turnContext.TurnState.Add<IConnectorClient>(connectorClient);
-
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
-
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
-        //}
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
+        }
 
         [Fact]
         public async Task TestConversationUpdateTeamsMemberRemoved()
@@ -634,7 +571,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -864,14 +801,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                         theme = "default"
                     }
                 }),
-                //Value = JObject.Parse(@"{""data"":{""key"":""value"",""type"":""task / fetch""},""context"":{""theme"":""default""}}"),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -947,7 +883,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1212,388 +1148,327 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("10101010", _activitiesToSend[0].Text);
         }
 
-        //[Fact]
-        //public async Task TestMeetingParticipantsJoinEvent()
-        //{
+        [Fact]
+        public async Task TestMeetingParticipantsJoinEvent()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingParticipantJoin",
+                Value = JsonSerializer.SerializeToElement(
+                    new MeetingParticipantsEventDetails
+                    {
+                        Members =
+                        [
+                            new TeamsMeetingMember(
+                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new UserMeetingDetails { Role = "role", InMeeting = true }
+                            )
+                        ]
+                    }
+                ),
+            };
 
-        // Arrange
-        //string json = @"{
-        //        Members: [
-        //            {
-        //                User: 
-        //                {
-        //                    Id: 'id', 
-        //                    Name: 'name'
-        //                }, 
-        //                Meeting: 
-        //                {
-        //                    Role: 'role', 
-        //                    InMeeting: true
-        //                }
-        //            }
-        //        ]}";
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
 
-        //var x = new TeamsMeetingMember(
-        //    new TeamsChannelAccount() { Id = "id", Name = "name" },
-        //    new UserMeetingDetails() { InMeeting = true, Role = "role" }
-        //);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-        //MeetingParticipantsEventDetails details = new MeetingParticipantsEventDetails();
-        //details.Members.Add(x);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        ////var serialized = JsonSerializer.SerializeToElement(details);
-        //var serialized = SerializationExtensions.ToJson(details);
-        //var backAgain = SerializationExtensions.ToObject<MeetingParticipantsEventDetails>(serialized);
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
+            Assert.NotNull(activitiesToSend);
+            Assert.Single(activitiesToSend);
+            Assert.Equal("id", activitiesToSend[0].Text);
+        }
 
-        //Assert.True(backAgain.Members.Count == 1);
+        [Fact]
+        public async Task TestMeetingParticipantsLeaveEvent()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingParticipantLeave",
+                Value = JsonSerializer.SerializeToElement(
+                    new MeetingParticipantsEventDetails
+                    {
+                        Members =
+                        [
+                            new TeamsMeetingMember(
+                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new UserMeetingDetails { Role = "role", InMeeting = true }
+                            )
+                        ]
+                    }
+                ),
+            };
 
+            _activitiesToSend = null;
 
-        //var activity = new Activity
-        //{
-        //    ChannelId = Channels.Msteams,
-        //    Type = ActivityTypes.Event,
-        //    Name = "application/vnd.microsoft.meetingParticipantJoin",
-        //    Value = JsonSerializer.SerializeToElement(details)
-        //};
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //var activity = new Activity
-        //{
-        //    ChannelId = Channels.Msteams,
-        //    Type = ActivityTypes.Event,
-        //    Name = "application/vnd.microsoft.meetingParticipantJoin",                
-        //    Value = JsonSerializer.SerializeToElement( new
-        //    {                    
-        //        Members = new[]
-        //        {
-        //            new
-        //            {
-        //                User = new
-        //                {
-        //                    Id = "id",
-        //                    Name = "name"
-        //                },
-        //                Meeting = new
-        //                {
-        //                    Role = "role",
-        //                    InMeeting = true
-        //                }
-        //            }
-        //        }
-        //    }),
-        //};
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingParticipantsLeaveAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.Equal("id", _activitiesToSend[0].Text);
+        }
 
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageEdit()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "editMessage" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //Value = JObject.Parse(@"{
-        //    Members: [
-        //        {
-        //            User: 
-        //            {
-        //                Id: 'id', 
-        //                Name: 'name'
-        //            }, 
-        //            Meeting: 
-        //            {
-        //                Role: 'role', 
-        //                InMeeting: true
-        //            }
-        //        }
-        //    ]
-        //}"),
-        //
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageEditAsync", bot.Record[1]);
+        }
 
-        //// Act
-        //var bot = new TestActivityHandler();
-        //await bot.OnTurnAsync(turnContext);
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageUndelete()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //// Assert
-        //Assert.Equal(2, bot.Record.Count);
-        //Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-        //Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
-        //Assert.NotNull(_activitiesToSend);
-        //Assert.Single(_activitiesToSend);
-        //Assert.Equal("id", _activitiesToSend[0].Text);
-        //}
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //[Fact]
-        //public async Task TestMeetingParticipantsLeaveEvent()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        ChannelId = Channels.Msteams,
-        //        Type = ActivityTypes.Event,
-        //        Name = "application/vnd.microsoft.meetingParticipantLeave",
-        //        Value = JObject.Parse(@"{
-        //            Members: [
-        //                {
-        //                    User: 
-        //                    {
-        //                        Id: 'id', 
-        //                        Name: 'name'
-        //                    }, 
-        //                    Meeting: 
-        //                    {
-        //                        Role: 'role', 
-        //                        InMeeting: true
-        //                    }
-        //                }
-        //            ]
-        //        }"),
-        //    };
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageUndeleteAsync", bot.Record[1]);
+        }
 
-        //    _activitiesToSend = null;
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageUndelete_NoMsteams()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //    var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+        }
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMeetingParticipantsLeaveAsync", bot.Record[1]);
-        //    Assert.NotNull(_activitiesToSend);
-        //    Assert.Single(_activitiesToSend);
-        //    Assert.Equal("id", _activitiesToSend[0].Text);
-        //}
+        [Fact]
+        public async Task TestMessageUpdateActivityTeams_NoChannelData()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //[Fact]
-        //public async Task TestMessageUpdateActivityTeamsMessageEdit()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageUpdate,
-        //        ChannelData = new TeamsChannelData { EventType = "editMessage" },
-        //        ChannelId = Channels.Msteams,
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+        }
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMessageEditAsync", bot.Record[1]);
-        //}
+        [Fact]
+        public async Task TestMessageDeleteActivityTeamsMessageSoftDelete()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
+                ChannelId = Channels.Msteams
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //[Fact]
-        //public async Task TestMessageUpdateActivityTeamsMessageUndelete()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageUpdate,
-        //        ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
-        //        ChannelId = Channels.Msteams,
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageSoftDeleteAsync", bot.Record[1]);
+        }
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMessageUndeleteAsync", bot.Record[1]);
-        //}
+        [Fact]
+        public async Task TestMessageDeleteActivityTeamsMessageSoftDelete_NoMsteams()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelData = new TeamsChannelData { EventType = "softMessage" }
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //[Fact]
-        //public async Task TestMessageUpdateActivityTeamsMessageUndelete_NoMsteams()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageUpdate,
-        //        ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+        }
 
-        //    // Assert
-        //    Assert.Single(bot.Record);
-        //    Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-        //}
+        [Fact]
+        public async Task TestMessageDeleteActivityTeams_NoChannelData()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-        //[Fact]
-        //public async Task TestMessageUpdateActivityTeams_NoChannelData()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageUpdate,
-        //        ChannelId = Channels.Msteams,
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+        }
 
-        //    // Assert
-        //    Assert.Single(bot.Record);
-        //    Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-        //}
+        private class RosterHttpMessageHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.OK);
 
-        //[Fact]
-        //public async Task TestMessageDeleteActivityTeamsMessageSoftDelete()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageDelete,
-        //        ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
-        //        ChannelId = Channels.Msteams
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                // GetMembers (Team)
+                if (request.RequestUri.PathAndQuery.EndsWith("team-id/members"))
+                {
+                    var content = new TeamsPagedMembersResult
+                    {
+                        Members =
+                        [
+                            new TeamsChannelAccount
+                            {
+                                Id = "id-1",
+                                Name = "name-1",
+                                GivenName = "givenName-1",
+                                Surname = "surname-1",
+                                Email = "email-1",
+                                UserPrincipalName = "userPrincipalName-1",
+                                UserRole = "userRole-1",
+                                TenantId = "tenantId-1",
+                            },
+                            new TeamsChannelAccount
+                            {
+                                Id = "id-2",
+                                Name = "name-2",
+                                GivenName = "givenName-2",
+                                Surname = "surname-2",
+                                Email = "email-2",
+                                UserPrincipalName = "userPrincipalName-2",
+                                UserRole = "userRole-2",
+                                TenantId = "tenantId-2",
+                            },
+                        ]
+                    };
+                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                }
 
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
+                // GetMembers (Group Chat)
+                else if (request.RequestUri.PathAndQuery.EndsWith("conversation-id/members"))
+                {
+                    var content = new TeamsPagedMembersResult
+                    {
+                        Members =
+                        [
+                            new TeamsChannelAccount
+                            {
+                                Id = "id-3",
+                                Name = "name-3",
+                                GivenName = "givenName-3",
+                                Surname = "surname-3",
+                                Email = "email-3",
+                                UserPrincipalName = "userPrincipalName-3",
+                                UserRole = "userRole-3",
+                                TenantId = "tenantId-3",
+                            },
+                            new TeamsChannelAccount
+                            {
+                                Id = "id-4",
+                                Name = "name-4",
+                                GivenName = "givenName-4",
+                                Surname = "surname-4",
+                                Email = "email-4",
+                                UserPrincipalName = "userPrincipalName-4",
+                                UserRole = "userRole-4",
+                                TenantId = "tenantId-4",
+                            },
+                        ]
+                    };
+                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                }
+                else if (request.RequestUri.PathAndQuery.EndsWith("team-id/members/id-1") || request.RequestUri.PathAndQuery.EndsWith("conversation-id/members/id-1"))
+                {
+                    var content = new
+                    {
+                        Id = "id-1",
+                        ObjectId = "objectId-1",
+                        Name = "name-1",
+                        GivenName = "givenName-1",
+                        Surname = "surname-1",
+                        Email = "email-1",
+                        UserPrincipalName = "userPrincipalName-1",
+                        TenantId = "tenantId-1",
+                    };
+                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                }
 
-        //    // Assert
-        //    Assert.Equal(2, bot.Record.Count);
-        //    Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-        //    Assert.Equal("OnTeamsMessageSoftDeleteAsync", bot.Record[1]);
-        //}
-
-        //[Fact]
-        //public async Task TestMessageDeleteActivityTeamsMessageSoftDelete_NoMsteams()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageDelete,
-        //        ChannelData = new TeamsChannelData { EventType = "softMessage" }
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
-
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
-
-        //    // Assert
-        //    Assert.Single(bot.Record);
-        //    Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-        //}
-
-        //[Fact]
-        //public async Task TestMessageDeleteActivityTeams_NoChannelData()
-        //{
-        //    // Arrange
-        //    var activity = new Activity
-        //    {
-        //        Type = ActivityTypes.MessageDelete,
-        //        ChannelId = Channels.Msteams,
-        //    };
-        //    var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
-
-        //    // Act
-        //    var bot = new TestActivityHandler();
-        //    await ((IBot)bot).OnTurnAsync(turnContext);
-
-        //    // Assert
-        //    Assert.Single(bot.Record);
-        //    Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-        //}
-
-
-
-        //private class RosterHttpMessageHandler : HttpMessageHandler
-        //{
-        //    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        //    {
-        //        var response = new HttpResponseMessage(HttpStatusCode.OK);
-
-        //        // GetMembers (Team)
-        //        if (request.RequestUri.PathAndQuery.EndsWith("team-id/members"))
-        //        {
-        //            var content = new JArray
-        //            {
-        //                new JObject
-        //                {
-        //                    new JProperty("id", "id-1"),
-        //                    new JProperty("objectId", "objectId-1"),
-        //                    new JProperty("name", "name-1"),
-        //                    new JProperty("givenName", "givenName-1"),
-        //                    new JProperty("surname", "surname-1"),
-        //                    new JProperty("email", "email-1"),
-        //                    new JProperty("userPrincipalName", "userPrincipalName-1"),
-        //                    new JProperty("tenantId", "tenantId-1"),
-        //                },
-        //                new JObject
-        //                {
-        //                    new JProperty("id", "id-2"),
-        //                    new JProperty("objectId", "objectId-2"),
-        //                    new JProperty("name", "name-2"),
-        //                    new JProperty("givenName", "givenName-2"),
-        //                    new JProperty("surname", "surname-2"),
-        //                    new JProperty("email", "email-2"),
-        //                    new JProperty("userPrincipalName", "userPrincipalName-2"),
-        //                    new JProperty("tenantId", "tenantId-2"),
-        //                },
-        //            };
-        //            response.Content = new StringContent(content.ToString());
-        //        }
-
-        //        // GetMembers (Group Chat)
-        //        else if (request.RequestUri.PathAndQuery.EndsWith("conversation-id/members"))
-        //        {
-        //            var content = new JArray
-        //            {
-        //                new JObject
-        //                {
-        //                    new JProperty("id", "id-3"),
-        //                    new JProperty("objectId", "objectId-3"),
-        //                    new JProperty("name", "name-3"),
-        //                    new JProperty("givenName", "givenName-3"),
-        //                    new JProperty("surname", "surname-3"),
-        //                    new JProperty("email", "email-3"),
-        //                    new JProperty("userPrincipalName", "userPrincipalName-3"),
-        //                    new JProperty("tenantId", "tenantId-3"),
-        //                },
-        //                new JObject
-        //                {
-        //                    new JProperty("id", "id-4"),
-        //                    new JProperty("objectId", "objectId-4"),
-        //                    new JProperty("name", "name-4"),
-        //                    new JProperty("givenName", "givenName-4"),
-        //                    new JProperty("surname", "surname-4"),
-        //                    new JProperty("email", "email-4"),
-        //                    new JProperty("userPrincipalName", "userPrincipalName-4"),
-        //                    new JProperty("tenantId", "tenantId-4"),
-        //                },
-        //            };
-        //            response.Content = new StringContent(content.ToString());
-        //        }
-        //        else if (request.RequestUri.PathAndQuery.EndsWith("team-id/members/id-1") || request.RequestUri.PathAndQuery.EndsWith("conversation-id/members/id-1"))
-        //        {
-        //            var content = new JObject
-        //                {
-        //                    new JProperty("id", "id-1"),
-        //                    new JProperty("objectId", "objectId-1"),
-        //                    new JProperty("name", "name-1"),
-        //                    new JProperty("givenName", "givenName-1"),
-        //                    new JProperty("surname", "surname-1"),
-        //                    new JProperty("email", "email-1"),
-        //                    new JProperty("userPrincipalName", "userPrincipalName-1"),
-        //                    new JProperty("tenantId", "tenantId-1"),
-        //                };
-        //            response.Content = new StringContent(content.ToString());
-        //        }
-
-        //        return Task.FromResult(response);
-        //    }
-        //}
+                return Task.FromResult(response);
+            }
+        }
     }
 }

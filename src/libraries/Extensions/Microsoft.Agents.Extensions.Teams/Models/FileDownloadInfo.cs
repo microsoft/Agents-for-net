@@ -39,9 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets file download URL.
         /// </summary>
         /// <value>The file download URL.</value>
-#pragma warning disable CA1056 // Uri properties should not be strings
         public string DownloadUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Gets or sets unique Id for the file.

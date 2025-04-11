@@ -17,10 +17,10 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary> Initializes a new instance of ChannelAccount. </summary>
-        /// <param name="id"> Channel id for the user or bot on this channel (Example: joe@smith.com, or @joesmith or 123456). </param>
+        /// <param name="id"> Channel id for the user or Agent on this channel (Example: joe@smith.com, or @joesmith or 123456). </param>
         /// <param name="name"> Display friendly name. </param>
         /// <param name="aadObjectId"> This account's object ID within Azure Active Directory (AAD). </param>
-        /// <param name="role"> Role of the entity behind the account (Example: User, Bot, etc.). </param>
+        /// <param name="role"> Role of the entity behind the account (Example: User, Agent, etc.). </param>
         public ChannelAccount(string id = default, string name = default, string role = default, string aadObjectId = default)
         {
             Id = id;
@@ -29,13 +29,13 @@ namespace Microsoft.Agents.Core.Models
             Role = role;
         }
 
-        /// <summary> Channel id for the user or bot on this channel (Example: joe@smith.com, or @joesmith or 123456). </summary>
+        /// <summary> Channel id for the user or Agent on this channel (Example: joe@smith.com, or @joesmith or 123456). </summary>
         public string Id { get; set; }
         /// <summary> Display friendly name. </summary>
         public string Name { get; set; }
         /// <summary> This account's object ID within Azure Active Directory (AAD). </summary>
         public string AadObjectId { get; set; }
-        /// <summary> Role of the entity behind the account (Example: User, Bot, etc.). </summary>
+        /// <summary> Role of the entity behind the account (Example: User, Agent, etc.). </summary>
         public string Role { get; set; }
 
         /// <summary>

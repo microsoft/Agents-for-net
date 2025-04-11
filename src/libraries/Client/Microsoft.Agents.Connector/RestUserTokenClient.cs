@@ -12,8 +12,8 @@ using System.Net.Http;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.RestClients;
-using Microsoft.Agents.Connector.Types;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Connector
 {
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Connector
     {
         private readonly string _appId;
         private readonly UserTokenRestClient _userTokenClient;
-        private readonly BotSignInRestClient _botSignInClient;
+        private readonly AgentSignInRestClient _agentSignInClient;
         private readonly ILogger _logger;
         private bool _disposed;
 
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Connector
             _appId = appId;
 
             _userTokenClient = new UserTokenRestClient(this);
-            _botSignInClient = new BotSignInRestClient(this);
+            _agentSignInClient = new AgentSignInRestClient(this);
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation($"GetSignInResourceAsync ConnectionName: {connectionName}");
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
-            return await _botSignInClient.GetSignInResourceAsync(state, null, null, finalRedirect, cancellationToken).ConfigureAwait(false);
+            return await _agentSignInClient.GetSignInResourceAsync(state, null, null, finalRedirect, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Core.Models
         /// The type value for invoke response activities.
         /// </summary>
         /// <remarks>This is used for a return payload in response to an invoke activity.
-        /// Invoke activities communicate programmatic information from a client or channel to a bot, and
+        /// Invoke activities communicate programmatic information from a client or channel to an Agent, and
         /// have a corresponding return payload for use within the channel. The meaning of an invoke activity
         /// is defined by the <see cref="Activity.Name"/> field, which is meaningful within the scope of a channel.
         /// </remarks>

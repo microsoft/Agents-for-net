@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -123,7 +124,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetConversations operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetConversations operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -187,7 +188,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"CreateConversation operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"CreateConversation operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -258,7 +259,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"SendToConversation operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"SendToConversation operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -327,7 +328,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"SendConversationHistory operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"SendConversationHistory operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -412,7 +413,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"UpdateActivity operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"UpdateActivity operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -524,7 +525,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"ReplyToActivity operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"ReplyToActivity operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -609,7 +610,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"DeleteActivity operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"DeleteActivity operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -676,7 +677,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetConversationMembers operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetConversationMembers operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -755,7 +756,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetConversationMember operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetConversationMember operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -824,7 +825,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"DeleteConversationMember operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"DeleteConversationMember operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -892,7 +893,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetConversationPagedMembers operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetConversationPagedMembers operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -959,7 +960,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetActivityMembers operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetActivityMembers operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -1028,7 +1029,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"UploadAttachment operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"UploadAttachment operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {

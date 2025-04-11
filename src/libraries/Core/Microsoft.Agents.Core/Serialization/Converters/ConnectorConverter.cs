@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             writer.WriteStartObject();
 
-            foreach (var property in typeof(T).GetProperties())
+            foreach (var property in value.GetType().GetProperties())
             {
                 if (!TryWriteExtensionData(writer, value, property.Name))
                 {

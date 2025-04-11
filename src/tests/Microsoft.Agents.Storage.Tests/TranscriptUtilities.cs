@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Storage.Tests
             return new ConversationReference
             {
                 User = user,
-                Bot = bot,
+                Agent = bot,
                 Conversation = activity.Conversation,
                 ChannelId = activity.ChannelId,
                 ServiceUrl = activity.ServiceUrl,

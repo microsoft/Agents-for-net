@@ -100,24 +100,18 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets set of facts for the current section.
         /// </summary>
         /// <value>The facts for the current section.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardFact> Facts { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets set of images for the current section.
         /// </summary>
         /// <value>The images for the current section.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardImage> Images { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets set of actions for the current section.
         /// </summary>
         /// <value>The actions for the current section.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardActionBase> PotentialAction { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

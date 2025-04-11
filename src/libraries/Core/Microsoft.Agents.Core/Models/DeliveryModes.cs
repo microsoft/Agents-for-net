@@ -4,18 +4,27 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Defines values for DeliveryModes.
+    /// DeliveryModes define how an Agent receiving an Activity replies to the sender.
+    /// <see cref="IActivity.DeliveryMode"/>
     /// </summary>
     public static class DeliveryModes
     {
         /// <summary>
-        /// The mode value for normal delivery modes.
+        /// When specified on an Activity being sent, the receiver sends replies
+        /// via HTTP POSTs back the Activity.ServiceUrl.  These replies will happen
+        /// asynchronously, including after the sending Turn is over.
         /// </summary>
         public const string Normal = "normal";
 
         /// <summary>
-        /// The value for expected replies delivery modes.
+        /// When specified on an Activity being sent
         /// </summary>
         public const string ExpectReplies = "expectReplies";
+
+        /// <summary>
+        /// When specified on an Activity being sent, replies from the receiver
+        /// are streamed back in the HTTP response.
+        /// </summary>
+        public const string Stream = "stream";
     }
 }

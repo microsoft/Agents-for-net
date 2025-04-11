@@ -1,4 +1,9 @@
-﻿namespace Microsoft.Agents.Authentication.Errors
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Errors;
+
+namespace Microsoft.Agents.Authentication.Errors
 {
     /// <summary>
     /// Error helper for the Authentication core system
@@ -25,12 +30,13 @@ internal static class ErrorHelper
         /// </summary>
         private static int baseAuthProviderErrorCode = -40000;
 
-        internal static AgentAuthErrorDefinition MissingAuthenticationConfiguration = new AgentAuthErrorDefinition(baseAuthProviderErrorCode, Properties.Resources.Error_MissingAuthenticationConfig, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentAuthErrorDefinition ConnectionNotFoundByName = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 1, Properties.Resources.Error_ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentAuthErrorDefinition FailedToCreateAuthModuleProvider = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 2, Properties.Resources.Error_FailedToCreateAuthModuleProvider, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentAuthErrorDefinition AuthProviderTypeNotFound = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 3, Properties.Resources.Error_AuthModuleNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentAuthErrorDefinition AuthProviderTypeInvalidConstructor = new AgentAuthErrorDefinition(baseAuthProviderErrorCode - 4, Properties.Resources.Error_InvalidAuthProviderConstructor, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition MissingAuthenticationConfiguration = new(baseAuthProviderErrorCode, Properties.Resources.Error_MissingAuthenticationConfig, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition ConnectionNotFoundByName = new(baseAuthProviderErrorCode - 1, Properties.Resources.Error_ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition FailedToCreateAuthModuleProvider = new(baseAuthProviderErrorCode - 2, Properties.Resources.Error_FailedToCreateAuthModuleProvider, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition AuthProviderTypeNotFound = new(baseAuthProviderErrorCode - 3, Properties.Resources.Error_AuthModuleNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition AuthProviderTypeInvalidConstructor = new(baseAuthProviderErrorCode - 4, Properties.Resources.Error_InvalidAuthProviderConstructor, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition ConfigurationSectionNotFound = new(baseAuthProviderErrorCode - 5, Properties.Resources.Error_ConfigurationSectionNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static AgentErrorDefinition ConfigurationSectionNotProvided = new(baseAuthProviderErrorCode - 6, Properties.Resources.Error_ConfigurationSectionNotProvided, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
 
     }
-
 }

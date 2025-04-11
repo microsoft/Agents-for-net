@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Represents a point in a bot's logic, to help with bot debugging.
+    /// Represents a point in a Agent's logic, to help with Agent debugging.
     /// </summary>
     /// <remarks>
     /// The trace activity typically is logged by transcript history components to become part of a

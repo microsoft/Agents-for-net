@@ -1,14 +1,13 @@
-﻿// <copyright file="LogoutDialog.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
 
-namespace BotConversationSsoQuickstart.Dialogs
+namespace TeamsConversationSsoQuickstart.Dialogs
 {
     public class LogoutDialog : ComponentDialog
     {
@@ -33,7 +32,7 @@ namespace BotConversationSsoQuickstart.Dialogs
         protected override async Task<DialogTurnResult> OnBeginDialogAsync(
             DialogContext innerDc,
             object options,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             var result = await InterruptAsync(innerDc, cancellationToken);
             if (result != null)
@@ -52,7 +51,7 @@ namespace BotConversationSsoQuickstart.Dialogs
         /// <returns>A task representing the asynchronous operation.</returns>
         protected override async Task<DialogTurnResult> OnContinueDialogAsync(
             DialogContext innerDc,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             var result = await InterruptAsync(innerDc, cancellationToken);
             if (result != null)
@@ -71,7 +70,7 @@ namespace BotConversationSsoQuickstart.Dialogs
         /// <returns></returns>
         private async Task<DialogTurnResult> InterruptAsync(
             DialogContext innerDc,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             if (innerDc.Context.Activity.Type == ActivityTypes.Message)
             {

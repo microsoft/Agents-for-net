@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Loader;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -20,16 +19,14 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     /// <remarks>
     /// "Connections": {
-    ///   "BotServiceConnection": {
-    ///   "Assembly": "Microsoft.Agents.Authentication.Msal",
-    ///   "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
-    ///   "Settings": {
-    ///   }
+    ///   "ServiceConnection": {
+    ///     "Settings": {
+    ///     }
     /// },
     /// "ConnectionsMap": [
     ///  { 
     ///    "ServiceUrl": "*",
-    ///    "Connection": "BotServiceConnection"
+    ///    "Connection": "ServiceConnection"
     /// }
     /// 
     /// The type indicated must have the constructor: (IServiceProvider systemServiceProvider, IConfigurationSection configurationSection).
@@ -41,32 +38,35 @@ namespace Microsoft.Agents.Authentication
     {
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IEnumerable<ConnectionMapItem> _map;
+        private readonly IList<ConnectionMapItem> _map;
         private readonly ILogger<ConfigurationConnections> _logger;
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(connectionsKey);
-            ArgumentNullException.ThrowIfNullOrEmpty(mapKey);
+            ArgumentException.ThrowIfNullOrEmpty(connectionsKey);
+            ArgumentException.ThrowIfNullOrEmpty(mapKey);
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
 
-            _map = configuration
-                .GetSection(mapKey)
-                .Get<List<ConnectionMapItem>>() ?? Enumerable.Empty<ConnectionMapItem>();
-
-            if (!_map.Any())
-            {
-                _logger.LogWarning("No connections map found in configuration.");
-            }
-
             _connections = configuration
                 .GetSection(connectionsKey)
                 .Get<Dictionary<string, ConnectionDefinition>>() ?? [];
-            if (!_connections.Any())
+            if (_connections.Count == 0)
             {
                 _logger.LogWarning("No connections found in configuration.");
+            }
+
+            _map = configuration
+                .GetSection(mapKey)
+                .Get<List<ConnectionMapItem>>() ?? [];
+            if (!_map.Any())
+            {
+                _logger.LogWarning("No connections map found in configuration.");
+                if (_connections.Count == 1)
+                {
+                    _map.Add(new ConnectionMapItem() {  ServiceUrl = "*", Connection = _connections.First().Key });
+                }
             }
 
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, _logger);
@@ -77,26 +77,61 @@ namespace Microsoft.Agents.Authentication
             }
         }
 
+        public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
+        {
+            _connections = [];
+            if (accessTokenProviders != null)
+            {
+                foreach (var provider in accessTokenProviders)
+                {
+                    _connections[provider.Key] = new ConnectionDefinition() { Instance = provider.Value };
+                }
+            }
+
+            if (_connections.Count == 0)
+            {
+                _logger.LogWarning("No connections provided");
+            }
+
+            _map = connectionMapItems == null ? [] : [.. connectionMapItems];
+            if (!_map.Any())
+            {
+                _logger.LogWarning("No connections map provided");
+                if (_connections.Count == 1)
+                {
+                    _map.Add(new ConnectionMapItem() { ServiceUrl = "*", Connection = _connections.First().Key });
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public IAccessTokenProvider GetConnection(string name)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(name);
 
             return GetConnectionInstance(name);
+        }
+
+        public bool TryGetConnection(string name, out IAccessTokenProvider connection)
+        {
+            if (!_connections.TryGetValue(name, out ConnectionDefinition definition))
+            {
+                connection = null;
+                return false;
+            }
+
+            connection = GetConnectionInstance(definition, doThrow: false);
+            return connection != null;
         }
 
         /// <inheritdoc/>
         public IAccessTokenProvider GetDefaultConnection()
         {
             // if no connections, abort and return null.
-            if (!_connections.Any())
+            if (_connections.Count == 0)
             {
                 _logger.LogError(ErrorHelper.MissingAuthenticationConfiguration.description);
-                throw new IndexOutOfRangeException(ErrorHelper.MissingAuthenticationConfiguration.description)
-                {
-                    HResult = ErrorHelper.MissingAuthenticationConfiguration.code,
-                    HelpLink = ErrorHelper.MissingAuthenticationConfiguration.helplink
-                };
+                throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.MissingAuthenticationConfiguration, null);
             }
 
             // Return the wildcard map item instance.
@@ -121,7 +156,7 @@ namespace Microsoft.Agents.Authentication
         ///    {
         ///       "ServiceUrl": "http://*..botframework.com/*.",
         ///       "Audience": optional,
-        ///       "Connection": "BotServiceConnection"
+        ///       "Connection": "ServiceConnection"
         ///    }
         /// ]
         /// 
@@ -134,14 +169,14 @@ namespace Microsoft.Agents.Authentication
         public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, string serviceUrl)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
-            ArgumentNullException.ThrowIfNullOrEmpty(serviceUrl);
+            ArgumentException.ThrowIfNullOrEmpty(serviceUrl);
 
             if (!_map.Any())
             {
                 return GetDefaultConnection();
             }
 
-            var audience = BotClaims.GetAppId(claimsIdentity);
+            var audience = AgentClaims.GetAppId(claimsIdentity);
 
             // Find a match, in document order.
             foreach (var mapItem in _map)
@@ -174,12 +209,12 @@ namespace Microsoft.Agents.Authentication
         {
             if (!_connections.TryGetValue(name, out ConnectionDefinition value))
             {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.ConnectionNotFoundByName, null, name);
+                throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.ConnectionNotFoundByName, null, name);
             }
             return GetConnectionInstance(value);
         }
 
-        private IAccessTokenProvider GetConnectionInstance(ConnectionDefinition connection)
+        private IAccessTokenProvider GetConnectionInstance(ConnectionDefinition connection, bool doThrow = true)
         {
             if (connection.Instance != null)
             {
@@ -195,8 +230,12 @@ namespace Microsoft.Agents.Authentication
             }
             catch (Exception ex)
             {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
+                if (doThrow)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
+                }
             }
+            return null;
         }
     }
 }

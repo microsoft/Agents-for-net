@@ -90,14 +90,14 @@ namespace Microsoft.Agents.Core.Models
                             // if first char of followingText is not whitespace
                             if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
                             {
-                                // insert space because teams does => <at>Tom</at>is cool => Tomis cool
+                                // insert space because teams does => <at>Tom</at> is cool => Tom is cool
                                 followingText = $" {followingText}";
                             }
 
-                            text = text.Substring(0, iAtClose) + followingText;
+                            text = string.Concat(text.AsSpan(0, iAtClose), followingText);
 
                             // replace <at ...>
-                            text = text.Substring(0, iAtStart) + text.Substring(iAtEnd + 1);
+                            text = string.Concat(text.AsSpan(0, iAtStart), text.AsSpan(iAtEnd + 1));
 
                             // we found one, try again, there may be more.
                             foundTag = true;
@@ -113,11 +113,11 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// Remove any mention text for given id from the Activity.Text property.  For example, given the message
-        /// `@echoBot Hi Bot`, this will remove "@echoBot", leaving `Hi Bot`.
+        /// `@echoAgent Hi Agent`, this will remove "@echoAgent", leaving `Hi Agent`.
         /// </summary>
         /// <param name="activity"></param>
         /// <description>
-        /// Typically this would be used to remove the mention text for the target recipient (the bot usually), though
+        /// Typically this would be used to remove the mention text for the target recipient (the Agent usually), though
         /// it could be called for each member.  For example:
         ///    turnContext.Activity.RemoveMentionText(turnContext.Activity.Recipient.Id);
         /// The format of a mention Activity.Entity is dependent on the Channel.  But in all cases we
@@ -161,6 +161,16 @@ namespace Microsoft.Agents.Core.Models
             }
 
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
+        }
+
+        public static ActivityTreatment GetActivityTreatmentEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.ActivityTreatment, StringComparison.OrdinalIgnoreCase)) as ActivityTreatment;
         }
     }
 }

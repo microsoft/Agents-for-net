@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
-using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Moq;
@@ -840,14 +840,14 @@ namespace Microsoft.Agents.State.Tests
             public string Name { get; set; }
         }
 
-        public class TestBotState : BotState
+        public class TestBotState : AgentState
         {
             public TestBotState(IStorage storage)
-                : base(storage, $"BotState:{typeof(BotState).Namespace}.{typeof(BotState).Name}")
+                : base(storage, $"BotState:{typeof(AgentState).Namespace}.{typeof(AgentState).Name}")
             {
             }
 
-            protected override string GetStorageKey(ITurnContext turnContext) => $"botstate/{turnContext.Activity.ChannelId}/{turnContext.Activity.Conversation.Id}/{typeof(BotState).Namespace}.{typeof(BotState).Name}";
+            protected override string GetStorageKey(ITurnContext turnContext) => $"botstate/{turnContext.Activity.ChannelId}/{turnContext.Activity.Conversation.Id}/{typeof(AgentState).Namespace}.{typeof(AgentState).Name}";
         }
 
         public class CustomState : IStoreItem
@@ -857,7 +857,7 @@ namespace Microsoft.Agents.State.Tests
             public string ETag { get; set; }
         }
 
-        public class CustomKeyState : BotState
+        public class CustomKeyState : AgentState
         {
             public const string PropertyName = "Microsoft.Bot.Builder.Tests.CustomKeyState";
 

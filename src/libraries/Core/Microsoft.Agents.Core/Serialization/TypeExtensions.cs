@@ -38,5 +38,27 @@ namespace Microsoft.Agents.Core.Serialization
             dict.Remove("$type");
             dict.Remove("$typeAssembly");
         }
+
+        public static IDictionary<string, string> GetTypeInfoProperties(this JsonObject jsonObject)
+        {
+            return new Dictionary<string, string>
+            {
+                { "$type", jsonObject["$type"].ToString() },
+                { "$typeAssembly", jsonObject["$typeAssembly"].ToString() }
+            };
+        }
+
+        public static IDictionary<string, string> RemoveTypeInfoProperties(this JsonObject jsonObject)
+        {
+            var props = GetTypeInfoProperties(jsonObject);
+            jsonObject.RemoveTypeInfo();
+            return props;
+        }
+
+        public static void SetTypeInfoProperties(this JsonObject jsonObject, IDictionary<string, string> properties)
+        {
+            jsonObject["$type"] = properties["$type"];
+            jsonObject["$typeAssembly"] = properties["$typeAssembly"];
+        }
     }
 }

@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
-using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System.Threading.Tasks;
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.State.Tests
 
             const int USER_INITITAL_COUNT = 100;
             const int CONVERSATION_INITIAL_COUNT = 10;
-            BotCallbackHandler botLogic = async (context, cancellationToken) =>
+            AgentCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from hSet
                 var userCount = userState.GetValue("userCount", () => USER_INITITAL_COUNT);
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.State.Tests
                 ChannelId = "test",
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
                 .Use(new AutoSaveStateMiddleware(true, userState, convState));
@@ -102,7 +102,7 @@ namespace Microsoft.Agents.State.Tests
 
             const int USER_INITITAL_COUNT = 100;
             const int CONVERSATION_INITIAL_COUNT = 10;
-            BotCallbackHandler botLogic = async (context, cancellationToken) =>
+            AgentCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from botStateSet
                 var userCount = userState.GetValue("userCount", () => USER_INITITAL_COUNT);
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.State.Tests
                 ChannelId = "test",
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
                 .Use(bss);

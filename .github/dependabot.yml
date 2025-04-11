@@ -4,26 +4,23 @@
 version: 2
 updates:
 - package-ecosystem: nuget
-  directory: /
+  directories: 
+    - "*"
   schedule:
     interval: daily
+  target-branch: "main"    
   labels:
     - 'dependencies'
   reviewers:
     - 'microsoft/botframework-sdk'    
-  groups:
-    nerdbank-gitversioning:
-      patterns:
-      - nbgv
-      - nerdbank.gitversioning
-    xunit:
-      patterns:
-      - 'xunit*'
-- package-ecosystem: dotnet-sdk
-  directory: /
-  schedule:
-    interval: daily
-  labels:
-    - 'dependencies'
-  reviewers:
-    - 'microsoft/botframework-sdk'      
+
+  
+#- package-ecosystem: dotnet-sdk
+#  directory: "/"
+#  schedule:
+#    interval: daily
+#  target-branch: "main"    
+#  labels:
+#    - 'dependencies'
+#  reviewers:
+#    - 'microsoft/botframework-sdk'      

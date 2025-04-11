@@ -49,9 +49,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// item can be in any subtype of O365ConnectorCardInputBase.
         /// </summary>
         /// <value>The inputs contained in the ActionCard.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardInputBase> Inputs { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets set of actions contained in this ActionCard whose each
@@ -59,8 +57,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// O365ConnectorCardActionCard, as nested ActionCard is forbidden.
         /// </summary>
         /// <value>The actions contained in this ActionCard.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardActionBase> Actions { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
     }
 }

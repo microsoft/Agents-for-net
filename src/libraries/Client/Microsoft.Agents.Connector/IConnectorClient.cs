@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Connector
 {
     /// <summary>
-    /// The Bot Connector API allows communicating back to the incoming request.  Typically to the Activity.ServiceUrl property.
+    /// The Connector API allows communicating back to the incoming request.  Typically to the Activity.ServiceUrl property.
     /// </summary>
     public interface IConnectorClient : System.IDisposable
     {

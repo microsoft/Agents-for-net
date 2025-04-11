@@ -2,5 +2,5 @@
 
 ## About
 
-Contains the implementation for the Azure Bot Service ChannelAPI and TokenAPI: ConnectorClient, TeamsConnectorClient, and UserTokenClient
+Contains the implementation for the Azure Bot Service ChannelAPI and TokenAPI clients.
 

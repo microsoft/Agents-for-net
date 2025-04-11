@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of AadResourceUrls. </summary>
         public AadResourceUrls()
         {
-            ResourceUrls = new List<string>();
+            ResourceUrls = [];
         }
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="resourceUrls">The URLs to the resource you want to connect to.</param>
         public AadResourceUrls(IList<string> resourceUrls = default)
         {
-            ResourceUrls = resourceUrls ?? new List<string>();
+            ResourceUrls = resourceUrls ?? [];
         }
 
         /// <summary> Gets the resource urls. </summary>

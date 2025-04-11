@@ -1,4 +1,8 @@
-﻿using System;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 {
@@ -14,116 +18,169 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
         /// <param name="conversationId">Optional, Conversation ID to address</param>
-        /// <param name="botType">Type of Bot being addressed. <see cref="BotType"/></param>
-        /// <param name="cloud">Power Platform Cloud Hosting Bot <see cref="PowerPlatformCloud"/></param>
+        /// <param name="agentType">Type of Agent being addressed. <see cref="AgentType"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
+        /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static Uri GetCopilotStudioConnectionUrl(
                 ConnectionSettings settings,
                 string? conversationId,
-                BotType botType = BotType.Published,
+                AgentType agentType = AgentType.Published,
                 PowerPlatformCloud cloud = PowerPlatformCloud.Prod, 
-                string? cloudBaseAddress = default
+                string? cloudBaseAddress = default,
+                string? directConnectUrl = default
             )
         {
-            if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
+            if (string.IsNullOrEmpty(directConnectUrl) && string.IsNullOrEmpty(settings.DirectConnectUrl))
             {
-                throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
-            }
-            if (string.IsNullOrEmpty(settings.EnvironmentId))
-            {
-                throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
-            }
-            if (string.IsNullOrEmpty(settings.BotIdentifier))
-            {
-                throw new ArgumentException("BotIdentifier must be provided", nameof(settings.BotIdentifier));
-            }
-            if ( settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
-            {
-                cloud = settings.Cloud.Value;
-            }
-            if (cloud == PowerPlatformCloud.Other)
-            {
-                if (!string.IsNullOrEmpty(cloudBaseAddress) && Uri.IsWellFormedUriString(cloudBaseAddress, UriKind.Absolute))
+                if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
                 {
-                    cloud = PowerPlatformCloud.Other;
+                    throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
                 }
-                else
+                if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
-                    if (!string.IsNullOrEmpty(settings.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                    throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
+                }
+                if (string.IsNullOrEmpty(settings.SchemaName))
+                {
+                    throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
+                }
+                if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
+                {
+                    cloud = settings.Cloud.Value;
+                }
+                if (cloud == PowerPlatformCloud.Other)
+                {
+                    if (!string.IsNullOrEmpty(cloudBaseAddress) && Uri.IsWellFormedUriString(cloudBaseAddress, UriKind.Absolute))
                     {
                         cloud = PowerPlatformCloud.Other;
-                        cloudBaseAddress = settings.CustomPowerPlatformCloud;
                     }
                     else
                     {
-                        throw new ArgumentException("Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other");
+                        if (!string.IsNullOrEmpty(settings.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                        {
+                            cloud = PowerPlatformCloud.Other;
+                            cloudBaseAddress = settings.CustomPowerPlatformCloud;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other");
+                        }
                     }
                 }
+                if (settings.CopilotAgentType != null)
+                {
+                    agentType = settings.CopilotAgentType.Value;
+                }
+
+                cloudBaseAddress ??= "api.unknown.powerplatform.com";
+
+                var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId, cloudBaseAddress);
+                return CreateUri(settings.SchemaName, host, agentType, conversationId);
             }
-            if ( settings.CopilotBotType != null)
+            else
             {
-                botType = settings.CopilotBotType.Value;
+                directConnectUrl ??= settings.DirectConnectUrl;
+                if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
+                {
+                    // FIX for Missing Tenant ID
+                    if ( directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
+                        settings.DirectConnectUrl = string.Empty; 
+                        return GetCopilotStudioConnectionUrl(settings, conversationId, agentType, cloud, cloudBaseAddress);
+                    }
+                    return CreateUri(directConnectUrl, conversationId);
+                }
+                else
+                {
+                    throw new ArgumentException("DirectConnectUrl is invalid");
+                }
             }
-
-            cloudBaseAddress ??= "api.unknown.powerplatform.com";
-
-            var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId, cloudBaseAddress);
-            return CreateUri(settings.BotIdentifier, host, botType, conversationId);
         }
 
         /// <summary>
         /// Returns the Power Platform API Audience.
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
-        /// <param name="cloud">Power Platform Cloud Hosting Bot <see cref="PowerPlatformCloud"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
+        /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static string GetTokenAudience(
             ConnectionSettings? settings,
             PowerPlatformCloud cloud = PowerPlatformCloud.Unknown, 
-            string? cloudBaseAddress = default)
+            string? cloudBaseAddress = default,
+            string? directConnectUrl = default)
         {
-            if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
+            if (string.IsNullOrEmpty(directConnectUrl) && string.IsNullOrEmpty(settings?.DirectConnectUrl))
             {
-                throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
-            }
-
-            if (settings == null && cloud == PowerPlatformCloud.Unknown)
-            {
-                throw new ArgumentException("Either settings or cloud must be provided", nameof(settings));
-            }
-
-            if (settings != null && settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
-            {
-                cloud = settings.Cloud.Value;
-            }
-
-            if (cloud == PowerPlatformCloud.Other)
-            {
-                if (!string.IsNullOrEmpty(cloudBaseAddress) && Uri.IsWellFormedUriString(cloudBaseAddress, UriKind.Absolute))
+                if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
                 {
-                    cloud = PowerPlatformCloud.Other;
+                    throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
                 }
-                else
+                if (settings == null && cloud == PowerPlatformCloud.Unknown)
                 {
-                    if (!string.IsNullOrEmpty(settings?.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                    throw new ArgumentException("Either settings or cloud must be provided", nameof(settings));
+                }
+                if (settings != null && settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
+                {
+                    cloud = settings.Cloud.Value;
+                }
+                if (cloud == PowerPlatformCloud.Other)
+                {
+                    if (!string.IsNullOrEmpty(cloudBaseAddress) && Uri.IsWellFormedUriString(cloudBaseAddress, UriKind.Absolute))
                     {
                         cloud = PowerPlatformCloud.Other;
-                        cloudBaseAddress = settings.CustomPowerPlatformCloud;
                     }
                     else
                     {
-                        throw new ArgumentException("Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other");
+                        if (!string.IsNullOrEmpty(settings?.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                        {
+                            cloud = PowerPlatformCloud.Other;
+                            cloudBaseAddress = settings.CustomPowerPlatformCloud;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other");
+                        }
                     }
                 }
+                cloudBaseAddress ??= "api.unknown.powerplatform.com";
+                return $"https://{GetEndpointSuffix(cloud, cloudBaseAddress)}/.default";
             }
+            else
+            {
+                directConnectUrl ??= settings?.DirectConnectUrl;
+                if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
+                {
+                    if ( DecodeCloudFromURI(new Uri(directConnectUrl)) == PowerPlatformCloud.Unknown)
+                    {
+                        PowerPlatformCloud cloudToTest = settings?.Cloud ?? cloud;
 
-
-            cloudBaseAddress ??= "api.unknown.powerplatform.com";
-            return $"https://{GetEndpointSuffix(cloud, cloudBaseAddress)}/.default";
+                        if (cloudToTest == PowerPlatformCloud.Other || cloudToTest == PowerPlatformCloud.Unknown)
+                        {
+                            throw new ArgumentException("Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audiance resolver requires a specific PowerPlatformCloudCategory.");
+                        }
+                        if (cloudToTest != PowerPlatformCloud.Unknown)
+                        {
+                            return $"https://{GetEndpointSuffix(cloudToTest, string.Empty)}/.default";
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Unable to resolve the PowerPlatform Cloud from DirectConnectUrl. The Token Audiance resolver requires a specific PowerPlatformCloudCategory.");
+                        }
+                    }
+                    return $"https://{GetEndpointSuffix(DecodeCloudFromURI(new Uri(directConnectUrl)), string.Empty)}/.default";
+                }
+                else
+                {
+                    throw new ArgumentException("DirectConnectUrl must be provided when DirectConnectUrl is set");
+                }
+            }
         }
 
 
@@ -132,25 +189,55 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <summary>
         /// Creates the PowerPlatform API connection URL for the given settings.
         /// </summary>
-        private static Uri CreateUri(string botIdentifier, string host, BotType botType, string? conversationId)
+        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId)
         {
-            string botPathName = "";
-            if (BotType.Published == botType)
+            string agentPathName;
+            if (AgentType.Published == agentType)
             {
-                botPathName = "dataverse-backed";
+                agentPathName = "dataverse-backed";
             }
             else
             {
-                botPathName = "prebuilt";
+                agentPathName = "prebuilt";
             }
             var builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = host;
             builder.Query = $"api-version={ApiVersion}";
             if (string.IsNullOrEmpty(conversationId))
-                builder.Path = $"/copilotstudio/{botPathName}/authenticated/bots/{botIdentifier}/conversations";
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations";
             else
-                builder.Path = $"/copilotstudio/{botPathName}/authenticated/bots/{botIdentifier}/conversations/{conversationId}";
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}";
+            return builder.Uri;
+        }
+
+        /// <summary>
+        /// Used only when DirectConnectUrl is provided.
+        /// </summary>
+        /// <param name="baseaddress"></param>
+        /// <param name="conversationId"></param>
+        /// <returns></returns>
+        private static Uri CreateUri(string baseaddress, string? conversationId)
+        {
+            var builder = new UriBuilder(baseaddress);
+            builder.Query = $"api-version={ApiVersion}";
+
+            // if builder.path ends with /, remove it
+            if (builder.Path.EndsWith('/'))
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
+            }
+            // if builder.path has /conversations, remove it
+            if (builder.Path.Contains("/conversations"))
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.IndexOf("/conversations"));
+            }
+
+            if (string.IsNullOrEmpty(conversationId))
+                builder.Path = $"{builder.Path}/conversations";
+            else
+                builder.Path = $"{builder.Path}/conversations/{conversationId}";
+
             return builder.Uri;
         }
 
@@ -204,6 +291,43 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             PowerPlatformCloud.Other => cloudBaseAddress,
             _ => throw new ArgumentException($"Invalid cluster category value: {category}", nameof(category)),
         };
+
+        /// <summary>
+        ///  Decode scope from DirectConnect URL.
+        /// </summary>
+        /// <param name="hostUri">This is the URL to decode a Cloud from</param>
+        /// <returns></returns>
+        private static PowerPlatformCloud DecodeCloudFromURI( Uri hostUri )
+        {
+            string Host = hostUri.Host.ToLower();
+            switch(Host)
+            {
+                case "api.powerplatform.localhost":
+                    return PowerPlatformCloud.Local;
+                case "api.exp.powerplatform.com":
+                    return PowerPlatformCloud.Exp;
+                case "api.dev.powerplatform.com":
+                    return PowerPlatformCloud.Dev;
+                case "api.prv.powerplatform.com":
+                    return PowerPlatformCloud.Prv;
+                case "api.test.powerplatform.com":
+                    return PowerPlatformCloud.Test;
+                case "api.preprod.powerplatform.com":
+                    return PowerPlatformCloud.Preprod;
+                case "api.powerplatform.com":
+                    return PowerPlatformCloud.Prod;
+                case "api.gov.powerplatform.microsoft.us":
+                    return PowerPlatformCloud.GovFR;
+                case "api.high.powerplatform.microsoft.us":
+                    return PowerPlatformCloud.High;
+                case "api.appsplatform.us":
+                    return PowerPlatformCloud.DoD;
+                case "api.powerplatform.partner.microsoftonline.cn":
+                    return PowerPlatformCloud.Mooncake;
+                default:
+                    return PowerPlatformCloud.Unknown;
+            }
+        }
 
         /// <summary>
         /// Get Environment ID Suffix Length for the given Power Platform Cloud Category.

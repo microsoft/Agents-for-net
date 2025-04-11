@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 
 namespace Microsoft.Agents.Connector
 {
@@ -11,7 +14,7 @@ namespace Microsoft.Agents.Connector
         {
             if (uri == null) throw new ArgumentNullException(nameof(uri));
             string uriString = uri.ToString();
-            if (!uriString.EndsWith("/"))
+            if (!uriString.EndsWith('/'))
             {
                 uriString += "/";
             }

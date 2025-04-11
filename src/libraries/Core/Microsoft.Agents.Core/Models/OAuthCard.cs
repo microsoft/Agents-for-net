@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of OAuthCard. </summary>
         public OAuthCard()
         {
-            Buttons = new List<CardAction>();
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of OAuthCard. </summary>
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Core.Models
         {
             Text = text;
             ConnectionName = connectionName;
-            Buttons = buttons ?? new List<CardAction>();
+            Buttons = buttons ?? [];
         }
 
         /// <summary>

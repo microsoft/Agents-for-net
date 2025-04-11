@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.NotNull(convoParameters);
             Assert.IsType<ConversationParameters>(convoParameters);
             Assert.Equal(isGroup, convoParameters.IsGroup);
-            Assert.Equal(bot, convoParameters.Bot);
+            Assert.Equal(bot, convoParameters.Agent);
             Assert.Equal(members, convoParameters.Members);
             Assert.Equal(topicName, convoParameters.TopicName);
             Assert.Equal(activity, convoParameters.Activity);
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal(locale.ToString(), convoRef.Locale);
             Assert.Equal(activityId, convoRef.ActivityId);
             Assert.Equal(user, convoRef.User);
-            Assert.Equal(bot, convoRef.Bot);
+            Assert.Equal(bot, convoRef.Agent);
             Assert.Equal(conversation, convoRef.Conversation);
             Assert.Equal(channelId, convoRef.ChannelId);
             Assert.Equal(serviceUrl, convoRef.ServiceUrl);
@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.IsType<ConversationReference>(convoRef);
             Assert.Equal(activityId, convoRef.ActivityId);
             Assert.Equal(user, convoRef.User);
-            Assert.Equal(bot, convoRef.Bot);
+            Assert.Equal(bot, convoRef.Agent);
             Assert.Equal(conversation, convoRef.Conversation);
             Assert.Equal(channelId, convoRef.ChannelId);
             Assert.Equal(serviceUrl, convoRef.ServiceUrl);

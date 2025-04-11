@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Connector
 {
     /// <summary>
-    /// The Bot Connector REST API allows your bot to send and receive messages to channels configured in the Azure Bot Service.
+    /// The Connector REST API allows your Agent to send and receive messages to channels configured in the Azure Bot Service.
     /// The Connector service uses industry-standard REST and JSON over HTTPS.
     /// </summary>
     public class RestConnectorClient : RestClientBase, IConnectorClient

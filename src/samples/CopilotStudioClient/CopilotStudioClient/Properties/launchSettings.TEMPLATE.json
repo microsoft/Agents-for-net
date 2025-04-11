@@ -7,7 +7,7 @@
         "DirectToEngineSettings__TenantId": "",
         "DirectToEngineSettings__EnvironmentId": "",
         "DirectToEngineSettings__AppClientId": "",
-        "DirectToEngineSettings__BotIdentifier": ""
+        "DirectToEngineSettings__SchemaName": ""
       }
     }
   }

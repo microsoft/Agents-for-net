@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App
 {
     /// <summary>
-    /// Downloads attachments from Teams using the Bot access token.
+    /// Downloads attachments from Teams using the configure Token Provider (from IConnections).
     /// </summary>
     public class TeamsAttachmentDownloader : IInputFileDownloader
     {
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             // If authentication is enabled, get access token
             if (!_options.UseAnonymous)
             {
-                accessToken = await _accessTokenProvider.GetAccessTokenAsync(BotClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
+                accessToken = await _accessTokenProvider.GetAccessTokenAsync(AgentClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
             }
 
             List<InputFile> files = [];

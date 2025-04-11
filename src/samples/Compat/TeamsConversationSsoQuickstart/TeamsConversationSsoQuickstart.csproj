@@ -13,7 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
-		<ProjectReference Include="..\..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
+		<ProjectReference Include="..\..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Storage\Microsoft.Agents.Storage.Blobs\Microsoft.Agents.Storage.Blobs.csproj" />

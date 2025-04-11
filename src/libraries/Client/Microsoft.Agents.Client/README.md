@@ -1,12 +1,9 @@
 # Microsoft.Agents.Client
 
-Contains the implementation for bot-to-bot handling.
+Contains the implementation for agent-to-agent handling.
 
 ## Main Types
 
-- IChannel
-- IChannelHost
-- IConversationIdFactory
-- HttpBotChannel: Implements IChannel for sending requests to another Agent using Http.
-- ConversationIdFactory: IConversationIdFactory that uses IStorage for persistence.
-- ConfigurationChannelHost : IChannelHost that loads Channel definitions from configuration.
+- ServiceExtension `AddAgentHost` that adds agent-to-agent capabilities.
+- IAgentHost for performing and managing conversations with other Agents.
+- AgentResponses Extension, for getting Agent replies in AgentApplication.
