@@ -52,7 +52,7 @@ builder.AddAgent(sp =>
             tokenProviderFunction: (s) =>
             {
                 // The result of a sign in is cached in Authorization (for the duration of the turn).
-                return Task.FromResult(app.Authorization.GetTurnToken("mcs"));
+                return Task.FromResult(app.UserAuthorization.GetTurnToken("mcs"));
             },
             NullLogger.Instance,
             "mcs");
@@ -93,7 +93,7 @@ builder.AddAgent(sp =>
         }
     });
 
-    app.Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
+    app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
     {
         await turnContext.SendActivityAsync($"Auto SignIn: Failed with '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
     });
