@@ -133,6 +133,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 {
                     await _userSignInSuccessHandler(turnContext, turnState, handlerName, existingCachedToken, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
+                return;
             }
 
             SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, true, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -165,6 +166,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (_userSignInFailureHandler != null)
                 {
                     await _userSignInFailureHandler(turnContext, turnState, handlerName, response, turnContext.Activity, cancellationToken).ConfigureAwait(false);
+                    return;
                 }
                 else
                 {

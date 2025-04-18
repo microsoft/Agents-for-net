@@ -16,6 +16,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Identity.Client" />
+		<PackageReference Include="Microsoft.Identity.Web.Certificateless" />
 		<PackageReference Include="Microsoft.IdentityModel.LoggingExtensions" />
 		<PackageReference Include="Microsoft.IdentityModel.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />

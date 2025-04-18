@@ -52,11 +52,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>True if valid. Otherwise, false.</returns>
         public virtual bool IsValidActivity(ITurnContext context)
         {
-            // TODO: if flow hasn't started, does it matter what the Activity.Type is?  Though it is likely always an Activity (until it's not).
             var isMatch = context.Activity.Type == ActivityTypes.Message
+                && context.Activity.ChannelId != Channels.Msteams
                 && !string.IsNullOrEmpty(context.Activity.Text);
 
-            // TODO: the following is only true if the flow is already started, but we don't know that yet.
             isMatch |= context.Activity.Type == ActivityTypes.Invoke &&
                 context.Activity.Name == SignInConstants.VerifyStateOperationName;
 
