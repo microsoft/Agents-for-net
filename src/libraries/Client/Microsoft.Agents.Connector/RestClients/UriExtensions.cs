@@ -25,5 +25,16 @@ namespace Microsoft.Agents.Connector.RestClients
                 return new Uri($"{url}&{name}={argValue}");
             }
         }
+
+        public static Uri EnsureTrailingSlash(this Uri uri)
+        {
+            ArgumentNullException.ThrowIfNull(uri);
+            string uriString = uri.ToString();
+            if (!uriString.EndsWith('/'))
+            {
+                uriString += "/";
+            }
+            return new Uri(uriString);
+        }
     }
 }

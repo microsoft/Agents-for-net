@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Errors;
@@ -14,9 +16,15 @@ using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class UserTokenRestClient(IRestTransport transport) : IUserToken
+    internal class UserTokenRestClient : IUserToken
     {
-        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
+        private readonly IRestTransport _transport;
+        private readonly static MemoryCache _cache = new MemoryCache(nameof(UserTokenRestClient));
+
+        public UserTokenRestClient(IRestTransport transport)
+        {
+            _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
+        }
 
         internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
         {
@@ -52,7 +60,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
+        public async Task<object> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
@@ -84,11 +92,32 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
+        private static string CacheKey(string userId, string connectionName, string channelId)
+        {
+            return $"{userId}-{connectionName}-{channelId}";
+        }
+
         /// <inheritdoc/>
         public async Task<TokenResponse> GetTokenAsync(string userId, string connectionName, string channelId = null, string code = null, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+
+            var cacheKey = CacheKey(userId, connectionName, channelId);
+            if (string.IsNullOrEmpty(code))
+            {
+                var value = _cache.Get(cacheKey);
+                if (value != null)
+                {
+                    var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
+                    if (toExpiration?.TotalMinutes >= 3)
+                    {
+                        return (TokenResponse)value;
+                    }
+
+                    _cache.Remove(cacheKey);
+                }
+            }
 
             using var message = CreateGetTokenRequest(userId, connectionName, channelId, code);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -96,10 +125,32 @@ namespace Microsoft.Agents.Connector.RestClients
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+                    var response = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
+
+                    if (response?.Token != null)
+                    {
+                        // Token Service isn't returning Expiration in TokenResponse
+                        if (response.Expiration == null)
+                        {
+                            var jwtToken = new JwtSecurityToken(response.Token);
+                            response.Expiration = jwtToken.ValidTo;
+                        }
+
+                        _cache.Add(
+                            new CacheItem(cacheKey) { Value = response },
+                            new CacheItemPolicy()
+                            {
+                                SlidingExpiration = TimeSpan.FromMinutes(3)
+                            });
+                    }
+
+                    return response;
+
                 case 404:
                     // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
+
                 default:
                     throw new HttpRequestException($"GetTokenAsync {httpResponse.StatusCode}");
             }
@@ -158,9 +209,11 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> SignOutAsync(string userId, string connectionName = null, string channelId = null, CancellationToken cancellationToken = default)
+        public async Task<object> SignOutAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
+
+            _cache.Remove(CacheKey(userId, connectionName, channelId));
 
             using var message = CreateSignOutRequest(userId, connectionName, channelId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);

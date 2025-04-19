@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Agents.Core.Models;
@@ -205,10 +206,10 @@ namespace Microsoft.Agents.Model.Tests
             var channelId = "channelId";
             var connectionName = "connectionName";
             var token = "token";
-            var expiration = "expiration";
+            var expiration = DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM");
             var properties = new Dictionary<string, JsonElement>();
 
-            var tokenResponse = new TokenResponse(channelId, connectionName, token, expiration)
+            var tokenResponse = new TokenResponse(channelId, connectionName, token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"))
             {
                 Properties = properties
             };
@@ -229,6 +230,23 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(tokenResponse);
             Assert.IsType<TokenResponse>(tokenResponse);
+        }
+
+        [Fact]
+        public void TokenResponseRoundTrip()
+        {
+            var response = new TokenResponse()
+            {
+                Token = "token",
+                Expiration = DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM")
+            };
+
+            var outJson = ProtocolJsonSerializer.ToJson(response);
+            var inResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(outJson);
+
+            Assert.Equal(response.Token, inResponse.Token);
+            Assert.Equal(response.Expiration, inResponse.Expiration);
+            Assert.Equal(outJson, ProtocolJsonSerializer.ToJson(inResponse));
         }
 
         [Fact]

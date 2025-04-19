@@ -188,7 +188,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task OAuthPromptTimesOut_TokenResponseEvent()
         {
             var activity = new Activity() { Type = ActivityTypes.Event, Name = SignInConstants.TokenResponseEventName };
-            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, null);
+            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"));
             await PromptTimeoutEndsDialogTest(activity);
         }
 

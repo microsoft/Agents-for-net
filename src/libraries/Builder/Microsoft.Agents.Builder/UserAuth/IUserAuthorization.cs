@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <param name="state">AgentApplication state.</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The authentication token if user is signed in. Otherwise returns null. In that case the Agent will attempt to sign the user in.</returns>
-        Task<string> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
+        Task<TokenResponse> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Signs out a user.
@@ -43,5 +44,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
+
+        Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string connectionName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
     }
 }

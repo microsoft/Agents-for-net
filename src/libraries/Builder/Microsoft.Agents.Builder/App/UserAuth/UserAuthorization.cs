@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         private readonly IUserAuthorizationDispatcher _dispatcher;
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
-        private readonly Dictionary<string, string> _authTokens = [];
+        private readonly Dictionary<string, TokenResponse> _authTokens = [];
 
         /// <summary>
         /// Callback when user sign in success
@@ -89,14 +89,48 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             AddManualSignInCompletionHandler();
         }
 
+        [Obsolete("Use Task<string> GetTurnToken(string) instead")]
+        public string GetTurnToken(string handlerName)
+        {
+            return _authTokens.TryGetValue(handlerName, out var token) ? token.Token : default;
+        }
+
         /// <summary>
         /// Return a previously acquired token.
         /// </summary>
+        /// <remarks>
+        /// This is a mechanism to access a previously acquired user token during the turn. It should be
+        /// considered a convenience method to get a token for each handler.  Not as a way to 
+        /// initiate the signin process.  This will also handle refreshing the token if expired between
+        /// initial acquisition and use.
+        /// </remarks>
+        /// <param name="turnContext"></param>
+        /// <param name="turnState"></param>
         /// <param name="handlerName"></param>
+        /// <param name="exchangeConnection"></param>
+        /// <param name="exchangeScopes"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public string GetTurnToken(string handlerName)
+        public async Task<string> GetTurnTokenForCaller(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            return _authTokens.TryGetValue(handlerName, out var token) ? token : default;
+            if (_authTokens.TryGetValue(handlerName, out var token))
+            {
+                var diff = token.Expiration - DateTimeOffset.UtcNow;
+                if (diff.HasValue && diff?.TotalMinutes >= 3)
+                {
+                    return token.Token;
+                }
+                
+                var handler = _dispatcher.Get(handlerName);
+                var response = await handler.GetRefreshedUserTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+                if (response?.Token != null)
+                {
+                    _authTokens[handlerName] = response;
+                    return response.Token;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -125,7 +159,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             }
 
             // Handle the case where we already have a token for this handler and the Agent is calling this again.
-            var existingCachedToken = GetTurnToken(handlerName);
+            var existingCachedToken = await GetTurnTokenForCaller(turnContext, turnState, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (existingCachedToken != null)
             {
                 // call the handler directly
@@ -178,12 +212,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (response.Status == SignInStatus.Complete)
             {
                 DeleteActiveFlow(turnState);
-                CacheToken(handlerName, response.Token);
+                CacheToken(handlerName, response);
 
                 // call the handler directly
                 if (_userSignInSuccessHandler != null)
                 {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.Token, turnContext.Activity, cancellationToken).ConfigureAwait(false);
+                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.Token.Token, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -342,7 +376,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (response.Status == SignInStatus.Complete)
                 {
                     DeleteActiveFlow(turnState);
-                    CacheToken(activeFlowName, response.Token);
+                    CacheToken(activeFlowName, response);
 
                     if (signInContinuation != null)
                     {
@@ -401,12 +435,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 var signInCompletion = ProtocolJsonSerializer.ToObject<SignInEventValue>(turnContext.Activity.Value);
                 if (signInCompletion.Response.Status == SignInStatus.Complete && _userSignInSuccessHandler != null)
                 {
-                    CacheToken(signInCompletion.HandlerName, signInCompletion.Response.Token);
+                    CacheToken(signInCompletion.HandlerName, signInCompletion.Response);
                     await _userSignInSuccessHandler(
                         turnContext, 
                         turnState, 
                         signInCompletion.HandlerName, 
-                        signInCompletion.Response.Token,
+                        signInCompletion.Response.Token.Token,
                         signInCompletion.InitiatingActivity, 
                         cancellationToken).ConfigureAwait(false);
                 }
@@ -435,10 +469,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// Set token in state
         /// </summary>
         /// <param name="name">The name of token</param>
-        /// <param name="token">The value of token</param>
-        private void CacheToken(string name, string token)
+        /// <param name="response">The value of token</param>
+        private void CacheToken(string name, SignInResponse response)
         {
-            _authTokens[name] = token;
+            _authTokens[name] = response.Token;
         }
 
         /// <summary>

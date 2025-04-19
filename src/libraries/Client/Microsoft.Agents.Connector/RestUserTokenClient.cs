@@ -126,8 +126,8 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
-            _logger.LogInformation($"ExchangeAsyncAsync ConnectionName: {connectionName}");
-            var result = await _userTokenClient.ExchangeAsyncAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation($"ExchangeTokenAsync ConnectionName: {connectionName}");
+            var result = await _userTokenClient.ExchangeAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
             if (result == null)
             {
                 return null;
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Connector
             }
             else
             {
-                throw new InvalidOperationException($"ExchangeAsyncAsync returned improper result: {result.GetType()}");
+                throw new InvalidOperationException($"ExchangeAsync returned improper result: {result.GetType()}");
             }
         }
 

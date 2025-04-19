@@ -164,7 +164,7 @@ public class AuthAgent : AgentApplication
         if (handlerName.Equals(_signInHandlerName))
         {
             // Check for Access Token from the Authorization Sub System. 
-            if (string.IsNullOrEmpty(UserAuthorization.GetTurnToken(handlerName)))
+            if (string.IsNullOrEmpty(await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, handlerName, cancellationToken: cancellationToken)))
             {
                 // Failed to get access token here, and we will now bail out of this message loop. 
                 await turnContext.SendActivityAsync($"The auto sign in process failed and no access token is available", cancellationToken: cancellationToken);
@@ -172,7 +172,7 @@ public class AuthAgent : AgentApplication
             }
 
             // We have the access token, now try to get your user name from graph. 
-            string displayName = await GetDisplayName(turnContext);
+            string displayName = await GetDisplayName(turnContext, turnState);
             if (displayName.Equals(_defaultDisplayName))
             {
                 // Handle error response from Graph API
@@ -196,10 +196,10 @@ public class AuthAgent : AgentApplication
     /// </summary>
     /// <param name="turnContext"><see cref="ITurnState"/></param>
     /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    private async Task<string> GetDisplayName(ITurnContext turnContext, ITurnState turnState)
     {
         string displayName = _defaultDisplayName;
-        string accessToken = UserAuthorization.GetTurnToken(_signInHandlerName);
+        string accessToken = await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, _signInHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {

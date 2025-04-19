@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using System;
 
 namespace Microsoft.Agents.Builder.UserAuth
@@ -32,6 +33,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <summary>
         /// The token response.  Only available when sign-in status is Complete.
         /// </summary>
-        public string Token { get; set; }
+        public TokenResponse Token { get; set; }
     }
 }
