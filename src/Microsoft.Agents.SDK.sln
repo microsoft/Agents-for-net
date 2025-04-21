@@ -126,6 +126,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Authorization", "Authorizat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManualSignIn", "samples\Authorization\ManualSignIn\ManualSignIn.csproj", "{72503E70-31C3-82E3-1E1D-52A6B0C5A808}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HandlingCards", "samples\HandlingCards\HandlingCards.csproj", "{8087E501-AFF3-3A69-BACA-FC83101DF3F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -304,6 +306,10 @@ Global
 		{72503E70-31C3-82E3-1E1D-52A6B0C5A808}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72503E70-31C3-82E3-1E1D-52A6B0C5A808}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72503E70-31C3-82E3-1E1D-52A6B0C5A808}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -366,6 +372,7 @@ Global
 		{2D522479-7808-6236-5B86-F9653C2F2D0A} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{0F9D3F0D-C131-4D3B-A86F-59CC781E8A02} = {674A812C-7287-4883-97F9-697D83750648}
 		{72503E70-31C3-82E3-1E1D-52A6B0C5A808} = {0F9D3F0D-C131-4D3B-A86F-59CC781E8A02}
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
