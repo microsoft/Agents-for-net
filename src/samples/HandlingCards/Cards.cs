@@ -72,6 +72,12 @@ namespace HandlingCards
                 return true;
             }
 
+            if (cardCommand.Name.Equals("animation") && !Channels.SupportsAnimationCard(turnContext.Activity.ChannelId))
+            {
+                await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support animation cards.", cancellationToken: cancellationToken);
+                return true;
+            }
+
             await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
             return true;
         }
