@@ -13,6 +13,8 @@ using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -111,7 +113,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
+
+                // if Auth is not configured, we still need the claims from the JWT token.
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
+                if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+                {
+                    var auth = httpRequest.Headers.Authorization;
+                    if (auth.Count != 0)
+                    {
+                        var authHeaderValue = auth.First();
+                        var authValues = authHeaderValue.Split(' ');
+                        if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var jwt = new JwtSecurityToken(authValues[1]);
+                            claimsIdentity = new ClaimsIdentity(jwt.Claims);
+                        }
+                    }
+                }
 
                 if (!IsValidChannelActivity(activity))
                 {

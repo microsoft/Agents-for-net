@@ -1,6 +1,7 @@
 ﻿
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Storage;
 using System;
 
 namespace Microsoft.Agents.Builder.Tests.App.TestUtils
@@ -15,5 +16,5 @@ namespace Microsoft.Agents.Builder.Tests.App.TestUtils
         }
     }
 
-    public class TestApplicationOptions : AgentApplicationOptions { }
+    public class TestApplicationOptions(IStorage storage) : AgentApplicationOptions(storage) { }
 }

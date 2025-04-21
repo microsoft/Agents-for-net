@@ -149,11 +149,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var messages = new List<string>();
             app.AddRoute(
@@ -187,11 +186,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var selectedRoutes = new List<int>();
             app.AddRoute(
@@ -255,10 +253,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var turnContext2 = new TurnContext(adapter, activity2);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.AddRoute(
@@ -296,10 +293,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var selectedRoutes = new List<int>();
             app.AddRoute(
@@ -352,10 +348,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var selectedRoutes = new List<int>();
             app.AddRoute(
@@ -400,10 +395,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var selectedRoutes = new List<int>();
             app.AddRoute(
@@ -464,11 +458,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var types = new List<string>();
             app.OnActivity(ActivityTypes.Message, (context, _, _) =>
@@ -511,11 +504,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var types = new List<string>();
             app.OnActivity(new Regex("^message$"), (context, _, _) =>
@@ -559,11 +551,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var types = new List<string>();
             app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
@@ -616,11 +607,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var types = new List<string>();
             app.OnActivity(new MultipleRouteSelector
@@ -683,11 +673,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (context, _, _) =>
@@ -742,11 +731,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(ConversationUpdateEvents.MembersRemoved, (context, _, _) =>
@@ -781,11 +769,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate("unknown",
@@ -840,11 +827,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var texts = new List<string>();
             app.OnMessage("hello", (context, _, _) =>
@@ -900,11 +886,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var texts = new List<string>();
             app.OnMessage(new Regex("llo"), (context, _, _) =>
@@ -949,11 +934,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var texts = new List<string>();
             app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
@@ -1009,11 +993,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var texts = new List<string>();
             app.OnMessage(new MultipleRouteSelector
@@ -1076,11 +1059,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnMessageReactionsAdded((context, _, _) =>
@@ -1135,11 +1117,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnMessageReactionsRemoved((context, _, _) =>
@@ -1205,11 +1186,10 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Status = 200
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var ids = new List<string>();
             app.OnHandoff((turnContext, _, _, _) =>

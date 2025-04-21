@@ -57,5 +57,17 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='cancellationToken'> The cancellation token. </param>
         /// <returns> A task that represents the work queued to execute. </returns>
         Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default);
+
+        /// <summary> Get token or sign in resource with HTTP message. </summary>
+        /// <param name="userId"> User ID.</param>
+        /// <param name="connectionName"> Connection name.</param>
+        /// <param name="channelId"> Channel ID.</param>
+        /// <param name="code"> Code.</param>
+        /// <param name="state"> State.</param>
+        /// <param name="finalRedirect"> Final redirect.</param>
+        /// <param name="fwdUrl"> Fwd URL.</param>
+        /// <param name="cancellationToken"> The cancellation token.</param>
+        /// <returns>A Task representing the <see cref="TokenOrSignInResourceResponse"/> of the HTTP operation.</returns>
+        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default);
     }
 }

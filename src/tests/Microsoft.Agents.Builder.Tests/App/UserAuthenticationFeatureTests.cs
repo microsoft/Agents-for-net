@@ -59,7 +59,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
-                var app = new TestApplication(new TestApplicationOptions());
+                var storage = new MemoryStorage();
+                var app = new TestApplication(new TestApplicationOptions(storage));
                 var options = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object);
                 var authManager = new TestUserAuthenticationFeature(app, options);
             });
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void Test_DefaultHandlerNameNotFound()
         {
-            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions() 
+            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions((IStorage) null) 
             { 
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) 
@@ -81,7 +82,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void Test_DefaultHandlerFirst()
         {
-            var app = new AgentApplication(new AgentApplicationOptions()
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage) null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
@@ -94,7 +95,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_AutoSignIn_Default()
         {
             // arrange
-            var options = new TestApplicationOptions() 
+            var options = new TestApplicationOptions((IStorage)null) 
             { 
                 Adapter = MockChannelAdapter.Object, 
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object) 
@@ -117,7 +118,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_AutoSignIn_Named()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -143,7 +144,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((string)null));
 
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
@@ -163,7 +164,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_SignOut_DefaultHandler()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -186,7 +187,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_SignOut_SpecificHandler()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions((IStorage)null)
             {
                 Adapter = MockChannelAdapter.Object,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
@@ -222,10 +223,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -281,10 +281,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -332,10 +331,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn
@@ -386,10 +384,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Returns(GraphName);
 
             // arrange
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn

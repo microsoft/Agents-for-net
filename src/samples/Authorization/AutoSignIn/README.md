@@ -1,4 +1,4 @@
-﻿# AuthorizationAgent
+﻿# AutoSignIn
 
 This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use user authorization in your Agent.
 

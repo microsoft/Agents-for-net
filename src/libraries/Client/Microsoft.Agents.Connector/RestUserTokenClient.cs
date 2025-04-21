@@ -14,6 +14,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.Core.Errors;
+using System.Diagnostics;
 
 namespace Microsoft.Agents.Connector
 {
@@ -146,14 +147,25 @@ namespace Microsoft.Agents.Connector
             }
         }
 
+        /// <inheritdoc />
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, nameof(GetTokenOrSignInResourceAsync));
+            ArgumentNullException.ThrowIfNull(activity);
+            ArgumentException.ThrowIfNullOrEmpty(connectionName);
+            _logger.LogInformation($"GetTokenOrSignInResourceAsync ConnectionName: {connectionName}");
+            var state = CreateTokenExchangeState(_appId, connectionName, activity);
+            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Helper function to create the base64 encoded token exchange state used in GetSignInResourceAsync calls.
         /// </summary>
         /// <param name="appId">The appId to include in the token exchange state.</param>
         /// <param name="connectionName">The connectionName to include in the token exchange state.</param>
-        /// <param name="activity">The <see cref="Activity"/> from which to derive the token exchange state.</param>
+        /// <param name="activity">The <see cref="IActivity"/> from which to derive the token exchange state.</param>
         /// <returns>base64 encoded token exchange state.</returns>
-        private static string CreateTokenExchangeState(string appId, string connectionName, IActivity activity)
+        public static string CreateTokenExchangeState(string appId, string connectionName, IActivity activity)
         {
             var tokenExchangeState = new TokenExchangeState
             {

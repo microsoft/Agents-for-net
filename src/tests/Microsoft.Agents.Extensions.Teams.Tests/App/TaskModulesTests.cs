@@ -58,10 +58,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Body = taskModuleResponseMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -116,10 +115,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -154,10 +152,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -218,10 +215,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Body = taskModuleResponseMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             SubmitHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -276,10 +272,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
 
@@ -315,10 +310,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);

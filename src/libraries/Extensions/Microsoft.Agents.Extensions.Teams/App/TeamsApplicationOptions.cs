@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
 {
     public class TeamsApplicationOptions : AgentApplicationOptions
     {
-        public TeamsApplicationOptions() : base() { }
+        public TeamsApplicationOptions(IStorage storage) : base(storage) { }
 
         public TeamsApplicationOptions(IServiceProvider sp, IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, UserAuthorizationOptions authOptions = null, AdaptiveCardsOptions cardOptions = null, ILoggerFactory loggerFactory = null, IList<IInputFileDownloader> fileDownloaders = null, string configurationSection = "AgentApplication") 
             : base(sp, configuration, channelAdapter, storage, authOptions, cardOptions, loggerFactory, fileDownloaders, configurationSection)

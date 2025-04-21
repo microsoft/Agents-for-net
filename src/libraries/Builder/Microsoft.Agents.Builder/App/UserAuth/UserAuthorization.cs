@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// </remarks>
     public class UserAuthorization
     {
-        private readonly AutoSignInSelectorAsync? _startSignIn;
+        private readonly AutoSignInSelector? _startSignIn;
         private const string IS_SIGNED_IN_KEY = "__InSignInFlow__";
         private const string SIGNIN_ACTIVITY_KEY = "__SignInFlowActivity__";
         private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";
@@ -133,6 +133,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 {
                     await _userSignInSuccessHandler(turnContext, turnState, handlerName, existingCachedToken, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
+                return;
             }
 
             SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, true, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -165,6 +166,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (_userSignInFailureHandler != null)
                 {
                     await _userSignInFailureHandler(turnContext, turnState, handlerName, response, turnContext.Activity, cancellationToken).ConfigureAwait(false);
+                    return;
                 }
                 else
                 {

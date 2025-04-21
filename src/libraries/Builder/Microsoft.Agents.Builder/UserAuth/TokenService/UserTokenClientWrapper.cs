@@ -23,6 +23,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, magicCode, cancellationToken);
         }
 
+        public static Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(ITurnContext context, string connectionName, string magicCode = null, CancellationToken cancellationToken = default)
+        {
+            IUserTokenClient userTokenClient = GetUserTokenClient(context);
+            return userTokenClient.GetTokenOrSignInResourceAsync(connectionName, context.Activity, magicCode, null, null, cancellationToken);
+        }
+
         public static Task<TokenResponse> ExchangeTokenAsync(ITurnContext context, string connectionName, TokenExchangeRequest tokenExchangeRequest, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);

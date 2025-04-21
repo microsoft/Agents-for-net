@@ -42,11 +42,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelCreated,
@@ -86,11 +85,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelRenamed,
@@ -130,11 +128,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelDeleted,
@@ -175,11 +172,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelRestored,
@@ -218,11 +214,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamRenamed,
@@ -261,11 +256,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamDeleted,
@@ -304,11 +298,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamHardDeleted,
@@ -347,11 +340,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamArchived,
@@ -390,11 +382,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamUnarchived,
@@ -433,11 +424,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(TeamsConversationUpdateEvents.TeamRestored,
@@ -499,11 +489,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -572,11 +561,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             app.OnConversationUpdate(
@@ -643,11 +631,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -717,11 +704,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -785,11 +771,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -855,11 +840,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var names = new List<string>();
@@ -940,11 +924,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Body = configResponseMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -1036,11 +1019,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Body = configResponseMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1124,11 +1106,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Status = 200
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -1209,11 +1190,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Status = 200
             };
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1287,11 +1267,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Status = 200
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1338,11 +1317,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
@@ -1383,11 +1361,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
 
             var extension = new TeamsAgentExtension(app);
