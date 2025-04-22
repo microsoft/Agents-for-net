@@ -161,13 +161,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             return Task.CompletedTask;
         }
 
-        protected override Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensiOnAgentMessagePreviewEditAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
+        protected override Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionAgentMessagePreviewEditAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
             return Task.FromResult(new MessagingExtensionActionResponse());
         }
 
-        protected override Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensiOnAgentMessagePreviewSendAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
+        protected override Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionAgentMessagePreviewSendAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
             return Task.FromResult(new MessagingExtensionActionResponse());
