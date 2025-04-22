@@ -662,7 +662,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal(3, bot.Record.Count);
             Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
             Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
-            Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewEditAsync", bot.Record[2]);
+            Assert.Equal("OnTeamsMessagingExtensiOnAgentMessagePreviewEditAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
             Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
@@ -693,7 +693,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal(3, bot.Record.Count);
             Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
             Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
-            Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewSendAsync", bot.Record[2]);
+            Assert.Equal("OnTeamsMessagingExtensiOnAgentMessagePreviewSendAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
             Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
