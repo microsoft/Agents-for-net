@@ -47,6 +47,14 @@ This step will require permissions to Create application identities in your Azur
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
+> [!TIP]
+> If you see the following error message:
+> ```sh
+> fail: Microsoft.Agents.CopilotStudio.Client.CopilotClient[0]
+>      Error: {"code":"Forbidden","message":"The caller is not authorized to perform the request.","innererror":{"code":"InsufficientDelegatedPermissions","message":"Authorization denied: Application missing required delegated permissions: [CopilotStudio.Copilots.Invoke, All.All.ReadWrite]"}}
+> ```
+> You may also need to add the `Directory.ReadWrite.All` permission, found under `Microsoft APIs` -> `Microsoft Graph` -> `Delegated permissions` -> `Directory` -> `Directory.ReadWrite.All`. You will also need an admin to grant consent.
+
 ### Instructions - Configure the Example Application - User Interactive Login
 
 With the above information, you can now run the client `CopilostStudioClientSample`.
@@ -57,11 +65,14 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 ```json
   "CopilotStudioClientSettings": {
     "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-    "SchemaName": "", // Schema Name of the Copilot to use
+    "SchemaName": "", // Schema Name of the Copilot to use. See the note at the bottom of this section for help finding the Schema Name.
     "TenantId": "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
     "AppClientId": "" // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
   }
 ```
+
+> [!TIP]
+> To find your agent's schema name, navigate to your agent's settings and under `Advanced`, expand `Metadata` and you will see your agent's `Environment ID`, `Tenant ID`, `Agent app ID` and `Schema name`. Copy the value of `Schema name` and use that for `SchemaName` in your `appSettings.json` or `launchSettings.json` file.
 
 ## Create an Application Registration in Entra ID - Service Principal Login
 
@@ -99,17 +110,25 @@ This step will require permissions to Create application identities in your Azur
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
+> [!TIP]
+> If you see the following error message:
+> ```sh
+> fail: Microsoft.Agents.CopilotStudio.Client.CopilotClient[0]
+>      Error: {"code":"Forbidden","message":"The caller is not authorized to perform the request.","innererror":{"code":"InsufficientDelegatedPermissions","message":"Authorization denied: Application missing required delegated permissions: [CopilotStudio.Copilots.Invoke, All.All.ReadWrite]"}}
+> ```
+> You may also need to add the `Directory.ReadWrite.All` permission, found under `Microsoft APIs` -> `Microsoft Graph` -> `Delegated permissions` -> `Directory` -> `Directory.ReadWrite.All`. You will also need an admin to grant consent.
+
 ### Instructions - Configure the Example Application - Service Principal Login
 
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
 1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
-1. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
+2. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
 
 ```json
   "CopilotStudioClientSettings": {
     "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-    "SchemaName": "", // Schema Name of the Copilot to use
+    "SchemaName": "", // Schema Name of the Copilot to use. See the note at the bottom of this section for help finding the Schema Name.
     "TenantId": "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
     "UseS2SConnection": true,
     "AppClientId": "" // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
@@ -117,11 +136,12 @@ With the above information, you can now run the client `CopilostStudioClientSamp
   }
 ```
 
-
-
 3. Run the CopilotStudioClientSample.exe program.
 
 This should challenge you for login in a new browser window or tab and once completed, connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
+
+> [!TIP]
+> To find your agent's schema name, navigate to your agent's settings and under `Advanced`, expand `Metadata` and you will see your agent's `Environment ID`, `Tenant ID`, `Agent app ID` and `Schema name`. Copy the value of `Schema name` and use that for `SchemaName` in your `appSettings.json` or `launchSettings.json` file.
 
 ## Authentication
 
