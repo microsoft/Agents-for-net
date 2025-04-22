@@ -24,19 +24,8 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "ConnectionName": "{{ConnectionName}}",
-   
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}"
-      },
-
       "Connections": {
           "ServiceConnection": {
-          "Assembly": "Microsoft.Agents.Authentication.Msal",
-          "Type":  "MsalAuth",
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -55,14 +44,7 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
-1. Update `appsettings.json` 
-
-   | Property             | Value Description     | 
-   |----------------------|-----------|
-   | ConnectionName       | Set the configured bot's OAuth connection name.      |
-    
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and update it to match your DevTunnel port. If `./Properties/launchSettings.json` is not found, close and re-open the solution to allow `launchSettings.json` to be re-created.
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous
