@@ -8,6 +8,8 @@
   
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+
+	  <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)\build\targets\SetEnvironmentVars.targets" Condition="'$(RepoRoot)' != ''" />
