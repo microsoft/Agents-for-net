@@ -15,10 +15,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         public override JsonConverter CreateConverter(Type type, JsonSerializerOptions options) =>
             (JsonConverter)Activator.CreateInstance(
-                typeof(Array2DConverterInner<>).MakeGenericType(new[] { type.GetElementType() }),
+                typeof(Array2DConverterInner<>).MakeGenericType([type.GetElementType()]),
                 BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
-                args: new object[] { options },
+                args: [options],
                 culture: null);
 
         class Array2DConverterInner<T> : JsonConverter<T[,]>

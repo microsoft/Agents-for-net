@@ -91,11 +91,11 @@ namespace Microsoft.Agents.Builder.Dialogs
 
             ArgumentNullException.ThrowIfNull(dialog);
 
-            if (_dialogs.ContainsKey(dialog.Id))
+            if (_dialogs.TryGetValue(dialog.Id, out Dialog value))
             {
                 // If we are trying to add the same exact instance, it's not a name collision.
                 // No operation required since the instance is already in the dialog set.
-                if (_dialogs[dialog.Id] == dialog)
+                if (value == dialog)
                 {
                     return this;
                 }
