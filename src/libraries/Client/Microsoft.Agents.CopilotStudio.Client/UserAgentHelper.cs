@@ -8,7 +8,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
     internal static class UserAgentHelper
     {
         private static object _initLock = new object();
-        public static string ClientFileVersion { get; private set; }
+        public static string ClientFileVersion { get; private set; } = "unknown";
 
         public static string ClientName { get; private set; } = "CopilotStudioClient";
 
