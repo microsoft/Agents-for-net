@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// </summary>
     public class DialogSet
     {
-        private readonly IDictionary<string, Dialog> _dialogs = new Dictionary<string, Dialog>();
+        private readonly Dictionary<string, Dialog> _dialogs = new();
         private readonly DialogState _dialogState;
         private readonly IStatePropertyAccessor<DialogState> _dialogStateProperty;
         private string _version;
