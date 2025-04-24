@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
-            var storeName = provider.GetStoreName("test-name");
+            var storeName = X509StoreCertificateProvider.GetStoreName("test-name");
 
             Assert.Equal(StoreName.My, storeName);
         }
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
-            var storeName = provider.GetStoreName(null);
+            var storeName = X509StoreCertificateProvider.GetStoreName(null);
 
             Assert.Equal(StoreName.My, storeName);
         }
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
-            var storeName = provider.GetStoreName(StoreName.TrustedPeople.ToString());
+            var storeName = X509StoreCertificateProvider.GetStoreName(StoreName.TrustedPeople.ToString());
 
             Assert.Equal(StoreName.TrustedPeople, storeName);
         }

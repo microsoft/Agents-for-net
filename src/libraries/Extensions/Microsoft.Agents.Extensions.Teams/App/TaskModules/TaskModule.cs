@@ -263,12 +263,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
 
                 var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
 
-                if (!obj.ContainsKey("data"))
+                if (!obj.TryGetValue("data", out JsonElement value))
                 {
                     return Task.FromResult(false);
                 }
 
-                var data = JsonObject.Create(obj["data"]);
+                var data = JsonObject.Create(value);
 
                 bool isVerbMatch = data.TryGetPropertyValue(filter, out JsonNode filterField) && filterField.GetValueKind() == JsonValueKind.String
                     && isMatch(filterField.ToString());

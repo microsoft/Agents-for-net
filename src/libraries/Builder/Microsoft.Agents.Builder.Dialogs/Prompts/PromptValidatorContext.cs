@@ -52,12 +52,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         {
             get
             {
-                if (!State.ContainsKey(Prompt<T>.AttemptCountKey))
+                if (!State.TryGetValue(Prompt<T>.AttemptCountKey, out object value))
                 {
                     return 0;
                 }
 
-                return (int) State[Prompt<T>.AttemptCountKey];
+                return (int)value;
             }
         }
     }

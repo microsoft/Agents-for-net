@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                         innerExceptions.Add(emitErr);
                     }
 
-                    if (innerExceptions.Any())
+                    if (innerExceptions.Count != 0)
                     {
                         innerExceptions.Add(err);
                         throw new AggregateException("Unable to emit the error as a DialogEvent.", innerExceptions);
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 // Handle remote cancellation request from parent.
                 if (turnContext.Activity.Type == ActivityTypes.EndOfConversation)
                 {
-                    if (!dialogContext.Stack.Any())
+                    if (dialogContext.Stack.Count == 0)
                     {
                         // No dialogs to cancel, just return.
                         return new DialogTurnResult(DialogTurnStatus.Empty);
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 // Handle a reprompt event sent from the parent.
                 if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
                 {
-                    if (!dialogContext.Stack.Any())
+                    if (dialogContext.Stack.Count == 0)
                     {
                         // No dialogs to reprompt, just return.
                         return new DialogTurnResult(DialogTurnStatus.Empty);

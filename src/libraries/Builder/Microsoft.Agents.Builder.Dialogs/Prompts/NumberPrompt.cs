@@ -68,15 +68,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            ArgumentNullException.ThrowIfNull(options);
 
             if (isRetry && options.RetryPrompt != null)
             {
@@ -101,10 +95,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected override Task<PromptRecognizerResult<T>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             var result = new PromptRecognizerResult<T>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
@@ -179,7 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         {
             var number = NumberRecognizer.RecognizeNumber(utterance, culture);
 
-            if (number.Any())
+            if (number.Count != 0)
             {
                 // Result when it matches with a number recognizer
                 return number;
@@ -194,7 +185,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 results.Add(NumberWithUnitRecognizer.RecognizeDimension(utterance, culture));
 
                 // Filter the options that returned nothing and return the one that matched
-                return results.FirstOrDefault(r => r.Any()) ?? new List<ModelResult>();
+                return results.FirstOrDefault(r => r.Count != 0) ?? new List<ModelResult>();
             }
         }
     }

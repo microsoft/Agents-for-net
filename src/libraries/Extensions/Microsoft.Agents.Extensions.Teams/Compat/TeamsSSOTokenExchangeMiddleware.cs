@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity
@@ -179,13 +179,13 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                 var channelId = activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
-                var value = activity.Value.ToJsonElements();
-                if (value == null || !value.ContainsKey("id"))
+                var valueJ = activity.Value.ToJsonElements();
+                if (valueJ == null || !valueJ.TryGetValue("id", out global::System.Text.Json.JsonElement value))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");
                 }
 
-                return $"{channelId}/{conversationId}/{value["id"]}";
+                return $"{channelId}/{conversationId}/{value}";
             }
         }
     }

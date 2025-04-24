@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             get
             {
-                if (Stack.Any())
+                if (Stack.Count != 0)
                 {
                     return Stack.First();
                 }
@@ -206,10 +206,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                     throw new ArgumentNullException(nameof(dialogId));
                 }
 
-                if (options == null)
-                {
-                    throw new ArgumentNullException(nameof(options));
-                }
+                ArgumentNullException.ThrowIfNull(options);
 
                 return await BeginDialogAsync(dialogId, options, cancellationToken).ConfigureAwait(false);
             }
@@ -401,7 +398,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
                 eventName = eventName ?? DialogEvents.CancelDialog;
 
-                if (Stack.Any() || Parent != null)
+                if (Stack.Count != 0 || Parent != null)
                 {
                     // Cancel all local and parent dialogs while checking for interception
                     var notify = false;
@@ -409,7 +406,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
                     while (dialogContext != null)
                     {
-                        if (dialogContext.Stack.Any())
+                        if (dialogContext.Stack.Count != 0)
                         {
                             // Check to see if the dialog wants to handle the event
                             if (notify)
@@ -423,7 +420,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                             }
 
                             // End the active dialog
-                            await dialogContext.EndActiveDialogAsync(DialogReason.CancelCalled).ConfigureAwait(false);
+                            await dialogContext.EndActiveDialogAsync(DialogReason.CancelCalled, cancellationToken: cancellationToken).ConfigureAwait(false);
                         }
                         else
                         {

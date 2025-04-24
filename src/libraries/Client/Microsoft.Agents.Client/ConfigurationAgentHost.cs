@@ -378,15 +378,21 @@ namespace Microsoft.Agents.Client
             return null;
         }
 
-        private IAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)
+        private HttpAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)
         {
             var tokenProviderName = clientSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentTokenProviderNotFound, null, tokenProviderName, agentName);
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(
+                    ErrorHelper.AgentTokenProviderNotFound, null, tokenProviderName, agentName);
             }
 
-            return new HttpAgentClient(this, clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
+            return new HttpAgentClient(
+                this,
+                clientSettings,
+                _httpClientFactory,
+                tokenProvider,
+                (ILogger<HttpAgentClient>)_serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
         }
     }
 }

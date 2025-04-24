@@ -496,7 +496,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnQuery() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                IDictionary<string, object> parameters = new Dictionary<string, object>();
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
                 foreach (MessagingExtensionParameter parameter in messagingExtensionQuery.Parameters)
                 {
                     parameters.Add(parameter.Name, parameter.Value);

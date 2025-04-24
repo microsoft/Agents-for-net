@@ -801,7 +801,7 @@ namespace Microsoft.Agents.Builder.App
         /// <typeparam name="TExtension"></typeparam>
         /// <param name="extension"></param>
         /// <param name="extensionRegistration"></param>
-        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+        public static void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
             where TExtension : IAgentExtension
         {
             ArgumentNullException.ThrowIfNull(extensionRegistration);

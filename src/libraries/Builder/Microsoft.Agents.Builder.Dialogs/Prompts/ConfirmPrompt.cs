@@ -124,15 +124,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            ArgumentNullException.ThrowIfNull(options);
 
             // Format prompt to send
             IActivity prompt;
@@ -176,10 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             PromptOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             var result = new PromptRecognizerResult<bool>();
             if (turnContext.Activity.Type == ActivityTypes.Message)

@@ -244,10 +244,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                     var culturePrefix = cultureCode.Split('-').First();
                     var fallbackLocales = SupportedLocales.Where(locale => locale.StartsWith(culturePrefix, StringComparison.Ordinal)).ToList();
 
-                    if (fallbackLocales.Any())
+                    if (fallbackLocales.Count != 0)
                     {
                         // Handle cases like EnglishOthers with cultureCode "en-*"
-                        if (fallbackLocales.FirstOrDefault(locale => locale.EndsWith("*", StringComparison.Ordinal)) is string genericLocale)
+                        if (fallbackLocales.FirstOrDefault(locale => locale.EndsWith('*')) is string genericLocale)
                         {
                             return genericLocale;
                         }

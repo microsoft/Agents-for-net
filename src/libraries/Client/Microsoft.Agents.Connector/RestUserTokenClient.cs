@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
-            _logger.LogInformation($"GetTokenAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("GetAadTokensAsync ConnectionName: {ConnectionName}", connectionName);
             return await _userTokenClient.GetTokenAsync(userId, connectionName, channelId, magicCode, cancellationToken).ConfigureAwait(false);
         }
 
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _logger.LogInformation($"GetSignInResourceAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("ExchangeAsyncAsync ConnectionName: {ConnectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
             return await _agentSignInClient.GetSignInResourceAsync(state, null, null, finalRedirect, cancellationToken).ConfigureAwait(false);
         }
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
-            _logger.LogInformation($"SignOutAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("SignOutAsync ConnectionName: {ConnectionName}", connectionName);
             await _userTokenClient.SignOutAsync(userId, connectionName, channelId, cancellationToken).ConfigureAwait(false);
         }
 
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
-            _logger.LogInformation($"GetAadTokensAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("GetAadTokensAsync ConnectionName: {connectionName}", connectionName);
             return (Dictionary<string, TokenResponse>)await _userTokenClient.GetAadTokensAsync(userId, connectionName, new AadResourceUrls() { ResourceUrls = resourceUrls?.ToList() }, channelId, cancellationToken).ConfigureAwait(false);
         }
 
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Connector
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
 
-            _logger.LogInformation($"ExchangeAsyncAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("ExchangeAsyncAsync ConnectionName: {connectionName}", connectionName);
             var result = await _userTokenClient.ExchangeAsyncAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
             if (result == null)
             {
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Connector
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetTokenOrSignInResourceAsync));
             ArgumentNullException.ThrowIfNull(activity);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            _logger.LogInformation($"GetTokenOrSignInResourceAsync ConnectionName: {connectionName}");
+            _logger.LogInformation("GetTokenOrSignInResourceAsync ConnectionName: {ConnectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
             return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
         }

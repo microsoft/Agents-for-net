@@ -260,7 +260,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
             if (Settings.EnableDiagnostics)
             {
-                _logger.LogDebug($">>> SEND TO {req.RequestUri}");
+                _logger.LogDebug(">>> SEND TO {RequestUri}", req.RequestUri);
             }
 
             using HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -308,7 +308,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     {
                         sb.Append($"{item1} | ");
                     }
-                    _logger.LogDebug($"{item.Key} = {sb.ToString()}");
+                    _logger.LogDebug("{Key} = {Value}", item.Key, sb.ToString());
                 }
                 _logger.LogDebug("=====================================================");
             }
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "activity")
                 {
                     string jsonRaw = line[6..];
-                    _logger.LogTrace(jsonRaw);
+                    _logger.LogTrace("{json}",jsonRaw);
                     Activity activity = ProtocolJsonSerializer.ToObject<Activity>(jsonRaw);
                     switch (activity.Type)
                     {

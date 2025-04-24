@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Setup AgentApplication
             var app = new AgentApplication(new AgentApplicationOptions(_storage));
-            app.RegisterExtension(new AgentResponses(app, _agentHost), (extension) =>
+            AgentApplication.RegisterExtension(new AgentResponses(app, _agentHost), (extension) =>
             {
                 extension.OnAgentReply((turnContext, turnState, reference, agentActivity, cancellationToken) =>
                 {

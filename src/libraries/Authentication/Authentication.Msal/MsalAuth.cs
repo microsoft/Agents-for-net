@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Authentication.Msal
                     foreach (var scope in _connectionSettings.Scopes)
                     {
                         var scopePlaceholder = scope;
-                        if (scopePlaceholder.ToLower().Contains("{instance}"))
+                        if (scopePlaceholder.Contains("{instance}", StringComparison.CurrentCultureIgnoreCase))
                         {
                             scopePlaceholder = scopePlaceholder.Replace("{instance}", $"{instanceUrl.Scheme}://{instanceUrl.Host}");
                         }

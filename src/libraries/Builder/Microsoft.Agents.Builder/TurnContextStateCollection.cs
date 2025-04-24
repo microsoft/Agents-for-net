@@ -22,24 +22,28 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Gets a cached value by name from the turn's context.
+        /// Gets the default value by type from the turn's context.
         /// </summary>
         /// <typeparam name="T">The type of the object.</typeparam>
-        /// <param name="key">The name of the object.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="key"/> is null.</exception>
-        /// <returns>The object; or null if no service is registered by the key, or
-        /// the retrieved object does not match the object type.</returns>
+        /// <returns>The object; or null if no default service of the type is registered.</returns>
+        /// <remarks>The default service key is the <see cref="Type.FullName"/> of the object type.</remarks>
+        public T Get<T>()
+            where T : class
+        {
+            return Get<T>(typeof(T).FullName);
+        }
+
+        /// <summary>
+        /// Gets the default value by type from the turn's context.
+        /// </summary>
+        /// <typeparam name="T">The type of the object.</typeparam>
+        /// <returns>The object; or null if no default service of the type is registered.</returns>
+        /// <remarks>The default service key is the <see cref="Type.FullName"/> of the object type.</remarks>
         public T Get<T>(string key)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(Get));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, nameof(Get));
 
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(key);
 
             if (TryGetValue(key, out var service))
             {
@@ -54,18 +58,6 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Gets the default value by type from the turn's context.
-        /// </summary>
-        /// <typeparam name="T">The type of the object.</typeparam>
-        /// <returns>The object; or null if no default service of the type is registered.</returns>
-        /// <remarks>The default service key is the <see cref="Type.FullName"/> of the object type.</remarks>
-        public T Get<T>()
-            where T : class
-        {
-            return Get<T>(typeof(T).FullName);
-        }
-
-        /// <summary>
         /// Set a value to the turn's context.
         /// </summary>
         /// <typeparam name="T">The type of the object.</typeparam>
@@ -74,15 +66,9 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="ArgumentNullException"><paramref name="key"/> or <paramref name="value"/>is null.</exception>
         public void Set<T>(string key, T value)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(Set));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, nameof(Set));
 
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(key);
 
             this[key] = value;
         }

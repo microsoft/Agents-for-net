@@ -320,7 +320,7 @@ namespace Microsoft.Agents.Client
             return activityClone;
         }
 
-        private IActivity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
+        private Activity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
         {
             return new Activity()
             {

@@ -3,8 +3,9 @@
 		<!-- Enabled Documentation for Libs folder-->
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>$(NoWarn);CS1591;CS1572;CS1574</NoWarn>
-		<AnalysisLevel>latest-recommended</AnalysisLevel>
+		<AnalysisLevel>latest-minimum</AnalysisLevel>
 		<AnalysisMode>recommended</AnalysisMode>
+		<NeutralLanguage>en</NeutralLanguage>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">

@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
                 case 404:
-                    var json = await httpResponse.Content.ReadAsStringAsync();
+                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
                     return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                 default:
                     throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");

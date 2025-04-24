@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) => {
+            AgentApplication.RegisterExtension(extension, (ext) => {
                 ext.Meetings.OnStart((context, _, _, _) =>
                 {
                     ids.Add(context.Activity.Id);
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.RegisterExtension(extension, (ext) => {
+            AgentApplication.RegisterExtension(extension, (ext) => {
                 ext.Meetings.OnEnd((context, _, _, _) =>
                 {
                     ids.Add(context.Activity.Id);
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.RegisterExtension(extension, (ext) => {
+            AgentApplication.RegisterExtension(extension, (ext) => {
                 ext.Meetings.OnParticipantsJoin((context, _, _, _) =>
                 {
                     ids.Add(context.Activity.Id);
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
 
-            app.RegisterExtension(extension, (ext) => {
+            AgentApplication.RegisterExtension(extension, (ext) => {
                 ext.Meetings.OnParticipantsLeave((context, _, _, _) =>
                 {
                     ids.Add(context.Activity.Id);

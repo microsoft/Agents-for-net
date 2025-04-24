@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnFetch("test-verb", handler);
             });
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnFetch("test-verb", handler);
             });
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnFetch(routeSelector, handler);
             });
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnSubmit("test-verb", handler);
             });
@@ -283,7 +283,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnSubmit("test-verb", handler);
             });
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.TaskModules.OnSubmit(routeSelector, handler);
             });

@@ -239,10 +239,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns>Team Details.</returns>
         public static async Task<Tuple<ConversationReference, string>> SendMessageToTeamsChannelAsync(ITurnContext turnContext, IActivity activity, string teamsChannelId, string agentAppId, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             if (turnContext.Activity == null)
             {
@@ -482,7 +479,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             return teamsPagedMemberResults;
         }
 
-        private static ITeamsConnectorClient GetTeamsConnectorClient(ITurnContext turnContext)
+        private static RestTeamsConnectorClient GetTeamsConnectorClient(ITurnContext turnContext)
         {
             var connectorClient = GetConnectorClient(turnContext);
             if (connectorClient is IRestTransport withTransport)
@@ -491,7 +488,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             }
             else
             {
-                throw new InvalidOperationException("ITeamsConnectorClient is not available.  The registered ConnectorClient does not support IRestTransport");
+                throw new InvalidOperationException("RestTeamsConnectorClient is not available. The registered ConnectorClient does not support IRestTransport");
             }
         }
     }

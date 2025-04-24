@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Authentication
     {
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IList<ConnectionMapItem> _map;
+        private readonly List<ConnectionMapItem> _map;
         private readonly ILogger<ConfigurationConnections> _logger;
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Authentication
 
             _connections = configuration
                 .GetSection(connectionsKey)
-                .Get<Dictionary<string, ConnectionDefinition>>() ?? [];
+                .Get<Dictionary<string, ConnectionDefinition>>() ?? new Dictionary<string, ConnectionDefinition>();
             if (_connections.Count == 0)
             {
                 _logger.LogWarning("No connections found in configuration.");
@@ -59,13 +59,13 @@ namespace Microsoft.Agents.Authentication
 
             _map = configuration
                 .GetSection(mapKey)
-                .Get<List<ConnectionMapItem>>() ?? [];
-            if (!_map.Any())
+                .Get<List<ConnectionMapItem>>() ?? new List<ConnectionMapItem>();
+            if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map found in configuration.");
                 if (_connections.Count == 1)
                 {
-                    _map.Add(new ConnectionMapItem() {  ServiceUrl = "*", Connection = _connections.First().Key });
+                    _map.Add(new ConnectionMapItem() { ServiceUrl = "*", Connection = _connections.First().Key });
                 }
             }
 
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Authentication
 
         public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
         {
-            _connections = [];
+            _connections = new Dictionary<string, ConnectionDefinition>();
             if (accessTokenProviders != null)
             {
                 foreach (var provider in accessTokenProviders)
@@ -93,8 +93,8 @@ namespace Microsoft.Agents.Authentication
                 _logger.LogWarning("No connections provided");
             }
 
-            _map = connectionMapItems == null ? [] : [.. connectionMapItems];
-            if (!_map.Any())
+            _map = connectionMapItems == null ? new List<ConnectionMapItem>() : new List<ConnectionMapItem>(connectionMapItems);
+            if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map provided");
                 if (_connections.Count == 1)
@@ -130,7 +130,7 @@ namespace Microsoft.Agents.Authentication
             // if no connections, abort and return null.
             if (_connections.Count == 0)
             {
-                _logger.LogError(ErrorHelper.MissingAuthenticationConfiguration.description);
+                _logger.LogError("{ErrorDescription}", ErrorHelper.MissingAuthenticationConfiguration.description);
                 throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.MissingAuthenticationConfiguration, null);
             }
 
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Authentication
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentException.ThrowIfNullOrEmpty(serviceUrl);
 
-            if (!_map.Any())
+            if (_map.Count == 0)
             {
                 return GetDefaultConnection();
             }

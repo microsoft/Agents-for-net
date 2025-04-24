@@ -351,7 +351,7 @@ namespace Microsoft.Agents.Builder
             });
         }
 
-        private void SetDefaults(ITurnContext turnContext)
+        private void SetDefaults(TurnContext turnContext)
         {
             _isTeamsChannel = string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase);
 

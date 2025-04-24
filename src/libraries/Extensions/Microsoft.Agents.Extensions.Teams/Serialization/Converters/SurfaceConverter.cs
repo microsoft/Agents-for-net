@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.Serialization.Converters
             JsonDocument.Parse(json).WriteTo(writer);
         }
 
-        private static Surface CreateMeetingStageSurfaceWithContentType(ContentType? contentType)
+        private static MeetingStageSurface<TaskModuleContinueResponse> CreateMeetingStageSurfaceWithContentType(ContentType? contentType)
         {
             switch (contentType)
             {

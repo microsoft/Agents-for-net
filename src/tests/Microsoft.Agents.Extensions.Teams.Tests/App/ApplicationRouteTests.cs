@@ -498,7 +498,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnConversationUpdate(TeamsConversationUpdateEvents.TeamRenamed, (context, _, _) =>
                 {
@@ -640,7 +640,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 var events = new[] { TeamsConversationUpdateEvents.TeamRenamed, TeamsConversationUpdateEvents.ChannelDeleted, ConversationUpdateEvents.MembersAdded };
                 
@@ -712,7 +712,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnMessageEdit((turnContext, _, _) =>
                 {
@@ -779,7 +779,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnMessageUndelete((turnContext, _, _) =>
                 {
@@ -849,7 +849,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnMessageDelete((turnContext, _, _) =>
                 {
@@ -933,7 +933,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnConfigFetch((turnContext, _, _, _) =>
                 {
@@ -1026,7 +1026,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnConfigSubmit((turnContext, _, configData, _) =>
                 {
@@ -1113,7 +1113,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnFileConsentAccept((turnContext, _, _, _) =>
                 {
@@ -1197,7 +1197,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnFileConsentDecline((turnContext, _, _, _) =>
                 {
@@ -1274,7 +1274,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnO365ConnectorCardAction((turnContext, _, _, _) =>
                 {
@@ -1324,7 +1324,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnTeamsReadReceipt((context, _, _, _) =>
                 {
@@ -1369,7 +1369,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.OnTeamsReadReceipt((context, _, _, _) =>
                 {

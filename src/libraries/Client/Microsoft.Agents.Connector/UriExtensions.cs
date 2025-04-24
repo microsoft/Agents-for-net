@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Connector
     {
         internal static Uri EnsureTrailingSlash(this Uri uri)
         {
-            if (uri == null) throw new ArgumentNullException(nameof(uri));
+            ArgumentNullException.ThrowIfNull(uri);
             string uriString = uri.ToString();
             if (!uriString.EndsWith('/'))
             {

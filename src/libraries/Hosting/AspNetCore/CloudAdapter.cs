@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 string resolvedErrorMessage = sbError.ToString();
                 
                 // Writing formatted exception message to log with error codes and help links. 
-                logger.LogError(resolvedErrorMessage);
+                logger.LogError("{resolvedErrorMessage}", resolvedErrorMessage);
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {

@@ -89,10 +89,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Ensure new version hash is computed
             _version = null;
 
-            if (dialog == null)
-            {
-                throw new ArgumentNullException(nameof(dialog));
-            }
+            ArgumentNullException.ThrowIfNull(dialog);
 
             if (_dialogs.ContainsKey(dialog.Id))
             {

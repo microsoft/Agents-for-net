@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+
 // Licensed under the MIT License.
 
 using System;
@@ -41,11 +42,23 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 }
                 if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
-                    throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
+                    if (string.IsNullOrEmpty(settings.EnvironmentId))
+                    {
+                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
+                    }
+                    if (string.IsNullOrEmpty(settings.EnvironmentId))
+                    {
+                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
+                    }
+                    if (string.IsNullOrEmpty(settings.EnvironmentId))
+                    {
+                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
+                    }
+                    throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
                 }
                 if (string.IsNullOrEmpty(settings.SchemaName))
                 {
-                    throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
+                    throw new ArgumentException("SchemaName must be provided", nameof(settings));
                 }
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
@@ -96,7 +109,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 }
                 else
                 {
-                    throw new ArgumentException("DirectConnectUrl is invalid");
+                    throw new ArgumentException("DirectConnectUrl is invalid");
+
                 }
             }
         }

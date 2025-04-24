@@ -57,10 +57,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 throw new ArgumentException($"{nameof(options)} cannot be a cancellation token");
             }
 
-            if (outerDc == null)
-            {
-                throw new ArgumentNullException(nameof(outerDc));
-            }
+            ArgumentNullException.ThrowIfNull(outerDc);
 
             await EnsureInitializedAsync(outerDc).ConfigureAwait(false);
 
@@ -383,9 +380,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             DialogState state;
 
-            if (instance.State.ContainsKey(PersistedDialogState))
+            if (instance.State.TryGetValue(PersistedDialogState, out object value))
             {
-                state = instance.State[PersistedDialogState] as DialogState;
+                state = value as DialogState;
             }
             else
             {

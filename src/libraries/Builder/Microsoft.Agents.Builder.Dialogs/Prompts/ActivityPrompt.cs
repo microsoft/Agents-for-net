@@ -56,10 +56,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             if (options is CancellationToken)
             {
@@ -109,10 +106,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             // Perform base recognition
             var instance = dc.ActiveDialog;
@@ -236,15 +230,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            ArgumentNullException.ThrowIfNull(options);
 
             if (isRetry && options.RetryPrompt != null)
             {

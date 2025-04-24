@@ -71,10 +71,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 throw new ArgumentException($"{nameof(options)} cannot be a cancellation token");
             }
 
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             // Initialize waterfall state
             var state = dc.ActiveDialog.State;
@@ -109,10 +106,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// return value.</remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             // Don't do anything for non-message activities.
             if (dc.Context.Activity.Type != ActivityTypes.Message)
@@ -136,10 +130,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public override async Task<DialogTurnResult> ResumeDialogAsync(DialogContext dc, DialogReason reason, object result, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             // Increment step index and run step
             var state = dc.ActiveDialog.State;
@@ -224,10 +215,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         protected async Task<DialogTurnResult> RunStepAsync(DialogContext dc, int index, DialogReason reason, object result, CancellationToken cancellationToken)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             if (index < _steps.Count)
             {
@@ -263,7 +251,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             var stepName = _steps[index].Method.Name;
 
             // Default stepname for lambdas
-            if (string.IsNullOrWhiteSpace(stepName) || stepName.Contains("<"))
+            if (string.IsNullOrWhiteSpace(stepName) || stepName.Contains('<'))
             {
                 stepName = $"Step{index + 1}of{_steps.Count}";
             }

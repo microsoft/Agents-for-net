@@ -213,10 +213,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         private static BeginSkillDialogOptions ValidateBeginDialogArgs(object options)
         {
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            ArgumentNullException.ThrowIfNull(options);
 
             if (!(options is BeginSkillDialogOptions dialogArgs))
             {

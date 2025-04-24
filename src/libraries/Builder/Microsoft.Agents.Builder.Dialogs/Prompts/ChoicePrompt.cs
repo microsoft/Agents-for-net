@@ -120,15 +120,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            ArgumentNullException.ThrowIfNull(options);
 
             var culture = DetermineCulture(turnContext.Activity);
 
@@ -171,10 +165,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             PromptOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             var choices = options.Choices ?? new List<Choice>();
 

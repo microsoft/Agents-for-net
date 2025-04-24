@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 
                 if (config.AuthType == Model.AuthTypes.CertificateSubjectName)
                 {
-                    logger.LogInformation($"Reading certificate SubjectName - {config.CertificateSubjectName}");
+                    logger.LogInformation("Reading certificate SubjectName - {config.CertificateSubjectName}", config.CertificateSubjectName);
                     X509Certificate2Collection signingCerts = store.Certificates.Find(X509FindType.FindBySubjectName, config.CertificateSubjectName, config.ValidCertificateOnly);
                     if (signingCerts.Count > 0)
                     {
@@ -40,16 +40,16 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 
                     if (cert == null)
                     {
-                        logger.LogError($"Could not find certificate SubjectName - {config.CertificateSubjectName}");
+                        logger.LogError("Could not find certificate SubjectName - {config.CertificateSubjectName}", config.CertificateSubjectName);
                     }
                     else
                     {
-                        logger.LogInformation($"Completed reading certificate SubjectName - {config.CertificateSubjectName}");
+                        logger.LogInformation("Completed reading certificate SubjectName - {config.CertificateSubjectName}", config.CertificateSubjectName);
                     }
                 }
                 else
                 {
-                    logger.LogInformation($"Reading certificate Thumbprint - {config.CertificateThumbPrint}");
+                    logger.LogInformation("Reading certificate Thumbprint - {config.CertificateThumbPrint}", config.CertificateThumbPrint);
 
                     X509Certificate2Collection signingCerts = store.Certificates.Find(X509FindType.FindByThumbprint, config.CertificateThumbPrint, config.ValidCertificateOnly);
                     if (signingCerts.Count > 0)
@@ -59,11 +59,11 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
 
                     if (cert == null)
                     {
-                        logger.LogError($"Could not find certificate Thumbprint - {config.CertificateThumbPrint}");
+                        logger.LogError("Could not find certificate Thumbprint - {config.CertificateThumbPrint}", config.CertificateThumbPrint);
                     }
                     else
                     {
-                        logger.LogInformation($"Completed reading certificate Thumbprint - {config.CertificateThumbPrint}");
+                        logger.LogInformation("Completed reading certificate Thumbprint - {config.CertificateThumbPrint}", config.CertificateThumbPrint);
                     }
                 }
                 store.Close();
@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Authentication.Msal.Utils
         /// </summary>
         /// <param name="storeName"></param>
         /// <returns></returns>
-        public StoreName GetStoreName(string storeName)
+        public static StoreName GetStoreName(string storeName)
         {
             if (string.IsNullOrEmpty(storeName))
             {

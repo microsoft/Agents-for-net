@@ -21,10 +21,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <returns>A list of found choices, sorted by most relevant first.</returns>
         public static List<ModelResult<FoundChoice>> FindChoices(string utterance, IList<string> choices, FindChoicesOptions options = null)
         {
-            if (choices == null)
-            {
-                throw new ArgumentNullException(nameof(choices));
-            }
+            ArgumentNullException.ThrowIfNull(choices);
 
             return FindChoices(utterance, choices.Select(s => new Choice { Value = s }).ToList(), options);
         }
@@ -38,10 +35,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <returns>A list of found choices, sorted by most relevant first.</returns>
         public static List<ModelResult<FoundChoice>> FindChoices(string utterance, IList<Choice> choices, FindChoicesOptions options = null)
         {
-            if (choices == null)
-            {
-                throw new ArgumentNullException(nameof(choices));
-            }
+            ArgumentNullException.ThrowIfNull(choices);
 
             var opt = options ?? new FindChoicesOptions();
 

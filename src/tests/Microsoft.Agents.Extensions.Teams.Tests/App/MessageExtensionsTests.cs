@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Assert.Equal("test-content", actionData.Content);
                 return Task.FromResult(actionResponseMock.Object);
             };
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnSubmitAction("test-command", handler);
             });
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(actionResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnSubmitAction("not-test-command", handler);
             });
@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(actionResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnSubmitAction(routeSelector, handler);
             });
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(actionResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewEdit("test-command", handler);
             });
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(actionResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewEdit("not-test-command", handler);
             });
@@ -336,7 +336,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(actionResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewEdit(routeSelector, handler);
             });
@@ -398,7 +398,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewSend("test-command", handler);
             });
@@ -460,7 +460,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewSend("not-test-command", handler);
             });
@@ -499,8 +499,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.CompletedTask;
             };
-            
-            app.RegisterExtension(extension, (ext) =>
+
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewSend(routeSelector, handler);
             });
@@ -551,7 +551,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnFetchTask("test-command", handler);
             });
@@ -601,7 +601,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnFetchTask("not-test-command", handler);
             });
@@ -641,7 +641,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnFetchTask(routeSelector, handler);
             });
@@ -707,7 +707,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Assert.Equal(0, query.Skip);
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQuery("test-command", handler);
             });
@@ -769,7 +769,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQuery("not-test-command", handler);
             });
@@ -809,7 +809,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQuery(routeSelector, handler);
             });
@@ -860,7 +860,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnSelectItem(handler);
             });
@@ -915,7 +915,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnSelectItem(handler);
             });
@@ -970,7 +970,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQueryLink(handler);
             });
@@ -1014,8 +1014,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            
-            app.RegisterExtension(extension, (ext) =>
+
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQueryLink(handler);
             });
@@ -1071,7 +1071,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAnonymousQueryLink(handler);
             });
@@ -1116,7 +1116,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAnonymousQueryLink(handler);
             });
@@ -1164,8 +1164,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            
-            app.RegisterExtension(extension, (ext) =>
+
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQueryUrlSetting(handler);
             });
@@ -1209,7 +1209,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAnonymousQueryLink(handler);
             });
@@ -1261,7 +1261,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnConfigureSettings(handler);
             });
@@ -1305,7 +1305,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnConfigureSettings(handler);
             });
@@ -1350,7 +1350,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnCardButtonClicked(handler);
             });
@@ -1394,7 +1394,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 return Task.CompletedTask;
             };
 
-            app.RegisterExtension(extension, (ext) =>
+            AgentApplication.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnCardButtonClicked(handler);
             });

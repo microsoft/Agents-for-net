@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         /// Gets or sets card view render arguments.
         /// </summary>
         /// <value>Card view render arguments.</value>
-        public new object RenderArguments
+        public new static object RenderArguments
         { 
             get => null; 
             set { } 

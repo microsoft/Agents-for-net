@@ -102,8 +102,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             string token;
             try
@@ -139,8 +137,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, string handlerName, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             await auth.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }

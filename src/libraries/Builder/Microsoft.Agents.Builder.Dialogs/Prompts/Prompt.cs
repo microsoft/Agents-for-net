@@ -65,10 +65,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             if (options is CancellationToken)
             {
@@ -118,10 +115,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            ArgumentNullException.ThrowIfNull(dc);
 
             // Don't do anything for non-message activities
             if (dc.Context.Activity.Type != ActivityTypes.Message)
@@ -245,7 +239,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 var activeDialogState = dc.ActiveDialog.State;
                 var state = ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(activeDialogState[PersistedState]);
                 var options = ProtocolJsonSerializer.ToObject<PromptOptions>(activeDialogState[PersistedOptions]);
-                var recognized = await OnRecognizeAsync(dc.Context, state, options).ConfigureAwait(false);
+                var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
                 return recognized.Succeeded;
             }
 

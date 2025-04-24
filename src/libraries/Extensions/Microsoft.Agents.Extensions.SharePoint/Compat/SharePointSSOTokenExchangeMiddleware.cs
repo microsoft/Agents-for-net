@@ -49,10 +49,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
         /// sign on token exchange.</param>
         public SharePointSSOTokenExchangeMiddleware(IStorage storage, string connectionName)
         {
-            if (storage == null)
-            {
-                throw new ArgumentNullException(nameof(storage));
-            }
+            ArgumentNullException.ThrowIfNull(storage);
 
             if (string.IsNullOrEmpty(connectionName))
             {
@@ -122,7 +119,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity

@@ -36,11 +36,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>string which is unique SHA256 hash.</returns>
         public static string Hash(string text)
         {
-            using (var sha256Hash = SHA256.Create())
-            {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(text));
-                return Convert.ToBase64String(bytes);
-            }
+            byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(text));
+            return Convert.ToBase64String(bytes);
         }
 
         /// <summary>
