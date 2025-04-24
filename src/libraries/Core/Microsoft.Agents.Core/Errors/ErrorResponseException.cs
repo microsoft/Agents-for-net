@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Core.Errors
             string errorMessageToSend = string.Empty;
             if (errors != null && errors.Length > 0)
             {
-                errorMessageToSend = string.Format(message.description, errors);
+                errorMessageToSend = string.Format(System.Globalization.CultureInfo.InvariantCulture, message.description, errors);
             }
             else
             {

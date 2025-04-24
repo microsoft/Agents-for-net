@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Globalization;
 
 namespace Microsoft.Agents.Core.Errors
 {
@@ -36,9 +37,10 @@ namespace Microsoft.Agents.Core.Errors
     {
         public static T GenerateException<T>(AgentErrorDefinition errorDefinition, Exception innerException, params string[] messageFormat) where T : Exception
         {
+            var formattedMessage = string.Format(CultureInfo.InvariantCulture, errorDefinition.description, messageFormat);
             var excp = innerException != null
-                ? (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat), innerException })
-                : (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat) });
+                ? (T)Activator.CreateInstance(typeof(T), new object[] { formattedMessage, innerException })
+                : (T)Activator.CreateInstance(typeof(T), new object[] { formattedMessage });
 
             excp.HResult = errorDefinition.code;
             excp.HelpLink = errorDefinition.helplink;

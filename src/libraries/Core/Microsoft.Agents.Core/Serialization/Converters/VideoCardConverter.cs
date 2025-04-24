@@ -10,11 +10,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
     {
         protected override bool TryReadCollectionProperty(ref Utf8JsonReader reader, VideoCard value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.Buttons)))
+            if (propertyName.Equals(nameof(value.Buttons), System.StringComparison.Ordinal))
             {
                 SetCollection(ref reader, value.Buttons, options);
             }
-            else if (propertyName.Equals(nameof(value.Media)))
+            else if (propertyName.Equals(nameof(value.Media), System.StringComparison.Ordinal))
             {
                 SetCollection(ref reader, value.Media, options);
             }
@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, VideoCard value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.Value)))
+            if (propertyName.Equals(nameof(value.Value), System.StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.Value = data, options);
             }

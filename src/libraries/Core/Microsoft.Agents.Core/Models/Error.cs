@@ -3,9 +3,12 @@
 
 #nullable disable
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Object representing error information. </summary>
+    [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Error is a domain-specific term and widely used in this context.")]
     public class Error
     {
         /// <summary> Initializes a new instance of Error. </summary>

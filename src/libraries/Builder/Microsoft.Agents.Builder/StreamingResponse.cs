@@ -35,16 +35,16 @@ namespace Microsoft.Agents.Builder
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
     /// </remarks>
-    internal class StreamingResponse : IStreamingResponse
+    internal class StreamingResponse : IStreamingResponse, IDisposable
     {
         public static readonly int DefaultEndStreamTimeout = (int) TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private readonly TurnContext _context;
         private int _nextSequence = 1;
-        private bool _ended = false;
+        private bool _ended;
         private Timer _timer;
-        private bool _messageUpdated = false;
-        private bool _informativeSent = false;
+        private bool _messageUpdated;
+        private bool _informativeSent;
         private bool _isTeamsChannel;
 
         // Queue for outgoing activities
@@ -451,6 +451,21 @@ namespace Microsoft.Agents.Builder
                 {
                     StreamId = response.Id;
                 }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _timer?.Dispose();
+                _queueEmpty?.Dispose();
             }
         }
     }

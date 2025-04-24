@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json;
@@ -24,11 +25,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// <inheritdoc/>
         protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.ChannelData)))
+            if (propertyName.Equals(nameof(value.ChannelData), StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.ChannelData = data, options);
             }
-            else if (propertyName.Equals(nameof(value.Value)))
+            else if (propertyName.Equals(nameof(value.Value), StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.Value = data, options);
             }
@@ -50,7 +51,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// <inheritdoc/>
         protected override bool TryReadExtensionData(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options)
         {
-            if (!propertyName.Equals(nameof(value.Properties)))
+            if (!propertyName.Equals(nameof(value.Properties), StringComparison.Ordinal))
             {
                 return false;
             }
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// <inheritdoc/>
         protected override bool TryWriteExtensionData(Utf8JsonWriter writer, Activity value, string propertyName)
         {
-            if (!propertyName.Equals(nameof(value.Properties)))
+            if (!propertyName.Equals(nameof(value.Properties), StringComparison.Ordinal))
             {
                 return false;
             }

@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryReadExtensionData(ref Utf8JsonReader reader, ChannelAccount value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.Properties)))
+            if (propertyName.Equals(nameof(value.Properties), System.StringComparison.Ordinal))
             {
                 var propertyValue = System.Text.Json.JsonSerializer.Deserialize<object>(ref reader, options);
 
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryWriteExtensionData(Utf8JsonWriter writer, ChannelAccount value, string propertyName)
         {
-            if (propertyName.Equals(nameof(value.Properties)))
+            if (propertyName.Equals(nameof(value.Properties), System.StringComparison.Ordinal))
             {
                 foreach (var extensionData in value.Properties)
                 {

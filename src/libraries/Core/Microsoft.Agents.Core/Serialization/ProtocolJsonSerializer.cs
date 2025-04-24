@@ -159,8 +159,8 @@ namespace Microsoft.Agents.Core.Serialization
         {
             return string.Equals(
                     JsonSerializer.Serialize(value1, SerializationOptions),
-                    JsonSerializer.Serialize(value2, SerializationOptions)
-                );
+                    JsonSerializer.Serialize(value2, SerializationOptions), 
+                    StringComparison.Ordinal);
         }
 
         public static T CloneTo<T>(object obj)
@@ -173,9 +173,9 @@ namespace Microsoft.Agents.Core.Serialization
             return JsonSerializer.Serialize(value, SerializationOptions);
         }
 
-        public static ToT GetAs<ToT, FromT>(FromT source)
+        public static TToT GetAs<TToT, TFromT>(TFromT source)
         {
-            return JsonSerializer.Deserialize<ToT>(JsonSerializer.Serialize(source, SerializationOptions), SerializationOptions);
+            return JsonSerializer.Deserialize<TToT>(JsonSerializer.Serialize(source, SerializationOptions), SerializationOptions);
         }
     }
 }

@@ -22,11 +22,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, CardAction value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.ChannelData)))
+            if (propertyName.Equals(nameof(value.ChannelData), System.StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.ChannelData = data, options);
             }
-            else if (propertyName.Equals(nameof(value.Value)))
+            else if (propertyName.Equals(nameof(value.Value), System.StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.Value = data, options);
             }

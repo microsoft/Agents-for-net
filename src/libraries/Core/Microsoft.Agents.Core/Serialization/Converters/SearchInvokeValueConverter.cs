@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// <inheritdoc/>
         protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, SearchInvokeValue value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.Context)))
+            if (propertyName.Equals(nameof(value.Context), System.StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.Context = data, options);
             }

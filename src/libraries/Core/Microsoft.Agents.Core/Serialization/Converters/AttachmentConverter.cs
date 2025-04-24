@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, Attachment value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals(nameof(value.Content)))
+            if (propertyName.Equals(nameof(value.Content), System.StringComparison.Ordinal))
             {
                 SetGenericProperty(ref reader, data => value.Content = data, options);
             }
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryReadExtensionData(ref Utf8JsonReader reader, Attachment value, string propertyName, JsonSerializerOptions options)
         {
-            if (!propertyName.Equals(nameof(value.Properties)))
+            if (!propertyName.Equals(nameof(value.Properties), System.StringComparison.Ordinal))
             {
                 return false;
             }
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         protected override bool TryWriteExtensionData(Utf8JsonWriter writer, Attachment value, string propertyName)
         {
-            if (!propertyName.Equals(nameof(value.Properties)))
+            if (!propertyName.Equals(nameof(value.Properties), System.StringComparison.Ordinal))
             {
                 return false;
             }

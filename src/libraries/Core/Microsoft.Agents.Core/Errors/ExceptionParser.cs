@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Core.Errors
         private static void FormatExceptionMessage(string source, string targetSite, string message, string helpLink, int? errorCode, string stackTrace, StringBuilder sw, int level)
         {
             if (level != 0)
-                sw.AppendLine($"Inner Exception Level {level}\t: ");
+                sw.AppendLine(string.Format(CultureInfo.InvariantCulture, "Inner Exception Level {0}\t: ", level));
             if (errorCode.HasValue)
             {
                 if (level == 0)
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Core.Errors
             sw.AppendLine("Method: " + targetSite);
             sw.AppendLine("TimeStamp: " + DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
             sw.AppendLine("Error: " + message);
-            sw.AppendLine($"HelpLink Url: {helpLink}");
+            sw.AppendLine(string.Format(CultureInfo.InvariantCulture, "HelpLink Url: {0}", helpLink)); // Fixed CA1305
 #if DEBUG
             //TODO:
             // Update this code to use a setting or environment variable to control the output of the stack trace.

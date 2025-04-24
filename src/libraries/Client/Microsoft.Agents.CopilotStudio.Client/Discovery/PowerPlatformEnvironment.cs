@@ -3,6 +3,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Agents.CopilotStudio.Client.Discovery
@@ -29,7 +30,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 ConnectionSettings settings,
                 string? conversationId,
                 AgentType agentType = AgentType.Published,
-                PowerPlatformCloud cloud = PowerPlatformCloud.Prod, 
+                PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
@@ -42,18 +43,6 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 }
                 if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
-                    if (string.IsNullOrEmpty(settings.EnvironmentId))
-                    {
-                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
-                    }
-                    if (string.IsNullOrEmpty(settings.EnvironmentId))
-                    {
-                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
-                    }
-                    if (string.IsNullOrEmpty(settings.EnvironmentId))
-                    {
-                        throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
-                    }
                     throw new ArgumentException("EnvironmentId must be provided", nameof(settings));
                 }
                 if (string.IsNullOrEmpty(settings.SchemaName))
@@ -99,10 +88,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
                     // FIX for Missing Tenant ID
-                    if ( directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
+                    if (directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
                     {
                         // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
-                        settings.DirectConnectUrl = string.Empty; 
+                        settings.DirectConnectUrl = string.Empty;
                         return GetCopilotStudioConnectionUrl(settings, conversationId, agentType, cloud, cloudBaseAddress);
                     }
                     return CreateUri(directConnectUrl, conversationId);
@@ -126,7 +115,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <exception cref="ArgumentException"></exception>
         public static string GetTokenAudience(
             ConnectionSettings? settings,
-            PowerPlatformCloud cloud = PowerPlatformCloud.Unknown, 
+            PowerPlatformCloud cloud = PowerPlatformCloud.Unknown,
             string? cloudBaseAddress = default,
             string? directConnectUrl = default)
         {
@@ -171,7 +160,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 directConnectUrl ??= settings?.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    if ( DecodeCloudFromURI(new Uri(directConnectUrl)) == PowerPlatformCloud.Unknown)
+                    if (DecodeCloudFromURI(new Uri(directConnectUrl)) == PowerPlatformCloud.Unknown)
                     {
                         PowerPlatformCloud cloudToTest = settings?.Cloud ?? cloud;
 
@@ -242,9 +231,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
             }
             // if builder.path has /conversations, remove it
-            if (builder.Path.Contains("/conversations"))
+            if (builder.Path.Contains("/conversations", StringComparison.Ordinal))
             {
-                builder.Path = builder.Path.Substring(0, builder.Path.IndexOf("/conversations"));
+                builder.Path = builder.Path[..builder.Path.IndexOf("/conversations", StringComparison.Ordinal)];
             }
 
             if (string.IsNullOrEmpty(conversationId))
@@ -269,9 +258,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             {
                 throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
             }
-            cloudBaseAddress ??= "api.unknown.powerplatform.com";
+            cloudBaseAddress ??= "api.unknown.powerplatform.com";   
 
-            var normalizedResourceId = environmentId.ToLower().Replace("-", "");
+            // Fix for CA1304 and CA1311: Specify CultureInfo.InvariantCulture for ToLower
+            var normalizedResourceId = environmentId.ToLower(CultureInfo.InvariantCulture).Replace("-", "");
             var idSuffixLength = GetIdSuffixLength(cloud);
             var hexPrefix = normalizedResourceId.Substring(0, normalizedResourceId.Length - idSuffixLength);
             var hexSuffix = normalizedResourceId.Substring(normalizedResourceId.Length - idSuffixLength, idSuffixLength);
@@ -311,10 +301,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="hostUri">This is the URL to decode a Cloud from</param>
         /// <returns></returns>
-        private static PowerPlatformCloud DecodeCloudFromURI( Uri hostUri )
+        private static PowerPlatformCloud DecodeCloudFromURI(Uri hostUri)
         {
-            string Host = hostUri.Host.ToLower();
-            switch(Host)
+            string Host = hostUri.Host.ToLower(CultureInfo.InvariantCulture);
+            switch (Host)
             {
                 case "api.powerplatform.localhost":
                     return PowerPlatformCloud.Local;

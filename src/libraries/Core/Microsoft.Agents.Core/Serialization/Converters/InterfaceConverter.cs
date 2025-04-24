@@ -7,16 +7,16 @@ using System.Text.Json;
 
 namespace Microsoft.Agents.Core.Serialization.Converters
 {
-    public class InterfaceConverter<M, I> : JsonConverter<I> where M : class, I
+    public class InterfaceConverter<TM, TI> : JsonConverter<TI> where TM : class, TI
     {
-        public override I Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override TI Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return JsonSerializer.Deserialize<M>(ref reader, options);
+            return JsonSerializer.Deserialize<TM>(ref reader, options);
         }
 
-        public override void Write(Utf8JsonWriter writer, I value, JsonSerializerOptions options) 
+        public override void Write(Utf8JsonWriter writer, TI value, JsonSerializerOptions options) 
         { 
-            JsonSerializer.Serialize(writer, (M) value, options);
+            JsonSerializer.Serialize(writer, (TM) value, options);
         }
     }
 }
