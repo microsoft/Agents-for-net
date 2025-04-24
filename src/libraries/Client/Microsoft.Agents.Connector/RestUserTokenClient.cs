@@ -34,7 +34,14 @@ namespace Microsoft.Agents.Connector
         public RestUserTokenClient(string appId, Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestUserTokenClient), ILogger logger = null)
             : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
         {
+#if !NETSTANDARD
             ArgumentException.ThrowIfNullOrEmpty(appId);
+#else
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentException("AppId cannot be null or empty.", nameof(appId));
+            }
+#endif
 
             _appId = appId;
 
@@ -65,9 +72,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, string channelId, string magicCode, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetUserTokenAsync));
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GetUserTokenAsync));
+            }
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+#endif
 
             _logger.LogInformation($"GetTokenAsync ConnectionName: {connectionName}");
             return await _userTokenClient.GetTokenAsync(userId, connectionName, channelId, magicCode, cancellationToken).ConfigureAwait(false);
@@ -76,9 +98,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<SignInResource> GetSignInResourceAsync(string connectionName, IActivity activity, string finalRedirect, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetSignInResourceAsync));
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
             ArgumentNullException.ThrowIfNull(activity);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GetSignInResourceAsync));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+            if (activity == null)
+            {
+                throw new ArgumentNullException(nameof(activity));
+            }
+#endif
 
             _logger.LogInformation($"GetSignInResourceAsync ConnectionName: {connectionName}");
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
@@ -88,9 +125,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(SignOutUserAsync));
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(SignOutUserAsync));
+            }
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+#endif
 
             _logger.LogInformation($"SignOutAsync ConnectionName: {connectionName}");
             await _userTokenClient.SignOutAsync(userId, connectionName, channelId, cancellationToken).ConfigureAwait(false);
@@ -99,9 +151,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<TokenStatus[]> GetTokenStatusAsync(string userId, string channelId, string includeFilter, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetTokenStatusAsync));
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(channelId);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GetTokenStatusAsync));
+            }
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
+            }
+            if (string.IsNullOrEmpty(channelId))
+            {
+                throw new ArgumentException("ChannelId cannot be null or empty.", nameof(channelId));
+            }
+#endif
 
             _logger.LogInformation("GetTokenStatusAsync");
             var result = await _userTokenClient.GetTokenStatusAsync(userId, channelId, includeFilter, cancellationToken).ConfigureAwait(false);
@@ -111,9 +178,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, string channelId, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetAadTokensAsync));
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GetAadTokensAsync));
+            }
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+#endif
 
             _logger.LogInformation($"GetAadTokensAsync ConnectionName: {connectionName}");
             return (Dictionary<string, TokenResponse>)await _userTokenClient.GetAadTokensAsync(userId, connectionName, new AadResourceUrls() { ResourceUrls = resourceUrls?.ToList() }, channelId, cancellationToken).ConfigureAwait(false);
@@ -122,9 +204,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(ExchangeTokenAsync));
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(ExchangeTokenAsync));
+            }
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+#endif
 
             _logger.LogInformation($"ExchangeAsyncAsync ConnectionName: {connectionName}");
             var result = await _userTokenClient.ExchangeAsyncAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
@@ -150,9 +247,24 @@ namespace Microsoft.Agents.Connector
         /// <inheritdoc />
         public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default)
         {
+#if !NETSTANDARD
             ObjectDisposedException.ThrowIf(_disposed, nameof(GetTokenOrSignInResourceAsync));
             ArgumentNullException.ThrowIfNull(activity);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GetTokenOrSignInResourceAsync));
+            }
+            if (activity == null)
+            {
+                throw new ArgumentNullException(nameof(activity));
+            }
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
+            }
+#endif
             _logger.LogInformation($"GetTokenOrSignInResourceAsync ConnectionName: {connectionName}");
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
             return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);

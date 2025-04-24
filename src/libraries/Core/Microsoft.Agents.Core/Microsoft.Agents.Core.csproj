@@ -5,6 +5,7 @@
 		<ComponentAreaName>CplCore</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 

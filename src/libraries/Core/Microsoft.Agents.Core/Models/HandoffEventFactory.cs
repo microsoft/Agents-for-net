@@ -20,8 +20,14 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>handoff event.</returns>
         public static IActivity CreateHandoffInitiation(IActivity activity, object handoffContext, Transcript transcript = null)
         {
+#if !NETSTANDARD
             ArgumentNullException.ThrowIfNull(activity);
-
+#else
+            if (activity == null)
+            {
+                throw new ArgumentNullException(nameof(activity));
+            }
+#endif
             var handoffEvent = CreateHandoffEvent(HandoffEventNames.InitiateHandoff, handoffContext, activity.Conversation);
 
             handoffEvent.From = activity.From;
@@ -53,8 +59,19 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>handoff event.</returns>
         public static Activity CreateHandoffStatus(ConversationAccount conversation, string state, string message = null)
         {
+#if !NETSTANDARD2_0
             ArgumentNullException.ThrowIfNull(conversation);
             ArgumentException.ThrowIfNullOrWhiteSpace(state);
+#else
+            if (conversation == null)
+            {
+                throw new ArgumentNullException(nameof(conversation));
+            }
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                throw new ArgumentException("State cannot be null or empty.", nameof(state));
+            }
+#endif
 
             object value = new { state, message };
 
