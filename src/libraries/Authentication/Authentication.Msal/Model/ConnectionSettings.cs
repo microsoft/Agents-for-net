@@ -146,6 +146,16 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                         throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
                     }
                     break;
+                case AuthTypes.WorkloadIdentity:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
                 default:
                     break;
             }

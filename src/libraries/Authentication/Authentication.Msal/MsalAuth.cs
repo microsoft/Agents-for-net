@@ -225,6 +225,10 @@ namespace Microsoft.Agents.Authentication.Msal
                     }
                     cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
                 }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    // No need to do anything
+                }
                 else
                 {
                     throw new System.NotImplementedException();
