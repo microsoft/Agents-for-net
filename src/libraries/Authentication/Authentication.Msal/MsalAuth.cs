@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
                 {
-                    // No need to do anything
+                    // No need to do anything more, MSAL will resolve everything for WorkloadIdentity
                 }
                 else
                 {
