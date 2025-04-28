@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         public bool SendX5C { get; set; } = false;
 
         /// <summary>
-        /// Token path used for the workload identity, like the MSAL example for AKS
+        /// Token path used for the workload identity, like the MSAL example for AKS, equal to AZURE_FEDERATED_TOKEN_FILE 
         /// </summary>
         public string FederatedTokenFile { get; set; }
         
