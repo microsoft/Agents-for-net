@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
 
         public ConnectionSettings(IConfigurationSection msalConfigurationSection) : base(msalConfigurationSection)
         {
-            AssertionHelpers.ThrowIfNull(nameof(msalConfigurationSection), nameof(msalConfigurationSection));
+            AssertionHelpers.ThrowIfNull(msalConfigurationSection, nameof(msalConfigurationSection));
 
             if (msalConfigurationSection != null)
             {
