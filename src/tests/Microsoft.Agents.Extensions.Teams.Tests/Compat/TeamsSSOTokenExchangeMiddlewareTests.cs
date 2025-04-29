@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
         [Fact]
         public void Constructor_ShouldThrowOnEmptyConnectionName()
         {
-            Assert.Throws<ArgumentNullException>(() => new TeamsSSOTokenExchangeMiddleware(new MemoryStorage(), string.Empty));
+            Assert.Throws<ArgumentException>(() => new TeamsSSOTokenExchangeMiddleware(new MemoryStorage(), string.Empty));
         }
 
         [Fact]
