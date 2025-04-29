@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 // Handle a reprompt event sent from the parent.
                 if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
                 {
-                    if (dialogContext.Stack.Count != 0)
+                    if (dialogContext.Stack.Count == 0)
                     {
                         // No dialogs to reprompt, just return.
                         return new DialogTurnResult(DialogTurnStatus.Empty);
