@@ -107,7 +107,7 @@ This step will require permissions to Create application identities in your Azur
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
 1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
-2. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
+1. Configure the placeholder values for the various keys based on what was recorded during the setup phase.
 
 ```json
   "CopilotStudioClientSettings": {
