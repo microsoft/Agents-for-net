@@ -61,6 +61,9 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition OBOExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
 
         internal static AgentErrorDefinition AnonymousNotAllowed = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.AnonymousNotAllowed, "https://aka.ms/AgentsSDK-Error01");
+
+        // Extensions
+        internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

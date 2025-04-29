@@ -15,6 +15,7 @@ using Microsoft.Agents.CopilotStudio.Client.Discovery;
 using Microsoft.Agents.Core.Serialization;
 using System.Text;
 using System.Linq;
+using Microsoft.Agents.Core;
 
 [assembly: InternalsVisibleTo("Microsoft.Agents.CopilotStudio.Client.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67871e773a8fde8938c81dd402ba65b9201d60593e96c492651e889cc13f1415ebb53fac1131ae0bd333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307e8e33b8426143daec9f596836f97c8f74750e5975c64e2189f45def46b2a2b1247adc3652bf5c308055da9")]
 
@@ -180,14 +181,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
-#if !NETSTANDARD
-                ArgumentNullException.ThrowIfNull(activity);
-#else
-                if (activity == null)
-                {
-                    throw new ArgumentNullException(nameof(activity));
-                }
-#endif
+                AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
                 string localConversationId = "";
                 if (!string.IsNullOrEmpty(activity.Conversation?.Id))
                     localConversationId = activity.Conversation!.Id;
@@ -227,14 +222,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <exception cref="HttpRequestException"></exception>
         private async IAsyncEnumerable<IActivity> PostRequestAsync(HttpRequestMessage req, [EnumeratorCancellation] CancellationToken ct = default)
         {
-#if !NETSTANDARD
-            ArgumentNullException.ThrowIfNull(req);
-#else
-            if (req == null)
-            {
-                throw new ArgumentNullException(nameof(req));
-            }
-#endif
+            AssertionHelpers.ThrowIfNull(req, nameof(req));
 
             HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
@@ -264,26 +252,21 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 {
                     accessToken = await _tokenProviderFunction(string.Empty);
                 }
-#if !NETSTANDARD
-                ArgumentNullException.ThrowIfNull(req); // Dealing with the compiler warning.
-#else
-                if (req == null)
-                {
-                    throw new ArgumentNullException(nameof(req));
-                }
-#endif
+
+                AssertionHelpers.ThrowIfNull(req!, nameof(req));
+
                 if (!string.IsNullOrEmpty(accessToken))
                 {
-                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    req!.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 }
             }
 
             if (Settings.EnableDiagnostics)
             {
-                _logger.LogDebug($">>> SEND TO {req.RequestUri}");
+                _logger.LogDebug(">>> SEND TO {RequestUri}", req!.RequestUri);
             }
 
-            using HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+            using HttpResponseMessage resp = await httpClient.SendAsync(req!, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!resp.IsSuccessStatusCode)
             {
                 _logger.LogError("Error sending request: {Status}", resp.StatusCode);
@@ -332,7 +315,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     {
                         sb.Append($"{item1} | ");
                     }
-                    _logger.LogDebug($"{item.Key} = {sb.ToString()}");
+                    _logger.LogDebug("{HeaderKey} = {HeaderValues}", item.Key, sb.ToString());
                 }
                 _logger.LogDebug("=====================================================");
             }
@@ -363,7 +346,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 #else
                     string jsonRaw = line.Substring(6);
 #endif
-                    _logger.LogTrace(jsonRaw);
+                    _logger.LogTrace("Received JSON raw data: {JsonRaw}", jsonRaw);
                     Activity activity = ProtocolJsonSerializer.ToObject<Activity>(jsonRaw);
                     switch (activity.Type)
                     {

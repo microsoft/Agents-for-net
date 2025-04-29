@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -120,14 +121,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendToConversationAsync(string conversationId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateSendToConversationRequest(conversationId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -169,14 +163,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendConversationHistoryAsync(string conversationId, Transcript body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateSendConversationHistoryRequest(conversationId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -223,19 +210,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ResourceResponse> UpdateActivityAsync(string conversationId, string activityId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(activityId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(activityId))
-            {
-                throw new ArgumentException("ActivityId cannot be null or empty.", nameof(activityId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
             using var message = CreateUpdateActivityRequest(conversationId, activityId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -284,19 +260,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ResourceResponse> ReplyToActivityAsync(string conversationId, string activityId, IActivity body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(activityId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(activityId))
-            {
-                throw new ArgumentException("ActivityId cannot be null or empty.", nameof(activityId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateReplyToActivityRequest(conversationId, activityId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -344,19 +309,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task DeleteActivityAsync(string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(activityId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(activityId))
-            {
-                throw new ArgumentException("ActivityId cannot be null or empty.", nameof(activityId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
             using var message = CreateDeleteActivityRequest(conversationId, activityId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -387,15 +341,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<IReadOnlyList<ChannelAccount>> GetConversationMembersAsync(string conversationId, CancellationToken cancellationToken = default)
         {
-
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateGetConversationMembersRequest(conversationId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -431,19 +377,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ChannelAccount> GetConversationMemberAsync(string userId, string conversationId, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
             using var message = CreateGetConversationMemberRequest(conversationId, userId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -479,19 +414,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task DeleteConversationMemberAsync(string conversationId, string memberId, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(memberId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(memberId))
-            {
-                throw new ArgumentException("MemberId cannot be null or empty.", nameof(memberId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrEmpty(memberId, nameof(memberId));
 
             using var message = CreateDeleteConversationMemberRequest(conversationId, memberId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -523,14 +447,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default(int?), string continuationToken = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateGetConversationPagedMembersRequest(conversationId, pageSize, continuationToken);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -566,19 +483,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<IReadOnlyList<ChannelAccount>> GetActivityMembersAsync(string conversationId, string activityId, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-            ArgumentException.ThrowIfNullOrEmpty(activityId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-            if (string.IsNullOrEmpty(activityId))
-            {
-                throw new ArgumentException("ActivityId cannot be null or empty.", nameof(activityId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
             using var message = CreateGetActivityMembersRequest(conversationId, activityId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -618,14 +524,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ResourceResponse> UploadAttachmentAsync(string conversationId, AttachmentData body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(conversationId);
-#else
-            if (string.IsNullOrEmpty(conversationId))
-            {
-                throw new ArgumentException("ConversationId cannot be null or empty.", nameof(conversationId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
             using var message = CreateUploadAttachmentRequest(conversationId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -658,14 +557,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="errors"></param>
         private static Exception HandleExceptionResponse(HttpResponseMessage httpResponse, AgentErrorDefinition errorMessage, CancellationToken cancellationToken, params string[] errors)
         {
-#if !NETSTANDARD
-            ArgumentNullException.ThrowIfNull(httpResponse);
-#else
-            if (httpResponse == null)
-            {
-                throw new ArgumentNullException(nameof(httpResponse));
-            }
-#endif
+            AssertionHelpers.ThrowIfNull(httpResponse, nameof(httpResponse));
 
             var ex = ErrorResponseException.CreateErrorResponseException(httpResponse, errorMessage, cancellationToken: cancellationToken, errors: errors);
 

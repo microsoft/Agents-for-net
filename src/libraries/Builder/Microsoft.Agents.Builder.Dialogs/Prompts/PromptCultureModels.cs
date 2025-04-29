@@ -244,13 +244,15 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                     var culturePrefix = cultureCode.Split('-').First();
                     var fallbackLocales = SupportedLocales.Where(locale => locale.StartsWith(culturePrefix, StringComparison.Ordinal)).ToList();
 
-                    if (fallbackLocales.Any())
+                    if (fallbackLocales.Count > 0)
                     {
                         // Handle cases like EnglishOthers with cultureCode "en-*"
+#pragma warning disable CA1865 // Use char overload
                         if (fallbackLocales.FirstOrDefault(locale => locale.EndsWith("*", StringComparison.Ordinal)) is string genericLocale)
                         {
                             return genericLocale;
                         }
+#pragma warning restore CA1865 // Use char overload
 
                         // If there is no cultureCode like "-*", map only the prefix
                         // For example, "es-mx" will be mapped to "es-es"

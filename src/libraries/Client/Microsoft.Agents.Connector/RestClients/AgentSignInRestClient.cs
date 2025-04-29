@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -38,14 +39,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<string> GetSignInUrlAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(state);
-#else
-            if (string.IsNullOrEmpty(state))
-            {
-                throw new ArgumentException("State cannot be null or empty.", nameof(state));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
             using var message = CreateGetSignInUrlRequest(state, codeChallenge, emulatorUrl, finalRedirect);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -85,14 +79,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<SignInResource> GetSignInResourceAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(state);
-#else
-            if (string.IsNullOrEmpty(state))
-            {
-                throw new ArgumentException("State cannot be null or empty.", nameof(state));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
             using var message = CreateGetSignInResourceRequest(state, codeChallenge, emulatorUrl, finalRedirect);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);

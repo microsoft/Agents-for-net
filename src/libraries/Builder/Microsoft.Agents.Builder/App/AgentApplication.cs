@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Concurrent;
@@ -31,6 +32,8 @@ namespace Microsoft.Agents.Builder.App
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
+        
+        public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
         /// Creates a new AgentApplication instance.
@@ -38,7 +41,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="options">Optional. Options used to configure the application.</param>
         public AgentApplication(AgentApplicationOptions options)
         {
-            ArgumentNullException.ThrowIfNull(options);
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             Options = options;
 
@@ -117,8 +120,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(selector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             _routes.AddRoute(selector, handler, isInvokeRoute, rank, autoSignInHandler);
  
@@ -135,8 +138,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(type);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
             OnActivity(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -152,8 +155,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActivity(Regex typePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(typePattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type));
             OnActivity(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -169,8 +172,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActivity(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AddRoute(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
         }
@@ -185,8 +188,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActivity(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string type in routeSelectors.Strings)
@@ -221,8 +224,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public virtual AgentApplication OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(conversationUpdateEvent);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationUpdateEvent, nameof(conversationUpdateEvent));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             RouteSelector routeSelector;
             switch (conversationUpdateEvent)
@@ -270,8 +273,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public virtual AgentApplication OnConversationUpdate(RouteSelector conversationUpdateSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(conversationUpdateSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(conversationUpdateSelector, nameof(conversationUpdateSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             async Task<bool> wrapper(ITurnContext turnContext, CancellationToken cancellationToken)
             {
@@ -293,8 +296,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnConversationUpdate(string[] conversationUpdateEvents, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(conversationUpdateEvents);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(conversationUpdateEvents, nameof(conversationUpdateEvents));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             foreach (string conversationUpdateEvent in conversationUpdateEvents)
             {
                 OnConversationUpdate(conversationUpdateEvent, handler, rank, autoSignInHandler: autoSignInHandler);
@@ -319,14 +322,18 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessage(string text, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(text);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _)
                 => Task.FromResult
                 (
                     string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
                     && context.Activity?.Text != null
+#if !NETSTANDARD
                     && context.Activity.Text.Contains(text, StringComparison.OrdinalIgnoreCase)
+#else
+                    && context.Activity.Text.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0
+#endif
                 );
             OnMessage(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -349,8 +356,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessage(Regex textPattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(textPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _)
                 => Task.FromResult
                 (
@@ -375,8 +382,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessage(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AddRoute(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
         }
@@ -394,8 +401,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessage(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string text in routeSelectors.Strings)
@@ -430,14 +437,18 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnEvent(string eventName, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(eventName, nameof(eventName));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
                     string.Equals(ActivityTypes.Event, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
                     && context.Activity?.Name != null
+#if !NETSTANDARD
                     && context.Activity.Text.Contains(eventName, StringComparison.OrdinalIgnoreCase)
+#else
+                    && context.Activity.Text.IndexOf(eventName, StringComparison.OrdinalIgnoreCase) >= 0
+#endif
                 );
             OnEvent(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -453,8 +464,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnEvent(Regex namePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(namePattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
@@ -476,8 +487,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnEvent(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AddRoute(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
         }
@@ -491,7 +502,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
@@ -511,7 +522,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
@@ -531,7 +542,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnHandoff(HandoffHandler handler, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -562,7 +573,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnBeforeTurn(TurnEventHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _beforeTurn.Enqueue(handler);
             return this;
         }
@@ -577,7 +588,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnAfterTurn(TurnEventHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _afterTurn.Enqueue(handler);
             return this;
         }
@@ -592,12 +603,12 @@ namespace Microsoft.Agents.Builder.App
         /// </remarks>
         public AgentApplication OnTurnError(AgentApplicationTurnError handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _turnErrorHandlers.Enqueue(handler);
             return this;
         }
 
-        #endregion
+#endregion
 
         #region ShowTyping
         /// <summary>
@@ -654,8 +665,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-            ArgumentNullException.ThrowIfNull(turnContext.Activity);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
             try
             {
@@ -804,7 +815,13 @@ namespace Microsoft.Agents.Builder.App
         public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
             where TExtension : IAgentExtension
         {
-            ArgumentNullException.ThrowIfNull(extensionRegistration);
+            AssertionHelpers.ThrowIfNull(extensionRegistration, nameof(extensionRegistration));
+            if (RegisteredExtensions.Contains(extension))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ExtensionAlreadyRegistered, null, nameof(TExtension));
+            }
+            // TODO: add Logging event for extension registration
+            RegisteredExtensions.Add(extension);
             extensionRegistration(extension);
         }
         #endregion

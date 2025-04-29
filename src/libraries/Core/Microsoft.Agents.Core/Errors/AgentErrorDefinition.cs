@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Reflection;
 
 namespace Microsoft.Agents.Core.Errors
 {
@@ -62,8 +63,11 @@ namespace Microsoft.Agents.Core.Errors
             excp.HResult = errorDefinition.code;
 #else
             // HResult is not available in .NET Standard
-            // excp.HResult = errorDefinition.code;
-            excp.Data["HResult"] = errorDefinition.code;
+            var hResultProperty = excp.GetType().GetProperty("HResult", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (hResultProperty != null && hResultProperty.CanWrite)
+            {
+                hResultProperty.SetValue(excp, errorDefinition.code);
+            }
 #endif
             excp.HelpLink = errorDefinition.helplink;
             return excp;

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
@@ -115,7 +116,7 @@ namespace Microsoft.Agents.Builder.State
 
         public TurnState Add(IAgentState agentState)
         {
-            ArgumentNullException.ThrowIfNull(agentState);
+            AssertionHelpers.ThrowIfNull(agentState, nameof(agentState));
             _scopes.Add(agentState.Name, agentState);
             return this;
         }

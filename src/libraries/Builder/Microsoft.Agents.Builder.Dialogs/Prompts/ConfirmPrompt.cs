@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.Choice;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
@@ -124,15 +125,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             // Format prompt to send
             IActivity prompt;
@@ -176,10 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             PromptOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<bool>();
             if (turnContext.Activity.Type == ActivityTypes.Message)

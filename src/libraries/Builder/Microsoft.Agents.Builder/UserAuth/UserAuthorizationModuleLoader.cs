@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -11,17 +12,25 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+#if !NETSTANDARD
 using System.Runtime.Loader;
+#endif
 
 namespace Microsoft.Agents.Builder.UserAuth
 {
+#if !NETSTANDARD
     internal class UserAuthorizationModuleLoader( AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
-        
+#else
+    internal class UserAuthorizationModuleLoader( AppDomain loadContext, ILogger logger)
+    {
+        private readonly AppDomain _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
+#endif
+
         public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
+            AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
             if (string.IsNullOrEmpty(assemblyName))
             {
@@ -38,8 +47,12 @@ namespace Microsoft.Agents.Builder.UserAuth
             }
 
             // This throws for invalid assembly name.
+#if !NETSTANDARD
             Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
-
+#else
+            // This throws for invalid assembly name.
+            Assembly assembly = _loadContext.Load(assemblyName);
+#endif
             Type type = assembly.GetType(typeName);
             if (!IsValidProviderType(type))
             {
@@ -55,9 +68,13 @@ namespace Microsoft.Agents.Builder.UserAuth
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)
         {
-            ArgumentException.ThrowIfNullOrEmpty(assemblyName);
+            AssertionHelpers.ThrowIfNullOrEmpty(assemblyName, nameof(assemblyName));
 
+#if !NETSTANDARD
             Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+#else
+            Assembly assembly = _loadContext.Load(assemblyName);
+#endif
 
             foreach (Type loadedType in assembly.GetTypes())
             {

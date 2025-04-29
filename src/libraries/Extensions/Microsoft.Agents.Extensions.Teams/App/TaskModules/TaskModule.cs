@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -48,8 +49,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetch(string verb, FetchHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(verb);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verb, nameof(verb));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
@@ -64,8 +66,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetch(Regex verbPattern, FetchHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(verbPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelector routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
@@ -80,8 +82,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetch(RouteSelector routeSelector, FetchHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
@@ -114,8 +116,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetch(MultipleRouteSelector routeSelectors, FetchHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             if (routeSelectors.Strings != null)
             {
@@ -150,8 +152,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmit(string verb, SubmitHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(verb);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verb, nameof(verb));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
@@ -167,8 +169,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmit(Regex verbPattern, SubmitHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(verbPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelector routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
@@ -183,8 +185,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmit(RouteSelector routeSelector, SubmitHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
@@ -217,8 +219,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmit(MultipleRouteSelector routeSelectors, SubmitHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             if (routeSelectors.Strings != null)
             {
@@ -263,7 +265,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
 
                 var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
 
-                if (!obj.ContainsKey("data"))
+                if (!obj.TryGetValue("data", out var dataNode))
                 {
                     return Task.FromResult(false);
                 }

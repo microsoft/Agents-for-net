@@ -714,7 +714,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             if (SendAssert != null)
             {
+#if !NETFRAMEWORK
                 var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+#else
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStringAsync().Result);
+#endif
                 SendAssert(activity, _sendRequest);
             }
 

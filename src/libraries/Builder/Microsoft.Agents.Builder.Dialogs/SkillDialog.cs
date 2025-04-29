@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -213,10 +214,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         private static BeginSkillDialogOptions ValidateBeginDialogArgs(object options)
         {
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             if (!(options is BeginSkillDialogOptions dialogArgs))
             {

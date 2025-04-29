@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Extensions.SharePoint.Compat;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Extensions.SharePoint
 {
@@ -49,10 +50,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
         /// sign on token exchange.</param>
         public SharePointSSOTokenExchangeMiddleware(IStorage storage, string connectionName)
         {
-            if (storage == null)
-            {
-                throw new ArgumentNullException(nameof(storage));
-            }
+            AssertionHelpers.ThrowIfNull(storage, nameof(storage));
 
             if (string.IsNullOrEmpty(connectionName))
             {
@@ -122,7 +120,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity

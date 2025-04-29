@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 
@@ -72,15 +73,8 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             IList<BaseCardComponent> footer)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
 
             ValidateGenericCardViewFooterConfiguration(footer);
 
@@ -114,20 +108,9 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             IList<BaseCardComponent> footer)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-
-            if (body == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
+            AssertionHelpers.ThrowIfNull(body, nameof(body));
 
             ValidateGenericCardViewFooterConfiguration(footer);
 
@@ -162,20 +145,9 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             CardImage image)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-
-            if (image == null)
-            {
-                throw new ArgumentNullException(nameof(image));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
+            AssertionHelpers.ThrowIfNull(image, nameof(image));
 
             ValidateGenericCardViewFooterConfiguration(footer);
 
@@ -213,20 +185,9 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             CardImage image)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-
-            if (body == null)
-            {
-                throw new ArgumentNullException(nameof(body));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
+            AssertionHelpers.ThrowIfNull(image, nameof(image));
 
             if (footer.Count > 2)
             {
@@ -265,25 +226,10 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             CardSearchFooterComponent footer)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-
-            if (body == null)
-            {
-                throw new ArgumentNullException(nameof(body));
-            }
-
-            if (footer == null)
-            {
-                throw new ArgumentNullException(nameof(footer));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
+            AssertionHelpers.ThrowIfNull(body, nameof(body));
+            AssertionHelpers.ThrowIfNull(footer, nameof(footer));
 
             return new CardViewParameters()
             {
@@ -310,25 +256,10 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             CardButtonComponent footer)
         {
             // Validate parameters
-            if (cardBar == null)
-            {
-                throw new ArgumentNullException(nameof(cardBar));
-            }
-
-            if (header == null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-
-            if (body == null)
-            {
-                throw new ArgumentNullException(nameof(body));
-            }
-
-            if (footer == null)
-            {
-                throw new ArgumentNullException(nameof(footer));
-            }
+            AssertionHelpers.ThrowIfNull(cardBar, nameof(cardBar));
+            AssertionHelpers.ThrowIfNull(header, nameof(header));
+            AssertionHelpers.ThrowIfNull(body, nameof(body));
+            AssertionHelpers.ThrowIfNull(footer, nameof(footer));
 
             return new CardViewParameters()
             {

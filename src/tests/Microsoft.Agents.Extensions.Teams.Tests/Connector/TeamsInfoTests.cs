@@ -1178,7 +1178,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             };
 
                             response.Content = new StringContent(JsonSerializer.Serialize(infos));
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.MultiStatus;
+#else
+                            response.StatusCode = (HttpStatusCode)207;
+#endif
                             break;
                         case "403":
                             response.Content = new StringContent("{\"error\":{\"code\":\"BotNotInConversationRoster\"}}");
@@ -1220,7 +1224,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1253,7 +1261,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1290,7 +1302,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1323,7 +1339,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1356,7 +1376,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1388,7 +1412,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;
@@ -1414,7 +1442,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "429":
                             response.Content = new StringContent("{\"error\":{\"code\":\"TooManyRequests\"}}");
+#if !NETFRAMEWORK
                             response.StatusCode = HttpStatusCode.TooManyRequests;
+#else
+                            response.StatusCode = (HttpStatusCode)429;
+#endif
                             break;
                         default:
                             response.StatusCode = HttpStatusCode.Accepted;

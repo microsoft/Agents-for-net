@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -54,29 +55,10 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            ArgumentException.ThrowIfNullOrEmpty(channelId);
-            ArgumentNullException.ThrowIfNull(exchangeRequest);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-            if (string.IsNullOrEmpty(connectionName))
-            {
-                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
-            }
-            if (string.IsNullOrEmpty(channelId))
-            {
-                throw new ArgumentException("ChannelId cannot be null or empty.", nameof(channelId));
-            }
-            if (exchangeRequest == null)
-            {
-                throw new ArgumentNullException(nameof(exchangeRequest));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
+            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNull(exchangeRequest, nameof(exchangeRequest));
 
             using var message = CreateExchangeRequest(userId, connectionName, channelId, exchangeRequest);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -133,19 +115,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<TokenResponse> GetTokenAsync(string userId, string connectionName, string channelId = null, string code = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-            if (string.IsNullOrEmpty(connectionName))
-            {
-                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
             using var message = CreateGetTokenRequest(userId, connectionName, channelId, code);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -192,19 +163,8 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, string channelId = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-            if (string.IsNullOrEmpty(connectionName))
-            {
-                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
             using var message = CreateGetAadTokensRequest(userId, connectionName, channelId, aadResourceUrls);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -246,14 +206,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<object> SignOutAsync(string userId, string connectionName = null, string channelId = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
             using var message = CreateSignOutRequest(userId, connectionName, channelId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -297,14 +250,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, string channelId = null, string include = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
             using var message = CreateGetTokenStatusRequest(userId, channelId, include);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -350,25 +296,10 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest body = null, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
 
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            ArgumentException.ThrowIfNullOrEmpty(channelId);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-            if (string.IsNullOrEmpty(connectionName))
-            {
-                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
-            }
-            if (string.IsNullOrEmpty(channelId))
-            {
-                throw new ArgumentException("ChannelId cannot be null or empty.", nameof(channelId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
+            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
 
             using var message = CreateExchangeTokenRequest(userId, connectionName, channelId, body);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -415,29 +346,10 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            ArgumentException.ThrowIfNullOrEmpty(channelId);
-            ArgumentException.ThrowIfNullOrEmpty(state);
-#else
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            }
-            if (string.IsNullOrEmpty(connectionName))
-            {
-                throw new ArgumentException("ConnectionName cannot be null or empty.", nameof(connectionName));
-            }
-            if (string.IsNullOrEmpty(channelId))
-            {
-                throw new ArgumentException("ChannelId cannot be null or empty.", nameof(channelId));
-            }
-            if (string.IsNullOrEmpty(state))
-            {
-                throw new ArgumentException("State cannot be null or empty.", nameof(state));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
+            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
             using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -446,10 +358,10 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
                 case 404:
-                    var json = await httpResponse.Content.ReadAsStringAsync();
 #if !NETSTANDARD
                     return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
+                    var json = await httpResponse.Content.ReadAsStringAsync();
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Builder
 {
@@ -48,7 +49,7 @@ namespace Microsoft.Agents.Builder
             string tokenServiceAudience = AuthenticationConstants.BotFrameworkScope,
             ILogger logger = null)
         {
-            ArgumentNullException.ThrowIfNull(configuration);
+            AssertionHelpers.ThrowIfNull(configuration, nameof(configuration));
 
             _logger = logger ?? NullLogger.Instance;
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
@@ -68,8 +69,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc />
         public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(serviceUrl);
-            ArgumentException.ThrowIfNullOrWhiteSpace(audience);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(serviceUrl, nameof(serviceUrl));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(audience, nameof(audience));
 
             // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
             return Task.FromResult<IConnectorClient>(new RestConnectorClient(
@@ -95,7 +96,7 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc />
         public Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false)
         {
-            ArgumentNullException.ThrowIfNull(claimsIdentity);
+            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
 
             var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 

@@ -56,11 +56,19 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (!string.IsNullOrWhiteSpace(Type))
                 {
+#if !NETSTANDARD
                     app.OnActivity(Type, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnActivity(Type, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler),app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
+#if !NETSTANDARD
                     app.OnActivity(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnActivity(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
@@ -79,11 +87,19 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (!string.IsNullOrWhiteSpace(Text))
                 {
+#if !NETSTANDARD
                     app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnMessage(Text, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
+#if !NETSTANDARD
                     app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnMessage(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
@@ -102,11 +118,19 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
+#if !NETSTANDARD
                     app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnEvent(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
+#if !NETSTANDARD
                     app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnEvent(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
@@ -125,7 +149,11 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
+#if !NETSTANDARD
                     app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+#else
+                    app.OnConversationUpdate(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+#endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
@@ -168,7 +196,11 @@ namespace Microsoft.Agents.Builder.App
         {
             try
             {
+#if !NETSTANDARD
                 delegateSelector = selectorMethod.CreateDelegate<T>(app);
+#else
+                delegateSelector = (T)selectorMethod.CreateDelegate(typeof(T), app);
+#endif
             }
             catch (ArgumentException ex)
             {
@@ -181,7 +213,11 @@ namespace Microsoft.Agents.Builder.App
         {
             try
             {
+#if !NETSTANDARD
                 delegateHandler = attributedMethod.CreateDelegate<T>(app);
+#else
+                delegateHandler = (T)attributedMethod.CreateDelegate(typeof(T), app);
+#endif
             }
             catch (ArgumentException ex)
             {

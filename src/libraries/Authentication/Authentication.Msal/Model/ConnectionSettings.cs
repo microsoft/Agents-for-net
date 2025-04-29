@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication.Msal.Interfaces;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using System;
 
@@ -16,7 +17,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
 
         public ConnectionSettings(IConfigurationSection msalConfigurationSection) : base(msalConfigurationSection)
         {
-            ArgumentNullException.ThrowIfNull(msalConfigurationSection);
+            AssertionHelpers.ThrowIfNull(nameof(msalConfigurationSection), nameof(msalConfigurationSection));
 
             if (msalConfigurationSection != null)
             {

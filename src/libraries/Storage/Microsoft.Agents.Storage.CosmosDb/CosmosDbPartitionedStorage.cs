@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
-using System.Runtime.InteropServices.JavaScript;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Storage.CosmosDb
 {
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <param name="cosmosDbStorageOptions">Cosmos DB partitioned storage configuration options.</param>
         public CosmosDbPartitionedStorage(CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            ArgumentNullException.ThrowIfNull(cosmosDbStorageOptions);
+            AssertionHelpers.ThrowIfNull(cosmosDbStorageOptions, nameof(cosmosDbStorageOptions));
 
             if (cosmosDbStorageOptions.CosmosDbEndpoint == null)
             {
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <inheritdoc/>
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(keys);
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             if (keys.Length == 0)
             {
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(changes);
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
             if (changes.Count == 0)
             {
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
-            ArgumentNullException.ThrowIfNull(changes);
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
             Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
             foreach (var change in changes)
@@ -267,7 +267,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <inheritdoc/>
         public async Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(keys);
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             if (keys.Length == 0)
             {
