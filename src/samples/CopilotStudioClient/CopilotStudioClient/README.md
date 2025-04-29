@@ -47,14 +47,6 @@ This step will require permissions to Create application identities in your Azur
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
 
-> [!TIP]
-> If you see the following error message:
-> ```sh
-> fail: Microsoft.Agents.CopilotStudio.Client.CopilotClient[0]
->      Error: {"code":"Forbidden","message":"The caller is not authorized to perform the request.","innererror":{"code":"InsufficientDelegatedPermissions","message":"Authorization denied: Application missing required delegated permissions: [CopilotStudio.Copilots.Invoke, All.All.ReadWrite]"}}
-> ```
-> You may also need to add the `Directory.ReadWrite.All` permission, found under `Microsoft APIs` -> `Microsoft Graph` -> `Delegated permissions` -> `Directory` -> `Directory.ReadWrite.All`. You will also need an admin to grant consent.
-
 ### Instructions - Configure the Example Application - User Interactive Login
 
 With the above information, you can now run the client `CopilostStudioClientSample`.
@@ -109,14 +101,6 @@ This step will require permissions to Create application identities in your Azur
 
 > [!TIP]
 > If you do not see `Power Platform API` in the list of API's your organization uses, you need to add the Power Platform API to your tenant. To do that, goto [Power Platform API Authentication](https://learn.microsoft.com/power-platform/admin/programmability-authentication-v2#step-2-configure-api-permissions) and follow the instructions on Step 2 to add the Power Platform Admin API to your Tenant
-
-> [!TIP]
-> If you see the following error message:
-> ```sh
-> fail: Microsoft.Agents.CopilotStudio.Client.CopilotClient[0]
->      Error: {"code":"Forbidden","message":"The caller is not authorized to perform the request.","innererror":{"code":"InsufficientDelegatedPermissions","message":"Authorization denied: Application missing required delegated permissions: [CopilotStudio.Copilots.Invoke, All.All.ReadWrite]"}}
-> ```
-> You may also need to add the `Directory.ReadWrite.All` permission, found under `Microsoft APIs` -> `Microsoft Graph` -> `Delegated permissions` -> `Directory` -> `Directory.ReadWrite.All`. You will also need an admin to grant consent.
 
 ### Instructions - Configure the Example Application - Service Principal Login
 
