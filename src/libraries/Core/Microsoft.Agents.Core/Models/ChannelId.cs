@@ -9,9 +9,12 @@ namespace Microsoft.Agents.Core.Models
 
         public ChannelId(string channelId)
         {
-            var split = channelId.Split(':');
-            Channel = split[0];
-            SubChannel = split.Length == 2 ? split[1] : null;
+            if (!string.IsNullOrEmpty(channelId))
+            {
+                var split = channelId.Split(':');
+                Channel = split[0];
+                SubChannel = split.Length == 2 ? split[1] : null;
+            }
         }
 
         public static bool operator == (ChannelId obj1, ChannelId obj2)
