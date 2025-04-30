@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             _httpMessageHandler = new TestHttpMessageHandler()
             {
-                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
             };
 
             _httpFactory = new Mock<IHttpClientFactory>();
@@ -714,7 +714,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             if (SendAssert != null)
             {
+#if !NETFRAMEWORK
                 var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+#else
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStringAsync().Result);
+#endif
                 SendAssert(activity, _sendRequest);
             }
 

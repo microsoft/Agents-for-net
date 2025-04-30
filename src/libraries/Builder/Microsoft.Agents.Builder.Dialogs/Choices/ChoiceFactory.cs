@@ -11,9 +11,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     /// <summary>
     /// Assists with formatting a message activity that contains a list of choices.
     /// </summary>
-#pragma warning disable CA1052 // Static holder types should be Static or NotInheritable (we can't change this without breaking binary compat)
     public class ChoiceFactory
-#pragma warning restore CA1052 // Static holder types should be Static or NotInheritable
     {
         /// <summary>
         /// Creates a message activity that includes a list of choices formatted based on the capabilities of a given channel.
@@ -21,7 +19,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <param name="channelId">A channel ID. The <see cref="Connector.Channels"/> class contains known channel IDs.</param>
         /// <param name="list">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="speak">Optional, the text to be spoken by your bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
         /// <param name="options">Optional, the formatting options to use when rendering as a list.</param>
         /// <returns>The created message activity.</returns>
         /// <remarks>The algorithm prefers to format the supplied list of choices as suggested actions but can decide
@@ -40,7 +38,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <param name="channelId">A channel ID. The <see cref="Connector.Channels"/> class contains known channel IDs.</param>
         /// <param name="list">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="speak">Optional, the text to be spoken by your bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
         /// <param name="options">Optional, the formatting options to use when rendering as a list.</param>
         /// <param name="conversationType">Optional, the type of the conversation.</param>
         /// <param name="toList">Optional, the list of recipients.</param>
@@ -102,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="speak">Optional, the text to be spoken by your bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
         /// <param name="options">Optional, the formatting options to use when rendering as a list.</param>
         /// <returns>The created message activity.</returns>
         public static IActivity Inline(IList<Choice> choices, string text = null, string speak = null, ChoiceFactoryOptions options = null)
@@ -156,7 +154,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
-        /// <param name="speak">Optional, the text to be spoken by your bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
         /// <param name="options">Optional, the formatting options to use when rendering as a list.</param>
         /// <returns>The created message activity.</returns>
         public static IActivity List(IList<string> choices, string text = null, string speak = null, ChoiceFactoryOptions options = null)
@@ -169,7 +167,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to render.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <param name="options">Optional, formatting options to tweak the rendering of the list.</param>
         /// <returns>An activity with choices as a numbered or bulleted list.</returns>
         public static IActivity List(IList<Choice> choices, string text = null, string speak = null, ChoiceFactoryOptions options = null)
@@ -215,7 +213,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">List of strings representing the choices to add.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <returns>An activity with choices as suggested actions.</returns>
         public static IActivity SuggestedAction(IList<string> choices, string text = null, string speak = null)
         {
@@ -227,7 +225,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">List of strings representing the choices to add.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <param name="toList">Optional, the list of recipients.</param>
         /// <returns>An activity with choices as suggested actions.</returns>
         public static IActivity SuggestedAction(IList<string> choices, string text = null, string speak = null, IList<string> toList = default)
@@ -240,7 +238,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to add.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <returns>An activity with choices as suggested actions.</returns>
         public static IActivity SuggestedAction(IList<Choice> choices, string text = null, string speak = null)
         {
@@ -253,7 +251,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to add.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <param name="toList">Optional, the list of recipients.</param>
         /// <returns>An activity with choices as suggested actions.</returns>
         public static IActivity SuggestedAction(IList<Choice> choices, string text = null, string speak = null, IList<string> toList = default)
@@ -267,7 +265,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// </summary>
         /// <param name="choices">The list of choices to add.</param>
         /// <param name="text">Optional, text of the message.</param>
-        /// <param name="speak">Optional, SSML text to be spoken by the bot on a speech-enabled channel.</param>
+        /// <param name="speak">Optional, SSML text to be spoken by the Agent on a speech-enabled channel.</param>
         /// <returns>An activity with choices as HeroCard with buttons.</returns>
         public static IActivity HeroCard(IList<Choice> choices, string text = null, string speak = null)
         {

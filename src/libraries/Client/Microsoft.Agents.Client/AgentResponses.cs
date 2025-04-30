@@ -91,7 +91,11 @@ namespace Microsoft.Agents.Client
             agentApplication.OnTurnError(async (turnContext, turnState, exception, cancellationToken) => await errorHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false));
         }
 
+#if !NETSTANDARD
         public string ChannelId { get; init; } = "*";
+#else
+        public string ChannelId { get; set; } = "*";
+#endif
 
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
         {

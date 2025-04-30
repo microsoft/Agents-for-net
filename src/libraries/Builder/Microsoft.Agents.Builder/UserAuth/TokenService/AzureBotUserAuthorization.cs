@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Handles user authentication using The Azure Bot Token Service.
+    /// Handles user authentication using the Token Service.
     /// </summary>
     public class AzureBotUserAuthorization : IUserAuthorization
     {
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             */
 
-            if (_botAuthentication != null && (_botAuthentication.IsValidActivity(turnContext) || forceSignIn))
+            if (_botAuthentication != null && (forceSignIn || _botAuthentication.IsValidActivity(turnContext)))
             {
                 var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);

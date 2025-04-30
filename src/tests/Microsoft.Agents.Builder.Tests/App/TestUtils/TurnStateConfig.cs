@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Tests.App.TestUtils
 {
     public static class TurnStateConfig
     {
-        public static async Task<ITurnState> GetTurnStateWithConversationStateAsync(TurnContext turnContext)
+        public static async Task<ITurnState> GetTurnStateWithConversationStateAsync(ITurnContext turnContext)
         {
             if (turnContext == null)
             {
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Tests.App.TestUtils
 
             return state;
         }
-        public static TurnContext CreateConfiguredTurnContext()
+        public static ITurnContext CreateConfiguredTurnContext()
         {
             return new TurnContext(new NotImplementedAdapter(), new Activity(
                 text: "hello",

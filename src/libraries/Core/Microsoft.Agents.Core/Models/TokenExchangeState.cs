@@ -43,9 +43,7 @@ namespace Microsoft.Agents.Core.Models
         /// <value>
         /// The URL of the Agent messaging endpoint.
         /// </value>
-#pragma warning disable CA1056 // Uri properties should not be strings (we can't change this without breaking binary compat)
         [JsonPropertyName("botUrl")]
         public string AgentUrl { get; set; }
-#pragma warning restore CA1056 // Uri properties should not be strings
     }
 }

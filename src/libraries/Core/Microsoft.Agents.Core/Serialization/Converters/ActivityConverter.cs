@@ -16,12 +16,12 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             var activity = base.Read(ref reader, typeToConvert, options);
 
-            var subchannel = activity.GetSubChannelEntity();
-            if (subchannel != null)
+            var productInfo = activity.GetProductInfoEntity();
+            if (productInfo != null)
             {
                 if (activity.ChannelId != null)
                 {
-                    activity.ChannelId.SubChannel = subchannel.ChannelId;
+                    activity.ChannelId.SubChannel = productInfo.Id;
                 }
             }
 
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
             {
                 var property = properties[propertyName];
-                var propertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, typeof(string), options);
+                var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
                 property.SetValue(value, new ChannelId((string) propertyValue));
                 return;
             }

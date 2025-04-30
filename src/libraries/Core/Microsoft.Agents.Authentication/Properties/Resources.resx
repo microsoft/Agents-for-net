@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Error_ConfigurationSectionNotFound" xml:space="preserve">
+    <value>Authentication configuration section '{0}' not Found.</value>
+    <comment>Raised during IConnections construction using IConfiguration.  The indicated section was not found.</comment>
+  </data>
+  <data name="Error_ConfigurationSectionNotProvided" xml:space="preserve">
+    <value>No configuration section provided. An authentication configuration section is required to create a connection settings object.</value>
+    <comment>Raises during IConnection construction using IConfiguration and a section wasn't provided.</comment>
+  </data>
   <data name="Error_AuthModuleNotFound" xml:space="preserve">
     <value>Type '{0}' not found in Assembly '{1}' or is the wrong type for '{2}'</value>
     <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>

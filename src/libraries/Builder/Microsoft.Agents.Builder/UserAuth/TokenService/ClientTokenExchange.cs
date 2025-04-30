@@ -20,15 +20,16 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// </summary>
     /// <remarks>
     /// This is only for Teams or SharePoint channels.
-    /// If a user is signed into multiple Teams clients, the Bot could receive a
+    /// If a user is signed into multiple Teams clients, the Agent could receive a
     /// "signin/tokenExchange" from each client. Each token exchange request for a
     /// specific user login will have an identical Activity.Value.Id.
     /// 
-    /// Only one of these token exchange requests should be processed by the bot.
+    /// Only one of these token exchange requests should be processed by the Agent.
     /// The others return <see cref="HttpStatusCode.PreconditionFailed"/>.
-    /// For a distributed bot in production, this requires a distributed storage
-    /// ensuring only one token exchange is processed. This middleware supports
-    /// CosmosDb storage found in Microsoft.Bot.Builder.Azure, or MemoryStorage for
+    /// For a distributed Agent in production, this requires a distributed storage
+    /// ensuring only one token exchange is processed. This supports
+    /// CosmosDb storage found in Microsoft.Agents.Storage.CosmosDb, 
+    /// Microsoft.Agents.Storage.Blobs, or MemoryStorage for
     /// local development. IStorage's ETag implementation for token exchange activity
     /// deduplication.
     /// </remarks>
@@ -92,7 +93,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return false;
         }
 
-        private async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
+        private static async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
@@ -118,7 +119,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity
@@ -132,7 +133,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
+        private static async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
         {
             TokenResponse tokenExchangeResponse = null;
             var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
@@ -153,9 +154,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                     throw new NotSupportedException("Token Exchange is not supported by the current adapter.");
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 // Ignore Exceptions
                 // If token exchange failed for any reason, tokenExchangeResponse above stays null,
@@ -171,7 +170,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     Id = tokenExchangeRequest.Id,
                     ConnectionName = connectionName,
-                    FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
+                    FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                 };
 
                 await SendInvokeResponseAsync(turnContext, invokeResponse, HttpStatusCode.PreconditionFailed, cancellationToken).ConfigureAwait(false);
@@ -193,12 +192,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
                 var value = activity.Value.ToJsonElements();
-                if (value == null || !value.ContainsKey("id"))
+                if (value == null || !value.TryGetValue("id", out var id))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");
                 }
 
-                return $"oauth/{channelId}/{conversationId}/{value["id"]}";
+                return $"oauth/{channelId}/{conversationId}/{id}";
             }
         }
     }

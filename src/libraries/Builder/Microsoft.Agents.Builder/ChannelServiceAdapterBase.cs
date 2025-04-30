@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
@@ -52,8 +53,6 @@ namespace Microsoft.Agents.Builder
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
 
-            Logger.LogInformation($"SendActivitiesAsync for {activities.Length} activities.");
-
             var responses = new ResourceResponse[activities.Length];
 
             for (var index = 0; index < activities.Length; index++)
@@ -62,8 +61,6 @@ namespace Microsoft.Agents.Builder
 
                 activity.Id = null;
                 var response = default(ResourceResponse);
-
-                Logger.LogInformation($"Sending activity.  ReplyToId: {activity.ReplyToId}");
 
                 if (activity.Type == ActivityTypes.Delay)
                 {
@@ -109,8 +106,6 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
-            Logger.LogInformation($"UpdateActivityAsync ActivityId: {activity.Id}");
-
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
@@ -120,8 +115,6 @@ namespace Microsoft.Agents.Builder
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
-
-            Logger.LogInformation($"DeleteActivityAsync Conversation Id: {reference.Conversation.Id}, ActivityId: {reference.ActivityId}");
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
@@ -195,8 +188,6 @@ namespace Microsoft.Agents.Builder
             _ = conversationParameters ?? throw new ArgumentNullException(nameof(conversationParameters));
             _ = callback ?? throw new ArgumentNullException(nameof(callback));
 
-            Logger.LogInformation($"CreateConversationAsync for channel: {channelId}");
-
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
             var claimsIdentity = CreateClaimsIdentity(agentAppId);
 
@@ -237,7 +228,6 @@ namespace Microsoft.Agents.Builder
         /// <returns>A task that represents the work queued to execute.</returns>
         public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
             audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
 
             // Create the connector client to use for outbound requests.
@@ -267,9 +257,18 @@ namespace Microsoft.Agents.Builder
                 //activity.CallerId = ???
             }
 
-            bool useAnonymousAuthCallback = false; 
-            if (!claimsIdentity.IsAuthenticated && activity.ChannelId == Channels.Emulator)
-                useAnonymousAuthCallback = true;
+            bool useAnonymousAuthCallback = false;
+            if (!claimsIdentity.IsAuthenticated)
+            {
+                if (activity.ChannelId == Channels.Emulator)
+                {
+                    useAnonymousAuthCallback = true;
+                }
+                else
+                {
+                    Logger.LogWarning("Anonymous access is not allowed for channel: {ChannelId}.", activity.ChannelId);
+                }
+            }
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
@@ -297,9 +296,9 @@ namespace Microsoft.Agents.Builder
         /// This is a helper to create the ClaimsIdentity structure from an appId that will be added to the TurnContext.
         /// It is intended for use in proactive and named-pipe scenarios.
         /// </summary>
-        /// <param name="agentAppId">The bot's application id.</param>
+        /// <param name="agentAppId">The Agent's application id.</param>
         /// <returns>A <see cref="ClaimsIdentity"/> with the audience and appId claims set to the appId.</returns>
-        protected ClaimsIdentity CreateClaimsIdentity(string agentAppId)
+        protected static ClaimsIdentity CreateClaimsIdentity(string agentAppId)
         {
             agentAppId ??= string.Empty;
 

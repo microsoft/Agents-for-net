@@ -13,9 +13,9 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of ReceiptCard. </summary>
         public ReceiptCard()
         {
-            Facts = new List<Fact>();
-            Items = new List<ReceiptItem>();
-            Buttons = new List<CardAction>();
+            Facts = [];
+            Items = [];
+            Buttons = [];
         }
 
         /// <summary> Initializes a new instance of ReceiptCard. </summary>
@@ -30,13 +30,13 @@ namespace Microsoft.Agents.Core.Models
         public ReceiptCard(string title = default, IList<Fact> facts = default, IList<ReceiptItem> items = default, CardAction tap = default, string total = default, string tax = default, string vat = default, IList<CardAction> buttons = default)
         {
             Title = title;
-            Facts = facts ?? new List<Fact>();
-            Items = items ?? new List<ReceiptItem>();
+            Facts = facts ?? [];
+            Items = items ?? [];
             Tap = tap;
             Total = total;
             Tax = tax;
             Vat = vat;
-            Buttons = buttons ?? new List<CardAction>();
+            Buttons = buttons ?? [];
         }
 
         /// <summary>

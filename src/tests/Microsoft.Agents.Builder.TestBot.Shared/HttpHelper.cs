@@ -15,20 +15,14 @@ namespace Microsoft.Agents.Builder.TestBot.Shared
     {
         public static Activity ReadRequest(HttpRequest request)
         {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
+            ArgumentNullException.ThrowIfNull(request);
 
             return ProtocolJsonSerializer.ToObject<Activity>(request.Body);
         }
 
         public static void WriteResponse(HttpResponse response, InvokeResponse invokeResponse)
         {
-            if (response == null)
-            {
-                throw new ArgumentNullException(nameof(response));
-            }
+            ArgumentNullException.ThrowIfNull(response);
 
             if (invokeResponse == null)
             {
@@ -40,11 +34,8 @@ namespace Microsoft.Agents.Builder.TestBot.Shared
                 response.StatusCode = (int)invokeResponse.Status;
 
                 var json = ProtocolJsonSerializer.ToJson(invokeResponse.Body);
-                using (var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json)))
-                {
-                    memoryStream.CopyTo(response.Body);
-                }
-
+                using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json));
+                memoryStream.CopyTo(response.Body);
             }
         }
     }

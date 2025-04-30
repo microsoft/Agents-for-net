@@ -7,11 +7,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.Choice;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Prompts a user to confirm something with a yes/no response.
@@ -61,7 +62,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// custom validation for this prompt.</param>
         /// <param name="defaultLocale">Optional, the default locale used to determine language-specific behavior of the prompt.
         /// The locale is a 2, 3, or 4 character ISO 639 code that represents a language or language family.</param>
-        /// <param name="choiceDefaults">Overrides the dictionary of Bot Framework SDK-supported _choiceDefaults (for prompt localization).
+        /// <param name="choiceDefaults">Overrides the dictionary of SDK-supported choiceDefaults (for prompt localization).
         /// Must be passed in to each ConfirmPrompt that needs the custom choice defaults.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
         /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.
@@ -124,15 +125,8 @@ namespace Microsoft.Agents.Builder.Dialogs
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             // Format prompt to send
             IActivity prompt;
@@ -176,10 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             PromptOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<bool>();
             if (turnContext.Activity.Type == ActivityTypes.Message)

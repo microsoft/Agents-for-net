@@ -13,6 +13,8 @@ using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -68,9 +70,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                
+
                 // Writing formatted exception message to log with error codes and help links. 
+#pragma warning disable CA2254 // Template should be a static expression
                 logger.LogError(resolvedErrorMessage);
+#pragma warning restore CA2254 // Template should be a static expression
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {
@@ -89,19 +93,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <remarks>
         /// Note, this is an ImmediateAccept and BackgroundProcessing override of: 
-        /// Task IBotHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default);
+        /// Task IAgentHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
         /// </remarks>
         /// <param name="httpRequest">The HTTP request object, typically in a POST handler by a Controller.</param>
         /// <param name="httpResponse">The HTTP response object.</param>
-        /// <param name="bot">The bot implementation.</param>
+        /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive
         ///     notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent bot, CancellationToken cancellationToken = default)
+        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
             ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(bot);
+            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -111,7 +115,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
+
+                // if Auth is not configured, we still need the claims from the JWT token.
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
+                if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+                {
+                    var auth = httpRequest.Headers.Authorization;
+                    if (auth.Count != 0)
+                    {
+                        var authHeaderValue = auth.First();
+                        var authValues = authHeaderValue.Split(' ');
+                        if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var jwt = new JwtSecurityToken(authValues[1]);
+                            claimsIdentity = new ClaimsIdentity(jwt.Claims);
+                        }
+                    }
+                }
 
                 if (!IsValidChannelActivity(activity))
                 {
@@ -144,8 +164,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the bot
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                        // Process the inbound activity with the Agent
+                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
                         // Write the response, potentially serializing the InvokeResponse
                         await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
@@ -172,11 +192,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
-        /// <param name="bot"></param>
+        /// <param name="agent"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
         /// <returns></returns>
-        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken, string audience = null)
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
             if (_adapterOptions.Async)
             {
@@ -185,7 +205,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return Task.CompletedTask;
             }
 
-            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
+            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
         protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)

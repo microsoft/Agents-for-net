@@ -120,10 +120,10 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersAdded = new List<ChannelAccount>
-                {
+                MembersAdded =
+                [
                     new ChannelAccount { Id = "b" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "b" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -144,11 +144,11 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersAdded = new List<ChannelAccount>
-                {
+                MembersAdded =
+                [
                     new ChannelAccount { Id = "a" },
                     new ChannelAccount { Id = "b" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "b" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -170,12 +170,12 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersAdded = new List<ChannelAccount>
-                {
+                MembersAdded =
+                [
                     new ChannelAccount { Id = "a" },
                     new ChannelAccount { Id = "b" },
                     new ChannelAccount { Id = "c" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "b" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -197,10 +197,10 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersRemoved = new List<ChannelAccount>
-                {
+                MembersRemoved =
+                [
                     new ChannelAccount { Id = "c" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "c" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -221,11 +221,11 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersRemoved = new List<ChannelAccount>
-                {
+                MembersRemoved =
+                [
                     new ChannelAccount { Id = "a" },
                     new ChannelAccount { Id = "c" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "c" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -247,12 +247,12 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersRemoved = new List<ChannelAccount>
-                {
+                MembersRemoved =
+                [
                     new ChannelAccount { Id = "a" },
                     new ChannelAccount { Id = "b" },
                     new ChannelAccount { Id = "c" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "c" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -274,10 +274,10 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersAdded = new List<ChannelAccount>
-                {
+                MembersAdded =
+                [
                     new ChannelAccount { Id = "b" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "b" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -298,10 +298,10 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                MembersRemoved = new List<ChannelAccount>
-                {
+                MembersRemoved =
+                [
                     new ChannelAccount { Id = "c" },
-                },
+                ],
                 Recipient = new ChannelAccount { Id = "c" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -326,14 +326,14 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageReaction,
-                ReactionsAdded = new List<MessageReaction>
-                {
+                ReactionsAdded =
+                [
                     new MessageReaction("sad"),
-                },
-                ReactionsRemoved = new List<MessageReaction>
-                {
+                ],
+                ReactionsRemoved =
+                [
                     new MessageReaction("angry"),
-                },
+                ],
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -655,8 +655,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
 
-            turnContextMock.Setup(tc => tc.StackState).Returns(new TurnContextStateCollection());
-            turnContextMock.Setup(tc => tc.Services).Returns(new TurnContextStateCollection());
+            turnContextMock.Setup(tc => tc.StackState).Returns([]);
+            turnContextMock.Setup(tc => tc.Services).Returns([]);
             turnContextMock.Object.Services.Set(new Mock<IConnectorClient>().Object);
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
@@ -691,7 +691,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             turnContextMock.Verify(tc => tc.UpdateActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()), Times.Once);
             turnContextMock.Verify(tc => tc.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
 
-            //Validate entities inheritated and managed by TypedTurnContext
+            //Validate entities inherited and managed by TypedTurnContext
             Assert.NotNull(typedTurnContext.Services.Get<IConnectorClient>());
             Assert.NotNull(typedTurnContext.Activity);
         }
@@ -879,17 +879,14 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             await AssertErrorThroughInvokeAdapter(activity, "Value property is not valid for search");
         }
 
-        private Activity GetSearchActivity(object value)
+        private static Activity GetSearchActivity(object value) => new()
         {
-            return new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "application/search",
-                Value = value
-            };
-        }
+            Type = ActivityTypes.Invoke,
+            Name = "application/search",
+            Value = value
+        };
 
-        private async Task AssertErrorThroughInvokeAdapter(Activity activity, string errorMessage)
+        private static async Task AssertErrorThroughInvokeAdapter(Activity activity, string errorMessage)
         {
             // Arrange
             var adapter = new TestInvokeAdapter();
@@ -925,13 +922,13 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
             {
                 Activity = activities.FirstOrDefault(activity => activity.Type == ActivityTypes.InvokeResponse);
-                return Task.FromResult(new ResourceResponse[0]);
+                return Task.FromResult(Array.Empty<ResourceResponse>());
             }
         }
 
         private class TestActivityHandler : ActivityHandler
         {
-            public List<string> Record { get; } = new List<string>();
+            public List<string> Record { get; } = [];
 
             protected override Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
             {
@@ -1091,22 +1088,22 @@ namespace Microsoft.Agents.Builder.Tests.Handler
                 var activity = turnContext.Activity;
                 var adapter = turnContext.Adapter;
                 var turnState = turnContext.StackState;
-                var responsed = turnContext.Responded;
+                var responded = turnContext.Responded;
                 turnContext.OnDeleteActivity((t, a, n) => Task.CompletedTask);
-                turnContext.OnSendActivities((t, a, n) => Task.FromResult(new ResourceResponse[] { new ResourceResponse() }));
+                turnContext.OnSendActivities((t, a, n) => Task.FromResult(new ResourceResponse[] { new() }));
                 turnContext.OnUpdateActivity((t, a, n) => Task.FromResult(new ResourceResponse()));
                 await turnContext.DeleteActivityAsync(activity.GetConversationReference(), cancellationToken);
                 await turnContext.DeleteActivityAsync(activity.Id, cancellationToken);
                 await turnContext.SendActivityAsync(new Activity(), cancellationToken);
                 await turnContext.SendActivitiesAsync([new Activity()], cancellationToken);
                 await turnContext.UpdateActivityAsync(new Activity(), cancellationToken);
-                await turnContext.TraceActivityAsync(activity.Name, activity.Value, activity.ValueType, activity.Label);
+                await turnContext.TraceActivityAsync(activity.Name, activity.Value, activity.ValueType, activity.Label, cancellationToken);
             }
         }
 
         private class MockConnectorClient : IConnectorClient
         {
-            private Uri _baseUri = new Uri("http://tempuri.org/whatever");
+            private Uri _baseUri = new("http://tempuri.org/whatever");
 
             public Uri BaseUri
             {

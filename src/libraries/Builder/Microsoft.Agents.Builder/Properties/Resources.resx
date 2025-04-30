@@ -122,8 +122,8 @@
     <comment>Raised when the call get an access token provider returns null.</comment>
   </data>
   <data name="UserAuthorizationNotConfigured" xml:space="preserve">
-    <value>The AgentApplication.Authorization property is unavailable because no user Authorization handlers were configured.</value>
-    <comment>Raised when accessing AgentApplication.Authorization but it hasn't been configured.</comment>
+    <value>The AgentApplication.UserAuthorization feature is unavailable because no user Authorization handlers were configured in AgentApplication:UserAuthorization:Handlers.</value>
+    <comment>Raised when accessing AgentApplication.UserAuthorization but it hasn't been configured.</comment>
   </data>
   <data name="AttributeSelectorNotFound" xml:space="preserve">
     <value>The RouteAttribute.Selector method '{0}' is not found.</value>
@@ -134,7 +134,7 @@
     <comment>Raised when accessing RouteAttribute is being initialized but the indicated Selector method does not have a valid signature.</comment>
   </data>
   <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
-    <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
+    <value>AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing the AgentApplication.</comment>
   </data>
   <data name="StreamingResponseEnded" xml:space="preserve">
@@ -162,8 +162,8 @@
     <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>
   </data>
   <data name="UserAuthorizationHandlerNotFound" xml:space="preserve">
-    <value>Handler '{0}' not found in configuration</value>
-    <comment>Rased when IUserAuthorizationDispatcher requests a handler by name that cannot be found</comment>
+    <value>Handler name '{0}' not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid.</value>
+    <comment>Raised when AgentApplication.UserAuthorization requests a handler by name that cannot be found</comment>
   </data>
   <data name="FailedToCreateUserAuthorizationHandler" xml:space="preserve">
     <value>Failed to create user Authorization provider for handler name '{0}'</value>
@@ -178,8 +178,8 @@
     <comment>Raised when a User Authorization was initiated and encountered a critical error.</comment>
   </data>
   <data name="UserAuthorizationAlreadyActive" xml:space="preserve">
-    <value>UserAuthorization already has an active handler.</value>
-    <comment>Raised when user sign in is already active.</comment>
+    <value>UserAuthorization sign in for '{0}' is already in progress.</value>
+    <comment>Raised when user sign in is already in progress.  Only one sign in at a time can occur.</comment>
   </data>
   <data name="OBONotExchangeableToken" xml:space="preserve">
     <value>OBO for '{0}' cannot exchange an application that does not have an api:// audience.</value>
@@ -192,5 +192,16 @@
   <data name="OBOExchangeFailed" xml:space="preserve">
     <value>OBO exchange failed for connection '{0}' with scopes {1}.</value>
     <comment>Raised when an OBO exchange was attempted.</comment>
+  </data>
+  <data name="UserAuthorizationDefaultHandlerNotFound" xml:space="preserve">
+    <value>Handler name '{0}' not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid.</value>
+    <comment>Raised when AgentApplication:UserAuthorization:DefaultHandlerName isn't found or fails to create.</comment>
+  </data>
+  <data name="AnonymousNotAllowed" xml:space="preserve">
+    <value>Raised when JWT authentication has not been enabled for the sending channel.</value>
+    <comment>Anonymous access is not allowed for this channel.</comment>
+  </data>
+  <data name="ExtensionAlreadyRegistered" xml:space="preserve">
+    <value>An instance of this extention has allready been registred for this application. {0}</value>
   </data>
 </root>

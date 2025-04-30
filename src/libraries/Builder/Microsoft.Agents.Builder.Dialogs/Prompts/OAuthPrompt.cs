@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// Creates a new prompt that asks the user to sign in using the Bot Frameworks Single Sign On (SSO)
+    /// Creates a new prompt that asks the user to sign in using the Single Sign On (SSO)
     /// service.
     /// </summary>
     /// <remarks>
@@ -22,10 +23,10 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// will send them an `OAuthCard` containing a button they can press to sign in. Depending on the
     /// channel, the user will be sent through one of two possible sign in flows:
     ///
-    /// - The automatic sign in flow where once the user signs in and the SSO service will forward the bot
+    /// - The automatic sign in flow where once the user signs in and the SSO service will forward the Agent
     /// the users access token using either an `event` or `invoke` activity.
     /// - The "magic code" flow where once the user signs in they will be prompted by the SSO
-    /// service to send the bot a six digit code confirming their identity. This code will be sent as a
+    /// service to send the Agent a six digit code confirming their identity. This code will be sent as a
     /// standard `message` activity.
     ///
     /// Both flows are automatically supported by the `OAuthPrompt` and the only thing you need to be
@@ -34,8 +35,8 @@ namespace Microsoft.Agents.Builder.Dialogs
     ///
     /// <blockquote>
     /// **Note**:
-    /// You should avoid persisting the access token with your bots other state. The Bot Frameworks
-    /// SSO service will securely store the token on your behalf. If you store it in your bots state
+    /// You should avoid persisting the access token with your Agents other state. The 
+    /// SSO service will securely store the token on your behalf. If you store it in your Agents state
     /// it could expire or be revoked in between turns.
     ///
     /// When calling the prompt from within a waterfall step you should use the token within the step
@@ -44,7 +45,7 @@ namespace Microsoft.Agents.Builder.Dialogs
     ///
     /// ## Prompt Usage
     ///
-    /// When used with your bot's <see cref="DialogSet"/> you can simply add a new instance of the prompt as a named
+    /// When used with your Agent's <see cref="DialogSet"/> you can simply add a new instance of the prompt as a named
     /// dialog using <see cref="DialogSet.Add(Dialog)"/>. You can then start the prompt from a waterfall step using either
     /// <see cref="DialogContext.BeginDialogAsync(string, object, CancellationToken)"/> or
     /// <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>. The user
@@ -109,7 +110,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(dc);
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             if (options is CancellationToken)
             {
@@ -171,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(dc);
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Check for timeout
             var state = dc.ActiveDialog.State;
@@ -209,7 +210,6 @@ namespace Microsoft.Agents.Builder.Dialogs
                 var promptOptions = (PromptOptions)state[PersistedOptions];
 
                 // Increment attempt count
-                // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
                 promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value

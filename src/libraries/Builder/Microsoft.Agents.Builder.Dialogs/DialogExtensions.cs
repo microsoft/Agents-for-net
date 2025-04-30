@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         /// <param name="dialog">The dialog to start.</param>
         /// <param name="turnContext">The context for the current turn of the conversation.</param>
-        /// <param name="state">BotState to use for state.</param>
+        /// <param name="state">AgentState to use for state.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -88,14 +88,12 @@ namespace Microsoft.Agents.Builder.Dialogs
                         // fire error event, bubbling from the leaf.
                         handled = await dialogContext.EmitEventAsync(DialogEvents.Error, err, bubble: true, fromLeaf: true, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
-#pragma warning disable CA1031 // Do not catch general exception types (capture the error in case it's not handled properly)
                     catch (Exception emitErr)
-#pragma warning restore CA1031 // Do not catch general exception types
                     {
                         innerExceptions.Add(emitErr);
                     }
 
-                    if (innerExceptions.Any())
+                    if (innerExceptions.Count > 0)
                     {
                         innerExceptions.Add(err);
                         throw new AggregateException("Unable to emit the error as a DialogEvent.", innerExceptions);
@@ -115,13 +113,13 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private static async Task<DialogTurnResult> InnerRunAsync(ITurnContext turnContext, string dialogId, DialogContext dialogContext, CancellationToken cancellationToken)
         {
-            // Handle EoC and Reprompt event from a parent bot (can be root bot to skill or skill to skill)
+            // Handle EoC and Reprompt event from a parent Agent (can be root bot to skill or skill to skill)
             if (IsFromParentToSkill(turnContext))
             {
                 // Handle remote cancellation request from parent.
                 if (turnContext.Activity.Type == ActivityTypes.EndOfConversation)
                 {
-                    if (!dialogContext.Stack.Any())
+                    if (dialogContext.Stack.Count == 0)
                     {
                         // No dialogs to cancel, just return.
                         return new DialogTurnResult(DialogTurnStatus.Empty);
@@ -136,7 +134,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 // Handle a reprompt event sent from the parent.
                 if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
                 {
-                    if (!dialogContext.Stack.Any())
+                    if (dialogContext.Stack.Count == 0)
                     {
                         // No dialogs to reprompt, just return.
                         return new DialogTurnResult(DialogTurnStatus.Empty);
@@ -176,7 +174,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
             {
-                // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
+                // EoC Activities returned by skills are bounced back to the Agent by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
                 var skillConversationReference = turnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey);
                 if (skillConversationReference != null)

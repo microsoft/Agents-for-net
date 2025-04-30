@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -51,7 +52,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <seealso cref="ActivityTypes"/>
         public virtual async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             if (turnContext.Activity == null)
             {
@@ -797,9 +798,7 @@ namespace Microsoft.Agents.Builder.Compat
             {
                 invokeValue = ProtocolJsonSerializer.ToObject<SearchInvokeValue>(activity.Value);
             }
-#pragma warning disable CA1031 // Do not catch general exception types
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 var errorResponse = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "BadRequest", "Value property is not valid for search");
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, errorResponse);
@@ -858,9 +857,7 @@ namespace Microsoft.Agents.Builder.Compat
             {
                 invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(activity.Value);
             }
-#pragma warning disable CA1031 // Do not catch general exception types
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "BadRequest", "Value property is not properly formed");
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);
@@ -898,9 +895,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <summary>
         /// A custom exception for invoke response errors.
         /// </summary>
-#pragma warning disable CA1064 // Exceptions should be public (we can't change this without breaking binary compat, we may consider making this type public in the future)
         protected class InvokeResponseException : Exception
-#pragma warning restore CA1064 // Exceptions should be public
         {
             private readonly HttpStatusCode _statusCode;
             private readonly object _body;

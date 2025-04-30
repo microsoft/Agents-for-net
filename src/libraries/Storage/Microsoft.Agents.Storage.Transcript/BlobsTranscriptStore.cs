@@ -14,6 +14,7 @@ using Azure.Core;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
@@ -110,15 +111,8 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(Uri blobServiceUri, TokenCredential tokenCredential, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializer = null)
         {
-            if (blobServiceUri == null)
-            {
-                throw new ArgumentNullException(nameof(blobServiceUri));
-            }
-
-            if (tokenCredential == null)
-            {
-                throw new ArgumentNullException(nameof(tokenCredential));
-            }
+            AssertionHelpers.ThrowIfNull(blobServiceUri, nameof(blobServiceUri));
+            AssertionHelpers.ThrowIfNull(tokenCredential, nameof(tokenCredential));
 
             if (string.IsNullOrEmpty(containerName))
             {
@@ -162,7 +156,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <returns>A <see cref="Task"/>A task that represents the work queued to execute.</returns>
         public async Task LogActivityAsync(IActivity activity)
         {
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             switch (activity.Type)
             {
@@ -317,7 +311,7 @@ namespace Microsoft.Agents.Storage.Transcript
             }
 
             string token = null;
-            List<TranscriptInfo> conversations = new List<TranscriptInfo>();
+            List<TranscriptInfo> conversations = [];
             do
             {
                 var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/")

@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.Testing.XUnit
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task OnTurnAsync(ITurnContext context, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task OnTurnAsync(ITurnContext context, NextDelegate next, CancellationToken cancellationToken = default)
         {
             var stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.Testing.XUnit
         /// <param name="activity">The <see cref="Activity"/> to be logged.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task that represents the work to execute.</returns>
-        protected virtual Task LogIncomingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
+        protected virtual Task LogIncomingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default)
         {
             var actor = "User: ";
             if (activity.Type == ActivityTypes.Message)
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Builder.Testing.XUnit
         /// <param name="activity">The <see cref="Activity"/> to be logged.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task that represents the work to execute.</returns>
-        protected virtual Task LogOutgoingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
+        protected virtual Task LogOutgoingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default)
         {
             var stopwatch = context.Services.Get<System.Diagnostics.Stopwatch>(_stopWatchStateKey);
             var actor = "Bot:  ";

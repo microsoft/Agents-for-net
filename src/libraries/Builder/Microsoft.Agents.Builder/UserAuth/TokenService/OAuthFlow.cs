@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Creates a new prompt that asks the user to sign in using the Azure Bot Token Service.
+    /// Creates a new prompt that asks the user to sign in using the Token Service.
     /// service.
     /// </summary>
     /// <remarks>
@@ -21,10 +22,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// will send them an `OAuthCard|SigninCard` containing a button they can press to signin. Depending on the
     /// channel, the user will be sent through one of two possible signin flows:
     ///
-    /// - The automatic signin flow where once the user signs in and the SSO service will forward the bot
+    /// - The automatic signin flow where once the user signs in and the SSO service will forward the Agent
     /// the users access token using either an `event` or `invoke` activity.
     /// - The "magic code" flow where once the user signs in they will be prompted by the SSO
-    /// service to send the bot a six digit code confirming their identity. This code will be sent as a
+    /// service to send the Agent a six digit code confirming their identity. This code will be sent as a
     /// standard `message` activity.
     ///
     /// Both flows are automatically supported by the `OAuthFlow` and the only thing you need to be
@@ -48,19 +49,20 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext,nameof(turnContext));
 
             // Attempt to get the users token
-            var output = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
-            if (output != null)
+            var output = await UserTokenClientWrapper.GetTokenOrSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
+            if (output != null && output?.TokenResponse != null)
             {
                 // Return token
-                return output;
+                return output.TokenResponse;
             }
 
             // Prompt user to login
             await SendOAuthCardAsync(
                 turnContext,
+                output?.SignInResource,
                 promptFactory, cancellationToken).ConfigureAwait(false);
 
             return null;
@@ -81,7 +83,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <exception cref="TimeoutException"/>
         public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Check for timeout
             var hasTimedOut = HasTimedOut(turnContext, expires);
@@ -114,12 +116,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// </summary>
         /// <param name="settings">OAuthSettings.</param>
         /// <param name="turnContext">ITurnContext.</param>
+        /// <param name="signInResource"></param>
         /// <param name="promptFactory">Creates signin prompt</param>
         /// <param name="cancellationToken">CancellationToken.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        private async Task SendOAuthCardAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
+        private async Task SendOAuthCardAsync(ITurnContext turnContext, SignInResource signInResource, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             IActivity prompt = null;
             if (promptFactory != null)
@@ -144,7 +147,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 if (!prompt.Attachments.Any(a => a.Content is SigninCard))
                 {
-                    var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                    signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                     prompt.Attachments.Add(new Attachment
                     {
                         ContentType = SigninCard.ContentType,
@@ -167,7 +170,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             else if (!prompt.Attachments.Any(a => a.Content is OAuthCard))
             {
                 var cardActionType = ActionTypes.Signin;
-                var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
 
                 string value;
                 if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||
@@ -261,9 +264,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         await SendInvokeResponseAsync(turnContext, HttpStatusCode.NotFound, null, cancellationToken).ConfigureAwait(false);
                     }
                 }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring exception for now and send internal server error, see comment above)
                 catch
-#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     await SendInvokeResponseAsync(turnContext, HttpStatusCode.InternalServerError, null, cancellationToken).ConfigureAwait(false);
                 }
@@ -281,7 +282,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = null,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The bot received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
+                            FailureDetail = "The Agent received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else if (tokenExchangeRequest.ConnectionName != _settings.AzureBotOAuthConnectionName)
@@ -293,7 +294,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = tokenExchangeRequest.Id,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The bot received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
+                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else
@@ -306,9 +307,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
                         tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
                     }
-#pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
                     catch
-#pragma warning restore CA1031 // Do not catch general exception types
                     {
                         // Ignore Exceptions
                         // If token exchange failed for any reason, tokenExchangeResponse above stays null , and hence we send back a failure invoke response to the caller.
@@ -324,7 +323,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             {
                                 Id = tokenExchangeRequest.Id,
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
-                                FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
+                                FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
                     }
                     else

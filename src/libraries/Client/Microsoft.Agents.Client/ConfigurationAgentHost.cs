@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
@@ -244,7 +245,8 @@ namespace Microsoft.Agents.Client
             {
                 ConversationReference = conversationReference,
                 OAuthScope = turnContext.Identity == null ? null : AgentClaims.GetTokenScopes(turnContext.Identity)?.FirstOrDefault(),
-                AgentName = agentName
+                AgentName = agentName,
+                AgentConversationId = agentConversationId,
             };
 
             agentConversations.Add(agentName, new AgentConversation() { AgentConversationId = agentConversationId, AgentName = agentName });
@@ -363,7 +365,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<ChannelConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
 
             var channelConversationInfo = await _storage
                 .ReadAsync(new[] { GetAgentConversationStorageKey(agentConversationId) }, cancellationToken)
@@ -377,7 +379,7 @@ namespace Microsoft.Agents.Client
             return null;
         }
 
-        private IAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)
+        private HttpAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)
         {
             var tokenProviderName = clientSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))

@@ -12,12 +12,12 @@ namespace Microsoft.Agents.Builder.App
         private readonly ReaderWriterLock rwl = new();
         private List<RouteEntry> routes = [];
 
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
+        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string autoSignInHandler = null)
         {
             try
             {
                 rwl.AcquireWriterLock(1000);
-                routes.Add(new RouteEntry() { Rank = rank, Route = new(selector, handler), IsInvokeRoute = isInvokeRoute });
+                routes.Add(new RouteEntry() { Rank = rank, Route = new(selector, handler, isInvokeRoute, autoSignInHandler), IsInvokeRoute = isInvokeRoute });
 
                 // Invoke selectors are first.
                 // Invoke Activities from Teams need to be responded to in less than 5 seconds and the selectors are async
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.App
             try
             {
                 rwl.AcquireReaderLock(1000);
-                return new List<Route>(routes.Select(e => e.Route).ToList());
+                return [.. routes.Select(e => e.Route).ToList()];
             }
             finally
             {

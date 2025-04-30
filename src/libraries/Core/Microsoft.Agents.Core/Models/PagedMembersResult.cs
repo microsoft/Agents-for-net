@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of PagedMembersResult. </summary>
         public PagedMembersResult()
         {
-            Members = new List<ChannelAccount>();
+            Members = [];
         }
 
         /// <summary> Initializes a new instance of PagedMembersResult. </summary>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Models
         public PagedMembersResult(string continuationToken = default, IList<ChannelAccount> members = default)
         {
             ContinuationToken = continuationToken;
-            Members = members ?? new List<ChannelAccount>();
+            Members = members ?? [];
         }
 
         /// <summary> Paging token. </summary>

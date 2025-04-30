@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(CreateMockConnectorClient().Object);
 
             //Act
-            var result = await context.Adapter.UpdateActivityAsync(context, new Activity(), default(CancellationToken));
+            var result = await context.Adapter.UpdateActivityAsync(context, new Activity(), default);
 
             //Assert
             Assert.Equal(expectedResponseMessage, result.Id);
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
 
             //Act
-            await context.Adapter.DeleteActivityAsync(context, _reference, default(CancellationToken));
+            await context.Adapter.DeleteActivityAsync(context, _reference, default);
 
             //Assert
             connectorClient.Verify(
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
                   
             //Act
-            await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
             
             //Assert
             Assert.True(_callbackInvoked);
@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _reference, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync(claimsIdentity, _reference, ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _reference, "MyAudience", ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync(claimsIdentity, _reference, "MyAudience", ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             //Act
-            await adapter.ContinueConversationAsync("MyBot", _activity, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync("MyBot", _activity, ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _activity, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync(claimsIdentity, _activity, ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _activity, "MyAudience", ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync(claimsIdentity, _activity, "MyAudience", ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -232,7 +232,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.CreateConversationAsync("MyBot", "MyChannel", "MyServiceUrl", "MyAudience", new ConversationParameters(), ContinueCallback, default(CancellationToken));
+            await adapter.CreateConversationAsync("MyBot", "MyChannel", "MyServiceUrl", "MyAudience", new ConversationParameters(), ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -338,7 +338,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter, new Activity());
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, [], default(CancellationToken)));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, [], default));
         }
 
         private Task ContinueCallback(ITurnContext turnContext, CancellationToken cancellationToken)

@@ -19,8 +19,10 @@ public class AdaptiveCardPlugin
     public async Task<string> GetAdaptiveCardForData(Kernel kernel, string data)
     {
         // Create a chat history with the instructions as a system message and the data as a user message
-        ChatHistory chat = new(Instructions);
-        chat.Add(new ChatMessageContent(AuthorRole.User, data));
+        ChatHistory chat = new(Instructions)
+        {
+            new ChatMessageContent(AuthorRole.User, data)
+        };
 
         // Invoke the model to get a response
         var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();

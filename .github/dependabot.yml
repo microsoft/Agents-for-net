@@ -5,11 +5,9 @@ version: 2
 updates:
 - package-ecosystem: nuget
   directories: 
-    - "/Directory.Packages.props"
-    - "/src/tests/*"
+    - "*"
   schedule:
     interval: daily
-  open-pull-requests-limit: 1
   target-branch: "main"    
   labels:
     - 'dependencies'
@@ -17,13 +15,12 @@ updates:
     - 'microsoft/botframework-sdk'    
 
   
-- package-ecosystem: dotnet-sdk
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 1
-  target-branch: "main"    
-  labels:
-    - 'dependencies'
-  reviewers:
-    - 'microsoft/botframework-sdk'      
+#- package-ecosystem: dotnet-sdk
+#  directory: "/"
+#  schedule:
+#    interval: daily
+#  target-branch: "main"    
+#  labels:
+#    - 'dependencies'
+#  reviewers:
+#    - 'microsoft/botframework-sdk'      

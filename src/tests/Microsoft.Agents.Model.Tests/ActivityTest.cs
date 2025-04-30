@@ -208,43 +208,6 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(trace.Name == "test");
         }
 
-        [Fact]
-        public void IsFromStreamingConnectionTests()
-        {
-            var nonStreaming = new List<string>()
-            {
-                "http://yayay.com",
-                "https://yayay.com",
-                "HTTP://yayay.com",
-                "HTTPS://yayay.com",
-            };
-
-            var streaming = new List<string>()
-            {
-                "urn:botframework:WebSocket:wss://beep.com",
-                "urn:botframework:WebSocket:http://beep.com",
-                "URN:botframework:WebSocket:wss://beep.com",
-                "URN:botframework:WebSocket:http://beep.com",
-            };
-
-            var activity = CreateActivity("en-us");
-
-            nonStreaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.False(activity.IsFromStreamingConnection());
-            });
-
-            streaming.ForEach(s =>
-            {
-                activity.ServiceUrl = s;
-                Assert.True(activity.IsFromStreamingConnection());
-            });
-
-            activity.ServiceUrl = null;
-            Assert.False(activity.IsFromStreamingConnection());
-        }
-
         [Theory]
         [InlineData(nameof(ActivityTypes.EndOfConversation))]
         [InlineData(nameof(ActivityTypes.Event))]
@@ -274,7 +237,7 @@ namespace Microsoft.Agents.Model.Tests
         [InlineData("TestTrace", null, "TestValue", null)]
         public void TestCreateTraceActivity(string name, string valueType, object value, string label)
         {
-            var activity = Activity.CreateTraceActivity(name, valueType, value, label);
+            var activity = Activity.CreateTraceActivity(name, value, valueType, label);
 
             Assert.NotNull(activity);
             Assert.True(activity.Type == ActivityTypes.Trace);
@@ -406,15 +369,6 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.IsType<Mention[]>(mentions);
             Assert.True(mentions.Length == 0);
-        }
-
-        [Theory]
-        [ClassData(typeof(HasContentData))]
-        public void HasContent(Activity activity, bool expected)
-        {
-            var hasContent = activity.HasContent();
-
-            Assert.Equal(expected, hasContent);
         }
 
         [Theory]

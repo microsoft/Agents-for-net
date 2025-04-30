@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Model.Tests
         public void SignInCardInits()
         {
             var text = "Please sign in.";
-            var buttons = new List<CardAction>() { new CardAction("signin") };
+            var buttons = new List<CardAction>() { new("signin") };
 
             var signInCard = new SigninCard(text, buttons);
 

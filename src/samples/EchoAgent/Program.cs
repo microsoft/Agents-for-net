@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using EchoAgent;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Connector
@@ -14,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         public RestTeamsConnectorClient(IConnectorClient connector, IRestTransport transport = null)
         {
             var restTransport = transport ?? connector as IRestTransport;
-            ArgumentNullException.ThrowIfNull(nameof(restTransport));
+            AssertionHelpers.ThrowIfNull(restTransport, nameof(connector));
             Teams = new RestTeamsOperations(restTransport);
         }
 

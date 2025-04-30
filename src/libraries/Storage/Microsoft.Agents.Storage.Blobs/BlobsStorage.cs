@@ -15,6 +15,7 @@ using Azure.Core;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Storage.Blobs
@@ -60,9 +61,8 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public BlobsStorage(string dataConnectionString, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(dataConnectionString);
-            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
-
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(dataConnectionString, nameof(dataConnectionString));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(containerName, nameof(containerName));
             _storageTransferOptions = storageTransferOptions;
 
             _serializerOptions = jsonSerializerOptions ?? DefaultJsonSerializerOptions;
@@ -83,8 +83,8 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public BlobsStorage(Uri blobContainerUri, TokenCredential tokenCredential, StorageTransferOptions storageTransferOptions, BlobClientOptions options = default, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            ArgumentNullException.ThrowIfNull(blobContainerUri);
-            ArgumentNullException.ThrowIfNull(tokenCredential);
+            AssertionHelpers.ThrowIfNull(blobContainerUri, nameof(blobContainerUri));
+            AssertionHelpers.ThrowIfNull(tokenCredential, nameof(tokenCredential));
 
             _storageTransferOptions = storageTransferOptions;
 
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <inheritdoc/>
         public async Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(keys);
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             foreach (var key in keys)
             {
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <inheritdoc/>
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(keys);
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(changes);
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
             if (changes.Count == 0)
             {
@@ -244,9 +244,9 @@ namespace Microsoft.Agents.Storage.Blobs
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
-            ArgumentNullException.ThrowIfNull(changes);
-
-            Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            
+            Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)
             {
                 changesAsObject.Add(change.Key, change.Value);

@@ -140,17 +140,16 @@ namespace Microsoft.Agents.Builder.Tests
             {
             }
 
-            public override TurnContext CreateTurnContext(IActivity activity)
+            public override TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity identity = null)
             {
-                // Get the default turnContext from the base.
-                var turnContext = base.CreateTurnContext(activity);
-
                 // Create a skill ClaimsIdentity and put it in TurnState so SkillValidation.IsSkillClaim() returns true.
-                var claimsIdentity = new ClaimsIdentity();
+                var claimsIdentity = identity ?? new ClaimsIdentity();
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _parentBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _skillBotId));
-                turnContext.Identity = claimsIdentity;
+
+                // Get the default turnContext from the base.
+                var turnContext = base.CreateTurnContext(activity, claimsIdentity);
 
                 return turnContext;
             }

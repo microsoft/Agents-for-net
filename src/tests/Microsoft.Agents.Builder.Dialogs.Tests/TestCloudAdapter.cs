@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -110,6 +111,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
             {
                 throw new System.NotImplementedException();
+            }
+
+            public void Dispose()
+            {
+                GC.SuppressFinalize(this);
             }
         }
     }

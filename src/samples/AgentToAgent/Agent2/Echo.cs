@@ -61,7 +61,7 @@ public class Echo : AgentApplication
     [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
     protected async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // This will be called if the root bot is ending the conversation.  Sending additional messages should be
+        // This will be called if Agent1 is ending the conversation.  Sending additional messages should be
         // avoided as the conversation may have been deleted.
         // Perform cleanup of resources if needed.
         await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
@@ -71,7 +71,7 @@ public class Echo : AgentApplication
     {
         // Send an EndOfConversation activity to the caller with the error to end the conversation.
         var endOfConversation = Activity.CreateEndOfConversationActivity();
-        endOfConversation.Code = "Error";
+        endOfConversation.Code = EndOfConversationCodes.Error;
         endOfConversation.Text = exception.Message;
         await turnContext.SendActivityAsync(endOfConversation, CancellationToken.None);
     }

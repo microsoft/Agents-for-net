@@ -25,7 +25,7 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
-builder.AddAgent<EchoSkill, AdapterWithErrorHandler>();
+builder.AddAgent<EchoSkill>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -35,7 +35,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-// Required for providing the bot manifest.
+// Required for providing the Agent manifest.
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

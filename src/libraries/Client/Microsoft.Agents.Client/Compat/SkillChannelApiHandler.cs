@@ -15,6 +15,7 @@ using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Client.Compat
 {
@@ -41,9 +42,9 @@ namespace Microsoft.Agents.Client.Compat
             IAgentHost channelHost,
             ILogger logger = null)
         {
-            ArgumentNullException.ThrowIfNull(adapter);
-            ArgumentNullException.ThrowIfNull(agent);
-            ArgumentNullException.ThrowIfNull(channelHost);
+            AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
+            AssertionHelpers.ThrowIfNull(agent, nameof(agent));
+            AssertionHelpers.ThrowIfNull(channelHost, nameof(channelHost));
 
             _agent = agent;
             _adapter = adapter;
@@ -205,10 +206,9 @@ namespace Microsoft.Agents.Client.Compat
         {
             var conversationReference = await _agentHost.GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             if (conversationReference == null)
-
             {
                 var sanitizedConversationId = conversationId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
-                _logger.LogError($"Unable to get conversation reference for conversationId {sanitizedConversationId}.");
+                _logger.LogError("Unable to get conversation reference for conversationId {SanitizedConversationId}.", sanitizedConversationId);
                 throw new KeyNotFoundException();
             }
 
@@ -231,10 +231,10 @@ namespace Microsoft.Agents.Client.Compat
                 {
                     case ActivityTypes.EndOfConversation:
                         await _agentHost.DeleteConversationAsync(turnContext, conversationId, cancellationToken).ConfigureAwait(false);
-                        await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                        await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Event:
-                        await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                        await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Command:
                     case ActivityTypes.CommandResult:
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Client.Compat
                         }
                         else
                         {
-                            await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
+                            await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         }
 
                         break;
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Client.Compat
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         }
 
-        private async Task SendToBotAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
+        private async Task SendToAgentAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
         {
             ApplySkillActivityToTurnContext(turnContext, activity);
             await _agent.OnTurnAsync(turnContext, ct).ConfigureAwait(false);

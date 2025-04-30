@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using System;
 using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
 
@@ -44,7 +43,7 @@ namespace Microsoft.Agents.Core.Models
                     }
                 }
             }
-            return result.ToArray();
+            return [.. result];
         }
 
         /// <summary>
@@ -64,51 +63,44 @@ namespace Microsoft.Agents.Core.Models
         /// <returns></returns>
         public static IActivity Clone(this IActivity activity)
         {
-            var json = JsonSerializer.Serialize(activity, ProtocolJsonSerializer.SerializationOptions);
-            return JsonSerializer.Deserialize<Activity>(json, ProtocolJsonSerializer.SerializationOptions);
+            return ProtocolJsonSerializer.CloneTo<IActivity>(activity);
         }
+
         /// <summary>
         /// Gets the channel data for this activity as a strongly-typed object.
         /// </summary>
-        /// <typeparam name="TypeT">The type of the object to return.</typeparam>
+        /// <typeparam name="T">The type of the object to return.</typeparam>
         /// <returns>The strongly-typed object; or the type's default value, if the ChannelData is null.</returns>
-#pragma warning disable CA1715 // Identifiers should have correct prefix (we can't change it without breaking binary compatibility)
-        public static TypeT GetChannelData<TypeT>(this IActivity activity)
-#pragma warning restore CA1715 // Identifiers should have correct prefix
+        public static T GetChannelData<T>(this IActivity activity)
         {
             if (activity.ChannelData == null)
             {
                 return default;
             }
 
-            if (activity.ChannelData.GetType() == typeof(TypeT))
+            if (activity.ChannelData.GetType() == typeof(T))
             {
-                return (TypeT)activity.ChannelData;
+                return (T)activity.ChannelData;
             }
 
-            return ((JsonElement)activity.ChannelData).Deserialize<TypeT>(ProtocolJsonSerializer.SerializationOptions);
-
-
+            return ((JsonElement)activity.ChannelData).Deserialize<T>(ProtocolJsonSerializer.SerializationOptions);
         }
 
         /// <summary>
         /// Gets the channel data for this activity as a strongly-typed object.
         /// A return value indicates whether the operation succeeded.
         /// </summary>
-        /// <typeparam name="TypeT">The type of the object to return.</typeparam>
+        /// <typeparam name="T">The type of the object to return.</typeparam>
         /// <param name="instance">When this method returns, contains the strongly-typed object if the operation succeeded,
         /// or the type's default value if the operation failed.</param>
         /// <param name="activity"></param>
         /// <returns>
         /// <c>true</c> if the operation succeeded; otherwise, <c>false</c>.
         /// </returns>
-        /// <seealso cref="GetChannelData{TypeT}"/>
-#pragma warning disable CA1715 // Identifiers should have correct prefix (we can't change it without breaking binary compatibility)
-        public static bool TryGetChannelData<TypeT>(this IActivity activity, out TypeT instance)
-#pragma warning restore CA1715 // Identifiers should have correct prefix
+        /// <seealso cref="GetChannelData{T}"/>
+        public static bool TryGetChannelData<T>(this IActivity activity, out T instance)
         {
             instance = default;
-
 
             try
             {
@@ -117,12 +109,10 @@ namespace Microsoft.Agents.Core.Models
                     return false;
                 }
 
-                instance = activity.GetChannelData<TypeT>();
+                instance = activity.GetChannelData<T>();
                 return true;
             }
-#pragma warning disable CA1031 // Do not catch general exception types (we just return false here if the conversion fails for any reason)
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 return false;
             }

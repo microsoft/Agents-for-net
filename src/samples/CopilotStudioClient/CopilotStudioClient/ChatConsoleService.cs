@@ -20,11 +20,14 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// <exception cref="InvalidOperationException"></exception>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
         Console.Write("\nagent> ");
-        // Attempt to connect to the copilot studio hosted Agent here
-        // if successful, this will loop though all events that the Copilot Studio Agent sends to the client setup the conversation. 
+        // Attempt to connect to the copilot studio hosted agent here
+        // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
         await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent:true, cancellationToken:cancellationToken))
         {
+            System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
+            sw.Restart();
             if (act is null)
             {
                 throw new InvalidOperationException("Activity is null");
@@ -39,14 +42,18 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
             Console.Write("\nuser> ");
             string question = Console.ReadLine()!; // Get user input from the console to send. 
             Console.Write("\nagent> ");
-            // Send the user input to the Copilot Studio Agent and await the response.
-            // In this case we are not sending a conversation ID, as the Agent is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
+            // Send the user input to the Copilot Studio agent and await the response.
+            // In this case we are not sending a conversation ID, as the agent is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
+            sw.Restart();
             await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
             {
+                System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
                 // for each response,  report to the UX
                 PrintActivity(act);
+                sw.Restart();
             }
         }
+        sw.Stop(); 
     }
 
     /// <summary>
@@ -54,7 +61,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// This method does not handle all of the possible activity types and formats, it is focused on just a few common types. 
     /// </summary>
     /// <param name="act"></param>
-    static void PrintActivity(Activity act)
+    static void PrintActivity(IActivity act)
     {
         switch (act.Type)
         {

@@ -19,10 +19,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="httpRequest">The HTTP request object, typically in a POST handler by a controller.</param>
         /// <param name="httpResponse">The HTTP response object.</param>
-        /// <param name="agent">The bot implementation.</param>
+        /// <param name="agent">The Agent implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default(CancellationToken));
+        Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
     }
 }

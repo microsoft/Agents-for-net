@@ -47,9 +47,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// of O365ConnectorCardMultichoiceInputChoice.
         /// </summary>
         /// <value>The choices.</value>
-#pragma warning disable CA2227 // Collection properties should be read only (we can't change this without breaking compat).
         public IList<O365ConnectorCardMultichoiceInputChoice> Choices { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
 
         /// <summary>
         /// Gets or sets choice item rendering style. Default value is

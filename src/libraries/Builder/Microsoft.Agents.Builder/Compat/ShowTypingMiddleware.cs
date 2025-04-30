@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.Compat
     {
         private readonly TimeSpan _delay;
         private readonly TimeSpan _period;
-        private readonly ConcurrentDictionary<string, (Task, CancellationTokenSource)> _tasks = new ConcurrentDictionary<string, (Task, CancellationTokenSource)>();
+        private readonly ConcurrentDictionary<string, (Task, CancellationTokenSource)> _tasks = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ShowTypingMiddleware"/> class.
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Builder.Compat
             typingActivity.ApplyConversationReference(conversationReference);
 
             // make sure to send the Activity directly on the Adapter rather than via the TurnContext
-            await turnContext.Adapter.SendActivitiesAsync(turnContext, new Activity[] { typingActivity }, cancellationToken).ConfigureAwait(false);
+            await turnContext.Adapter.SendActivitiesAsync(turnContext, [typingActivity], cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Builder.Compat
         }
 
 
-        private static bool IsSkillBot(ITurnContext turnContext)
+        private static bool IsAgent(ITurnContext turnContext)
         {
             return turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity);
         }
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="turnContext">The context object for this turn.</param>
         private async Task ProcessTypingAsync(ITurnContext turnContext)
         {
-            if (!IsSkillBot(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
+            if (!IsAgent(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
             {
                 // Override the typing background task.
                 await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);

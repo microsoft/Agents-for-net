@@ -11,9 +11,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+#if !NETSTANDARD
+using System.Runtime.Loader;
+#endif
 
 namespace Microsoft.Agents.Builder.UserAuth
 {
@@ -86,7 +88,11 @@ namespace Microsoft.Agents.Builder.UserAuth
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
             }
 
+#if !NETSTANDARD
             var assemblyLoader = new UserAuthorizationModuleLoader(AssemblyLoadContext.Default, _logger);
+#else
+            var assemblyLoader = new UserAuthorizationModuleLoader(AppDomain.CurrentDomain, _logger);
+#endif
 
             foreach (var definition in _userAuthHandlers)
             {
@@ -102,8 +108,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             string token;
             try
@@ -139,8 +143,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, string handlerName, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             await auth.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
@@ -151,26 +153,44 @@ namespace Microsoft.Agents.Builder.UserAuth
             await Get(handlerName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
-        public IUserAuthorization Get(string name)
+        public IUserAuthorization Get(string handleName)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(handleName))
             {
                 return Default;
             }
 
-            return GetHandlerInstance(name);
+            return GetHandlerInstance(handleName);
         }
 
-        private IUserAuthorization GetHandlerInstance(string name)
+        public bool TryGet(string handlerName, out IUserAuthorization handler)
         {
-            if (!_userAuthHandlers.TryGetValue(name, out UserAuthorizationDefinition handlerDefinition))
+            if (string.IsNullOrEmpty(handlerName))
             {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationHandlerNotFound, null, name);
+                handler = Default;
+                return true;
             }
-            return GetHandlerInstance(name, handlerDefinition);
+
+            if (_userAuthHandlers.TryGetValue(handlerName, out UserAuthorizationDefinition handlerDefinition))
+            {
+                handler = GetHandlerInstance(handlerName, handlerDefinition);
+                return true;
+            }
+
+            handler = default;
+            return false;
         }
 
-        private IUserAuthorization GetHandlerInstance(string name, UserAuthorizationDefinition handlerDefinition)
+        private IUserAuthorization GetHandlerInstance(string handlerName)
+        {
+            if (!_userAuthHandlers.TryGetValue(handlerName, out UserAuthorizationDefinition handlerDefinition))
+            {
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationHandlerNotFound, null, handlerName);
+            }
+            return GetHandlerInstance(handlerName, handlerDefinition);
+        }
+
+        private IUserAuthorization GetHandlerInstance(string handlerName, UserAuthorizationDefinition handlerDefinition)
         {
             if (handlerDefinition.Instance != null)
             {
@@ -181,7 +201,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

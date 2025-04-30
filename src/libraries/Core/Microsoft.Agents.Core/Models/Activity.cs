@@ -40,25 +40,19 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of Activity. </summary>
         /// <param name="type"> Types of Activities. </param>
         /// <param name="id"> Contains an ID that uniquely identifies the activity on the channel. </param>
-        /// <param name="timestamp"> Contains the date and time that the message was sent, in UTC, expressed in ISO-8601 format. </param>
-        /// <param name="localTimestamp">
-        /// Contains the local date and time of the message, expressed in ISO-8601 format.
-        /// For example, 2016-09-23T13:07:49.4714686-07:00.
-        /// </param>
-        /// <param name="localTimezone">
-        /// Contains the name of the local timezone of the message, expressed in IANA Time Zone database format.
-        /// For example, America/Los_Angeles.
-        /// </param>
+        /// <param name="timestamp">The `timestamp` field records the exact UTC time when the activity occurred. Due to the distributed nature of computing systems, the important time is when the channel (the authoritative store) records the activity. The time when a client or Agent initiated an activity may be transmitted separately in the `localTimestamp` field. The value of the `timestamp` field is an `ISO 8601 date time format`.</param>
+        /// <param name="localTimestamp">The `localTimestamp` field expresses the datetime and timezone offset where the activity was generated. This may be different from the UTC `timestamp` where the activity was recorded. The value of the `localTimestamp` field is an ISO 8601</param>
+        /// <param name="localTimezone">The `localTimezone` field expresses the timezone where the activity was generated. The value of the `localTimezone` field is a time zone name (zone entry) per the IANA Time Zone database.</param>
         /// <param name="callerId">
         /// A string containing an IRI identifying the caller of an Agent. This field is not intended to be transmitted
         /// over the wire, but is instead populated by Agents and clients based on cryptographically verifiable data
         /// that asserts the identity of the callers (e.g. tokens).
         /// </param>
-        /// <param name="serviceUrl"> Contains the URL that specifies the channel's service endpoint. Set by the channel. </param>
-        /// <param name="channelId"> Contains an ID that uniquely identifies the channel. Set by the channel. </param>
-        /// <param name="from"> Identifies the sender of the message. </param>
-        /// <param name="conversation"> Identifies the conversation to which the activity belongs. </param>
-        /// <param name="recipient"> Identifies the recipient of the message. </param>
+        /// <param name="serviceUrl">The `serviceUrl` field is used by channels to denote the URL where replies to the current activity may be sent.</param>
+        /// <param name="channelId">Contains an ID that uniquely identifies the channel. Set by the channel. </param>
+        /// <param name="from">The `from` field describes which client, Agent, or channel generated an Activity.</param>
+        /// <param name="conversation">The `conversation` field describes the conversation in which the activity exists. The value of the `conversation` field is a complex object of the ConversationAccount type.</param>
+        /// <param name="recipient">The `recipient` field describes which client or Agent is receiving this activity. This field is only meaningful when an activity is transmitted to exactly one recipient; it is not meaningful when it is broadcast to multiple recipients (as happens when an activity is sent to a channel). The purpose of the field is to allow the recipient to identify themselves. This is helpful when a client or Agent has more than one identity within the channel. The value of the `recipient` field is a complex object of the ChannelAccount</param>
         /// <param name="textFormat"> Format of text fields Default:markdown. </param>
         /// <param name="attachmentLayout"> The layout hint for multiple attachments. Default: list. </param>
         /// <param name="membersAdded"> The collection of members added to the conversation. </param>
@@ -76,7 +70,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="entities"> Represents the entities that were mentioned in the message. </param>
         /// <param name="channelData"> Contains channel-specific content. </param>
         /// <param name="action"> Indicates whether the recipient of a contactRelationUpdate was added or removed from the sender's contact list. </param>
-        /// <param name="replyToId"> Contains the ID of the message to which this message is a reply. </param>
+        /// <param name="replyToId">The `replyToId` field identifies the prior activity to which the current activity is a reply. This field allows threaded conversation and comment nesting to be communicated between participants. `replyToId` is valid only within the current conversation.</param>
         /// <param name="label"> A descriptive label for the activity. </param>
         /// <param name="valueType"> The type of the activity's value object. </param>
         /// <param name="value"> A value that is associated with the activity. </param>
@@ -137,45 +131,6 @@ namespace Microsoft.Agents.Core.Models
         public bool IsType(string type)
         {
             return string.Equals(type, Type, StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <inheritdoc/>
-        public bool HasContent()
-        {
-            if (!string.IsNullOrWhiteSpace(Text))
-            {
-                return true;
-            }
-
-            if (!string.IsNullOrWhiteSpace(Summary))
-            {
-                return true;
-            }
-
-            if (Attachments != null && Attachments.Any())
-            {
-                return true;
-            }
-
-            if (ChannelData != null)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Determine if the Activity was sent via an Http/Https connection or Streaming
-        /// This can be determined by looking at the ServiceUrl property:
-        /// (1) All channels that send messages via http/https are not streaming
-        /// (2) Channels that send messages via streaming have a ServiceUrl that does not begin with http/https.
-        /// </summary>
-        /// <returns>True if the Activity originated from a streaming connection.</returns>
-        public bool IsFromStreamingConnection()
-        {
-            var isHttp = ServiceUrl?.StartsWith("http", StringComparison.InvariantCultureIgnoreCase);
-            return isHttp.HasValue && !isHttp.Value;
         }
 
         /// <inheritdoc/>
@@ -318,8 +273,8 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity(ActivityTypes.Message)
             {
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
         }
 
@@ -351,27 +306,6 @@ namespace Microsoft.Agents.Core.Models
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded = [],
                 MembersRemoved = [],
-            };
-        }
-
-        /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/>.
-        /// </summary>
-        /// <param name="name">The name of the trace operation to create.</param>
-        /// <param name="valueType">Optional, identifier for the format of the <paramref name="value"/>.
-        /// Default is the name of type of the <paramref name="value"/>.</param>
-        /// <param name="value">Optional, the content for this trace operation.</param>
-        /// <param name="label">Optional, a descriptive label for this trace operation.</param>
-        /// <returns>The new trace activity.</returns>
-        public static IActivity CreateTraceActivity(string name, string valueType = null, object value = null, [CallerMemberName] string label = null)
-        {
-            return new Activity()
-            {
-                Type = ActivityTypes.Trace,
-                Name = name,
-                Label = label,
-                ValueType = valueType ?? value?.GetType().Name,
-                Value = value,
             };
         }
 
@@ -463,7 +397,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
-        public IActivity CreateReply(string text = "", string locale = "")
+        public IActivity CreateReply(string text = null, string locale = null)
         {
             var reply = new Activity
             {
@@ -477,14 +411,36 @@ namespace Microsoft.Agents.Core.Models
                 Conversation = new ConversationAccount(isGroup: Conversation.IsGroup, id: Conversation.Id, name: Conversation.Name),
                 Text = text ?? string.Empty,
                 Locale = locale ?? Locale,
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
             return reply;
         }
 
+        /// <summary>
+        /// Creates an instance of the <see cref="IActivity"/>.
+        /// </summary>
+        /// <param name="name">The name of the trace operation to create.</param>
+        /// <param name="valueType">Optional, identifier for the format of the <paramref name="value"/>.
+        /// Default is the name of type of the <paramref name="value"/>.</param>
+        /// <param name="value">Optional, the content for this trace operation.</param>
+        /// <param name="label">Optional, a descriptive label for this trace operation.</param>
+        /// <returns>The new trace activity.</returns>
+        public static IActivity CreateTraceActivity(string name, object value = null, string valueType = null, [CallerMemberName] string label = null)
+        {
+            return new Activity()
+            {
+                Type = ActivityTypes.Trace,
+                Name = name,
+                Label = label,
+                ValueType = valueType ?? value?.GetType().Name,
+                Value = value,
+            };
+        }
+
+
         /// <inheritdoc/>
-        public IActivity CreateTrace(string name, object value = null, string valueType = "", [CallerMemberName] string label = "")
+        public IActivity CreateTrace(string name, object value = null, string valueType = null, [CallerMemberName] string label = null)
         {
             var trace = new Activity
             {

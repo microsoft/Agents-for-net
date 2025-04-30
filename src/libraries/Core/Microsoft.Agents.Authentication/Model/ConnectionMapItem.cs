@@ -3,7 +3,7 @@
 
 namespace Microsoft.Agents.Authentication.Model
 {
-    internal class ConnectionMapItem
+    public class ConnectionMapItem
     {
         public string ServiceUrl { get; set; }
         public string Audience { get; set; }

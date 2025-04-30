@@ -6,7 +6,7 @@ using System;
 namespace Microsoft.Agents.Extensions.Teams.Connector
 {
     /// <summary>
-    /// ﻿﻿The Connector for Microsoft Teams allows your bot to perform extended operations on a Microsoft Teams channel.
+    /// ﻿﻿The Connector for Microsoft Teams allows your Agent to perform extended operations on a Microsoft Teams channel.
     /// </summary>
     public interface ITeamsConnectorClient : IDisposable
     {

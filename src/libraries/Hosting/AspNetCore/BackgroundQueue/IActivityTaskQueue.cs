@@ -24,9 +24,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
         /// <param name="proactive"></param>
         /// <param name="proactiveAudience"></param>
-        /// <param name="bot"></param>
+        /// <param name="agent"></param>
         /// <param name="onComplete"></param>
-        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null, Action<InvokeResponse> onComplete = null);
+        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Action<InvokeResponse> onComplete = null);
 
         /// <summary>
         /// Wait for a signal of an enqueued Activity with Claims to be processed.

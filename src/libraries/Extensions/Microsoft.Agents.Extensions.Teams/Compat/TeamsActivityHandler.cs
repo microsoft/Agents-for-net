@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>
-        /// Invoke activities communicate programmatic commands from a client or channel to a bot.
+        /// Invoke activities communicate programmatic commands from a client or channel to an Agent.
         /// The meaning of an invoke activity is defined by the property,
         /// which is meaningful within the scope of a channel.
         /// </remarks>
@@ -297,10 +297,10 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                 switch (action.BotMessagePreviewAction)
                 {
                     case "edit":
-                        return await OnTeamsMessagingExtensionBotMessagePreviewEditAsync(turnContext, action, cancellationToken).ConfigureAwait(false);
+                        return await OnTeamsMessagingExtensionAgentMessagePreviewEditAsync(turnContext, action, cancellationToken).ConfigureAwait(false);
 
                     case "send":
-                        return await OnTeamsMessagingExtensionBotMessagePreviewSendAsync(turnContext, action, cancellationToken).ConfigureAwait(false);
+                        return await OnTeamsMessagingExtensionAgentMessagePreviewSendAsync(turnContext, action, cancellationToken).ConfigureAwait(false);
 
                     default:
                         throw new InvokeResponseException(HttpStatusCode.BadRequest, $"{action.BotMessagePreviewAction} is not a supported BotMessagePreviewAction.");
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>The Messaging Extension Action Response for the action.</returns>
-        protected virtual Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionBotMessagePreviewEditAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
+        protected virtual Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionAgentMessagePreviewEditAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
         }
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>The Messaging Extension Action Response for the action.</returns>
-        protected virtual Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionBotMessagePreviewSendAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
+        protected virtual Task<MessagingExtensionActionResponse> OnTeamsMessagingExtensionAgentMessagePreviewSendAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionAction action, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
         }
@@ -471,7 +471,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// <summary>
         /// Invoked when a conversation update activity is received from the channel.
         /// Conversation update activities are useful when it comes to responding to users being added to or removed from the channel.
-        /// For example, a bot could respond to a user being added by greeting the user.
+        /// For example, an Agent could respond to a user being added by greeting the user.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -540,8 +540,8 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Override this in a derived class to provide logic for when members other than the bot
-        /// join the channel, such as your bot's welcome logic.
+        /// Override this in a derived class to provide logic for when members other than the Agent
+        /// join the channel, such as your Agent's welcome logic.
         /// UseIt will get the associated members with the provided accounts.
         /// </summary>
         /// <param name="membersAdded">A list of all the accounts added to the channel, as
@@ -558,7 +558,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
             {
                 if (memberAdded.Properties.Count > 0 || memberAdded.Id == turnContext.Activity?.Recipient?.Id)
                 {
-                    // when the ChannelAccount object is fully a TeamsChannelAccount, or the bot (when Teams changes the service to return the full details)
+                    // when the ChannelAccount object is fully a TeamsChannelAccount, or the Agent (when Teams changes the service to return the full details)
                     teamsMembersAdded.Add(ProtocolJsonSerializer.ToObject<TeamsChannelAccount>(memberAdded));
                 }
                 else
@@ -593,8 +593,8 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Override this in a derived class to provide logic for when members other than the bot
-        /// leave the channel, such as your bot's good-bye logic.
+        /// Override this in a derived class to provide logic for when members other than the Agent
+        /// leave the channel, such as your Agent's good-bye logic.
         /// It will get the associated members with the provided accounts.
         /// </summary>
         /// <param name="membersRemoved">A list of all the accounts removed from the channel, as
@@ -616,8 +616,8 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Override this in a derived class to provide logic for when members other than the bot
-        /// join the channel, such as your bot's welcome logic.
+        /// Override this in a derived class to provide logic for when members other than the Agent
+        /// join the channel, such as your Agent's welcome logic.
         /// </summary>
         /// <param name="teamsMembersAdded">A list of all the members added to the channel, as
         /// described by the conversation update activity.</param>
@@ -632,8 +632,8 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Override this in a derived class to provide logic for when members other than the bot
-        /// leave the channel, such as your bot's good-bye logic.
+        /// Override this in a derived class to provide logic for when members other than the Agent
+        /// leave the channel, such as your Agent's good-bye logic.
         /// </summary>
         /// <param name="teamsMembersRemoved">A list of all the members removed from the channel, as
         /// described by the conversation update activity.</param>
@@ -854,7 +854,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
 
         /// <summary>
         /// Invoked when a read receipt for a previously sent message is received from the connector.
-        /// Override this in a derived class to provide logic for when the bot receives a read receipt event.
+        /// Override this in a derived class to provide logic for when the Agent receives a read receipt event.
         /// </summary>
         /// <param name="readReceiptInfo">Information regarding the read receipt. i.e. Id of the message last read by the user.</param>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>

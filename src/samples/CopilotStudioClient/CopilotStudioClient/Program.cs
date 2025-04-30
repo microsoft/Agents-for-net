@@ -9,10 +9,20 @@ using Microsoft.Agents.CopilotStudio.Client;
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 // Get the configuration settings for the DirectToEngine client from the appsettings.json file.
-SampleConnectionSettings settings = new SampleConnectionSettings(builder.Configuration.GetSection("DirectToEngineSettings"));
+SampleConnectionSettings settings = new SampleConnectionSettings(builder.Configuration.GetSection("CopilotStudioClientSettings"));
 
 // Create an http client for use by the DirectToEngine Client and add the token handler to the client.
-builder.Services.AddHttpClient("mcs").ConfigurePrimaryHttpMessageHandler(() => new AddTokenHandler(settings));
+builder.Services.AddHttpClient("mcs").ConfigurePrimaryHttpMessageHandler(() =>
+{
+    if (settings.UseS2SConnection)
+    {
+        return new AddTokenHandlerS2S(settings);
+    }
+    else
+    {
+        return new AddTokenHandler(settings);
+    }
+});
 
 // add Settings and an instance of the Direct To engine Copilot Client to the Current services.  
 builder.Services

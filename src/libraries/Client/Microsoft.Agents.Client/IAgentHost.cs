@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Client
         /// Removes the indicated conversation.
         /// </summary>
         /// <remarks>
-        /// Only the bot knows when a conversation is done.  All effort should be made to remove conversations as otherwise the persisted conversations accumulate.
+        /// Only the Agent knows when a conversation is done.  All effort should be made to remove conversations as otherwise the persisted conversations accumulate.
         /// A received Activity of type EndOfConversation is one instance where the conversation should be deleted.
         /// </remarks>
         /// <param name="turnContext"></param>

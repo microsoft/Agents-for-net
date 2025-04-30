@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; internal set; } = CreateConnectorOptions();
 
         static ProtocolJsonSerializer()
         {
@@ -84,24 +84,20 @@ namespace Microsoft.Agents.Core.Serialization
             {
                 if (!string.IsNullOrWhiteSpace(json))
                 {
-                    using (var document = JsonDocument.Parse(json))
+                    using var document = JsonDocument.Parse(json);
+                    foreach (var property in document.RootElement.Clone().EnumerateObject())
                     {
-                        foreach (var property in document.RootElement.Clone().EnumerateObject())
-                        {
-                            elements.Add(property.Name, property.Value);
-                        }
+                        elements.Add(property.Name, property.Value);
                     }
                 }
             }
             else
             {
-                var serialized = System.Text.Json.JsonSerializer.Serialize(value, SerializationOptions);
-                using (var document = JsonDocument.Parse(serialized))
+                var serialized = JsonSerializer.Serialize(value, SerializationOptions);
+                using var document = JsonDocument.Parse(serialized);
+                foreach (var property in document.RootElement.Clone().EnumerateObject())
                 {
-                    foreach (var property in document.RootElement.Clone().EnumerateObject())
-                    {
-                        elements.Add(property.Name, property.Value);
-                    }
+                    elements.Add(property.Name, property.Value);
                 }
             }
 
@@ -148,43 +144,38 @@ namespace Microsoft.Agents.Core.Serialization
                     throw new ArgumentNullException(nameof(value));
                 }
 
-                return System.Text.Json.JsonSerializer.Deserialize<T>(json, SerializationOptions);
+                return JsonSerializer.Deserialize<T>(json, SerializationOptions);
             }
             else if (value is Stream stream)
             {
-                return System.Text.Json.JsonSerializer.Deserialize<T>(stream, ProtocolJsonSerializer.SerializationOptions);
+                return JsonSerializer.Deserialize<T>(stream, SerializationOptions);
             }
 
-            var serialized = System.Text.Json.JsonSerializer.Serialize(value, SerializationOptions);
-            return System.Text.Json.JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
+            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
+            return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 
         public static bool Equals<T>(T value1, T value2)
         {
             return string.Equals(
-                    JsonSerializer.Serialize(value1, ProtocolJsonSerializer.SerializationOptions),
-                    JsonSerializer.Serialize(value2, ProtocolJsonSerializer.SerializationOptions)
+                    JsonSerializer.Serialize(value1, SerializationOptions),
+                    JsonSerializer.Serialize(value2, SerializationOptions)
                 );
         }
 
         public static T CloneTo<T>(object obj)
         {
-            return System.Text.Json.JsonSerializer.Deserialize<T>(System.Text.Json.JsonSerializer.Serialize(obj, ProtocolJsonSerializer.SerializationOptions), ProtocolJsonSerializer.SerializationOptions);
+            return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(obj, SerializationOptions), SerializationOptions);
         }
 
         public static string ToJson(object value)
         {
-            return System.Text.Json.JsonSerializer.Serialize(value, ProtocolJsonSerializer.SerializationOptions);
+            return JsonSerializer.Serialize(value, SerializationOptions);
         }
 
         public static ToT GetAs<ToT, FromT>(FromT source)
         {
-            return System.Text.Json.JsonSerializer.Deserialize<ToT>(System.Text.Json.JsonSerializer.Serialize(source, ProtocolJsonSerializer.SerializationOptions), ProtocolJsonSerializer.SerializationOptions);
-        }
-
-        public static bool JsonEquals(object left, object right)
-        {
-            return System.Text.Json.JsonSerializer.Serialize(left).Equals(System.Text.Json.JsonSerializer.Serialize(right), StringComparison.Ordinal);
+            return JsonSerializer.Deserialize<ToT>(JsonSerializer.Serialize(source, SerializationOptions), SerializationOptions);
         }
     }
 }

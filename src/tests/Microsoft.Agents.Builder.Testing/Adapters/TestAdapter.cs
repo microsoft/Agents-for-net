@@ -517,12 +517,12 @@ namespace Microsoft.Agents.Builder.Testing
         /// </summary>
         /// <param name="activity">An <see cref="Activity"/> instance for the turn.</param>
         /// <returns>A <see cref="TurnContext"/> instance to be used by the adapter.</returns>
-        public virtual TurnContext CreateTurnContext(IActivity activity)
+        public virtual TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity identity = null)
         {
             var turnContext = new TurnContext(this, activity);
 
             turnContext.Services.Set<IUserTokenClient>(_userTokenClient);
-            turnContext.Identity = ClaimsIdentity;
+            turnContext.Identity = identity ?? ClaimsIdentity;
 
             return turnContext;
         }

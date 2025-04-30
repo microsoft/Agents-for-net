@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="activities"> A list of Activities included in the response. </param>
         public ExpectedReplies(IList<IActivity> activities)
         {
-            Activities = activities ?? new List<IActivity>();
+            Activities = activities ?? [];
         }
 
         /// <summary> A list of Activities included in the response. </summary>

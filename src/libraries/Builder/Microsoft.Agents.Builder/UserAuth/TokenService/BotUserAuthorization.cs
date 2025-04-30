@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Base class for bot authentication that handles common logic.
+    /// Base class for Agent authentication that handles common logic.
     /// </summary>
     internal class BotUserAuthorization
     {
@@ -35,7 +36,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public BotUserAuthorization(string name, OAuthSettings oauthSettings, IStorage storage)
         {
             _name = name;
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
@@ -52,11 +53,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>True if valid. Otherwise, false.</returns>
         public virtual bool IsValidActivity(ITurnContext context)
         {
-            // TODO: if flow hasn't started, does it matter what the Activity.Type is?  Though it is likely always an Activity (until it's not).
             var isMatch = context.Activity.Type == ActivityTypes.Message
+                && context.Activity.ChannelId != Channels.Msteams
                 && !string.IsNullOrEmpty(context.Activity.Text);
 
-            // TODO: the following is only true if the flow is already started, but we don't know that yet.
             isMatch |= context.Activity.Type == ActivityTypes.Invoke &&
                 context.Activity.Name == SignInConstants.VerifyStateOperationName;
 
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             else
             {
-                // For non-Teams bots, the user sends the "magic code" that will be used to exchange for a token.
+                // For non-Teams Agents, the user sends the "magic code" that will be used to exchange for a token.
                 tokenResponse = await OnContinueFlow(turnContext, cancellationToken);
             }
 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            TokenResponse tokenResponse = null;
+            TokenResponse tokenResponse;
 
             _state.ContinueCount++;
 

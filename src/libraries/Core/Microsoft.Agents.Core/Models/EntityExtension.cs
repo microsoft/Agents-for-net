@@ -90,14 +90,20 @@ namespace Microsoft.Agents.Core.Models
                             // if first char of followingText is not whitespace
                             if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
                             {
-                                // insert space because teams does => <at>Tom</at>is cool => Tomis cool
+                                // insert space because teams does => <at>Tom</at> is cool => Tom is cool
                                 followingText = $" {followingText}";
                             }
 
-                            text = text.Substring(0, iAtClose) + followingText;
+#if !NETSTANDARD
+                            text = string.Concat(text.AsSpan(0, iAtClose), followingText);
 
                             // replace <at ...>
-                            text = text.Substring(0, iAtStart) + text.Substring(iAtEnd + 1);
+                            text = string.Concat(text.AsSpan(0, iAtStart), text.AsSpan(iAtEnd + 1));
+#else
+                            text = string.Concat(text.Substring(0, iAtClose), followingText);
+                            // replace <at ...>
+                            text = string.Concat(text.Substring(0, iAtStart), text.Substring(iAtEnd + 1));
+#endif
 
                             // we found one, try again, there may be more.
                             foundTag = true;
@@ -163,14 +169,24 @@ namespace Microsoft.Agents.Core.Models
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
         }
 
-        public static SubChannelInfo GetSubChannelEntity(this IActivity activity)
+        public static ActivityTreatment GetActivityTreatmentEntity(this IActivity activity)
         {
             if (activity.Entities == null || activity.Entities.Count == 0)
             {
                 return null;
             }
 
-            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.SubChannelInfo, StringComparison.OrdinalIgnoreCase)) as SubChannelInfo;
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.ActivityTreatment, StringComparison.OrdinalIgnoreCase)) as ActivityTreatment;
+        }
+        
+        public static ProductInfo GetProductInfoEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.ProductInfo, StringComparison.OrdinalIgnoreCase)) as ProductInfo;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.State.Tests
 {
     public class TestUtilities
     {
-        public static TurnContext CreateEmptyContext()
+        public static ITurnContext CreateEmptyContext()
         {
             var b = new TestAdapter();
             var a = new Activity

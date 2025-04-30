@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -13,14 +14,9 @@ namespace Microsoft.Agents.Connector
 {
     internal static class HttpClientExtensions
     {
-        /// <summary>
-        /// The product info header value for the SDK. Stored as Static for performance.
-        /// </summary>
         private static ProductInfoHeaderValue _frameworkProductInfo = null;
-        /// <summary>
-        /// SDK Version String. Stored as Static for performance.
-        /// </summary>
         private static ProductInfoHeaderValue _versionString = null;
+        private static ProductInfoHeaderValue _osString = null;
 
         public static void AddDefaultUserAgent(this HttpClient httpClient, ProductInfoHeaderValue[] additionalProductInfo = null)
         {
@@ -29,16 +25,13 @@ namespace Microsoft.Agents.Connector
                 return;    
             }
 
-            var userAgent = new List<ProductInfoHeaderValue>();
-
-            userAgent.Add(new ProductInfoHeaderValue("Microsoft-Agents", "1.0"));
-            userAgent.Add(GetClientProductInfo());
-
-            var framework = GetFrameworkProductInfo();
-            if (framework != null)
+            // This is the expected order for our User-Agent.
+            var userAgent = new List<ProductInfoHeaderValue>
             {
-                userAgent.Add(framework);
-            }
+                GetClientProductInfo(),
+                GetFrameworkProductInfo(),
+                GetOSProductInfo()
+            };
 
             if (additionalProductInfo != null)
             {
@@ -73,8 +66,21 @@ namespace Microsoft.Agents.Connector
 
             var version = assembly.GetName().Version.ToString();
 
-            _versionString = new ProductInfoHeaderValue("Microsoft-Agent-SDK", version);
+            _versionString = new ProductInfoHeaderValue("agents-sdk-net", version);
             return _versionString;
+        }
+
+        private static ProductInfoHeaderValue GetOSProductInfo()
+        {
+            if (_osString != null)
+            {
+                return _osString;
+            }
+
+            var os = Environment.OSVersion;
+
+            _osString = new ProductInfoHeaderValue(os.Platform.ToString(), $"{os.Version.Major}.{os.Version.Minor}.{os.Version.Build}");
+            return _osString;
         }
 
         private static readonly Regex FrameworkRegEx = new Regex(@"(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)", RegexOptions.Compiled);
@@ -89,35 +95,22 @@ namespace Microsoft.Agents.Connector
                     .GetCustomAttribute<TargetFrameworkAttribute>()?
                     .FrameworkName ?? RuntimeInformation.FrameworkDescription;
 
-            if (!string.IsNullOrWhiteSpace(frameworkName) && frameworkName.Length > 0)
+            var splitFramework = frameworkName.Replace(",", string.Empty).Replace(" ", string.Empty).Split('=');
+            if (splitFramework.Length > 1)
             {
-                // from:
-                // .NETCoreApp,Version=v3.1
-                // to:
-                // .NETCoreAppVersion/v3.1
+                _ = ProductInfoHeaderValue.TryParse($"{splitFramework[0]}/{splitFramework[1]}", out _frameworkProductInfo);
+            }
+            else
+            {
+                frameworkName = splitFramework[0];
 
-                // from:
-                // .NET Framework 4.8.4250.0
-                // to:
-                // .NETFramework/4.8.4250.0
+                // Parse the version from the framework string.
+                var version = FrameworkRegEx.Match(frameworkName);
 
-                var splitFramework = frameworkName.Replace(",", string.Empty).Replace(" ", string.Empty).Split('=');
-                if (splitFramework.Length > 1)
+                if (version.Success)
                 {
-                    ProductInfoHeaderValue.TryParse($"{splitFramework[0]}/{splitFramework[1]}", out _frameworkProductInfo);
-                }
-                else if (splitFramework.Length > 0)
-                {
-                    frameworkName = splitFramework[0];
-
-                    // Parse the version from the framework string.
-                    var version = FrameworkRegEx.Match(frameworkName);
-
-                    if (version.Success)
-                    {
-                        frameworkName = frameworkName.Replace(version.Value, string.Empty).Trim();
-                        ProductInfoHeaderValue.TryParse($"{frameworkName}/{version.Value}", out _frameworkProductInfo);
-                    }
+                    frameworkName = frameworkName.Replace(version.Value, string.Empty).Trim();
+                    _ = ProductInfoHeaderValue.TryParse($"{frameworkName}/{version.Value}", out _frameworkProductInfo);
                 }
             }
 

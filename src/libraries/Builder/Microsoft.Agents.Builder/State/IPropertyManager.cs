@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.State
         /// <typeparam name="T">The property value type.</typeparam>
         /// <param name="name">The name of the property accessor.</param>
         /// <returns>A state property accessor for the property.</returns>
-        [Obsolete("Use BotState Get/Set methods and call BotState.LoadAsync or use AutoSaveStateMiddleware.")]
+        [Obsolete("Use AgentState Get/Set methods and call AgentState.LoadAsync or use AutoSaveStateMiddleware.")]
         IStatePropertyAccessor<T> CreateProperty<T>(string name);
     }
 }

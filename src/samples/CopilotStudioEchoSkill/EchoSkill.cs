@@ -19,6 +19,17 @@ public class EchoSkill : AgentApplication
 
         // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
         OnActivity(ActivityTypes.Message, OnMessageAsync);
+
+        // Handle uncaught exceptions be resetting ConversationState and letting MCS know the conversation is over.
+        OnTurnError(async (turnContext, turnState, exception, cancellationToken) =>
+        {
+            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
+
+            var eoc = Activity.CreateEndOfConversationActivity();
+            eoc.Code = EndOfConversationCodes.Error;
+            eoc.Text = exception.Message;
+            await turnContext.SendActivityAsync(eoc, cancellationToken);
+        });
     }
 
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -27,38 +38,35 @@ public class EchoSkill : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hi, This is EchoSkill"), cancellationToken);
+                await turnContext.SendActivityAsync("Hi, This is EchoSkill", cancellationToken: cancellationToken);
             }
         }
     }
 
     protected async Task EndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // This will be called if the root bot is ending the conversation.  Sending additional messages should be
+        // This will be called if MCS is ending the conversation.  Sending additional messages should be
         // avoided as the conversation may have been deleted.
         // Perform cleanup of resources if needed.
-        await turnContext.SendActivityAsync("Received EndOfConversation", cancellationToken: cancellationToken);
+        await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
     }
 
     protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        if (turnContext.Activity.Text.Contains("end") || turnContext.Activity.Text.Contains("stop"))
+        if (turnContext.Activity.Text.Contains("end"))
         {
-            var messageText = $"(EchoSkill) Ending conversation...";
-            await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.IgnoringInput.ToString()), cancellationToken);
+            await turnContext.SendActivityAsync("(EchoSkill) Ending conversation...", cancellationToken: cancellationToken);
 
             // Indicate this conversation is over by sending an EndOfConversation Activity.
-            // This bot doesn't return a value, but if it did it could be put in Activity.Value.
+            // This Agent doesn't return a value, but if it did it could be put in Activity.Value.
             var endOfConversation = Activity.CreateEndOfConversationActivity();
             endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
             await turnContext.SendActivityAsync(endOfConversation, cancellationToken);
         }
         else
         {
-            var messageText = $"Echo(EchoSkill): {turnContext.Activity.Text}";
-            await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.IgnoringInput.ToString()), cancellationToken);
-            messageText = "Echo(EchoSkill): Say \"end\" or \"stop\" and I'll end the conversation and return to the parent.";
-            await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
+            await turnContext.SendActivityAsync($"(EchoSkill): {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+            await turnContext.SendActivityAsync("(EchoSkill): Say \"end\" and I'll end the conversation.", cancellationToken: cancellationToken);
         }
     }
 }

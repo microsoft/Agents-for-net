@@ -55,12 +55,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
-            ActionExecuteHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            ActionExecuteHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 TestAdaptiveCardActionData actionData = Cast<TestAdaptiveCardActionData>(data);
                 Assert.Equal("test-value", actionData.TestKey);
@@ -116,12 +115,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adaptiveCardInvokeResponseMock = new Mock<AdaptiveCardInvokeResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
-            ActionExecuteHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            ActionExecuteHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(adaptiveCardInvokeResponseMock.Object);
             };
@@ -151,16 +149,15 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adaptiveCardInvokeResponseMock = new Mock<AdaptiveCardInvokeResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
-            ActionExecuteHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            ActionExecuteHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(adaptiveCardInvokeResponseMock.Object);
             };
@@ -193,10 +190,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var called = false;
             ActionSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -235,10 +231,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 ChannelId = "channelId",
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             var called = false;
             ActionSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -274,10 +269,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
@@ -345,12 +339,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
-            SearchHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Equal("test-query", query.Parameters.QueryText);
                 Assert.Equal("test-dataset", query.Parameters.Dataset);
@@ -404,12 +397,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
-            SearchHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Equal("test-query", query.Parameters.QueryText);
                 Assert.Equal("test-dataset", query.Parameters.Dataset);
@@ -438,22 +430,21 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             });
-            IList<AdaptiveCardsSearchResult> searchResults = new List<AdaptiveCardsSearchResult>
-            {
+            IList<AdaptiveCardsSearchResult> searchResults =
+            [
                 new("test-title", "test-value")
-            };
+            ];
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
-            var app = new AgentApplication(new()
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
-                TurnStateFactory = () => turnState.Result,
             });
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
-            SearchHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Equal("test-query", query.Parameters.QueryText);
                 Assert.Equal("test-dataset", query.Parameters.Dataset);

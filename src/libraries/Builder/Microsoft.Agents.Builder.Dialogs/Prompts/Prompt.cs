@@ -7,10 +7,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
-namespace Microsoft.Agents.Builder.Dialogs
+namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
     /// Defines the core behavior of prompt dialogs.
@@ -65,10 +66,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             if (options is CancellationToken)
             {
@@ -118,10 +116,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Don't do anything for non-message activities
             if (dc.Context.Activity.Type != ActivityTypes.Message)
@@ -136,7 +131,6 @@ namespace Microsoft.Agents.Builder.Dialogs
             var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
 
             // Increment attempt count
-            // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
             state[AttemptCountKey] = (int) state[AttemptCountKey] + 1;
 
             // Validate the return value
@@ -246,7 +240,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 var activeDialogState = dc.ActiveDialog.State;
                 var state = ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(activeDialogState[PersistedState]);
                 var options = ProtocolJsonSerializer.ToObject<PromptOptions>(activeDialogState[PersistedOptions]);
-                var recognized = await OnRecognizeAsync(dc.Context, state, options).ConfigureAwait(false);
+                var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken: cancellationToken).ConfigureAwait(false);
                 return recognized.Succeeded;
             }
 

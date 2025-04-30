@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -23,9 +24,9 @@ namespace Microsoft.Agents.Builder
     /// <seealso cref="IAgent"/>
     public class TurnContext : ITurnContext, IDisposable
     {
-        private readonly IList<SendActivitiesHandler> _onSendActivities = new List<SendActivitiesHandler>();
-        private readonly IList<UpdateActivityHandler> _onUpdateActivity = new List<UpdateActivityHandler>();
-        private readonly IList<DeleteActivityHandler> _onDeleteActivity = new List<DeleteActivityHandler>();
+        private readonly IList<SendActivitiesHandler> _onSendActivities = [];
+        private readonly IList<UpdateActivityHandler> _onUpdateActivity = [];
+        private readonly IList<DeleteActivityHandler> _onDeleteActivity = [];
 
         private bool _disposed;
         private readonly IStreamingResponse _streamingResponse;
@@ -44,8 +45,8 @@ namespace Microsoft.Agents.Builder
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
-            StackState = new TurnContextStateCollection();
-            Services = new TurnContextStateCollection();
+            StackState = [];
+            Services = [];
 
             _streamingResponse = new StreamingResponse(this);
         }
@@ -61,7 +62,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">activity to put into the new turn context.</param>
         public TurnContext(ITurnContext turnContext, IActivity activity)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
             _streamingResponse = new StreamingResponse(this);
@@ -123,62 +124,33 @@ namespace Microsoft.Agents.Builder
         /// Gets a list of activities to send when `context.Activity.DeliveryMode == 'expectReplies'.
         /// </summary>
         /// <value>A list of activities.</value>
-        public List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
+        internal List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
 
-        /// <summary>
-        /// Adds a response handler for send activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// or <see cref="SendActivitiesAsync(IActivity[], CancellationToken)"/> methods are called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnSendActivities(SendActivitiesHandler handler)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(OnSendActivities));
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(OnSendActivities));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             _onSendActivities.Add(handler);
             return this;
         }
 
-        /// <summary>
-        /// Adds a response handler for update activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="UpdateActivityAsync(IActivity, CancellationToken)"/> is called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(OnUpdateActivity));
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(OnUpdateActivity));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             _onUpdateActivity.Add(handler);
             return this;
         }
 
-        /// <summary>
-        /// Adds a response handler for delete activity operations.
-        /// </summary>
-        /// <param name="handler">The handler to add to the context object.</param>
-        /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
-        /// <remarks>When the context's <see cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// or <see cref="DeleteActivityAsync(string, CancellationToken)"/> is called,
-        /// the adapter calls the registered handlers in the order in which they were
-        /// added to the context object.
-        /// </remarks>
+        /// <inheritdoc/>
         public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(OnDeleteActivity));
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(OnDeleteActivity));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             _onDeleteActivity.Add(handler);
             return this;
@@ -187,8 +159,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = null, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(SendActivityAsync));
-            ArgumentException.ThrowIfNullOrWhiteSpace(textReplyToSend);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
 
             var activityToSend = new Activity() 
             { 
@@ -212,8 +184,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(SendActivityAsync));
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             ResourceResponse[] responses = await SendActivitiesAsync(new[] { activity }, cancellationToken).ConfigureAwait(false);
             if (responses == null || responses.Length == 0)
@@ -231,8 +203,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(SendActivitiesAsync));
-            ArgumentNullException.ThrowIfNull(activities);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivitiesAsync));
+            AssertionHelpers.ThrowIfNull(activities, nameof(activities));
 
             if (activities.Length == 0)
             {
@@ -287,7 +259,7 @@ namespace Microsoft.Agents.Builder
                         // is not being sent through the adapter, where it would be added to TurnState.
                         if (activity.Type == ActivityTypes.InvokeResponse)
                         {
-                            StackState.Add(ChannelAdapter.InvokeResponseKey, activity);
+                            StackState[ChannelAdapter.InvokeResponseKey] = activity;
                         }
 
                         responses[index] = new ResourceResponse();
@@ -332,8 +304,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(UpdateActivityAsync));
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(UpdateActivityAsync));
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             var conversationReference = Activity.GetConversationReference();
             var a = activity.ApplyConversationReference(conversationReference);
@@ -349,8 +321,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(DeleteActivityAsync));
-            ArgumentException.ThrowIfNullOrWhiteSpace(activityId);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteActivityAsync));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(activityId, nameof(activityId));
 
             var cr = Activity.GetConversationReference();
             cr.ActivityId = activityId;
@@ -366,8 +338,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
         {
-            ObjectDisposedException.ThrowIf(_disposed, nameof(DeleteActivityAsync));
-            ArgumentNullException.ThrowIfNull(conversationReference);
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteActivityAsync));
+            AssertionHelpers.ThrowIfNull(conversationReference, nameof(conversationReference));
 
             async Task ActuallyDeleteStuffAsync()
             {
@@ -418,7 +390,7 @@ namespace Microsoft.Agents.Builder
             Func<Task<ResourceResponse>> callAtBottom,
             CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             if (updateHandlers == null)
             {
@@ -458,7 +430,7 @@ namespace Microsoft.Agents.Builder
             Func<Task> callAtBottom,
             CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(cr);
+            AssertionHelpers.ThrowIfNull(cr, nameof(cr));
 
             if (deleteHandlers == null)
             {

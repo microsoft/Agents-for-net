@@ -20,7 +20,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public static Task<TokenResponse> GetUserTokenAsync(ITurnContext context, string connectionName, string magicCode, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);
-            return userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId.ToString(), magicCode, cancellationToken);
+            return userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId.Channel, magicCode, cancellationToken);
+        }
+
+        public static Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(ITurnContext context, string connectionName, string magicCode = null, CancellationToken cancellationToken = default)
+        {
+            IUserTokenClient userTokenClient = GetUserTokenClient(context);
+            return userTokenClient.GetTokenOrSignInResourceAsync(connectionName, context.Activity, magicCode, null, null, cancellationToken);
         }
 
         public static Task<TokenResponse> ExchangeTokenAsync(ITurnContext context, string connectionName, TokenExchangeRequest tokenExchangeRequest, CancellationToken cancellationToken)
@@ -38,11 +44,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static IUserTokenClient GetUserTokenClient(ITurnContext context)
         {
             IUserTokenClient userTokenClient = context.Services.Get<IUserTokenClient>();
-            if (userTokenClient == null)
-            {
-                throw new NotSupportedException("IUserTokenClient is not supported by the current adapter");
-            }
-            return userTokenClient;
+            return userTokenClient ?? throw new NotSupportedException("IUserTokenClient is not supported by the current adapter");
         }
     }
 }

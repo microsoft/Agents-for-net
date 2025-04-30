@@ -11,14 +11,16 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Handles requests received via the ChannelAPI endpoints in a ChannelApi Controller.
+    /// Handles requests received via the ChannelAPI endpoints exposed by a ChannelApi Controller.
     /// </summary>
     /// <remarks>
     /// These endpoints are defined by Azure Bot Service.  The client for this API is
-    /// in <see cref="RestConnectorClient"/>.  This is primarily used for Agent-to-Agent and
-    /// and handling replies from another Agent when DeliveryMode is `normal`, or the 
-    /// other Agent is using the other ChannelAPI operations.
+    /// in <see cref="RestConnectorClient"/>.  This is primarily used for communicating with
+    /// Azure Bot Service, Teams, and Agent-to-Agent.
     /// </remarks>
+    /// <remarks>This is not normally something implemented by an Agent developer unless there
+    /// is a specific need to handle requests from another Agent differently than what Agents
+    /// SDK provided handlers do.</remarks>
     public interface IChannelApiHandler
     {
         /// <summary>
@@ -36,8 +38,6 @@ namespace Microsoft.Agents.Builder
         ///
         /// Use ReplyToActivity when replying to a specific activity in the
         /// conversation.
-        ///
-        /// Use SendToConversation in all other cases.
         /// </remarks>
         /// <param name="claimsIdentity">claimsIdentity for the Agent, should have AudienceClaim, AppIdClaim and ServiceUrlClaim.</param>
         /// <param name='conversationId'>conversationId.</param> 
@@ -59,8 +59,6 @@ namespace Microsoft.Agents.Builder
         ///
         /// Use ReplyToActivity when replying to a specific activity in the
         /// conversation.
-        ///
-        /// Use SendToConversation in all other cases.
         /// </remarks>
         /// <param name="claimsIdentity">claimsIdentity for the Agent, should have AudienceClaim, AppIdClaim and ServiceUrlClaim.</param>
         /// <param name='conversationId'>Conversation ID.</param>
@@ -99,7 +97,6 @@ namespace Microsoft.Agents.Builder
         /// <param name='conversationId'>Conversation ID.</param>
         /// <param name='activityId'>activityId to delete.</param>
         /// <param name='cancellationToken'>The cancellation token.</param>
-        /// <returns>task for a resource response.</returns>
         Task OnDeleteActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -134,7 +131,7 @@ namespace Microsoft.Agents.Builder
         /// message conversation.  An example of how to do that would be:
         ///
         /// var resource = await connector.conversations.CreateConversation(new
-        /// ConversationParameters(){ Bot = Agent, members = new ChannelAccount[] { new
+        /// ConversationParameters(){ Agent = "agent", members = new ChannelAccount[] { new
         /// ChannelAccount("user1") } );
         /// await connect.Conversations.OnSendToConversationAsync(resource.Id, new
         /// Activity() ... ) ;

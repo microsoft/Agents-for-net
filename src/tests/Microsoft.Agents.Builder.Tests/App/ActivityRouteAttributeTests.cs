@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public async Task ActivityRouteAttribute_Type()
         {
-            var app = new TestApp(new AgentApplicationOptions());
+            var app = new TestApp(new AgentApplicationOptions((IStorage) null));
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public async Task ActivityRouteAttribute_Regex()
         {
-            var app = new TestApp(new AgentApplicationOptions());
+            var app = new TestApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
@@ -50,7 +51,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public async Task ActivityRouteAttribute_Selector()
         {
-            var app = new TestApp(new AgentApplicationOptions());
+            var app = new TestApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
@@ -66,13 +67,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void ActivityRouteAttribute_SelectorNotFound()
         {
-            Assert.Throws<ArgumentException>(() => new SelectorNotFoundTestApp(new AgentApplicationOptions()));
+            Assert.Throws<ArgumentException>(() => new SelectorNotFoundTestApp(new AgentApplicationOptions((IStorage)null)));
         }
 
         [Fact]
         public void ActivityRouteAttribute_SelectorInvalid()
         {
-            Assert.Throws<ArgumentException>(() => new InvalidSelectorTestApp(new AgentApplicationOptions()));
+            Assert.Throws<ArgumentException>(() => new InvalidSelectorTestApp(new AgentApplicationOptions((IStorage)null)));
         }
     }
 

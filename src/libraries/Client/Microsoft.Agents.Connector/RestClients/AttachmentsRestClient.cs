@@ -25,11 +25,16 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="attachmentId">id of the attachment.</param>
         /// <param name="viewId">default is "original".</param>
         /// <returns>uri.</returns>
-#pragma warning disable CA1055 // Uri return values should not be strings (we can't change this without breaking binary compat)
         public string GetAttachmentUri(string attachmentId, string viewId = "original")
-#pragma warning restore CA1055 // Uri return values should not be strings
         {
+#if !NETSTANDARD
             ArgumentException.ThrowIfNullOrWhiteSpace(attachmentId);
+#else
+            if (string.IsNullOrWhiteSpace(attachmentId))
+            {
+                throw new ArgumentException("AttachmentId cannot be null or empty.", nameof(attachmentId));
+            }
+#endif
 
             // Construct URL
             var baseUrl = _transport.Endpoint.ToString();
@@ -67,7 +72,11 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
                     {
+#if !NETSTANDARD
                         return ProtocolJsonSerializer.ToObject<AttachmentInfo>(httpResponse.Content.ReadAsStream(cancellationToken));
+#else
+                        return ProtocolJsonSerializer.ToObject<AttachmentInfo>(httpResponse.Content.ReadAsStringAsync().Result);
+#endif
                     }
                 default:
                     {
@@ -110,7 +119,11 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 200:
                     {
                         var memoryStream = new MemoryStream();
+#if !NETSTANDARD
                         httpResponse.Content.ReadAsStream(cancellationToken).CopyTo(memoryStream);
+#else
+                        (await httpResponse.Content.ReadAsStreamAsync()).CopyTo(memoryStream);
+#endif
                         memoryStream.Seek(0, SeekOrigin.Begin);
 
                         return memoryStream;

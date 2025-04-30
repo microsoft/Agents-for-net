@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Values persisted for the lifetime of the turn as part of the <see cref="ITurnContext"/>.
     /// </summary>
-    public class TurnContextStateCollection : Dictionary<string, object>, IDisposable
+    public class TurnContextStateCollection : ConcurrentDictionary<string, object>, IDisposable
     {
         private bool _disposed;
 
@@ -31,15 +32,8 @@ namespace Microsoft.Agents.Builder
         /// the retrieved object does not match the object type.</returns>
         public T Get<T>(string key)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(Get));
-            }
-
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            AssertionHelpers.ThrowIfNull(key, nameof(key));
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(Get));
 
             if (TryGetValue(key, out var service))
             {
@@ -74,15 +68,8 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="ArgumentNullException"><paramref name="key"/> or <paramref name="value"/>is null.</exception>
         public void Set<T>(string key, T value)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(Set));
-            }
-
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(Set));
+            AssertionHelpers.ThrowIfNull(value, nameof(value));
 
             this[key] = value;
         }

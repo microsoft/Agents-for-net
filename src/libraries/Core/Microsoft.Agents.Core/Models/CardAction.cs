@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Core.Models
         /// CardActions with string values.
         /// </summary>
         /// <param name="input">input.</param>
-        public static implicit operator CardAction(string input) => new CardAction(title: input, value: input);
+        public static implicit operator CardAction(string input) => new(title: input, value: input);
 
         /// <summary>
         /// Creates a <see cref="CardAction"/> from the given input.

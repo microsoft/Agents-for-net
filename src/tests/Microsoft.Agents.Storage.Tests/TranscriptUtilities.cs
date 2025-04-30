@@ -53,7 +53,11 @@ namespace Microsoft.Agents.Storage.Tests
             // If .chat file does not exists, try .transcript instead. Throw an exception if neither .chat nor .transcript file is found.
             if (!File.Exists(path))
             {
+#if !NETFRAMEWORK
                 path = Path.Combine(transcriptsRootFolder, relativePath.Replace(".transcript", ".chat", StringComparison.InvariantCultureIgnoreCase));
+#else
+                path = Path.Combine(transcriptsRootFolder, relativePath.Replace(".transcript", ".chat"));
+#endif
             }
 
             if (!File.Exists(path))

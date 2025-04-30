@@ -1,32 +1,33 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 using Agent1;
-using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Samples;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
-// Add AspNet token validation
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
-// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
-builder.Services.AddTransient<AgentApplicationOptions>();
+// Add AgentApplicationOptions from appsettings config.
+builder.AddAgentApplicationOptions();
 
-// Add basic Agent functionality
+// Add the Agent
 builder.AddAgent<HostAgent>();
 
-// Add ChannelHost to enable calling other Agents.  This is also required for
-// AgentApplication.ChannelResponses use.
+// Add the Agent-to-Agent handling
 builder.AddAgentHost();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -37,15 +38,20 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline.
+app.UseRouting();
+app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
-    app.MapGet("/", () => "Microsoft Agents SDK Sample - AgentToAgent Sample - Agent1");
-    app.UseDeveloperExceptionPage();
-    app.MapControllers().AllowAnonymous();
-}
-else
-{
-    app.MapControllers();
-}
+    await adapter.ProcessAsync(request, response, agent, cancellationToken);
+})
+    .AllowAnonymous();
+
+// Hardcoded for brevity and ease of testing. 
+// In production, this should be set in configuration.
+app.Urls.Add($"http://localhost:3978");
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
+app.MapControllers();
 
 app.Run();
+

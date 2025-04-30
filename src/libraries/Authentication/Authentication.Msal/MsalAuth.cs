@@ -3,12 +3,14 @@
 
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.AppConfig;
+using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
@@ -38,16 +40,25 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="msalConfigurationSection"></param>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
+        /// <param name="msalConfigurationSection"></param>
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+            : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
-            ArgumentNullException.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
-            ArgumentNullException.ThrowIfNull(msalConfigurationSection, nameof(msalConfigurationSection));
+        }
 
-            _systemServiceProvider = systemServiceProvider;
+        /// <summary>
+        /// Creates a MSAL Authentication Instance. 
+        /// </summary>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="settings">Settings for this instance.</param>
+        public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
+        {
+            AssertionHelpers.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
+
+            _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
-            _connectionSettings = new ConnectionSettings(msalConfigurationSection);
+            _connectionSettings = settings ?? throw new ArgumentNullException(nameof(settings));
             _logger = (ILogger)systemServiceProvider.GetService(typeof(ILogger<MsalAuth>));
             _certificateProvider = systemServiceProvider.GetService<ICertificateProvider>() ?? new X509StoreCertificateProvider(_connectionSettings, _logger);
         }
@@ -59,7 +70,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new ArgumentException("Invalid instance URL");
             }
 
-            Uri instanceUri = new Uri(resourceUrl);
+            Uri instanceUri = new(resourceUrl);
             var localScopes = ResolveScopesList(instanceUri, scopes);
 
             // Get or create existing token. 
@@ -73,7 +84,11 @@ namespace Microsoft.Agents.Authentication.Msal
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
+#if !NETSTANDARD
                         _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                        _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
                     }
 
                     if (!string.IsNullOrEmpty(accessToken))
@@ -83,7 +98,11 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else
                 {
+#if !NETSTANDARD
                     _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                    _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
                 }
             }
 
@@ -206,10 +225,20 @@ namespace Microsoft.Agents.Authentication.Msal
                 {
                     cAppBuilder.WithClientSecret(_connectionSettings.ClientSecret);
                 }
+                else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
+                {
+                    async Task<String> FetchExternalTokenAsync()
+                    {
+                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
+                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
+                    }
+                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                }
                 else
                 {
                     throw new System.NotImplementedException();
                 }
+
                 msalAuthClient = cAppBuilder.Build();
             }
 
@@ -240,7 +269,11 @@ namespace Microsoft.Agents.Authentication.Msal
                     foreach (var scope in _connectionSettings.Scopes)
                     {
                         var scopePlaceholder = scope;
-                        if (scopePlaceholder.ToLower().Contains("{instance}"))
+#if !NETSTANDARD
+                        if (scopePlaceholder.Contains("{instance}", StringComparison.CurrentCultureIgnoreCase))
+#else
+                        if (scopePlaceholder.ToString().Contains("{instance}"))
+#endif
                         {
                             scopePlaceholder = scopePlaceholder.Replace("{instance}", $"{instanceUrl.Scheme}://{instanceUrl.Host}");
                         }

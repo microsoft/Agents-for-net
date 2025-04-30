@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Raised when JWT authentication has not been enabled for the sending channel..
+        /// </summary>
+        internal static string AnonymousNotAllowed {
+            get {
+                return ResourceManager.GetString("AnonymousNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
         /// </summary>
         internal static string AttributeHandlerInvalid {
@@ -93,6 +102,15 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string AttributeSelectorNotFound {
             get {
                 return ResourceManager.GetString("AttributeSelectorNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of this extention has allready been registred for this application. {0}.
+        /// </summary>
+        internal static string ExtensionAlreadyRegistered {
+            get {
+                return ResourceManager.GetString("ExtensionAlreadyRegistered", resourceCulture);
             }
         }
         
@@ -169,7 +187,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {
             get {
@@ -178,11 +196,20 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to UserAuthorization already has an active handler..
+        ///   Looks up a localized string similar to UserAuthorization sign in for &apos;{0}&apos; is already in progress..
         /// </summary>
         internal static string UserAuthorizationAlreadyActive {
             get {
                 return ResourceManager.GetString("UserAuthorizationAlreadyActive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
+        /// </summary>
+        internal static string UserAuthorizationDefaultHandlerNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthorizationDefaultHandlerNotFound", resourceCulture);
             }
         }
         
@@ -196,7 +223,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Handler &apos;{0}&apos; not found in configuration.
+        ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
         /// </summary>
         internal static string UserAuthorizationHandlerNotFound {
             get {
@@ -205,7 +232,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The AgentApplication.Authorization property is unavailable because no user Authorization handlers were configured..
+        ///   Looks up a localized string similar to The AgentApplication.UserAuthorization feature is unavailable because no user Authorization handlers were configured in AgentApplication:UserAuthorization:Handlers..
         /// </summary>
         internal static string UserAuthorizationNotConfigured {
             get {

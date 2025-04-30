@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <value>Any additional text to include in the sign-in card.</value>
         public string Text { get; set; } = "Please sign in";
 
-        public string InvalidSignInRetryMessage { get; set; } = "Invalid sign in. Please try again.";
+        public string InvalidSignInRetryMessage { get; set; } = "Invalid sign in code. Please enter the 6-digit code.";
         public int InvalidSignInRetryMax { get; set; } = 2;
 
         /// <summary>

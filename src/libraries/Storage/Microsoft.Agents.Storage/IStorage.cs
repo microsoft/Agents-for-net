@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Storage
         /// the items read, indexed by key.</remarks>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
-        Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default(CancellationToken));
+        Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reads storage items from storage.
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
         /// the items read, indexed by key.</remarks>
-        Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default(CancellationToken)) where TStoreItem : class;
+        Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class;
 
         /// <summary>
         /// Writes storage items to storage.
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default(CancellationToken));
+        Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Writes storage items to storage.
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default(CancellationToken)) where TStoreItem : class;
+        Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class;
 
         /// <summary>
         /// Deletes storage items from storage.
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
-        Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default(CancellationToken));
+        Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default);
     }
 
     /// <summary>

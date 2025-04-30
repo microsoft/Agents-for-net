@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace Microsoft.Agents.Builder
     /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
     /// </remarks>
     /// <remarks>
-    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Bot Channels require
+    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Channels require
     /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
@@ -99,7 +100,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         public StreamingResponse(TurnContext turnContext)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             _context = turnContext;
             SetDefaults(turnContext);
@@ -351,7 +352,7 @@ namespace Microsoft.Agents.Builder
             });
         }
 
-        private void SetDefaults(ITurnContext turnContext)
+        private void SetDefaults(TurnContext turnContext)
         {
             _isTeamsChannel = turnContext.Activity.ChannelId == Channels.Msteams;
 

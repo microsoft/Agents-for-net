@@ -132,9 +132,7 @@ namespace Microsoft.Agents.Builder.State
                     SetPathValueInner(segments, obj, value, false);
                 }
             }
-#pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception)
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 return false;
             }
