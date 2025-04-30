@@ -38,7 +38,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             using (var sha256Hash = SHA256.Create())
             {
+#pragma warning disable CA1850 // Prefer static 'HashData' method over 'ComputeHash'
                 byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(text));
+#pragma warning restore CA1850 // Prefer static 'HashData' method over 'ComputeHash'
                 return Convert.ToBase64String(bytes);
             }
         }

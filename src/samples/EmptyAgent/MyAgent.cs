@@ -8,17 +8,19 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace EchoAgent;
+namespace EchoBot;
 
-public class Echo : AgentApplication
+public class MyAgent : AgentApplication
 {
-    public Echo(AgentApplicationOptions options) : base(options)
+    public MyAgent(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+
+        // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
+        OnActivity(ActivityTypes.Message, OnMessageAsync);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -29,11 +31,8 @@ public class Echo : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // Increment count state.
-        int count = turnState.Conversation.IncrementMessageCount();
-
-        await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -113,9 +114,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <exception cref="InvalidOperationException">If a flow is already active.</exception>
         public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-            ArgumentNullException.ThrowIfNull(turnState);
-            ArgumentException.ThrowIfNullOrWhiteSpace(handlerName);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnState, nameof(turnState));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(handlerName, nameof(handlerName));
 
             // Only one active flow allowed
             var activeFlow = UserInSignInFlow(turnState);

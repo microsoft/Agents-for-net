@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text.DateTime;
 using static Microsoft.Recognizers.Text.Culture;
@@ -57,15 +58,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             if (isRetry && options.RetryPrompt != null)
             {
@@ -90,10 +84,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected override Task<PromptRecognizerResult<IList<DateTimeResolution>>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<IList<DateTimeResolution>>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
@@ -123,7 +114,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             return Task.FromResult(result);
         }
 
-        private static DateTimeResolution ReadResolution(IDictionary<string, string> resolution)
+        private static DateTimeResolution ReadResolution(Dictionary<string, string> resolution)
         {
             var result = new DateTimeResolution();
 

@@ -7,6 +7,7 @@ using System.Reflection;
 
 namespace Microsoft.Agents.Core.Serialization
 {
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
     public class SerializationInitAttribute : Attribute
     {
         internal static void InitSerialization()

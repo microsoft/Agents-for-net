@@ -1,4 +1,4 @@
-name: Linux Local build and test
+name: Local build and test
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
 
     - uses: actions/checkout@v4

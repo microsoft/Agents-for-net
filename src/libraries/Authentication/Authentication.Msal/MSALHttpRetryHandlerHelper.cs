@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Authentication.Msal
                     else
                     {
 #if DEBUG
-                        System.Diagnostics.Trace.WriteLine($">>> MSAL RETRY ON TIMEOUT >>> {Thread.CurrentThread.ManagedThreadId} - {i}");
+                        System.Diagnostics.Trace.WriteLine($">>> MSAL RETRY ON TIMEOUT >>> {Environment.CurrentManagedThreadId} - {i}");
 #endif
                     }
                 }

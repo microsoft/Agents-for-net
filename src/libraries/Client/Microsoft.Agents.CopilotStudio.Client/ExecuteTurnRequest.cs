@@ -9,9 +9,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
     /// <summary>
     /// Turn request wrapper for communicating with Copilot Studio Engine.
     /// </summary>
-    public record ExecuteTurnRequest
+    public class ExecuteTurnRequest
     {
         [JsonPropertyName("activity")]
+#if !NETSTANDARD
         public Activity? Activity { get; init; }
+#else
+        public Activity? Activity { get; set; }
+#endif
     }
 }

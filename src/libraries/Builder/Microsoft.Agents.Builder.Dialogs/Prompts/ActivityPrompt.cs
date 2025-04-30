@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -56,10 +57,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             if (options is CancellationToken)
             {
@@ -109,10 +107,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            if (dc == null)
-            {
-                throw new ArgumentNullException(nameof(dc));
-            }
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Perform base recognition
             var instance = dc.ActiveDialog;
@@ -236,15 +231,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             if (isRetry && options.RetryPrompt != null)
             {

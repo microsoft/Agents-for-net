@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -48,19 +49,20 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext,nameof(turnContext));
 
             // Attempt to get the users token
-            var output = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
-            if (output != null)
+            var output = await UserTokenClientWrapper.GetTokenOrSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
+            if (output != null && output?.TokenResponse != null)
             {
                 // Return token
-                return output;
+                return output.TokenResponse;
             }
 
             // Prompt user to login
             await SendOAuthCardAsync(
                 turnContext,
+                output?.SignInResource,
                 promptFactory, cancellationToken).ConfigureAwait(false);
 
             return null;
@@ -81,7 +83,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <exception cref="TimeoutException"/>
         public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Check for timeout
             var hasTimedOut = HasTimedOut(turnContext, expires);
@@ -114,12 +116,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// </summary>
         /// <param name="settings">OAuthSettings.</param>
         /// <param name="turnContext">ITurnContext.</param>
+        /// <param name="signInResource"></param>
         /// <param name="promptFactory">Creates signin prompt</param>
         /// <param name="cancellationToken">CancellationToken.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        private async Task SendOAuthCardAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
+        private async Task SendOAuthCardAsync(ITurnContext turnContext, SignInResource signInResource, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             IActivity prompt = null;
             if (promptFactory != null)
@@ -144,7 +147,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 if (!prompt.Attachments.Any(a => a.Content is SigninCard))
                 {
-                    var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                    signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                     prompt.Attachments.Add(new Attachment
                     {
                         ContentType = SigninCard.ContentType,
@@ -167,7 +170,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             else if (!prompt.Attachments.Any(a => a.Content is OAuthCard))
             {
                 var cardActionType = ActionTypes.Signin;
-                var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
 
                 string value;
                 if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||

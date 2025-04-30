@@ -6,7 +6,9 @@ using System.ComponentModel.Design;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
+#if !NETFRAMEWORK
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
+#endif
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Model
