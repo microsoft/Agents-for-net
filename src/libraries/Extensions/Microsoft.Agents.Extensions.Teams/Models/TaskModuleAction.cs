@@ -14,6 +14,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     /// </summary>
     public class TaskModuleAction : CardAction
     {
+        JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TaskModuleAction"/> class.
         /// </summary>
@@ -39,10 +44,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
                 }
                 else
                 {
-                    data = JsonNode.Parse(JsonSerializer.Serialize(value, new JsonSerializerOptions
-                    {
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    }));
+                    data = JsonNode.Parse(JsonSerializer.Serialize(value, jsonSerializerOptions));
                 }
             }
 

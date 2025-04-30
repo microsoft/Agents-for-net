@@ -5,6 +5,7 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -154,7 +155,7 @@ namespace Microsoft.Agents.Builder
         /// </remarks>
         protected async Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Call any registered Middleware Components looking for ReceiveActivityAsync()
             if (turnContext.Activity != null)

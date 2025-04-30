@@ -167,7 +167,19 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             {
                 return Task.FromResult(new TokenOrSignInResourceResponse { TokenResponse = tokenResponse });
             }
-            return Task.FromResult(new TokenOrSignInResourceResponse { SignInResource = new SignInResource { SignInLink = fwdUrl } });
+            return Task.FromResult(new TokenOrSignInResourceResponse
+            {
+                SignInResource = new SignInResource
+                {
+                    SignInLink = $"https://fake.com/oauthsignin/{connectionName}/{activity.ChannelId}/{activity?.Recipient?.Id}",
+                    TokenExchangeResource = new TokenExchangeResource()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        ProviderId = null,
+                        Uri = $"api://{connectionName}/resource"
+                    }
+                }
+            });
         }
 
         public Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)

@@ -24,7 +24,11 @@ namespace Microsoft.Agents.Client.Tests
 
             if (SendAssert != null)
             {
+#if !NETFRAMEWORK
                 var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+#else
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStreamAsync().Result);
+#endif
                 SendAssert(activity, _sendRequest);
             }
 

@@ -78,6 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.Serialization.Converters
             JsonDocument.Parse(json).WriteTo(writer);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "Will return multiple types")]
         private static Surface CreateMeetingStageSurfaceWithContentType(ContentType? contentType)
         {
             switch (contentType)

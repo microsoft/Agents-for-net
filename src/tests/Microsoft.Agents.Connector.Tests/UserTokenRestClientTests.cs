@@ -394,7 +394,11 @@ namespace Microsoft.Agents.Connector.Tests
         [Fact]
         public async Task ExchangeTokenAsync_WithoutContent404()
         {
-            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent(string.Empty)
+                });
 
             var client = UseClient();
 

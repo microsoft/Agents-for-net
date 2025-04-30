@@ -4,6 +4,7 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.DirectToEngine</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
+		<TargetFrameworks>net8.0;net48</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
@@ -15,6 +16,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" />
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">
 			<PrivateAssets>all</PrivateAssets>

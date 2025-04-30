@@ -94,10 +94,16 @@ namespace Microsoft.Agents.Core.Models
                                 followingText = $" {followingText}";
                             }
 
+#if !NETSTANDARD
                             text = string.Concat(text.AsSpan(0, iAtClose), followingText);
 
                             // replace <at ...>
                             text = string.Concat(text.AsSpan(0, iAtStart), text.AsSpan(iAtEnd + 1));
+#else
+                            text = string.Concat(text.Substring(0, iAtClose), followingText);
+                            // replace <at ...>
+                            text = string.Concat(text.Substring(0, iAtStart), text.Substring(iAtEnd + 1));
+#endif
 
                             // we found one, try again, there may be more.
                             foundTag = true;

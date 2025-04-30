@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -81,8 +82,8 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             _logger.LogInformation("SendActivityAsync: '{AgentClientId}' at '{AgentEndpoint}'", _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString());
 
@@ -91,7 +92,11 @@ namespace Microsoft.Agents.Client
 
             // Create the HTTP request from the cloned Activity and send it to the Agent.
             using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
+#if !NETSTANDARD
             var content = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : null;
+#else
+            var content = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
+#endif
 
             // On success assuming either JSON that can be deserialized to T or empty.
             return new InvokeResponse<T>
@@ -104,9 +109,9 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
-            ArgumentNullException.ThrowIfNull(activity);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             await foreach (var received in SendActivityStreamedAsync(agentConversationId, activity, relatesTo, cancellationToken))
             {
@@ -189,7 +194,11 @@ namespace Microsoft.Agents.Client
             using var response = await SendRequest(activity, cancellationToken).ConfigureAwait(false);
 
             // Read streamed response
+#if !NETSTANDARD
             using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+#else
+            using Stream stream = await response.Content.ReadAsStreamAsync();
+#endif
             using StreamReader sr = new(stream);
             string streamType = string.Empty;
 
@@ -320,7 +329,7 @@ namespace Microsoft.Agents.Client
             return activityClone;
         }
 
-        private IActivity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
+        private Activity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
         {
             return new Activity()
             {

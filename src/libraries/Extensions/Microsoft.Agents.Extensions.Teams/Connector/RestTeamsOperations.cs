@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<ConversationList> FetchChannelListAsync(string teamId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(teamId);
+            AssertionHelpers.ThrowIfNull(teamId, nameof(teamId));
 
             // Construct URL
             var url = "v3/teams/{teamId}/conversations";
@@ -46,7 +47,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<TeamDetails> FetchTeamDetailsAsync(string teamId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(teamId);
+            AssertionHelpers.ThrowIfNull(teamId, nameof(teamId));
 
             // Construct URL
             var url = "v3/teams/{teamId}";
@@ -58,7 +59,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<MeetingInfo> FetchMeetingInfoAsync(string meetingId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(meetingId);
+            AssertionHelpers.ThrowIfNull(meetingId, nameof(meetingId));
 
             // Construct URL
             var url = "v1/meetings/{meetingId}";
@@ -70,9 +71,9 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<TeamsMeetingParticipant> FetchParticipantAsync(string meetingId, string participantId, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(meetingId);
-            ArgumentNullException.ThrowIfNull(participantId);
-            ArgumentNullException.ThrowIfNull(tenantId);
+            AssertionHelpers.ThrowIfNull(meetingId, nameof(meetingId));
+            AssertionHelpers.ThrowIfNull(participantId, nameof(participantId));
+            AssertionHelpers.ThrowIfNull(tenantId, nameof(tenantId));
 
             // Construct URL
             var url = "v1/meetings/{meetingId}/participants/{participantId}?tenantId={tenantId}";
@@ -86,7 +87,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<MeetingNotificationResponse> SendMeetingNotificationAsync(string meetingId, MeetingNotificationBase notification, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(meetingId);
+            AssertionHelpers.ThrowIfNull(meetingId, nameof(meetingId));
 
             // Construct URL
             var url = "v1/meetings/{meetingId}/notification";
@@ -98,8 +99,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<string> SendMessageToListOfUsersAsync(IActivity activity, List<TeamMember> teamsMembers, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(activity);
-            ArgumentException.ThrowIfNullOrEmpty(tenantId);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
 
             if (teamsMembers.Count == 0)
             {
@@ -126,8 +127,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<string> SendMessageToAllUsersInTenantAsync(IActivity activity, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(activity);
-            ArgumentException.ThrowIfNullOrEmpty(tenantId);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNullOrEmpty(tenantId, nameof(tenantId));
 
             var content = new
             {
@@ -148,9 +149,9 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<string> SendMessageToAllUsersInTeamAsync(IActivity activity, string teamId, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(activity);
-            ArgumentException.ThrowIfNullOrEmpty(teamId);
-            ArgumentException.ThrowIfNullOrEmpty(tenantId);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNullOrEmpty(teamId, nameof(teamId));
+            AssertionHelpers.ThrowIfNullOrEmpty(tenantId, nameof(tenantId));
 
             var content = new
             {
@@ -172,8 +173,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<string> SendMessageToListOfChannelsAsync(IActivity activity, List<TeamMember> channelsMembers, string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(activity);
-            ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
 
             if (channelsMembers?.Count == 0)
             {
@@ -200,7 +201,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<BatchOperationState> GetOperationStateAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrEmpty(operationId);
+            AssertionHelpers.ThrowIfNullOrEmpty(operationId, nameof(operationId));
 
             var apiUrl = "v3/batch/conversation/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
@@ -216,7 +217,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task<BatchFailedEntriesResponse> GetPagedFailedEntriesAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, string continuationToken = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrEmpty(operationId);
+            AssertionHelpers.ThrowIfNullOrEmpty(operationId, nameof(operationId));
 
             var apiUrl = "v3/batch/conversation/failedentries/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
@@ -232,7 +233,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <inheritdoc/>
         public async Task CancelOperationAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrEmpty(operationId);
+            AssertionHelpers.ThrowIfNullOrEmpty(operationId, nameof(operationId));
 
             var apiUrl = "v3/batch/conversation/{operationId}";
             apiUrl = apiUrl.Replace("{operationId}", Uri.EscapeDataString(operationId));
@@ -297,15 +298,22 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
                         {
                             if (httpResponse.Content != null)
                             {
+#if !NETSTANDARD
                                 var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
+#else
+                                var responseContent = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
                                 if (!string.IsNullOrEmpty(responseContent))
                                 {
                                     if (typeof(T) == typeof(string))
                                     {
                                         return ProtocolJsonSerializer.ToObject<T>(responseContent);
                                     }
+#if !NETSTANDARD
                                     return ProtocolJsonSerializer.ToObject<T>(httpResponse.Content.ReadAsStream(cancellationToken));
+#else
+                                    return ProtocolJsonSerializer.ToObject<T>(responseContent);
+#endif
                                 }
                             }
                             return default;
@@ -319,7 +327,11 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
                             var ex = new ErrorResponseException($"{operationName} operation returned an invalid status code '{httpResponse.StatusCode}'");
                             try
                             {
+#if !NETSTANDARD
                                 ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+#else
+                                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStringAsync().Result);
+#endif
                                 if (errorBody != null)
                                 {
                                     ex.Body = errorBody;

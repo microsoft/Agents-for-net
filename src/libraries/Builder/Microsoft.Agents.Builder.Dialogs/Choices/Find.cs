@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +22,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <returns>A list of found choices, sorted by most relevant first.</returns>
         public static List<ModelResult<FoundChoice>> FindChoices(string utterance, IList<string> choices, FindChoicesOptions options = null)
         {
-            if (choices == null)
-            {
-                throw new ArgumentNullException(nameof(choices));
-            }
+            AssertionHelpers.ThrowIfNull(choices, nameof(choices));
 
             return FindChoices(utterance, choices.Select(s => new Choice { Value = s }).ToList(), options);
         }
@@ -38,10 +36,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <returns>A list of found choices, sorted by most relevant first.</returns>
         public static List<ModelResult<FoundChoice>> FindChoices(string utterance, IList<Choice> choices, FindChoicesOptions options = null)
         {
-            if (choices == null)
-            {
-                throw new ArgumentNullException(nameof(choices));
-            }
+            AssertionHelpers.ThrowIfNull(choices, nameof(choices));
 
             var opt = options ?? new FindChoicesOptions();
 

@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 using Agent2;
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,13 +20,10 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// Add AspNet token validation
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+// Add AgentApplicationOptions from appsettings config.
+builder.AddAgentApplicationOptions();
 
-// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
-builder.Services.AddTransient<AgentApplicationOptions>();
-
-// Add basic Agent functionality
+// Add the Agent
 builder.AddAgent<Echo>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -36,20 +34,18 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-// Required for providing the Agent manifest.
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+// Configure the HTTP request pipeline.
+app.UseRouting();
+app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+{
+    await adapter.ProcessAsync(request, response, agent, cancellationToken);
+})
+    .AllowAnonymous();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapGet("/", () => "Microsoft Agents SDK Sample - AgentToAgent Sample - Agent2");
-    app.UseDeveloperExceptionPage();
-    app.MapControllers().AllowAnonymous();
-}
-else
-{
-    app.MapControllers();
-}
+// Hardcoded for brevity and ease of testing. 
+// In production, this should be set in configuration.
+app.Urls.Add($"http://localhost:39783");
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 app.Run();
 

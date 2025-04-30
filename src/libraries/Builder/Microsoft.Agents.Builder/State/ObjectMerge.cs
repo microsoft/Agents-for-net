@@ -4,6 +4,7 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -22,7 +23,11 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"The original JSON to merge new content into must be a container type. Instead it is {originalElement.ValueKind}.");
             }
 
+#if !NETSTANDARD
             var outputBuffer = new ArrayBufferWriter<byte>();
+#else
+            var outputBuffer = new LocalArrayBufferWriter<byte>(256);
+#endif
             using (var jsonWriter = new Utf8JsonWriter(outputBuffer, new JsonWriterOptions { Indented = true }))
             {
                 if (originalElement.ValueKind != newElement.ValueKind)
@@ -39,8 +44,11 @@ namespace Microsoft.Agents.Builder.State
                     MergeObjects(jsonWriter, originalElement, newElement);
                 }
             }
-
+#if !NETSTANDARD
             return JsonSerializer.Deserialize<JsonNode>(Encoding.UTF8.GetString(outputBuffer.WrittenSpan));
+#else
+            return JsonSerializer.Deserialize<JsonNode>(Encoding.UTF8.GetString(outputBuffer.WrittenSpan.ToArray()));
+#endif
         }
 
         private static void MergeObjects(Utf8JsonWriter jsonWriter, JsonElement root1, JsonElement root2)

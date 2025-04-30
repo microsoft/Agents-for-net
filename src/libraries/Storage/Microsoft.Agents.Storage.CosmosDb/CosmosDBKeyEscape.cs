@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -59,7 +60,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <returns>An escaped key that can be used safely with CosmosDB.</returns>
         public static string EscapeKey(string key, string suffix, bool compatibilityMode)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
 
             var firstIllegalCharIndex = key.IndexOfAny(_illegalKeys);
 
@@ -115,7 +116,11 @@ namespace Microsoft.Agents.Storage.CosmosDb
             if (key.Length > MaxKeyLength)
             {
                 var hash = key.GetHashCode().ToString("x", CultureInfo.InvariantCulture);
+#if !NETSTANDARD
                 key = string.Concat(key.AsSpan(0, MaxKeyLength - hash.Length), hash);
+#else
+                key = string.Concat(key.Substring(0, MaxKeyLength - hash.Length), hash);
+#endif
             }
 
             return key;

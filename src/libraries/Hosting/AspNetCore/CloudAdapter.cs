@@ -70,9 +70,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                
+
                 // Writing formatted exception message to log with error codes and help links. 
+#pragma warning disable CA2254 // Template should be a static expression
                 logger.LogError(resolvedErrorMessage);
+#pragma warning restore CA2254 // Template should be a static expression
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {

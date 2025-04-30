@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
+using Microsoft.Agents.Core;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -23,8 +24,8 @@ namespace Microsoft.Agents.Connector
         public RestConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestConnectorClient))
             : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
         {
-            ArgumentNullException.ThrowIfNull(endpoint);
-            ArgumentNullException.ThrowIfNull(httpClientFactory);
+            AssertionHelpers.ThrowIfNull(endpoint, nameof(endpoint));
+            AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
             Conversations = new ConversationsRestClient(this);
             Attachments = new AttachmentsRestClient(this);

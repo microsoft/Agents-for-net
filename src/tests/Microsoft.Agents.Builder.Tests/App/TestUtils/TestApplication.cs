@@ -10,7 +10,10 @@ namespace Microsoft.Agents.Builder.Tests.App.TestUtils
     {
         public TestApplication(TestApplicationOptions options) : base(options)
         {
-            ArgumentNullException.ThrowIfNull(options);
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
 
             options.StartTypingTimer = false;
         }
