@@ -4,6 +4,12 @@
   "type": "AdaptiveCard",
   "body": [
     {
+      "type": "TextBlock",
+      "size": "medium",
+      "weight": "bolder",
+      "text": "Static Adaptive Card"
+    },
+    {
       "text": "Select an IDE from the list.",
       "wrap": true,
       "type": "TextBlock"

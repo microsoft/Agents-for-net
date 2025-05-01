@@ -58,6 +58,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
+            options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
 
             return options;
         }
