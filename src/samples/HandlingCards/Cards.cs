@@ -19,6 +19,7 @@ namespace HandlingCards
                 [
                     new CardCommand("static_submit", SendStaticSubmitCardAsync),
                     new CardCommand("dynamic_search", SendDynamicSearchCardAsync),
+                    new CardCommand("action_execute", SendActionExecuteCardAsync),
                     new CardCommand("hero", SendHeroCardAsync),
                     new CardCommand("thumbnail", SendThumbnailCardAsync),
                     new CardCommand("audio", SendAudioCardAsync),
@@ -97,6 +98,13 @@ namespace HandlingCards
             Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "DynamicSearchCard.json"));
             await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
+
+        public static async Task SendActionExecuteCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "ActionExecute.json"));
+            await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
+        }
+
         private static Attachment CreateAdaptiveCardAttachment(string filePath)
         {
             var adaptiveCardJson = File.ReadAllText(filePath);

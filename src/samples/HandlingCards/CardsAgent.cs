@@ -11,7 +11,9 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -60,6 +62,10 @@ namespace HandlingCards
             // // See Resources/StaticSearchCard.json
             AdaptiveCards.OnActionSubmit("StaticSubmit", StaticSubmitHandlerAsync);
             AdaptiveCards.OnActionSubmit("DynamicSubmit", DynamicSubmitHandlerAsync);
+
+            // Listen for ActionExecute
+            AdaptiveCards.OnActionExecute("signin", ActionExecuteSignInHandlerAsync);
+            AdaptiveCards.OnActionExecute("signout", ActionExecuteSignOutHandlerAsync);
 
             // Listen for Search query an Adaptive Cards.
             // Adaptive Cards `items` that contain the following will triggers a callback to the Agent
@@ -162,6 +168,27 @@ namespace HandlingCards
             {
                 return Array.Empty<Package>();
             }
+        }
+
+        private Task<AdaptiveCardInvokeResponse> ActionExecuteSignInHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        {
+            var filePath = Path.Combine(".", "Resources", "ActionExecuteNew.json");
+            var adaptiveCardJson = File.ReadAllText(filePath);
+
+            return Task.FromResult(new AdaptiveCardInvokeResponse()
+            {
+                StatusCode = (int)HttpStatusCode.OK,
+                Type = "application/vnd.microsoft.card.adaptive",
+                Value = adaptiveCardJson,
+            });
+        }
+
+        private Task<AdaptiveCardInvokeResponse> ActionExecuteSignOutHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new AdaptiveCardInvokeResponse()
+            {
+                StatusCode = (int)HttpStatusCode.OK
+            });
         }
     }
 }
