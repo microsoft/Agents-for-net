@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 
@@ -120,15 +121,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             bool isRetry,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             var culture = DetermineCulture(turnContext.Activity);
 
@@ -171,10 +165,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             PromptOptions options,
             CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var choices = options.Choices ?? new List<Choice>();
 

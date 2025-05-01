@@ -16,7 +16,11 @@ namespace Microsoft.Agents.Connector.RestClients
 
             var argValue = escape ? Uri.EscapeDataString(value) : value;
             var url = uri.AbsoluteUri;
+#if !NETSTANDARD
             if (!url.Contains('?'))
+#else
+            if (!url.Contains("?"))
+#endif
             {
                 return new Uri($"{url}?{name}={argValue}");
             }

@@ -18,6 +18,7 @@
 	<Microsoft_IdentityClient_PkgVer>4.70.2</Microsoft_IdentityClient_PkgVer>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
@@ -63,8 +64,9 @@
     <PackageVersion Include="Jint" Version="4.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.10.0" />
     <PackageVersion Include="xunit.extensibility.core" Version="2.9.0" />
+    <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <!-- SDK Core -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.4" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />
 	<PackageVersion Include="Azure.Core" Version="1.45.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.22.2" />
@@ -82,10 +84,11 @@
 	<PackageVersion Include="Microsoft.Graph" Version="4.47.0" />
     <PackageVersion Include="Microsoft.Graph.Core" Version="2.0.14" />
     <!-- Semantic Kernel Samples -->
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.29.0-alpha" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.29.0-alpha" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.29.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.29.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.45.0-preview" />
+	<PackageVersion Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.45.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.45.0" />
     <!-- OpenAI -->
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />

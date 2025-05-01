@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
+        private static async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
         {
             TokenResponse tokenExchangeResponse = null;
             var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
@@ -192,12 +192,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
                 var value = activity.Value.ToJsonElements();
-                if (value == null || !value.ContainsKey("id"))
+                if (value == null || !value.TryGetValue("id", out var id))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");
                 }
 
-                return $"oauth/{channelId}/{conversationId}/{value["id"]}";
+                return $"oauth/{channelId}/{conversationId}/{id}";
             }
         }
     }

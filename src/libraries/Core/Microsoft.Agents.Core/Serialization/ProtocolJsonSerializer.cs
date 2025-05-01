@@ -16,7 +16,8 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; } = CreateConnectorOptions();
+        public static bool UnpackObjectStrings { get; set; } = true;
 
         static ProtocolJsonSerializer()
         {

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -51,7 +52,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task LogActivityAsync(IActivity activity)
         {
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             var transcriptFile = GetTranscriptFile(activity.ChannelId, activity.Conversation.Id);
 
@@ -278,8 +279,8 @@ namespace Microsoft.Agents.Storage.Transcript
 
         private string GetTranscriptFile(string channelId, string conversationId)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
-            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var channelFolder = GetChannelFolder(channelId);
             var fileName = SanitizeString(conversationId, Path.GetInvalidFileNameChars());
@@ -289,8 +290,7 @@ namespace Microsoft.Agents.Storage.Transcript
 
         private string GetChannelFolder(string channelId)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
-
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
             var folderName = SanitizeString(channelId, Path.GetInvalidPathChars());
             var channelFolder = Path.Combine(_folder, folderName);
 

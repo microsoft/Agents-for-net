@@ -51,7 +51,11 @@ namespace Microsoft.Agents.Core.Errors
             var ex = CreateErrorResponseException(message, innerException, errors);
             try
             {
+#if !NETSTANDARD
                 ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+#else
+                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStringAsync().Result);
+#endif
                 if (errorBody != null && errorBody.Error != null)
                 {
                     ex.Body = errorBody;

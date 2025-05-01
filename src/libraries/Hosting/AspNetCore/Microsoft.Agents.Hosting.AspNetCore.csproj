@@ -5,6 +5,8 @@
 		<ComponentAreaName>CplHostingAspNet</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<TargetFrameworks>net8.0</TargetFrameworks>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 

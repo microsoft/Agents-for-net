@@ -10,7 +10,11 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     public interface IAgentExtension
     {
-        string ChannelId { get; init; }
+#if !NETSTANDARD
+        string ChannelId { get; init;}
+#else
+        string ChannelId { get; set; }
+#endif
         void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified);
     }
 }

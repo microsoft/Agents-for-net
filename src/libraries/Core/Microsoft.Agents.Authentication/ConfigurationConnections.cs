@@ -3,12 +3,15 @@
 
 using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.Authentication.Model;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if !NETSTANDARD
 using System.Runtime.Loader;
+#endif
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
@@ -38,13 +41,13 @@ namespace Microsoft.Agents.Authentication
     {
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IList<ConnectionMapItem> _map;
+        private readonly List<ConnectionMapItem> _map;
         private readonly ILogger<ConfigurationConnections> _logger;
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
         {
-            ArgumentException.ThrowIfNullOrEmpty(connectionsKey);
-            ArgumentException.ThrowIfNullOrEmpty(mapKey);
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionsKey, nameof(connectionsKey));
+            AssertionHelpers.ThrowIfNullOrEmpty(mapKey, nameof(mapKey));
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
@@ -60,7 +63,8 @@ namespace Microsoft.Agents.Authentication
             _map = configuration
                 .GetSection(mapKey)
                 .Get<List<ConnectionMapItem>>() ?? [];
-            if (!_map.Any())
+            
+            if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map found in configuration.");
                 if (_connections.Count == 1)
@@ -69,7 +73,11 @@ namespace Microsoft.Agents.Authentication
                 }
             }
 
+#if !NETSTANDARD
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, _logger);
+#else
+            var assemblyLoader = new AuthModuleLoader(AppDomain.CurrentDomain, _logger);
+#endif
 
             foreach (var connection in _connections)
             {
@@ -94,7 +102,8 @@ namespace Microsoft.Agents.Authentication
             }
 
             _map = connectionMapItems == null ? [] : [.. connectionMapItems];
-            if (!_map.Any())
+            
+            if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map provided");
                 if (_connections.Count == 1)
@@ -107,7 +116,7 @@ namespace Microsoft.Agents.Authentication
         /// <inheritdoc/>
         public IAccessTokenProvider GetConnection(string name)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
+            AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
             return GetConnectionInstance(name);
         }
@@ -168,10 +177,10 @@ namespace Microsoft.Agents.Authentication
         /// <returns></returns>
         public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, string serviceUrl)
         {
-            ArgumentNullException.ThrowIfNull(claimsIdentity);
-            ArgumentException.ThrowIfNullOrEmpty(serviceUrl);
+            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
+            AssertionHelpers.ThrowIfNullOrEmpty(serviceUrl, nameof(serviceUrl));
 
-            if (!_map.Any())
+            if (_map.Count == 0)
             {
                 return GetDefaultConnection();
             }

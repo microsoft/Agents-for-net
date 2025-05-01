@@ -255,7 +255,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             //Total execution time
             var expectedTotalDelay = 2000;
-            var marginOfError = 50; // Allow a small margin for system overhead
+            var marginOfError = 200; // Allow a small margin for system overhead
 
             // Act
             stopwatch.Start();

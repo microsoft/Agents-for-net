@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -99,7 +100,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         public StreamingResponse(TurnContext turnContext)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             _context = turnContext;
             SetDefaults(turnContext);
@@ -351,7 +352,7 @@ namespace Microsoft.Agents.Builder
             });
         }
 
-        private void SetDefaults(ITurnContext turnContext)
+        private void SetDefaults(TurnContext turnContext)
         {
             _isTeamsChannel = string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase);
 

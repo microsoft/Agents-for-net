@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -48,7 +49,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext,nameof(turnContext));
 
             // Attempt to get the users token
             var output = await UserTokenClientWrapper.GetTokenOrSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
@@ -82,7 +83,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <exception cref="TimeoutException"/>
         public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Check for timeout
             var hasTimedOut = HasTimedOut(turnContext, expires);
@@ -121,7 +122,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
         private async Task SendOAuthCardAsync(ITurnContext turnContext, SignInResource signInResource, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             IActivity prompt = null;
             if (promptFactory != null)

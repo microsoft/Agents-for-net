@@ -77,8 +77,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
-                var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId, cloudBaseAddress);
-                return CreateUri(settings.SchemaName, host, agentType, conversationId);
+                var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId!, cloudBaseAddress);
+                return CreateUri(settings.SchemaName!, host, agentType, conversationId);
             }
             else
             {
@@ -86,17 +86,22 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
                     // FIX for Missing Tenant ID
+#if !NETSTANDARD
                     if ( directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
+#else
+                    if (directConnectUrl!.ToLower().Contains("tenants/00000000-0000-0000-0000-000000000000"))
+#endif
                     {
                         // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
-                        settings.DirectConnectUrl = string.Empty; 
+                        settings.DirectConnectUrl = string.Empty;
                         return GetCopilotStudioConnectionUrl(settings, conversationId, agentType, cloud, cloudBaseAddress);
                     }
                     return CreateUri(directConnectUrl, conversationId);
                 }
                 else
                 {
-                    throw new ArgumentException("DirectConnectUrl is invalid");
+                    throw new ArgumentException("DirectConnectUrl is invalid");
+
                 }
             }
         }
@@ -138,7 +143,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                     }
                     else
                     {
-                        if (!string.IsNullOrEmpty(settings?.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                        if (!string.IsNullOrEmpty(settings?.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings!.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
                         {
                             cloud = PowerPlatformCloud.Other;
                             cloudBaseAddress = settings.CustomPowerPlatformCloud;
@@ -223,7 +228,15 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             builder.Query = $"api-version={ApiVersion}";
 
             // if builder.path ends with /, remove it
+#if !NETSTANDARD
             if (builder.Path.EndsWith('/'))
+#else
+            if (builder.Path.EndsWith("/"))
+#endif
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
+            }
+
             {
                 builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
             }
@@ -346,6 +359,6 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
         }
 
-        #endregion
+#endregion
     }
 }

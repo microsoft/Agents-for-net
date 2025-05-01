@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Extensions.Teams.Compat
 {
@@ -45,8 +46,8 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// sign on token exchange.</param>
         public TeamsSSOTokenExchangeMiddleware(IStorage storage, string connectionName)
         {
-            ArgumentNullException.ThrowIfNull(storage);
-            ArgumentNullException.ThrowIfNullOrEmpty(connectionName);
+            AssertionHelpers.ThrowIfNull(storage, nameof(storage));
+            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
             _oAuthConnectionName = connectionName;
             _storage = storage;
@@ -106,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
             return true;
         }
 
-        private async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
+        private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
                 new Activity
@@ -180,12 +181,12 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
                 var value = activity.Value.ToJsonElements();
-                if (value == null || !value.ContainsKey("id"))
+                if (value == null || !value.TryGetValue("id", out System.Text.Json.JsonElement idValue))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");
                 }
 
-                return $"{channelId}/{conversationId}/{value["id"]}";
+                return $"{channelId}/{conversationId}/{idValue}";
             }
         }
     }

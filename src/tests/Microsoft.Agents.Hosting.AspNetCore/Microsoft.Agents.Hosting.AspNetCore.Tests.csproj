@@ -4,6 +4,7 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.DirectToEngine</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 

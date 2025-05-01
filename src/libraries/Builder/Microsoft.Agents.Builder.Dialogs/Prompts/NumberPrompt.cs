@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text;
 using Microsoft.Recognizers.Text.Number;
@@ -68,15 +69,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             if (isRetry && options.RetryPrompt != null)
             {
@@ -101,10 +95,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected override Task<PromptRecognizerResult<T>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<T>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
@@ -179,7 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         {
             var number = NumberRecognizer.RecognizeNumber(utterance, culture);
 
-            if (number.Any())
+            if (number.Count > 0)
             {
                 // Result when it matches with a number recognizer
                 return number;
@@ -194,7 +185,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 results.Add(NumberWithUnitRecognizer.RecognizeDimension(utterance, culture));
 
                 // Filter the options that returned nothing and return the one that matched
-                return results.FirstOrDefault(r => r.Any()) ?? new List<ModelResult>();
+                return results.FirstOrDefault(r => r.Count > 0) ?? new List<ModelResult>(); 
             }
         }
     }

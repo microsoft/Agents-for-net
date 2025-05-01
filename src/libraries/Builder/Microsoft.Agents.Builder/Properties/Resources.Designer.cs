@@ -106,6 +106,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An instance of this extention has allready been registred for this application. {0}.
+        /// </summary>
+        internal static string ExtensionAlreadyRegistered {
+            get {
+                return ResourceManager.GetString("ExtensionAlreadyRegistered", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to create user Authorization provider for handler name &apos;{0}&apos;.
         /// </summary>
         internal static string FailedToCreateUserAuthorizationHandler {

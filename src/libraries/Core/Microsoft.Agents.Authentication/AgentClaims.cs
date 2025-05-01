@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace Microsoft.Agents.Authentication
         public static string GetAppId(ClaimsIdentity claimsIdentity)
         {
             // Verify we have a sensible Claims Identity
-            ArgumentNullException.ThrowIfNull(claimsIdentity);
+            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             
             // For requests from channel App Id is in Audience claim of JWT token. For emulator it is in AppId claim. For
             // unauthenticated requests we have anonymous claimsIdentity provided auth is disabled.
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Authentication
         public static string GetOutgoingAppId(ClaimsIdentity identity)
         {
             // Verify we have a sensible Claims Identity
-            ArgumentNullException.ThrowIfNull(identity);
+            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
 
             var claimsList = identity.Claims;
             string appId = null;
@@ -83,7 +84,7 @@ namespace Microsoft.Agents.Authentication
         /// <returns>True if the list of claims is an Agent claim, false if is not.</returns>
         public static bool IsAgentClaim(ClaimsIdentity claims)
         {
-            ArgumentNullException.ThrowIfNull(claims);
+            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
 
             var claimsList = claims.Claims;
 

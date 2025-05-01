@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -50,8 +51,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionExecute(string verb, ActionExecuteHandler handler)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(verb);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
             return OnActionExecute(routeSelector, handler);
         }
@@ -64,8 +65,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(verbPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
             return OnActionExecute(routeSelector, handler);
         }
@@ -78,8 +79,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardInvokeValue? invokeValue;
@@ -108,8 +109,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors,nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)
@@ -159,8 +160,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionSubmit(string verb, ActionSubmitHandler handler)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(verb);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
             RouteSelector routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
             return OnActionSubmit(routeSelector, handler);
@@ -191,8 +192,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionSubmit(Regex verbPattern, ActionSubmitHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(verbPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
             RouteSelector routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
             return OnActionSubmit(routeSelector, handler);
@@ -223,8 +224,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionSubmit(RouteSelector routeSelector, ActionSubmitHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
@@ -265,8 +266,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionSubmit(MultipleRouteSelector routeSelectors, ActionSubmitHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)
@@ -299,8 +300,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSearch(string dataset, SearchHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(dataset);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(dataset, nameof(dataset));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
             return OnSearch(routeSelector, handler);
         }
@@ -313,8 +314,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSearch(Regex datasetPattern, SearchHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(datasetPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(datasetPattern, nameof(datasetPattern));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
             return OnSearch(routeSelector, handler);
         }
@@ -327,8 +328,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardSearchInvokeValue? searchInvokeValue;
@@ -367,8 +368,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSearch(MultipleRouteSelector routeSelectors, SearchHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)
