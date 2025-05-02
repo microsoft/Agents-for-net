@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             RouteSelector routeSelector = (context, _) =>
             {
                 var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
-                string? actionName = jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
+                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
                 return Task.FromResult
                 (
                     context.Activity.Type == ActivityTypes.Invoke
