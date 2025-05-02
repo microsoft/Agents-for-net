@@ -443,7 +443,7 @@ namespace Microsoft.Agents.Builder
                 if (!string.IsNullOrEmpty(StreamId))
                 {
                     activity.Id = StreamId;
-                    ((StreamInfo)activity.Entities[0]).StreamId = StreamId;
+                    activity.GetStreamingEntity().StreamId = StreamId;
                 }
 
                 var response = await _context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
