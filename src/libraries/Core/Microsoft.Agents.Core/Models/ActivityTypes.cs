@@ -29,13 +29,6 @@ namespace Microsoft.Agents.Core.Models
         public const string Event = "event";
 
         /// <summary>
-        /// The type value for delay activities.
-        /// </summary>
-        /// <remarks>As an outgoing activity type, causes the adapter to pause for <see cref="Activity.Value"/> milliseconds.
-        /// The activity's <see cref="Activity.Value"/> should be a <see cref="int"/>.</remarks>
-        public const string Delay = "delay";
-
-        /// <summary>
         /// The type value for delete user data activities.
         /// </summary>
         public const string DeleteUserData = "deleteUserData";
