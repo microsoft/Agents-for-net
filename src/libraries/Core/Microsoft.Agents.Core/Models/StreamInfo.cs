@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Core.Models
         public string StreamType { get; set; }
 
         /// <summary>
-        /// Required incrementing integer for each Typing Activity sent, and final Message.
+        /// Required incrementing integer for each Typing Activity sent. Can be null for final messages.
         /// </summary>
         public int? StreamSequence { get; set; }
 
