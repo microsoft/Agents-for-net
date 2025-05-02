@@ -62,12 +62,7 @@ namespace Microsoft.Agents.Builder
                 activity.Id = null;
                 var response = default(ResourceResponse);
 
-                if (activity.Type == ActivityTypes.Delay)
-                {
-                    var delayMs = Convert.ToInt32(activity.Value, CultureInfo.InvariantCulture);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
-                else if (activity.Type == ActivityTypes.InvokeResponse)
+                if (activity.Type == ActivityTypes.InvokeResponse)
                 {
                     turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
