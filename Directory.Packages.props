@@ -84,10 +84,11 @@
 	<PackageVersion Include="Microsoft.Graph" Version="4.47.0" />
     <PackageVersion Include="Microsoft.Graph.Core" Version="2.0.14" />
     <!-- Semantic Kernel Samples -->
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.29.0-alpha" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.29.0-alpha" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.29.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.29.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.45.0-preview" />
+	<PackageVersion Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.45.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.45.0" />
     <!-- OpenAI -->
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />

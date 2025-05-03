@@ -324,16 +324,12 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _)
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    context.Activity.IsType(ActivityTypes.Message)
                     && context.Activity?.Text != null
-#if !NETSTANDARD
-                    && context.Activity.Text.Contains(text, StringComparison.OrdinalIgnoreCase)
-#else
-                    && context.Activity.Text.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0
-#endif
+                    && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
                 );
             OnMessage(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -358,10 +354,10 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _)
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    context.Activity.IsType(ActivityTypes.Message)
                     && context.Activity?.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
@@ -384,7 +380,14 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            AddRoute(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
+
+            // Enforce Activity.Type Message
+            async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
+            {
+                return context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+            }
+
+            AddRoute(outerSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
         }
 
@@ -442,13 +445,9 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    string.Equals(ActivityTypes.Event, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    context.Activity.IsType(ActivityTypes.Event)
                     && context.Activity?.Name != null
-#if !NETSTANDARD
-                    && context.Activity.Text.Contains(eventName, StringComparison.OrdinalIgnoreCase)
-#else
-                    && context.Activity.Text.IndexOf(eventName, StringComparison.OrdinalIgnoreCase) >= 0
-#endif
+                    && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
                 );
             OnEvent(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -469,9 +468,9 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
-                    && context.Activity?.Text != null
-                    && namePattern.IsMatch(context.Activity.Text)
+                    context.Activity.IsType(ActivityTypes.Event)
+                    && context.Activity?.Name != null
+                    && namePattern.IsMatch(context.Activity.Name)
                 );
             OnEvent(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
@@ -489,7 +488,14 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            AddRoute(routeSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
+
+            // Enforce Activity.Type Event
+            async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
+            {
+                return context.Activity.IsType(ActivityTypes.Event) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+            }
+
+            AddRoute(outerSelector, handler, rank: rank, autoSignInHandler: autoSignInHandler);
             return this;
         }
 

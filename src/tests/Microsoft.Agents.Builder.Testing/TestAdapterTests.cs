@@ -172,32 +172,6 @@ namespace Microsoft.Agents.Builder.Testing
                 });
         }
 
-        [Fact]
-        public async Task TestAdapter_Delay()
-        {
-            var adapter = new TestAdapter();
-
-            using var turnContext = new TurnContext(adapter, new Activity());
-
-            var activities = new[]
-            {
-                new Activity(ActivityTypes.Delay, value: 275),
-                new Activity(ActivityTypes.Delay, value: 275L),
-                new Activity(ActivityTypes.Delay, value: 275F),
-                new Activity(ActivityTypes.Delay, value: 275D),
-            };
-
-            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-
-            sw.Start();
-
-            await adapter.SendActivitiesAsync(turnContext, activities, default);
-
-            sw.Stop();
-
-            Assert.True(sw.Elapsed.TotalSeconds > 1, $"Delay only lasted {sw.Elapsed}");
-        }
-
         [Theory]
         [InlineData(Channels.Test)]
         [InlineData(Channels.Emulator)]

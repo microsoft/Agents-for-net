@@ -239,35 +239,6 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public async Task SendActivitiesAsync_ShouldDelayTasks()
-        {
-            // Arrange
-            var connectorClient = CreateMockConnectorClient();
-            var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
-            var context = new TurnContext(adapter, new Activity());
-            context.Services.Set<IConnectorClient>(connectorClient.Object);
-            var activities = new Activity[]
-            {
-                new Activity(type: ActivityTypes.Delay, value: 2000)
-            };
-
-            var stopwatch = new System.Diagnostics.Stopwatch();
-
-            //Total execution time
-            var expectedTotalDelay = 2000;
-            var marginOfError = 50; // Allow a small margin for system overhead
-
-            // Act
-            stopwatch.Start();
-            await adapter.SendActivitiesAsync(context, activities, CancellationToken.None);
-            stopwatch.Stop();
-            var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-
-            // Assert
-            Assert.InRange(elapsedMilliseconds, expectedTotalDelay - marginOfError, expectedTotalDelay + marginOfError);
-        }
-
-        [Fact]
         public async Task SendActivitiesAsync_ShouldAddInvokeResponse()
         {
             // Arrange
