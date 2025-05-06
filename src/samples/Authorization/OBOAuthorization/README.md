@@ -27,7 +27,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       1. Give it a name and click **Register**
       1. **Authentication** tab
          1. **Add Platform**, then **Web**, Set `Redirect URI` to `Web` and `https://token.botframework.com/.auth/web/redirect`
-         1. **Add Platform**, then **Mobile and desktop applications**, and add an additional `http:localhost` Uri.
+         1. **Add Platform**, then **Mobile and desktop applications**, and add an additional `http://localhost` Uri.
       1. **API Permissions** tab
          1. **Dynamics CRM** with **user_impersonation**
          1. **Graph** with **User.Read**
@@ -35,7 +35,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
          1. Grant Admin Consent for your tenant.
       1. **Expose an API** tab
          1. Click **Add a Scope**
-         1. **Application ID URI** should be: app://botid-{{appid}}
+         1. **Application ID URI** should be: api://botid-{{appid}}
          1. **Scope Name** is "defaultScope"
          1. **Who can consent** is **Admins and users**
          1. Enter values for the required Consent fields
@@ -48,7 +48,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
    1. For **Service Provider** select **Azure Active Directory v2**
    1. **Client id** and **Client Secret** are the values created in step #3.
    1. Enter the **Tenant ID**
-   1. **Scopes** is "app://{{appid}}/defaultScope"
+   1. **Scopes** is "api://botid-{{appid}}/defaultScope"
 
 1. Configuring the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL authorization provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
@@ -60,13 +60,6 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}"
-      },
-
       "Connections": {
           "ServiceConnection": {
           "Settings": {

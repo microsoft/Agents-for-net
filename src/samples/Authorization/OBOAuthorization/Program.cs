@@ -37,19 +37,19 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Add the Agent
 builder.AddAgent(sp =>
 {
-    const string MCSConversationPropertyName = "conversation.MCSConversationId";
+    const string MCSConversationPropertyName = "MCSConversationId";
 
     var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
 
-    CopilotClient GetClient(AgentApplication app)
+    CopilotClient GetClient(AgentApplication app, ITurnContext turnContext)
     {
         return new CopilotClient(
             new ConnectionSettings(builder.Configuration.GetSection("CopilotStudioAgent")),
             sp.GetService<IHttpClientFactory>(),
-            tokenProviderFunction: (s) =>
+            tokenProviderFunction: async (s) =>
             {
                 // The result of a sign in is cached in Authorization (for the duration of the turn).
-                return Task.FromResult(app.UserAuthorization.GetTurnToken("mcs"));
+                return await app.UserAuthorization.GetTurnTokenAsync(turnContext, "mcs");
             },
             NullLogger.Instance,
             "mcs");
@@ -60,8 +60,8 @@ builder.AddAgent(sp =>
     // we just want to proxy messages to/from a Copilot Studio Agent.
     app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
     {
-        var mcsConversationId = turnState.GetValue<string>(MCSConversationPropertyName);
-        var cpsClient = GetClient(app);
+        var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
+        var cpsClient = GetClient(app, turnContext);
 
         if (string.IsNullOrEmpty(mcsConversationId))
         {
@@ -73,7 +73,7 @@ builder.AddAgent(sp =>
                     await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
 
                     // Record the conversationId MCS is sending. It will be used this for subsequent messages.
-                    turnState.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+                    turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
                 }
             }
         }
@@ -92,7 +92,7 @@ builder.AddAgent(sp =>
 
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
     {
-        await turnContext.SendActivityAsync($"Auto SignIn: Failed with '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
     });
 
     return app;
