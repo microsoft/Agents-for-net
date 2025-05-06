@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Reflection;
 
 namespace Microsoft.Agents.Core.Errors
 {
@@ -30,7 +31,25 @@ namespace Microsoft.Agents.Core.Errors
     /// <param name="code">Error code for the exception</param>
     /// <param name="description">Displayed Error message</param>
     /// <param name="helplink">Help URL Link for the Error.</param>
+#if !NETSTANDARD
     public record AgentErrorDefinition(int code, string description, string helplink);
+#else
+    public class AgentErrorDefinition(int code, string description, string helplink)
+    {
+        /// <summary>
+        /// Error code for the exception
+        /// </summary>
+        public int code { get; } = code;
+        /// <summary>
+        /// Displayed Error message
+        /// </summary>
+        public string description { get; } = description;
+        /// <summary>
+        /// Help URL Link for the Error.
+        /// </summary>
+        public string helplink { get; } = helplink;
+    }
+#endif
 
     public static class ExceptionHelper
     {
@@ -40,7 +59,16 @@ namespace Microsoft.Agents.Core.Errors
                 ? (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat), innerException })
                 : (T)Activator.CreateInstance(typeof(T), new object[] { string.Format(errorDefinition.description, messageFormat) });
 
+#if !NETSTANDARD
             excp.HResult = errorDefinition.code;
+#else
+            // HResult is not available in .NET Standard
+            var hResultProperty = excp.GetType().GetProperty("HResult", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (hResultProperty != null && hResultProperty.CanWrite)
+            {
+                hResultProperty.SetValue(excp, errorDefinition.code);
+            }
+#endif
             excp.HelpLink = errorDefinition.helplink;
             return excp;
         }

@@ -10,7 +10,7 @@ namespace DialogRootBot.Controllers;
 
 // This Controller exposes the HTTP endpoints for the Connector that DialogSkillBot uses to
 // communicate (send replies) with DialogRootBot.
-[Authorize]
+[AllowAnonymous]
 [ApiController]
 [Route("api/agentresponse")]
 public class AgentResponseController(IChannelApiHandler handler) : ChannelApiController(handler)

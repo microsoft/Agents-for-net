@@ -2,26 +2,36 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+#if !NETSTANDARD
 using System.Runtime.Loader;
+#endif
+
 
 namespace Microsoft.Agents.Authentication
 {
+#if !NETSTANDARD
     internal class AuthModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
-        
+#else
+    internal class AuthModuleLoader(AppDomain loadContext, ILogger logger)
+    {
+        private readonly AppDomain _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
+#endif
+
         // Default auth lib for AgentSDK authentication.  
         private readonly string _defaultAuthenticationLib = "Microsoft.Agents.Authentication.Msal"; 
         private readonly string _defaultAuthenticationLibEntryType = "MsalAuth";
 
         public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
             if (string.IsNullOrEmpty(assemblyName))
             {
@@ -39,8 +49,13 @@ namespace Microsoft.Agents.Authentication
                 typeName = _defaultAuthenticationLibEntryType;
             }
 
+#if !NETSTANDARD
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+#else
+            // This throws for invalid assembly name.
+            Assembly assembly = _loadContext.Load(assemblyName);
+#endif
 
             Type type = assembly.GetType(typeName);
             if (!IsValidProviderType(type))
@@ -57,9 +72,13 @@ namespace Microsoft.Agents.Authentication
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(assemblyName);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(assemblyName, nameof(assemblyName));
 
+#if !NETSTANDARD
             Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+#else
+            Assembly assembly = _loadContext.Load(assemblyName);
+#endif
 
             foreach (Type loadedType in assembly.GetTypes())
             {
@@ -101,5 +120,4 @@ namespace Microsoft.Agents.Authentication
                 modifiers: null);
         }
     }
-
 }

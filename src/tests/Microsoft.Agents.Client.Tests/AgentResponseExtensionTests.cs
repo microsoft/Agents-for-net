@@ -22,7 +22,9 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+#if !NETFRAMEWORK
 using static System.Runtime.InteropServices.JavaScript.JSType;
+#endif
 
 namespace Microsoft.Agents.Client.Tests
 {

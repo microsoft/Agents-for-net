@@ -5,12 +5,9 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Samples;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net.Http;
@@ -104,32 +101,19 @@ builder.AddAgent(sp =>
 
 // Configure the HTTP request pipeline.
 
-// Add AspNet token validation
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-
-var route = app.MapPost(
-    "/api/messages",
-    async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-    {
-        await adapter.ProcessAsync(request, response, agent, cancellationToken);
-    })
-    .RequireAuthorization(new AuthorizeAttribute("AllowedCallers"));
-
-
-// Setup port and listening address.
-
-if (app.Environment.IsDevelopment())
+app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
-    route.AllowAnonymous();
-    var port = args.Length > 0 ? args[0] : "3978";
-    app.Urls.Add($"http://localhost:{port}");
-}
+    await adapter.ProcessAsync(request, response, agent, cancellationToken);
+})
+    .AllowAnonymous();
 
-// Start listening. 
-await app.RunAsync();
+// Hardcoded for brevity and ease of testing. 
+// In production, this should be set in configuration.
+app.Urls.Add($"http://localhost:3978");
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
+app.Run();

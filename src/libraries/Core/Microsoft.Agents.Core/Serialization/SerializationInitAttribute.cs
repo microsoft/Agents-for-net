@@ -7,13 +7,16 @@ using System.Reflection;
 
 namespace Microsoft.Agents.Core.Serialization
 {
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
     public class SerializationInitAttribute : Attribute
     {
         internal static void InitSerialization()
         {
-            //init newly loaded assemblies
+            // Register handler for new assembly loads.  This is needed because
+            // C# doesn't load a package until accessed.
             AppDomain.CurrentDomain.AssemblyLoad += (s, o) => InitAssembly(o.LoadedAssembly);
-            //and all the ones we currently have loaded
+
+            // Call serialization init on currently loaded assemblies.
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 InitAssembly(assembly);

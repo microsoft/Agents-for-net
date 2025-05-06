@@ -25,8 +25,8 @@ public class AdaptiveCardPlugin
         };
 
         // Invoke the model to get a response
-        var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
-        var response = await chatCompletion.GetChatMessageContentAsync(chat);
+        IChatCompletionService chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
+        ChatMessageContent response = await chatCompletion.GetChatMessageContentAsync(chat);
 
         return response.ToString();
     }

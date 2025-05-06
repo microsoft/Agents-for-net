@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Compat
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
         }
 
-        private void ValidateSetPropertyPaneConfigurationResponse(BaseHandleActionResponse response)
+        private static void ValidateSetPropertyPaneConfigurationResponse(BaseHandleActionResponse response)
         {
             if (response is QuickViewHandleActionResponse)
             {

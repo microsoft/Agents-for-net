@@ -70,9 +70,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                
+
                 // Writing formatted exception message to log with error codes and help links. 
+#pragma warning disable CA2254 // Template should be a static expression
                 logger.LogError(resolvedErrorMessage);
+#pragma warning restore CA2254 // Template should be a static expression
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {
@@ -114,7 +116,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
 
-                // if Auth is not configured, we still need the claims from the JWT token.
+                // If Auth is not configured, we still need the claims from the JWT token.
+                // Currently, the stack does rely on certain Claims.  If the Bearer token
+                // was sent, we can get them from there.  The JWT token is NOT validated though.
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
                 if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
                 {

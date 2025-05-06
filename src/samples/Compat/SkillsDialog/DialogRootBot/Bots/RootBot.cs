@@ -66,7 +66,7 @@ namespace DialogRootBot.Bots
         // Load attachment from embedded resource.
         private Attachment CreateAdaptiveCardAttachment()
         {
-            var cardResourcePath = "Microsoft.BuilderSamples.DialogRootBot.Cards.welcomeCard.json";
+            var cardResourcePath = "DialogRootBot.Cards.welcomeCard.json";
 
             using (var stream = GetType().Assembly.GetManifestResourceStream(cardResourcePath))
             {

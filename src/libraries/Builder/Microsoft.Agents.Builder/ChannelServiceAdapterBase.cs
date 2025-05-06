@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -62,12 +63,7 @@ namespace Microsoft.Agents.Builder
                 activity.Id = null;
                 var response = default(ResourceResponse);
 
-                if (activity.Type == ActivityTypes.Delay)
-                {
-                    var delayMs = Convert.ToInt32(activity.Value, CultureInfo.InvariantCulture);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
-                else if (activity.Type == ActivityTypes.InvokeResponse)
+                if (activity.Type == ActivityTypes.InvokeResponse)
                 {
                     turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
@@ -257,17 +253,11 @@ namespace Microsoft.Agents.Builder
                 //activity.CallerId = ???
             }
 
-            bool useAnonymousAuthCallback = false;
-            if (!claimsIdentity.IsAuthenticated)
+            // If auth is disabled, and we don't have any
+            bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
+            if (useAnonymousAuthCallback)
             {
-                if (activity.ChannelId == Channels.Emulator)
-                {
-                    useAnonymousAuthCallback = true;
-                }
-                else
-                {
-                    Logger.LogWarning("Anonymous access is not allowed for channel: {ChannelId}.", activity.ChannelId);
-                }
+                Logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", activity.ChannelId);
             }
 
             // Create the connector client to use for outbound requests.

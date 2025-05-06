@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -33,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnStart(MeetingStartHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -56,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnEnd(MeetingEndHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -79,7 +80,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnParticipantsJoin(MeetingParticipantsEventHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -102,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnParticipantsLeave(MeetingParticipantsEventHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)

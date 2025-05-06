@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewEdit_CommandId()
+        public async Task Test_OnAgentMessagePreviewEdit_CommandId()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewEdit("test-command", handler);
+                ext.MessageExtensions.OnAgentMessagePreviewEdit("test-command", handler);
             });
 
             // Act
@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewEdit_CommandId_NotHit()
+        public async Task Test_OnAgentMessagePreviewEdit_CommandId_NotHit()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewEdit("not-test-command", handler);
+                ext.MessageExtensions.OnAgentMessagePreviewEdit("not-test-command", handler);
             });
 
             // Act
@@ -308,7 +308,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewEdit_RouteSelector_ActivityNotMatched()
+        public async Task Test_OnAgentMessagePreviewEdit_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
@@ -338,17 +338,17 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewEdit(routeSelector, handler);
+                ext.MessageExtensions.OnAgentMessagePreviewEdit(routeSelector, handler);
             });
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected MessageExtensions.OnBotMessagePreviewEdit() triggered for activity type: invoke", exception.Message);
+            Assert.Equal("Unexpected MessageExtensions.OnAgentMessagePreviewEdit() triggered for activity type: invoke", exception.Message);
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewSend_CommandId()
+        public async Task Test_OnAgentMessagePreviewSend_CommandId()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -400,7 +400,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewSend("test-command", handler);
+                ext.MessageExtensions.OnAgentMessagePreviewSend("test-command", handler);
             });
 
             // Act
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewSend_CommandId_NotHit()
+        public async Task Test_OnAgentMessagePreviewSend_CommandId_NotHit()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -462,7 +462,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewSend("not-test-command", handler);
+                ext.MessageExtensions.OnAgentMessagePreviewSend("not-test-command", handler);
             });
 
             // Act
@@ -473,7 +473,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnBotMessagePreviewSend_RouteSelector_ActivityNotMatched()
+        public async Task Test_OnAgentMessagePreviewSend_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
@@ -502,13 +502,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnBotMessagePreviewSend(routeSelector, handler);
+                ext.MessageExtensions.OnAgentMessagePreviewSend(routeSelector, handler);
             });
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected MessageExtensions.OnBotMessagePreviewSend() triggered for activity type: invoke", exception.Message);
+            Assert.Equal("Unexpected MessageExtensions.OnAgentMessagePreviewSend() triggered for activity type: invoke", exception.Message);
         }
 
         [Fact]

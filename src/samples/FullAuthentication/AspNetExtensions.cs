@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,7 +19,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Samples;
+namespace FullAuthentication;
 
 public static class AspNetExtensions
 {
@@ -45,9 +44,6 @@ public static class AspNetExtensions
     ///     "ValidIssuers": [
     ///       "{default:Public-AzureBotService}"
     ///     ],
-    ///     "AllowedCallers": [
-    ///       "*"
-    ///     ],
     ///     "IsGov": {optional:false},
     ///     "AzureBotServiceOpenIdMetadataUrl": optional,
     ///     "OpenIdMetadataUrl": optional,
@@ -62,13 +58,11 @@ public static class AspNetExtensions
     /// `AzureBotServiceOpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
     /// `OpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
     /// `AzureBotServiceTokenHandling` defaults to true and should always be true until Azure Bot Service sends Entra ID token.
-    /// `AllowedCallers` is optional and defaults to "*".  Otherwise, a list of AppId's the Agent will accept requests from.
     /// </remarks>
     public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
     {
         IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
         List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>();
-        List<string> allowedCallers = tokenValidationSection.GetSection("AllowedCallers").Get<List<string>>();
         List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
 
         if (!tokenValidationSection.Exists())
@@ -122,11 +116,6 @@ public static class AspNetExtensions
         }
 
         TimeSpan openIdRefreshInterval = tokenValidationSection.GetValue("OpenIdMetadataRefresh", BaseConfigurationManager.DefaultAutomaticRefreshInterval);
-
-        _ = services.AddAuthorization(options =>
-        {
-            options.AddPolicy("AllowedCallers", policy => policy.Requirements.Add(new AllowedCallersPolicy(allowedCallers)));
-        });
 
         _ = services.AddAuthentication(options =>
         {
@@ -220,52 +209,5 @@ public static class AspNetExtensions
                 }
             };
         });
-    }
-
-    class AllowedCallersPolicy : IAuthorizationHandler, IAuthorizationRequirement
-    {
-        private readonly IList<string> _allowedCallers;
-
-        public AllowedCallersPolicy(IList<string> allowedCallers)
-        {
-            _allowedCallers = allowedCallers  ?? [];
-        }
-
-        public Task HandleAsync(AuthorizationHandlerContext context)
-        {
-            if (_allowedCallers.Count == 0 || _allowedCallers[0] == "*")
-            {
-                context.Succeed(this);
-                return Task.CompletedTask;
-            }
-
-            var claims = context.User.Claims.ToList();
-
-            // allow ABS
-            var issuer = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim);
-            if (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
-            {
-                context.Succeed(this);
-            }
-            else
-            {
-                // Get azp or appid claim 
-                var party = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AuthorizedParty);
-                party ??= claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
-
-                // party must be in allowed list
-                var isAllowed = party != null && _allowedCallers.Where(allowed => allowed == party.Value).Any();
-                if (isAllowed)
-                {
-                    context.Succeed(this);
-                }
-                else
-                {
-                    context.Fail();
-                }
-            }
-
-            return Task.CompletedTask;
-        }
     }
 }

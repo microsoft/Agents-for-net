@@ -77,11 +77,13 @@ namespace Microsoft.Agents.Client
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
             // Perhaps a better way to do this, but what ChannelServiceAdapterBase does in ContinueConversation.
-            var hostClaimsIdentity = new ClaimsIdentity(
-            [
-                new(AuthenticationConstants.AudienceClaim, _channelHost.HostClientId),
-                new(AuthenticationConstants.AppIdClaim, _channelHost.HostClientId),
-            ]);
+            var hostClaimsIdentity = AgentClaims.AllowAnonymous(claimsIdentity) 
+                ? new ClaimsIdentity()
+                : new ClaimsIdentity(
+                [
+                    new(AuthenticationConstants.AudienceClaim, _channelHost.HostClientId),
+                    new(AuthenticationConstants.AppIdClaim, _channelHost.HostClientId),
+                ]);
 
             await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _agent.OnTurnAsync, cancellationToken);
 

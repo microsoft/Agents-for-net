@@ -516,7 +516,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             var ThrottleErrorResponse = new HttpResponseMessage
             {
+#if !NETFRAMEWORK
                 StatusCode = HttpStatusCode.TooManyRequests
+#else
+                StatusCode = (HttpStatusCode)429
+#endif
             };
 
             var teamsOperations = UseTeamsOperations();

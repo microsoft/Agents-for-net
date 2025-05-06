@@ -4,7 +4,6 @@
 using Azure.AI.OpenAI;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -21,9 +20,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
-
-// Add AspNet token validation
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 builder.Services.AddTransient<ChatClient>(sp =>
 {

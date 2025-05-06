@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -40,7 +40,8 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
         public Task DeleteAsync(string[] keys, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(keys);
+
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             lock (_syncroot)
             {
@@ -66,8 +67,7 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(keys);
-
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
             var storeItems = new Dictionary<string, object>(keys.Length);
             lock (_syncroot)
             {
@@ -118,8 +118,7 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(changes);
-
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
             lock (_syncroot)
             {
                 foreach (var change in changes)
@@ -164,7 +163,7 @@ namespace Microsoft.Agents.Storage
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
-            ArgumentNullException.ThrowIfNull(changes);
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
             Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)

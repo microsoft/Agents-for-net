@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -112,8 +113,8 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <remarks>If the task completes successfully, the result contains a page of matching activities.</remarks>
         public Task<PagedResult<IActivity>> GetTranscriptActivitiesAsync(string channelId, string conversationId, string continuationToken = null, DateTimeOffset startDate = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
-            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var pagedResult = new PagedResult<IActivity>();
             lock (_channels)
@@ -165,8 +166,8 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <returns>A task that represents the work queued to execute.</returns>
         public Task DeleteTranscriptAsync(string channelId, string conversationId)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
-            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             lock (_channels)
             {
@@ -188,7 +189,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <remarks>If the task is successful, the result contains a page of conversations.</remarks>
         public Task<PagedResult<TranscriptInfo>> ListTranscriptsAsync(string channelId, string continuationToken = null)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
 
             var pagedResult = new PagedResult<TranscriptInfo>();
             lock (_channels)

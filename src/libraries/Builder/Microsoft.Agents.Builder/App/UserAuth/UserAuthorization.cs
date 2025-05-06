@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -113,9 +114,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <exception cref="InvalidOperationException">If a flow is already active.</exception>
         public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-            ArgumentNullException.ThrowIfNull(turnState);
-            ArgumentException.ThrowIfNullOrWhiteSpace(handlerName);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnState, nameof(turnState));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(handlerName, nameof(handlerName));
 
             // Only one active flow allowed
             var activeFlow = UserInSignInFlow(turnState);
@@ -253,14 +254,15 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>
         /// <param name="handlerName">The name of the handler defined in <see cref="UserAuthorizationOptions"/></param>
+        /// <param name="forceAuto"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>false indicates the sign in is not complete.</returns>
-        internal async Task<bool> StartOrContinueSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
+        internal async Task<bool> StartOrContinueSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, bool forceAuto = false, CancellationToken cancellationToken = default)
         {
             // If a flow is active, continue that.
             string? activeFlowName = UserInSignInFlow(turnState);
             bool flowContinuation = activeFlowName != null;
-            bool autoSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
+            bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
 
             if (autoSignIn || flowContinuation)
             {

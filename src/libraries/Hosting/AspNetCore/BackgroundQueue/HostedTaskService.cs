@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)));
+                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
             }
 
             await base.StopAsync(stoppingToken);
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation($"Queued Hosted Service is running.{Environment.NewLine}");
+            _logger.LogInformation("Queued Hosted Service is running.{Environment.NewLine}", Environment.NewLine);
             
             await BackgroundProcessing(stoppingToken);
         }

@@ -14,6 +14,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Extensions.Teams.App
 {
@@ -62,7 +63,11 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         public TaskModule TaskModules { get; }
 
+#if !NETSTANDARD
         protected AgentApplication AgentApplication { get; init;}
+#else
+        protected AgentApplication AgentApplication { get; set;}
+#endif
 
         /// <summary>
         /// Handles conversation update events.
@@ -72,8 +77,9 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(conversationUpdateEvent);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+            AssertionHelpers.ThrowIfNull(conversationUpdateEvent, nameof(conversationUpdateEvent));
+            
             RouteSelector routeSelector;
             switch (conversationUpdateEvent)
             {
@@ -147,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnMessageEdit(RouteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -167,7 +173,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnMessageUndelete(RouteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -187,7 +193,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnMessageDelete(RouteHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -207,7 +213,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -229,7 +235,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
@@ -255,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
@@ -292,7 +298,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
         private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) =>
             {
                 FileConsentCardResponse? fileConsentCardResponse;
@@ -327,7 +333,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -357,12 +363,12 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <returns></returns>
         public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             RouteSelector routeSelector = (context, _) =>
             {
                 var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
-                string? actionName = jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
+                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
                 return Task.FromResult
                 (
                     context.Activity.Type == ActivityTypes.Invoke

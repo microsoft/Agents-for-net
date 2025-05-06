@@ -1,6 +1,12 @@
 ﻿# AutoSignIn
 
-This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use user authorization in your Agent.
+This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use Auto SignIn user authorization in your Agent.
+
+This sample:
+- Gets an OAuth token automatically for every message sent by the user
+  > This is done by setting the "AgentApplication.UserAuthorization.AutoSign" setting to true.  This will use the default UserAuthorization Handler to automatically get a token for all incoming Activities.  Use this when your Agents needs the same token for much of it's functionality.
+- Per-Route sign in .  In this sample, this is the `-me` message.
+  > Messages the user sends are routed to a handler of your choice.  This feature allow you to indicate that a particular token is needed for the handler.  Per-Route user authorization will automatically handle the OAuth flow to get the token and make it available to your agent.  Keep in mind that if the the Auto SignIn option is enabled, you actually have two tokens available in the handler.
 
 The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authorizes users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
 
@@ -16,6 +22,10 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
 
 1. [Add OAuth to your bot](https://aka.ms/AgentsSDK-AddAuth)
 
+1. For purposes of this sample, create a second Azure Bot **OAuth Connection** as a copy of the one just created.
+   > This is to ease setup of this sample.  In an actual Agent, this second connection would be setup separately, with different API Permissions and scopes specific to the external service being accessed. \
+   > This OAuth Connection is for the `-me` message in this sample.   
+
 1. Configuring the token connection in the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL Authentication provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
 
@@ -24,19 +34,8 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "ConnectionName": "{{ConnectionName}}",
-   
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}"
-      },
-
       "Connections": {
           "ServiceConnection": {
-          "Assembly": "Microsoft.Agents.Authentication.Msal",
-          "Type":  "MsalAuth",
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -55,14 +54,36 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
-1. Update `appsettings.json` 
+1. Configure the UserAuthorization handlers
+   1. Open the `appsettings.json` file and locate
+      ```json
+      "AgentApplication": {
+        "UserAuthorization": {
+          "DefaultHandlerName": "auto",
+          "AutoSignin": true,
+          "Handlers": {
+            "auto": {
+              "Settings": {
+                "AzureBotOAuthConnectionName": "{{auto_connection_name}}",
+                "Title": "SigIn for Sample",
+                "Text":  "Please sign in and send the 6-digit code"
+              }
+            },
+           "me": {
+             "Settings": {
+               "AzureBotOAuthConnectionName": "{{me_connection_name}}",
+               "Title": "SigIn for Me",
+               "Text": "Please sign in and send the 6-digit code"
+             }
+          }
+        }
+      }
+      ```
 
-   | Property             | Value Description     | 
-   |----------------------|-----------|
-   | ConnectionName       | Set the configured bot's OAuth connection name.      |
-    
+      1. Replace **{{auto_connection_name}}** with the first **OAuth Connection** name created
+      1. Replace **{{me_connection_name}}** with the second **OAuth Connection** name created
+
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and update it to match your DevTunnel port. If `./Properties/launchSettings.json`not fount Close and re-open the solution.launchSettings.json have been re-created.
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous
@@ -92,7 +113,9 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
 
 ## Interacting with the Agent
 
-Type anything to sign-in, or `logout` to sign-out.  
+- When the conversation starts, you will be greeted with a welcome message which include your name and instructions.
+- Sending `-me` will display additional information about you.
+- Note that if running this in Teams and SSO is setup, you shouldn't see any "sign in" prompts.  This is true in this sample since we are only requesting a basic set of scopes that Teams doesn't require additional consent for.
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
