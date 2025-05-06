@@ -54,6 +54,10 @@
       "requiresBotState": true,
       "supportsListening": true,
       "supportsTts": true
+    },
+    {
+      "type": "subChannelInfo",
+      "channelId": "subchannel"
     }
   ],
   "channelData": {

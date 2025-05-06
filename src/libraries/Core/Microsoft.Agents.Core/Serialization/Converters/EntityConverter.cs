@@ -37,7 +37,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 return JsonSerializer.Deserialize<ActivityTreatment>(JsonSerializer.Serialize(entity, options), options);
             }
-
+			else if (string.Equals(EntityTypes.ProductInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
+            {
+                return JsonSerializer.Deserialize<ProductInfo>(JsonSerializer.Serialize(entity, options), options);
+            }
+            
             return entity;
         }
 

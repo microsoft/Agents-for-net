@@ -126,6 +126,12 @@ namespace Microsoft.Agents.Core.Models
         public const string M365 = "m365extensions";
 
         /// <summary>
+        /// M365 Copilot Teams Subchannel
+        /// </summary>
+        public const string M365CopilotSubChannel = "COPILOT";
+        public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
+
+        /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.
         /// </summary>
         /// <param name="channelId">The Channel to check the if Suggested Actions are supported in.</param>
