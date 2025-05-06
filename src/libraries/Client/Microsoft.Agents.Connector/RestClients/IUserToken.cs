@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='exchangeRequest'> Exchange request. </param>
         /// <param name='cancellationToken'> The cancellation token. </param>
         /// <returns> A task that represents the work queued to execute. </returns>
-        Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default);
+        Task<TokenResponse> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default);
 
         /// <summary> Get token or sign in resource with HTTP message. </summary>
         /// <param name="userId"> User ID.</param>

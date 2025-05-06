@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -51,7 +52,7 @@ namespace Microsoft.Agents.Connector.Tests
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             var client = UseClient();
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetSignInUrlAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetSignInUrlAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
         }
 
         [Fact]
@@ -87,7 +88,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetSignInResourceAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetSignInResourceAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
         }
 
         [Fact]

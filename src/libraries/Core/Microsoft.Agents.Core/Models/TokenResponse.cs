@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="connectionName"> The connection name. </param>
         /// <param name="token"> The user token. </param>
         /// <param name="expiration"> Expiration for the token, in ISO 8601 format (e.g. "2007-04-05T14:30Z"). </param>
-        public TokenResponse(string channelId = default, string connectionName = default, string token = default, string expiration = default)
+        public TokenResponse(string channelId = default, string connectionName = default, string token = default, DateTime expiration = default)
         {
             ChannelId = channelId;
             ConnectionName = connectionName;
@@ -33,7 +34,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> The user token. </summary>
         public string Token { get; set; }
         /// <summary> Expiration for the token, in ISO 8601 format (e.g. "2007-04-05T14:30Z"). </summary>
-        public string Expiration { get; set; }
+        public DateTimeOffset? Expiration { get; set; }
 
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that

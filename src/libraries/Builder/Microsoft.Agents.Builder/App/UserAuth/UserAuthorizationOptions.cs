@@ -48,13 +48,27 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         ///   }
         /// }
         /// </code>
-        /// The "AutoSignIn" property will map to <see cref="AutoSignInOn"/> or <see cref="AutoSignInOff"/>.  To provide a
-        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.
-        /// </remarks>
-        /// <remarks>
-        /// The "Handlers" property is mapped to <see cref="UserAuthorizationDispatcher"/> using the key of `UserAuthorization:Handlers.  
-        /// To provide a custom <see cref="IUserAuthorizationDispatcher"/> use DI.  If a custom IUserAuthorizationDispatcher is provided
-        /// the Handlers node is note used.
+        /// 
+        /// <para>The "AutoSignIn" property will map to <see cref="AutoSignInOn"/> or <see cref="AutoSignInOff"/>.  To provide a
+        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.</para>
+        /// 
+        /// The default Handler:Settings are mapped to <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthSettings"/>.  These
+        /// setting can be included in config:
+        /// <code>
+        /// "UserAuthorization": {
+        ///   "Handlers": {
+        ///     "Settings": {
+        ///       "AzureBotOAuthConnectionName": "{{auzre-bot-connection-name}}",
+        ///       "OBOConnectionName": "{{connections-name}}",
+        ///       "OBOScopes": ["{{obo-scope}}"],
+        ///       "Title": "{{signin-card-title}}",
+        ///       "Text": "{{signin-card-button-text}}",
+        ///       "InvalidSignInRetryMax": 2,
+        ///       "InvalidSignInRetryMessage": "Please send code again",
+        ///       "Timeout": {{timeout-ms}}
+        ///     }
+        ///   }
+        /// </code>
         /// </remarks>
         /// <param name="sp"></param>
         /// <param name="configuration"></param>

@@ -10,10 +10,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
 
-namespace Microsoft.Agents.Extensions.Teams.Compat
+namespace Microsoft.Agents.Builder.Compat
 {
     /// <summary>
     /// If the activity name is signin/tokenExchange, this middleware will attempt to

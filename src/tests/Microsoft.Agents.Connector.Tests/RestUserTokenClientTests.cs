@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Connector.Tests
 {
@@ -77,7 +78,8 @@ namespace Microsoft.Agents.Connector.Tests
             {
                 var tokenResponse = new TokenResponse
                 {
-                    Token = "test-token"
+                    // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                    Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
                 };
 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -326,7 +328,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -355,7 +357,7 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var errorResponse = new
             {
-                Error = new Error { Code = "errorCode", Message = "errorMessage" }
+                Error = new Error { Code = "ConsentRequired", Message = "Consent Required" }
             };
 
             var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -372,9 +374,9 @@ namespace Microsoft.Agents.Connector.Tests
                 await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
                 Assert.Fail("Should have thrown");
             }
-            catch (InvalidOperationException ex)
+            catch (ErrorResponseException ex)
             {
-                Assert.Equal("Unable to exchange token: (errorCode) errorMessage", ex.Message);
+                Assert.Equal("(ConsentRequired) Consent Required", ex.Message);
             }
         }
 

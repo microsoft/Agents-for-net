@@ -21,6 +21,8 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <summary>
         /// Error occurred during sign-in
         /// </summary>
-        Error
+        Error,
+
+        Duplicate
     }
 }

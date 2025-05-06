@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
+
 #if !NETSTANDARD
 using System.Runtime.Loader;
 #endif
@@ -109,17 +112,21 @@ namespace Microsoft.Agents.Builder.UserAuth
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             IUserAuthorization auth = Get(handlerName);
-            string token;
+            TokenResponse token;
             try
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            }
+            catch(DuplicateExchangeException)
+            {
+                return new SignInResponse(SignInStatus.Duplicate);
             }
             catch (Exception ex)
             {
                 SignInResponse newResponse = new(SignInStatus.Error)
                 {
                     Error = ex,
-                    Cause = AuthExceptionReason.Other
+                    Cause = AuthExceptionReason.Exception
                 };
                 if (ex is AuthException authEx)
                 {
@@ -129,11 +136,11 @@ namespace Microsoft.Agents.Builder.UserAuth
                 return newResponse;
             }
 
-            if (!string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token?.Token))
             {
                 return new SignInResponse(SignInStatus.Complete)
                 {
-                    Token = token
+                    TokenResponse = token,
                 };
             }
 

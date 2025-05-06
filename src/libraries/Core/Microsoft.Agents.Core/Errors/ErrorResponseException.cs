@@ -52,9 +52,9 @@ namespace Microsoft.Agents.Core.Errors
             try
             {
 #if !NETSTANDARD
-                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content?.ReadAsStream(cancellationToken));
 #else
-                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStringAsync().Result);
+                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content?.ReadAsStringAsync().Result);
 #endif
                 if (errorBody != null && errorBody.Error != null)
                 {

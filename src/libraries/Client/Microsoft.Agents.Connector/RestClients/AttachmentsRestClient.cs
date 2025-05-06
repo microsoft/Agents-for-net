@@ -5,7 +5,6 @@
 
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.IO;
@@ -80,7 +79,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -133,7 +132,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return null;
                 default:
                     {
-                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }

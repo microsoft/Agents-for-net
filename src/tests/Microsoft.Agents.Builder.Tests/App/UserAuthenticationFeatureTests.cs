@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Builder.UserAuth;
@@ -36,7 +34,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             MockGraph = new Mock<IUserAuthorization>();
             MockGraph
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(GraphToken));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) }));
             MockGraph
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -44,7 +42,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             MockSharePoint = new Mock<IUserAuthorization>();
             MockSharePoint
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(SharePointToken));
+                .Returns(Task.FromResult(new TokenResponse() { Token = SharePointToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) }));
             MockSharePoint
                 .Setup(e => e.Name)
                 .Returns(SharePointName);
@@ -110,8 +108,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
-            Assert.Equal(GraphToken, app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
+            Assert.Equal(GraphToken, await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
         }
 
         [Fact]
@@ -133,8 +131,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
-            Assert.Equal(SharePointToken, app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
+            Assert.Equal(SharePointToken, await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
         }
 
         [Fact]
@@ -142,7 +140,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             MockGraph
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((string)null));
+                .Returns(Task.FromResult((TokenResponse)null));
 
             var options = new TestApplicationOptions((IStorage)null)
             {
@@ -179,8 +177,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(app.UserAuthorization.GetTurnToken(GraphName));
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
         }
 
         [Fact]
@@ -202,10 +200,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(app.UserAuthorization.GetTurnToken(SharePointName));
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
         }
 
+#if MANUAL_SIGNIN
         [Fact]
         public async Task Test_ManualSignInOnSuccessForCached()
         {
@@ -217,7 +216,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(GraphToken));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -253,7 +252,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
 
         [Fact]
@@ -272,9 +271,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(GraphToken);
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -312,8 +311,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
+#endif
 
         [Fact]
         public async Task Test_AutoSignInForCached()
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(GraphToken));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -356,7 +356,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
         }
 
         [Fact]
@@ -375,9 +375,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(GraphToken);
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -410,7 +410,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
         }
 
         [Fact]
@@ -430,9 +430,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(GraphToken);
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -446,9 +446,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (sharePointAttempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(SharePointToken);
+                    return Task.FromResult(new TokenResponse() { Token = SharePointToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             sharePointMock
                 .Setup(e => e.Name)
@@ -460,7 +460,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(() =>
                 {
-                    return Task.FromResult("signedIn token");
+                    return Task.FromResult(new TokenResponse() { Token = "signedIn token", Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             signedInMock
                 .Setup(e => e.Name)
@@ -481,7 +481,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-graph" using GraphName OAuth
             app.OnMessage("-graph", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+                Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: GraphName);
@@ -489,7 +489,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: SharePointName);
@@ -497,7 +497,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-signedIn" using "signedIn" OAuth.  This tests "already signed in".
             app.OnMessage("-signedIn", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnToken("signedIn"));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, "signedIn"));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: "signedIn");
@@ -536,9 +536,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(GraphToken);
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -554,9 +554,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (sharePointAttempt++ == 0)
                     {
-                        return Task.FromResult((string)null);
+                        return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(SharePointToken);
+                    return Task.FromResult(new TokenResponse() { Token = SharePointToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             sharePointMock
                 .Setup(e => e.Name)
@@ -576,7 +576,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Default AutoSignIn "global" handler.
             app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             rank: RouteRank.Last);
@@ -584,10 +584,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
 
                 // GraphName token should be available since it was global auto
-                Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
 
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },

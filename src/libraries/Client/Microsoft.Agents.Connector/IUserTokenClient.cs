@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="channelId">The channel Id that will be associated with the token.</param>
         /// <param name="exchangeRequest">The exchange request details, either a token to exchange or a uri to exchange.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <exception>ErrorResponseException</exception>
         Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken);
 
         /// <summary>
