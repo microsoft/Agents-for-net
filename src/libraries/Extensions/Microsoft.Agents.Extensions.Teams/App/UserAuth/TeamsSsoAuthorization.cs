@@ -106,18 +106,6 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             await _msalAdapter.StopLongRunningProcessInWebApiAsync(homeAccountId, cancellationToken);
         }
 
-        /// <summary>
-        /// Check if the user is signed, if they are then return the token.
-        /// </summary>
-        /// <param name="context">The turn context.</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The token if the user is signed. Otherwise null.</returns>
-        public async Task<string> IsUserSignedInAsync(ITurnContext context, CancellationToken cancellationToken = default)
-        {
-            var token = await _msalAdapter.TryGetUserToken(context, Name, _settings).ConfigureAwait(false);
-            return token?.Token;
-        }
-
         async Task IUserAuthorization.ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
