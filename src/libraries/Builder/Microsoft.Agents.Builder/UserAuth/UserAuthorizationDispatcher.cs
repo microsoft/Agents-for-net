@@ -114,6 +114,10 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
+            catch (UnsupportedChannel)
+            {
+                return new SignInResponse(SignInStatus.UnsupportedChannel);
+            }
             catch (Exception ex)
             {
                 SignInResponse newResponse = new(SignInStatus.Error)

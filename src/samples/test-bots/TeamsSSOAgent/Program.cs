@@ -2,11 +2,7 @@
 // Licensed under the MIT License.
 
 
-using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.UserAuth;
-using Microsoft.Agents.Extensions.Teams.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;

@@ -12,6 +12,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Identity.Client;
 using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
@@ -63,6 +64,11 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <returns>The sign in response</returns>
         public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new UnsupportedChannel();
+            }
+
             var token = await _msalAdapter.TryGetUserToken(turnContext, Name, _settings).ConfigureAwait(false);
             if (token != null)
             {
