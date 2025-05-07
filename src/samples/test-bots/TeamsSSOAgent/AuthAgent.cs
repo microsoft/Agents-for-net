@@ -40,10 +40,6 @@ public class AuthAgent : AgentApplication
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
-        // Demonstrates the use of Per-Route Auto sign-in.  This will automatically get a token using the indicated OAuth handler for this message route.
-        // This Route will automatically get a token using the "me" UserAuthorization.Handler in config.
-        OnMessage("-me", OnMe, autoSignInHandler: "me");
-
         // Handles the user sending a SignOut command using the specific keywords '-signout'
         OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>
         {
@@ -51,7 +47,6 @@ public class AuthAgent : AgentApplication
             // This is needed to reset the token in Azure Bot Services if needed. 
             // Typically this wouldn't be need in a production Agent.  Made available to assist it starting from scratch.
             await UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
-            await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken: cancellationToken);
             await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
         }, rank: RouteRank.Last);
 
@@ -100,41 +95,6 @@ public class AuthAgent : AgentApplication
                 sb.Clear();
             }
         }
-    }
-
-    /// Handles -me, using a different OAuthConnection to show Per-Route OAuth. 
-    /// </summary>
-    /// <param name="turnContext"><see cref="ITurnContext"/></param>
-    /// <param name="turnState"><see cref="ITurnState"/></param>
-    /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
-    /// <returns></returns>
-    private async Task OnMe(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        // If the sign in is successful, the user will be signed in and the token will be available from the UserAuthorization.GetTurnToken("me") call. 
-        // If the sign in was not successful, this won't be reached.  Instead, OnUserSignInFailure route would have been called.
-
-        // For this sample, two OAuth Connections are setup to demonstrate multiple OAuth Connections and Auto SignIn handling and routing.
-        // For ease of setup, both connections are using the same App Reg for API Permissions.  In a real Agent, these would be using different
-        // App Registrations with different permissions. In this cases, we are using two different tokens to access external services.
-
-        var displayName = await GetDisplayName();
-        var graphInfo = await GetGraphInfo("me");
-
-        // Just to verify "auto" handler setup.  This wouldn't be needed in a production Agent and here just to verify sample setup.
-        if (displayName.Equals(_defaultDisplayName) || graphInfo == null)
-        {
-            await turnContext.SendActivityAsync($"Failed to get information from handlers '{UserAuthorization.DefaultHandlerName}' and/or 'me'. \nDid you update the scope correctly in Azure bot Service?. If so type in -signout to force signout the current user", cancellationToken: cancellationToken);
-            return;
-        }
-
-        // Just to verify we in fact have two different tokens.  This wouldn't be needed in a production Agent and here just to verify sample setup.
-        if (UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName) == UserAuthorization.GetTurnToken("me"))
-        {
-            await turnContext.SendActivityAsync($"It would seem '{UserAuthorization.DefaultHandlerName}' and 'me' are using the same OAuth Connection", cancellationToken: cancellationToken);
-        }
-
-        var meInfo = $"Name: {displayName}\r\nJob Title: {graphInfo["jobTitle"].GetValue<string>()}\r\nEmail: {graphInfo["mail"].GetValue<string>()}";
-        await turnContext.SendActivityAsync(meInfo, cancellationToken: cancellationToken);
     }
 
     /// <summary>
