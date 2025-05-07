@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Identity.Client;
-
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
@@ -16,9 +14,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         public string[] Scopes { get; set; }
 
         /// <summary>
-        /// The instance of ConfidentialClientApplication from Microsoft Authentication Library
+        /// Name of the IConnections token provider to use.
         /// </summary>
-        public IConfidentialClientApplication MSAL { get; set; }
+        public string ConnectionName { get; set; }
 
         /// <summary>
         /// The sign in link for authentication.
@@ -47,18 +45,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <summary>
         /// Initializes the class
         /// </summary>
+        /// <param name="connectionName"></param>
         /// <param name="scopes">The AAD scopes for authentication.</param>
         /// <param name="signInLink">The sign in link for authentication.</param>
-        /// <param name="msal">The instance of ConfidentialClientApplication from Microsoft Authentication Library</param>
         /// <param name="timeout">Number of milliseconds to wait for the user to authenticate.</param>
         /// <param name="endOnInvalidMessage">Value indicating whether the authentication should end upon receiving an invalid message.</param>
-        public TeamsSsoSettings(string[] scopes, string signInLink, IConfidentialClientApplication msal, int timeout = 900000, bool endOnInvalidMessage = true)
+        public TeamsSsoSettings(string connectionName, string[] scopes, string signInLink, int timeout = 900000, bool endOnInvalidMessage = true)
         {
-            this.Scopes = scopes;
-            this.MSAL = msal;
-            this.SignInLink = signInLink;
-            this.Timeout = timeout;
-            this.EndOnInvalidMessage = endOnInvalidMessage;
+            Scopes = scopes;
+            ConnectionName = connectionName;
+            SignInLink = signInLink;
+            Timeout = timeout;
+            EndOnInvalidMessage = endOnInvalidMessage;
         }
     }
 }

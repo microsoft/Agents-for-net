@@ -31,6 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
 	  <ProjectReference Include="..\..\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 	  <ProjectReference Include="..\..\Client\Microsoft.Agents.Connector\Microsoft.Agents.Connector.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />

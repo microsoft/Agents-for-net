@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="msalAdapter"></param>
         public TeamsSsoBotAuthentication(string name, TeamsSsoSettings settings, IStorage storage, IConfidentialClientApplicationAdapter msalAdapter)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
             _name = name;
 
             _msalAdapter = msalAdapter ?? throw new ArgumentNullException(nameof(msalAdapter));
@@ -54,8 +55,6 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <returns>True if valid. Otherwise, false.</returns>
         public virtual bool IsValidActivity(ITurnContext turnContext)
         {
-            // TODO: this is because SignIn is triggered by a message.  This really shouldn't be the case
-            // when Sign in is initiated.  
             var isMatch = turnContext.Activity.Type == ActivityTypes.Message
                 && !string.IsNullOrEmpty(turnContext.Activity.Text);
 
@@ -81,10 +80,10 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <returns>The token response if available.</returns>
         public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (await ShouldDedupeAsync(turnContext).ConfigureAwait(false))
-            {
-                return null;
-            }
+            //if (await ShouldDedupeAsync(turnContext).ConfigureAwait(false))
+            //{
+            //    return null;
+            //}
 
             _state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
@@ -114,6 +113,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             if (tokenResponse == null)
             {
                 var expires = DateTime.UtcNow.AddMilliseconds(_settings.Timeout ?? OAuthSettings.DefaultTimeoutValue.TotalMilliseconds);
+
+                await SendOAuthCardToObtainTokenAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
                 _state.FlowStarted = true;
                 _state.FlowExpires = expires;
@@ -365,23 +366,24 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             key = null;
             id = null;
 
-            if (turnContext.Activity.Type != ActivityTypes.Invoke || turnContext.Activity.Name != SignInConstants.TokenExchangeOperationName)
-            {
+            //if (turnContext.Activity.Type != ActivityTypes.Invoke || turnContext.Activity.Name != SignInConstants.TokenExchangeOperationName)
+            //{
                 // TokenExchangeState can only be used with Invokes of signin/tokenExchange
-                return false;
-            }
+            //    return false;
+            //}
 
             var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
             var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
-            var values = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
-            if (!values.TryGetValue("id", out var valueId))
-            {
+            //var values = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
+            //if (!values.TryGetValue("id", out var valueId))
+            //{
                 // Invalid signin/tokenExchange. Missing activity.value.id
-                return false;
-            }
+            //    return false;
+            //}
 
-            key = $"teamssso/{_name}/{channelId}/{conversationId}/{valueId}/flowState";
+            //key = $"teamssso/{_name}/{channelId}/{conversationId}/{valueId}/flowState";
+            key = $"teamssso/{_name}/{channelId}/{conversationId}/flowState";
             return true;
         }
     }
