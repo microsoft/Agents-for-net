@@ -87,7 +87,7 @@ public class AuthAgent : AgentApplication
                 sb.AppendLine("**-signout**: Sign out of the agent and force it to reset the login flow on next message.");
                 if (displayName.Equals(_defaultDisplayName))
                 {
-                    sb.AppendLine("**WARNING: We were unable to get your display name with the current access token.. please use the -signout command before proceeding**");
+                    sb.AppendLine("**WARNING: Unable to retrieve your display name using the current access token. Please use the -signout command and try again.**");
                 }
                 sb.AppendLine("");
                 sb.AppendLine("Type anything else to see the agent echo back your message.");
