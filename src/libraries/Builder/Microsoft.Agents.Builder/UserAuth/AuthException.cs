@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.UserAuth
     /// </remarks>
     /// <param name="message">The exception message</param>
     /// <param name="reason">The cause of the exception</param>
-    internal class AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other) : Exception(message)
+    public class AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other) : Exception(message)
     {
         /// <summary>
         /// The cause of the exception.
