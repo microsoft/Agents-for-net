@@ -289,12 +289,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     exchangeScopes: exchangeScopes, 
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                if (response.Status == SignInStatus.UnsupportedChannel)
-                {
-                    // Probably should throw here?
-                    return true;
-                }
-
                 if (response.Status == SignInStatus.Pending)
                 {
                     if (!flowContinuation)

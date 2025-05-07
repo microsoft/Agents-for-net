@@ -13,13 +13,14 @@ using Microsoft.Identity.Client;
 using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
     /// Handles authentication based on Teams SSO.
     /// </summary>
-    public class TeamsSsoAuthorization : IUserAuthorization
+    public class TeamsSsoAuthorization : AzureBotUserAuthorization, IUserAuthorization
     {
         private readonly ConfidentialClientApplicationAdapter _msalAdapter;
         private readonly TeamsSsoBotAuthorization _botAuth;
@@ -40,17 +41,14 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="connections"></param>
         /// <param name="storage">The storage to use.</param>
-        public TeamsSsoAuthorization(string name, IStorage storage, IConnections connections, TeamsSsoSettings settings)
+        public TeamsSsoAuthorization(string name, IStorage storage, IConnections connections, TeamsSsoSettings settings) : base(name, storage, connections, settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
             _msalAdapter = GetMsalAdapter(connections);
 
             _botAuth = new TeamsSsoBotAuthorization(name, _settings, storage, _msalAdapter);
             //_messageExtensionsAuth = new TeamsSsoMessageExtensionsAuthentication(_settings);
         }
-
-        public string Name { get; private set; }
 
         /// <summary>
         /// Sign in current user
@@ -62,13 +60,11 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="state">The turn state</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in response</returns>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        async Task<string> IUserAuthorization.SignInUserAsync(ITurnContext turnContext, bool forceSignIn, string exchangeConnection, IList<string> exchangeScopes, CancellationToken cancellationToken)
         {
-            // TEMP.  This is just to somewhat handle access by non-Teams channels.  Should likely forward to the 
-            // Token Service impl for those.
             if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
             {
-                throw new UnsupportedChannel();
+                return await base.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
 
             var token = await _msalAdapter.TryGetUserToken(turnContext, Name, _settings).ConfigureAwait(false);
@@ -97,8 +93,14 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// </summary>
         /// <param name="turnContext">The turn context</param>
         /// <param name="cancellationToken">The cancellation token</param>
-        public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        async Task IUserAuthorization.SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            {
+                await base.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             string homeAccountId = $"{turnContext.Activity.From.AadObjectId}.{turnContext.Activity.Conversation.TenantId}";
 
             await _msalAdapter.StopLongRunningProcessInWebApiAsync(homeAccountId, cancellationToken);
@@ -116,20 +118,26 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             return token?.Token;
         }
 
-        public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        async Task IUserAuthorization.ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            {
+                await base.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             await _botAuth.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         private ConfidentialClientApplicationAdapter GetMsalAdapter(IConnections connections)
         {
-            var client = connections.GetConnection(_settings.ConnectionName);
+            var client = connections.GetConnection(_settings.SsoConnectionName);
             if (client is IMSALProvider msal)
             {
                 return new ConfidentialClientApplicationAdapter((IConfidentialClientApplication) msal.CreateClientApplication());
             }
 
-            throw new InvalidOperationException($"Connection '{_settings.ConnectionName}' does not support MSAL");
+            throw new InvalidOperationException($"Connection '{_settings.SsoConnectionName}' does not support MSAL");
         }
     }
 }
