@@ -64,6 +64,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <returns>The sign in response</returns>
         public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            // TEMP.  This is just to somewhat handle access by non-Teams channels.  Should likely forward to the 
+            // Token Service impl for those.
             if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
             {
                 throw new UnsupportedChannel();
