@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -70,8 +71,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandId);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), SUBMIT_ACTION_INVOKE_NAME);
             return OnSubmitAction(routeSelector, handler);
         }
@@ -84,8 +86,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandIdPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME);
             return OnSubmitAction(routeSelector, handler);
         }
@@ -129,8 +131,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmitAction(MultipleRouteSelector routeSelectors, SubmitActionHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string commandId in routeSelectors.Strings)
@@ -162,12 +164,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandId);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), SUBMIT_ACTION_INVOKE_NAME, "edit");
-            return OnBotMessagePreviewEdit(routeSelector, handler);
+            return OnAgentMessagePreviewEdit(routeSelector, handler);
         }
 
         /// <summary>
@@ -177,12 +179,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandIdPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME, "edit");
-            return OnBotMessagePreviewEdit(routeSelector, handler);
+            return OnAgentMessagePreviewEdit(routeSelector, handler);
         }
 
         /// <summary>
@@ -192,7 +194,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
         {
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -202,7 +204,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(turnContext.Activity.Value)) == null
                     || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "edit"))
                 {
-                    throw new InvalidOperationException($"Unexpected MessageExtensions.OnBotMessagePreviewEdit() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewEdit() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 MessagingExtensionActionResponse result = await handler(turnContext, turnState, messagingExtensionAction.BotActivityPreview[0], cancellationToken);
@@ -225,29 +227,29 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewEdit(MultipleRouteSelector routeSelectors, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnAgentMessagePreviewEdit(MultipleRouteSelector routeSelectors, BotMessagePreviewEditHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string commandId in routeSelectors.Strings)
                 {
-                    OnBotMessagePreviewEdit(commandId, handler);
+                    OnAgentMessagePreviewEdit(commandId, handler);
                 }
             }
             if (routeSelectors.Regexes != null)
             {
                 foreach (Regex commandIdPattern in routeSelectors.Regexes)
                 {
-                    OnBotMessagePreviewEdit(commandIdPattern, handler);
+                    OnAgentMessagePreviewEdit(commandIdPattern, handler);
                 }
             }
             if (routeSelectors.RouteSelectors != null)
             {
                 foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
-                    OnBotMessagePreviewEdit(routeSelector, handler);
+                    OnAgentMessagePreviewEdit(routeSelector, handler);
                 }
             }
             return _app;
@@ -260,12 +262,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnAgentMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(commandId);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), SUBMIT_ACTION_INVOKE_NAME, "send");
-            return OnBotMessagePreviewSend(routeSelector, handler);
+            return OnAgentMessagePreviewSend(routeSelector, handler);
         }
 
         /// <summary>
@@ -275,12 +277,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(commandIdPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME, "send");
-            return OnBotMessagePreviewSend(routeSelector, handler);
+            return OnAgentMessagePreviewSend(routeSelector, handler);
         }
 
         /// <summary>
@@ -290,10 +292,10 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnAgentMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 MessagingExtensionAction? messagingExtensionAction;
@@ -302,7 +304,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(turnContext.Activity.Value)) == null
                     || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "send"))
                 {
-                    throw new InvalidOperationException($"Unexpected MessageExtensions.OnBotMessagePreviewSend() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewSend() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 Activity activityPreview = messagingExtensionAction.BotActivityPreview.Count > 0 ? messagingExtensionAction.BotActivityPreview[0] : new Activity();
@@ -327,29 +329,29 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnBotMessagePreviewSend(MultipleRouteSelector routeSelectors, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnAgentMessagePreviewSend(MultipleRouteSelector routeSelectors, BotMessagePreviewSendHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string commandId in routeSelectors.Strings)
                 {
-                    OnBotMessagePreviewSend(commandId, handler);
+                    OnAgentMessagePreviewSend(commandId, handler);
                 }
             }
             if (routeSelectors.Regexes != null)
             {
                 foreach (Regex commandIdPattern in routeSelectors.Regexes)
                 {
-                    OnBotMessagePreviewSend(commandIdPattern, handler);
+                    OnAgentMessagePreviewSend(commandIdPattern, handler);
                 }
             }
             if (routeSelectors.RouteSelectors != null)
             {
                 foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
-                    OnBotMessagePreviewSend(routeSelector, handler);
+                    OnAgentMessagePreviewSend(routeSelector, handler);
                 }
             }
             return _app;
@@ -363,8 +365,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandId);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), MessageExtensionsInvokeNames.FETCH_TASK_INVOKE_NAME);
             return OnFetchTask(routeSelector, handler);
         }
@@ -377,8 +379,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandIdPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), MessageExtensionsInvokeNames.FETCH_TASK_INVOKE_NAME);
             return OnFetchTask(routeSelector, handler);
         }
@@ -391,8 +393,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetchTask(RouteSelector routeSelector, FetchTaskHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -422,8 +424,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetchTask(MultipleRouteSelector routeSelectors, FetchTaskHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string commandId in routeSelectors.Strings)
@@ -456,8 +458,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQuery(string commandId, QueryHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandId);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), MessageExtensionsInvokeNames.QUERY_INVOKE_NAME);
             return OnQuery(routeSelector, handler);
         }
@@ -470,8 +472,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(commandIdPattern);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), MessageExtensionsInvokeNames.QUERY_INVOKE_NAME);
             return OnQuery(routeSelector, handler);
         }
@@ -484,8 +486,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQuery(RouteSelector routeSelector, QueryHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelector);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 MessagingExtensionQuery? messagingExtensionQuery;
@@ -496,7 +498,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnQuery() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                IDictionary<string, object> parameters = new Dictionary<string, object>();
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
                 foreach (MessagingExtensionParameter parameter in messagingExtensionQuery.Parameters)
                 {
                     parameters.Add(parameter.Name, parameter.Value);
@@ -527,8 +529,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQuery(MultipleRouteSelector routeSelectors, QueryHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(routeSelectors);
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {
                 foreach (string commandId in routeSelectors.Strings)
@@ -567,7 +569,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSelectItem(SelectItemHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -599,7 +601,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQueryLink(QueryLinkHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -637,7 +639,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -673,7 +675,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -708,7 +710,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnConfigureSettings(ConfigureSettingsHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -741,7 +743,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnCardButtonClicked(CardButtonClickedHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)

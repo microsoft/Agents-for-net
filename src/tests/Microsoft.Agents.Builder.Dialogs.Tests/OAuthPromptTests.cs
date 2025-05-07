@@ -909,7 +909,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var convoState = new ConversationState(new MemoryStorage());
 
             var adapter = new TestAdapter()
-                .Use(new AutoSaveStateMiddleware(convoState));
+                .Use(new AutoSaveStateMiddleware(true, convoState));
 
             AgentCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
@@ -954,6 +954,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 // Add an exchangable token to the adapter
                 adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
             })
+            .Delay(500)
             .Send(oauthPromptActivity)
             .AssertReply("ended")
             .StartTestAsync();

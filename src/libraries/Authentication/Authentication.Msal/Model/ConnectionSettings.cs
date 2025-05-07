@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication.Msal.Interfaces;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using System;
 
@@ -16,7 +17,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
 
         public ConnectionSettings(IConfigurationSection msalConfigurationSection) : base(msalConfigurationSection)
         {
-            ArgumentNullException.ThrowIfNull(msalConfigurationSection);
+            AssertionHelpers.ThrowIfNull(msalConfigurationSection, nameof(msalConfigurationSection));
 
             if (msalConfigurationSection != null)
             {
@@ -27,6 +28,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 SendX5C = msalConfigurationSection.GetValue<bool>("SendX5C", false);
                 ClientSecret = msalConfigurationSection.GetValue<string>("ClientSecret", string.Empty);
                 AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
+                FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
             }
 
             ValidateConfiguration();
@@ -66,6 +68,11 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         /// Use x5c for certs.  Defaults to false.
         /// </summary>
         public bool SendX5C { get; set; } = false;
+
+        /// <summary>
+        /// ClientId of the ManagedIdentity used with FederatedCredentials
+        /// </summary>
+        public string FederatedClientId { get; set; }
 
         /// <summary>
         /// Validates required properties are present in the configuration for the requested authentication type. 
@@ -125,6 +132,20 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     break;
                 case AuthTypes.SystemManagedIdentity:
                     // No additional validation needed
+                    break;
+                case AuthTypes.FederatedCredentials:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(FederatedClientId))
+                    {
+                        throw new ArgumentNullException(nameof(FederatedClientId), "FederatedClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
                     break;
                 default:
                     break;

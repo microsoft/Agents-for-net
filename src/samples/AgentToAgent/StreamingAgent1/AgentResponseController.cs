@@ -10,7 +10,7 @@ namespace StreamingAgent1;
 
 // This Controller exposes the HTTP endpoints for the Connector that Agent2 uses to
 // communicate (send replies) with Agent1.
-[Authorize]
+[AllowAnonymous]
 [ApiController]
 [Route("api/agentresponse")]
 public class AgentResponseController(IChannelApiHandler handler) : ChannelApiController(handler)

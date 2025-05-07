@@ -201,4 +201,7 @@
     <value>Raised when JWT authentication has not been enabled for the sending channel.</value>
     <comment>Anonymous access is not allowed for this channel.</comment>
   </data>
+  <data name="ExtensionAlreadyRegistered" xml:space="preserve">
+    <value>An instance of this extention has allready been registred for this application. {0}</value>
+  </data>
 </root>

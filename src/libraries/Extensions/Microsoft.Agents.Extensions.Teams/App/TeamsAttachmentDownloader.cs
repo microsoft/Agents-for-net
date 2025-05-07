@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -35,9 +36,9 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <exception cref="ArgumentException"></exception>
         public TeamsAttachmentDownloader(TeamsAttachmentDownloaderOptions options, IConnections connections, IHttpClientFactory httpClientFactory)
         {
-            ArgumentNullException.ThrowIfNull(options);
-            ArgumentNullException.ThrowIfNull(connections);
-            ArgumentNullException.ThrowIfNull(httpClientFactory);
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
+            AssertionHelpers.ThrowIfNull(connections, nameof(connections));
+            AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
             _options = options;
             if (string.IsNullOrEmpty(_options.TokenProviderName))
@@ -102,12 +103,12 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 // Get downloadable content link
                 var contentProperties = ProtocolJsonSerializer.ToJsonElements(attachment.Content);
-                if (contentProperties == null || !contentProperties.ContainsKey("downloadUrl"))
+                if (contentProperties == null || !contentProperties.TryGetValue("downloadUrl", out System.Text.Json.JsonElement value))
                 {
                     return null;
                 }
 
-                string? downloadUrl = contentProperties["downloadUrl"].ToString();
+                string? downloadUrl = value.ToString();
                 if (downloadUrl == null)
                 {
                     downloadUrl = attachment.ContentUrl;

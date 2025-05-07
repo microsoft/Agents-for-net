@@ -34,7 +34,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 if (itemValue is JsonObject jObj && jObj.GetTypeInfo(out var type))
                 {
                     var obj = JsonSerializer.Deserialize(itemValue, type, options);
-                    
+
+#if NETSTANDARD
+                    var changes = new List<KeyValuePair<string, object>>();
+#endif
+
                     // Update dictionary elements with actual type
                     if (obj is IDictionary<string, object> dict)
                     {
@@ -54,7 +58,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                 if (typedChild.GetTypeInfo(out var childType))
                                 {
                                     typedChild.RemoveTypeInfo();
+#if NETSTANDARD
+                                    changes.Add(new KeyValuePair<string, object>(child.Key, JsonSerializer.Deserialize(typedChild, childType, options)));
+#else
                                     dict[child.Key] = JsonSerializer.Deserialize(typedChild, childType, options);
+#endif
                                 }
                             }
                             else if (childObj is JsonElement valValue)
@@ -62,22 +70,39 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                 switch (valValue.ValueKind)
                                 {
                                     case JsonValueKind.Number:
+#if NETSTANDARD
+                                        changes.Add(new KeyValuePair<string, object>(child.Key, valValue.GetInt32()));
+#else
                                         dict[child.Key] = valValue.GetInt32();
+#endif
                                         break;
 
                                     case JsonValueKind.String:
+#if NETSTANDARD
+                                        changes.Add(new KeyValuePair<string, object>(child.Key, valValue.GetString()));
+#else
                                         dict[child.Key] = valValue.GetString();
+#endif
                                         break;
 
                                     case JsonValueKind.True:
                                     case JsonValueKind.False:
+#if NETSTANDARD
+                                        changes.Add(new KeyValuePair<string, object>(child.Key, valValue.GetBoolean()));
+#else
                                         dict[child.Key] = valValue.GetBoolean();
+#endif
                                         break;
                                 }
                             }
                         }
+#if NETSTANDARD
+                        foreach (var change in changes)
+                        {
+                            dict[change.Key] = change.Value;
+                        }
+#endif
                     }
-
                     value.Add(keyString, obj);
                 }
                 else
@@ -138,7 +163,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 var newValue = item.Value;
                 if (item.Value == null)
                 {
-                    writer.WriteNull(item.Key);    
+                    writer.WriteNull(item.Key);
                     continue;
                 }
 

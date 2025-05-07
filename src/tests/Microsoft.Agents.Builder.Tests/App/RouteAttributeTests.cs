@@ -25,10 +25,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var storage = new MemoryStorage();
             var adapter = new TestAdapter();
 
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
             };
             var app = new TestActivityTypeApp(options);
 
@@ -59,10 +58,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             var storage = new MemoryStorage();
             var adapter = new TestAdapter();
 
-            var options = new TestApplicationOptions()
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
             };
             var app = new TestMessageApp(options);
 
@@ -90,10 +88,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void RouteAttributeTest_SelectorNotFound()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var storage = new MemoryStorage();
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = new TestAdapter(),
-                TurnStateFactory = () => new TurnState(new MemoryStorage()),
             };
 
             try
@@ -114,10 +112,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void RouteAttributeTest_SelectorInvalid()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var storage = new MemoryStorage();
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = new TestAdapter(),
-                TurnStateFactory = () => new TurnState(new MemoryStorage()),
             };
 
             try
@@ -138,10 +136,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void RouteAttributeTest_MissingArgs()
         {
             // arrange
-            var options = new TestApplicationOptions()
+            var storage = new MemoryStorage();
+            var options = new TestApplicationOptions(storage)
             {
                 Adapter = new TestAdapter(),
-                TurnStateFactory = () => new TurnState(new MemoryStorage()),
             };
 
             try

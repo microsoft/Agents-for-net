@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {
@@ -89,10 +90,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Ensure new version hash is computed
             _version = null;
 
-            if (dialog == null)
-            {
-                throw new ArgumentNullException(nameof(dialog));
-            }
+            AssertionHelpers.ThrowIfNull(dialog, nameof(dialog));
 
             if (_dialogs.ContainsKey(dialog.Id))
             {
@@ -138,7 +136,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </remarks>
         public async Task<DialogContext> CreateContextAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             if (_dialogState == null && _dialogStateProperty == null)
             {

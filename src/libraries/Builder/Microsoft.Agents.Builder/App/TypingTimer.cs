@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -55,7 +56,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>True if the timer was started, otherwise False.</returns>
         public bool Start(ITurnContext turnContext)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             if (turnContext.Activity.Type != ActivityTypes.Message || IsRunning())
             {

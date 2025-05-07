@@ -22,7 +22,9 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+#if !NETFRAMEWORK
 using static System.Runtime.InteropServices.JavaScript.JSType;
+#endif
 
 namespace Microsoft.Agents.Client.Tests
 {
@@ -91,7 +93,7 @@ namespace Microsoft.Agents.Client.Tests
                 }));
 
             // Setup AgentApplication
-            var app = new AgentApplication(new AgentApplicationOptions() { TurnStateFactory = () => new TurnState(_storage) });
+            var app = new AgentApplication(new AgentApplicationOptions(_storage));
             app.RegisterExtension(new AgentResponses(app, _agentHost), (extension) =>
             {
                 extension.OnAgentReply((turnContext, turnState, reference, agentActivity, cancellationToken) =>
@@ -181,7 +183,7 @@ namespace Microsoft.Agents.Client.Tests
         public async Task ResponseHandler_NoConversationTest()
         {
             // Setup AgentApplication
-            var app = new AgentApplication(new AgentApplicationOptions() { TurnStateFactory = () => new TurnState(_storage), Adapter = new TestAdapter() });
+            var app = new AgentApplication(new AgentApplicationOptions(_storage) { Adapter = new TestAdapter() });
             var responseHandler = new AdapterChannelResponseHandler(app.Options.Adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
 
             // Act
@@ -221,7 +223,7 @@ namespace Microsoft.Agents.Client.Tests
             var agent2ConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, "bot1");
 
             // Setup AgentApplication
-            var app = new AgentApplication(new AgentApplicationOptions() { TurnStateFactory = () => new TurnState(_storage), Adapter = new TestAdapter() });
+            var app = new AgentApplication(new AgentApplicationOptions(_storage) { Adapter = new TestAdapter() });
 
             app.OnActivity(ActivityTypes.Event, (turnContext, turnState, cancellationToken) =>
             {

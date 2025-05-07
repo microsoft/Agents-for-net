@@ -42,7 +42,11 @@ namespace Microsoft.Agents.Storage.Tests
 
             // The resulting key should be:
             var hash = tooLongKey.GetHashCode().ToString("x");
+#if !NETFRAMEWORK
             var correctKey = string.Concat(sanitizedKey.AsSpan(0, CosmosDbKeyEscape.MaxKeyLength - hash.Length), hash);
+#else
+            var correctKey = string.Concat(sanitizedKey.Substring(0, CosmosDbKeyEscape.MaxKeyLength - hash.Length), hash);
+#endif
 
             Assert.Equal(correctKey, sanitizedKey);
         }

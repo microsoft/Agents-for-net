@@ -93,7 +93,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public void Hash_ShouldReturnBase64String()
         {
             var result = StringUtils.Hash(_text);
+#if !NETFRAMEWORK
             var expected = SHA256.HashData(Encoding.UTF8.GetBytes(_text));
+#else
+            using var sha256 = SHA256.Create();
+            var expected = sha256.ComputeHash(Encoding.UTF8.GetBytes(_text));
+#endif
             var actual = Convert.FromBase64String(result);
 
             Assert.Equal(expected, actual);

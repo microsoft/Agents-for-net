@@ -9,6 +9,7 @@ using System.Threading;
 using Xunit;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {
@@ -18,6 +19,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task CommandBotTest()
         {
             var adapter = new TestAdapter();
+            var storage = new MemoryStorage();
 
             // Create mock Activity for testing.
             var commandActivity = new Activity
@@ -34,7 +36,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Value = new MathCommand { First = 10, Second = 2 }
             };
 
-            await new TestFlow(adapter, new CommandBot(new AgentApplicationOptions()))
+            await new TestFlow(adapter, new CommandBot(new AgentApplicationOptions(storage)))
                 .Send(commandActivity)
                 .AssertReply((activity) =>
                 {

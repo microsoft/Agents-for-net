@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -239,10 +240,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns>Team Details.</returns>
         public static async Task<Tuple<ConversationReference, string>> SendMessageToTeamsChannelAsync(ITurnContext turnContext, IActivity activity, string teamsChannelId, string agentAppId, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             if (turnContext.Activity == null)
             {
@@ -482,7 +480,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             return teamsPagedMemberResults;
         }
 
-        private static ITeamsConnectorClient GetTeamsConnectorClient(ITurnContext turnContext)
+        private static RestTeamsConnectorClient GetTeamsConnectorClient(ITurnContext turnContext)
         {
             var connectorClient = GetConnectorClient(turnContext);
             if (connectorClient is IRestTransport withTransport)

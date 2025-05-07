@@ -10,7 +10,6 @@ This Agent Sample is intended to introduce you the basics of integrating Semanti
 
 - [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
 - [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
-- [Bot Framework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases) for Testing Web Chat.
 
 ## Running this sample
 
@@ -25,18 +24,6 @@ This Agent Sample is intended to introduce you the basics of integrating Semanti
 ## Getting Started with WeatherBot Sample
 
 Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
-
-### QuickStart using Bot Framework Emulator
-
-1. Open the WeatherBot Sample in Visual Studio 2022
-1. Run it in Debug Mode (F5)
-1. A blank web page will open, note down the URL which should be similar too `http://localhost:65349/`
-1. Open the [BotFramework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
-    1. Click **Open Bot**
-    1. In the bot URL field input the URL you noted down from the web page and add /api/messages to it. It should appear similar to `http://localhost:65349/api/messages`
-    1. Click **Connect**
-
-If all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Hello and Welcome! I'm here to help with all your weather forecast needs!"**
 
 ### QuickStart using WebChat
 
@@ -53,13 +40,6 @@ If all is working correctly, the Bot Emulator should show you a Web Chat experie
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}"
-      },
-
       "Connections": {
         "ServiceConnection": {
           "Settings": {
@@ -98,7 +78,6 @@ If all is working correctly, the Bot Emulator should show you a Web Chat experie
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous

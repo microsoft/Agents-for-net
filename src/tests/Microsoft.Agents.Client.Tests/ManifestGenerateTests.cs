@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.Client.Tests
 {
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             var activities = new Dictionary<string, ActivityInfo>();
 
-            var app = new ManifestAgent(new AgentApplicationOptions());
+            var app = new ManifestAgent(new AgentApplicationOptions((IStorage) null));
 
             foreach (var method in app.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {

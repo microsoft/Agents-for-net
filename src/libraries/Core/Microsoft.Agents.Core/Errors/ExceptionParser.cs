@@ -68,8 +68,12 @@ namespace Microsoft.Agents.Core.Errors
             sw.AppendLine("TimeStamp: " + DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
             sw.AppendLine("Error: " + message);
             sw.AppendLine($"HelpLink Url: {helpLink}");
+#if DEBUG
+            //TODO:
+            // Update this code to use a setting or environment variable to control the output of the stack trace.
             if (!string.IsNullOrEmpty(stackTrace))
                 sw.AppendLine("Stack Trace: " + stackTrace);
+#endif
             sw.AppendLine("=====================================");
         }
     }

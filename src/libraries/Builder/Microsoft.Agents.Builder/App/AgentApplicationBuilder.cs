@@ -4,8 +4,8 @@
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder.App
@@ -16,20 +16,29 @@ namespace Microsoft.Agents.Builder.App
     public class AgentApplicationBuilder
     {
         /// <summary>
-        /// The application's configured options.
+        /// Creates the builder and uses IStorage to create the default TurnStateFactory to use for managing the Agent's turn state.
         /// </summary>
-        public AgentApplicationOptions Options { get; private set; } = new();
+        /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        public AgentApplicationBuilder(IStorage storage)
+        {
+            Options = new(storage);
+        }
 
         /// <summary>
-        /// Configures the turn state factory to use for managing the bot's turn state.
+        /// Creates the builder and uses the passed TurnStateFactory to use for managing the Agent's turn state.
         /// </summary>
-        /// <param name="turnStateFactory">The turn state factory to use.</param>
-        /// <returns>The ApplicationBuilder instance.</returns>
-        public AgentApplicationBuilder WithTurnStateFactory(Func<ITurnState> turnStateFactory)
+        /// <param name="turnStateFactory"></param>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        public AgentApplicationBuilder(TurnStateFactory turnStateFactory)
         {
-            Options.TurnStateFactory = turnStateFactory;
-            return this;
+            Options = new(turnStateFactory);
         }
+
+        /// <summary>
+        /// The application's configured options.
+        /// </summary>
+        public AgentApplicationOptions Options { get; private set; }
 
         /// <summary>
         /// Configures the Logger factory for the application
@@ -54,7 +63,7 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Configures the removing of mentions of the bot's name from incoming messages.
+        /// Configures the removing of mentions of the Agent's name from incoming messages.
         /// Default state for removeRecipientMention is true
         /// </summary>
         /// <param name="removeRecipientMention">The boolean for removing recipient mentions.</param>

@@ -15,6 +15,7 @@ using Microsoft.Agents.CopilotStudio.Client.Discovery;
 using Microsoft.Agents.Core.Serialization;
 using System.Text;
 using System.Linq;
+using Microsoft.Agents.Core;
 
 [assembly: InternalsVisibleTo("Microsoft.Agents.CopilotStudio.Client.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67871e773a8fde8938c81dd402ba65b9201d60593e96c492651e889cc13f1415ebb53fac1131ae0bd333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307e8e33b8426143daec9f596836f97c8f74750e5975c64e2189f45def46b2a2b1247adc3652bf5c308055da9")]
 
@@ -180,10 +181,11 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
-                ArgumentNullException.ThrowIfNull(activity);
+                AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
                 string localConversationId = "";
                 if (!string.IsNullOrEmpty(activity.Conversation?.Id))
-                    localConversationId = activity.Conversation.Id;
+                    localConversationId = activity.Conversation!.Id;
                 else
                     localConversationId = _conversationId;
 
@@ -220,7 +222,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <exception cref="HttpRequestException"></exception>
         private async IAsyncEnumerable<IActivity> PostRequestAsync(HttpRequestMessage req, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            ArgumentNullException.ThrowIfNull(req);
+            AssertionHelpers.ThrowIfNull(req, nameof(req));
 
             HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
@@ -251,25 +253,30 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     accessToken = await _tokenProviderFunction(string.Empty);
                 }
 
-                ArgumentNullException.ThrowIfNull(req); // Dealing with the compiler warning.
+                AssertionHelpers.ThrowIfNull(req!, nameof(req));
+
                 if (!string.IsNullOrEmpty(accessToken))
                 {
-                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    req!.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 }
             }
 
             if (Settings.EnableDiagnostics)
             {
-                _logger.LogDebug($">>> SEND TO {req.RequestUri}");
+                _logger.LogDebug(">>> SEND TO {RequestUri}", req!.RequestUri);
             }
 
-            using HttpResponseMessage resp = await httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+            using HttpResponseMessage resp = await httpClient.SendAsync(req!, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!resp.IsSuccessStatusCode)
             {
                 _logger.LogError("Error sending request: {Status}", resp.StatusCode);
                 if (resp.Content != null)
                 {
+#if !NETSTANDARD
                     string error = await resp.Content.ReadAsStringAsync(ct);
+#else
+                    string error = await resp.Content.ReadAsStringAsync();
+#endif
                     _logger.LogError("Error: {Error}", error);
                     throw new HttpRequestException($"Error sending request: {resp.StatusCode}. {error}");
                 }
@@ -308,12 +315,16 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     {
                         sb.Append($"{item1} | ");
                     }
-                    _logger.LogDebug($"{item.Key} = {sb.ToString()}");
+                    _logger.LogDebug("{HeaderKey} = {HeaderValues}", item.Key, sb.ToString());
                 }
                 _logger.LogDebug("=====================================================");
             }
 
+#if !NETSTANDARD
             using Stream stream = await resp.Content.ReadAsStreamAsync(ct);
+#else
+            using Stream stream = await resp.Content.ReadAsStreamAsync();
+#endif
             using StreamReader sr = new(stream);
             string streamType = string.Empty;
             while (!sr.EndOfStream)
@@ -322,12 +333,20 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 string line = sr.ReadLine()!;
                 if (line!.StartsWith("event:", StringComparison.InvariantCulture))
                 {
+#if !NETSTANDARD
                     streamType = line[7..];
+#else
+                    streamType = line.Substring(7);
+#endif
                 }
                 else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "activity")
                 {
+#if !NETSTANDARD
                     string jsonRaw = line[6..];
-                    _logger.LogTrace(jsonRaw);
+#else
+                    string jsonRaw = line.Substring(6);
+#endif
+                    _logger.LogTrace("Received JSON raw data: {JsonRaw}", jsonRaw);
                     Activity activity = ProtocolJsonSerializer.ToObject<Activity>(jsonRaw);
                     switch (activity.Type)
                     {

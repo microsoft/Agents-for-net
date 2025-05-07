@@ -44,22 +44,24 @@ namespace Microsoft.Agents.Client
         /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 
         /// use the returned <see cref="IAgentClient"/> directly for those.
         /// </remarks>
+        /// <param name="turnContext"></param>
         /// <param name="agentName">An Agent name from configuration.</param>
         /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
         /// <param name="activity"></param>
         /// <param name="cancellationToken"></param>
         /// <exception cref="ArgumentException">If the specified agentName is null or not found.</exception>
-        Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
+        Task SendToAgent(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="turnContext"></param>
         /// <param name="agentName">An Agent name from configuration.</param>
         /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
         /// <param name="activity"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<object> SendToAgentStreamedAsync(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the conversationId for an existing conversation for a Agent, relative to the current Turns Conversation.
