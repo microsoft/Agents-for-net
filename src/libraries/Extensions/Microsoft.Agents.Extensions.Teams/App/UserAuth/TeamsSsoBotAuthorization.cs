@@ -19,9 +19,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
-    /// Handles authentication for bot in Teams using Teams SSO.
+    /// Handles authentication for an Azure Bot in Teams using Teams SSO.
     /// </summary>
-    internal class TeamsSsoBotAuthentication
+    internal class TeamsSsoBotAuthorization
     {
         private readonly Regex _tokenExchangeIdRegex;
         private readonly string _name;
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="settings">The authentication settings</param>
         /// <param name="storage">The storage to save turn state</param>
         /// <param name="msalAdapter"></param>
-        public TeamsSsoBotAuthentication(string name, TeamsSsoSettings settings, IStorage storage, IConfidentialClientApplicationAdapter msalAdapter)
+        public TeamsSsoBotAuthorization(string name, TeamsSsoSettings settings, IStorage storage, IConfidentialClientApplicationAdapter msalAdapter)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
             _name = name;

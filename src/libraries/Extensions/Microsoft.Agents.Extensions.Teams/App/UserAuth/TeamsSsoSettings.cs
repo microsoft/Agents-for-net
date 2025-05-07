@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <summary>
         /// The AAD scopes for authentication. Only one resource is allowed in the scopes.
         /// </summary>
-        public string[] Scopes { get; set; }
+        public string[] Scopes { get; set; } = [];
 
         /// <summary>
         /// Name of the IConnections token provider to use.

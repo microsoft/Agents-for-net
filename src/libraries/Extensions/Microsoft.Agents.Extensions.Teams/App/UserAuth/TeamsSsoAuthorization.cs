@@ -11,18 +11,25 @@ using System.Collections.Generic;
 using Microsoft.Agents.Authentication;
 using Microsoft.Identity.Client;
 using Microsoft.Agents.Authentication.Msal;
+using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
     /// Handles authentication based on Teams SSO.
     /// </summary>
-    public class TeamsSsoAuthentication : IUserAuthorization
+    public class TeamsSsoAuthorization : IUserAuthorization
     {
         private readonly ConfidentialClientApplicationAdapter _msalAdapter;
-        private readonly TeamsSsoBotAuthentication _botAuth;
+        private readonly TeamsSsoBotAuthorization _botAuth;
         //private TeamsSsoMessageExtensionsAuthentication? _messageExtensionsAuth;
         private readonly TeamsSsoSettings _settings;
+
+        public TeamsSsoAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+            : this(name, storage, connections, configurationSection.Get<TeamsSsoSettings>())
+        {
+
+        }
 
         /// <summary>
         /// Initialize instance for current class
@@ -32,13 +39,13 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="connections"></param>
         /// <param name="storage">The storage to use.</param>
-        public TeamsSsoAuthentication(string name, TeamsSsoSettings settings, IConnections connections, IStorage storage)
+        public TeamsSsoAuthorization(string name, IStorage storage, IConnections connections, TeamsSsoSettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _msalAdapter = GetMsalAdapter(connections);
 
-            _botAuth = new TeamsSsoBotAuthentication(name, _settings, storage, _msalAdapter);
+            _botAuth = new TeamsSsoBotAuthorization(name, _settings, storage, _msalAdapter);
             //_messageExtensionsAuth = new TeamsSsoMessageExtensionsAuthentication(_settings);
         }
 

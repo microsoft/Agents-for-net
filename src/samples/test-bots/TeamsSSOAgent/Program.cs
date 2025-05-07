@@ -25,30 +25,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AgentApplicationOptions
-builder.Services.AddSingleton(sp =>
-{
-    var storage = sp.GetService<IStorage>();
-
-    var authOptions = new UserAuthorizationOptions(
-        sp.GetService<IConnections>(),
-        new TeamsSsoAuthentication(
-            "auto",
-            new TeamsSsoSettings("TeamsSsoConnection", ["User.Read"], $"{builder.Configuration["SignInPath"]}/auth-start.html"),
-            sp.GetService<IConnections>(),
-            storage))
-    {
-        // Auto-SignIn will use this OAuth flow
-        DefaultHandlerName = "auto",
-        AutoSignIn = UserAuthorizationOptions.AutoSignInOn
-    };
-
-    return new AgentApplicationOptions(storage)
-    {
-        Adapter = sp.GetService<IChannelAdapter>(),
-        StartTypingTimer = false,
-        UserAuthorization = authOptions
-    };
-});
+builder.AddAgentApplicationOptions();
 
 // Add the Agent
 builder.AddAgent<AuthAgent>();
