@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+
 // Licensed under the MIT License.
 
 using System;
@@ -89,7 +90,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 #if !NETSTANDARD
                     if ( directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
 #else
-                    if (directConnectUrl!.ToLower().Contains("tenants/00000000-0000-0000-0000-000000000000"))
+                    if (directConnectUrl!.IndexOf("tenants/00000000-0000-0000-0000-000000000000", StringComparison.CurrentCultureIgnoreCase) >= 0)
 #endif
                     {
                         // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
