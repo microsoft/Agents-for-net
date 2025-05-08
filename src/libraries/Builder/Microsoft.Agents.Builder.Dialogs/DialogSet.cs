@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// </summary>
     public class DialogSet
     {
-        private readonly IDictionary<string, Dialog> _dialogs = new Dictionary<string, Dialog>();
+        private readonly Dictionary<string, Dialog> _dialogs = new Dictionary<string, Dialog>();
         private readonly DialogState _dialogState;
         private readonly IStatePropertyAccessor<DialogState> _dialogStateProperty;
         private string _version;
@@ -92,11 +92,11 @@ namespace Microsoft.Agents.Builder.Dialogs
 
             AssertionHelpers.ThrowIfNull(dialog, nameof(dialog));
 
-            if (_dialogs.ContainsKey(dialog.Id))
+            if (_dialogs.TryGetValue(dialog.Id, out Dialog value))
             {
                 // If we are trying to add the same exact instance, it's not a name collision.
                 // No operation required since the instance is already in the dialog set.
-                if (_dialogs[dialog.Id] == dialog)
+                if (value == dialog)
                 {
                     return this;
                 }
