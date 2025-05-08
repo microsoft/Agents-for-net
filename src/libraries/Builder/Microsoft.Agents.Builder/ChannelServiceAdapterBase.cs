@@ -261,13 +261,16 @@ namespace Microsoft.Agents.Builder
             }
 
             // Create the connector client to use for outbound requests.
-            using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
-                claimsIdentity, 
-                activity.ServiceUrl, 
-                AgentClaims.GetTokenAudience(claimsIdentity), 
-                cancellationToken, 
-                scopes: AgentClaims.GetTokenScopes(claimsIdentity),
-                useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using IConnectorClient connectorClient =
+                activity.DeliveryMode != DeliveryModes.ExpectReplies ?  // if Delivery Mode == ExpectReplies, we don't need a connector client.
+                    await ChannelServiceFactory.CreateConnectorClientAsync(
+                    claimsIdentity,
+                    activity.ServiceUrl,
+                    AgentClaims.GetTokenAudience(claimsIdentity),
+                    cancellationToken,
+                    scopes: AgentClaims.GetTokenScopes(claimsIdentity),
+                    useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false)
+                    : null;
 
             // Create a UserTokenClient instance for OAuth flow.
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
@@ -280,6 +283,7 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+
         }
 
         /// <summary>
@@ -325,8 +329,8 @@ namespace Microsoft.Agents.Builder
             var turnContext = new TurnContext(this, activity);
 
             turnContext.Identity = claimsIdentity;
-
-            turnContext.Services.Set(connectorClient);
+            if (connectorClient != null)
+                turnContext.Services.Set(connectorClient);
             turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
 
