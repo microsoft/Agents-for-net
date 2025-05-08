@@ -1,4 +1,4 @@
-name: Local build and test
+name: Linux Local build and test 
 
 on:
   workflow_dispatch:
