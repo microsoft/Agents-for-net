@@ -1,0 +1,42 @@
+name: Local build and test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x        
+
+    - uses: dotnet/nbgv@master
+      with:
+          setAllVars: true        
+    - run: echo "NuGetPackageVersion $NuGetPackageVersion"      
+
+    - name: Restore
+      run: dotnet restore AgentSdk.proj
+  
+    - name: Build Debug
+      run: dotnet build --no-restore -c debug AgentSdk.proj
+
+    - name: Build Release
+      run: dotnet build --no-restore -c release AgentSdk.proj
+
+    - name: Package
+      run: dotnet pack --no-build --no-restore -c release src/Microsoft.Agents.SDK.sln 
+
+    - name: Test
+      run: dotnet test --no-build --no-restore -c debug ./src/ -f net8.0
