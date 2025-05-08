@@ -92,11 +92,11 @@ namespace Microsoft.Agents.Builder.Dialogs
 
             AssertionHelpers.ThrowIfNull(dialog, nameof(dialog));
 
-            if (_dialogs.TryGetValue(dialog.Id, out Dialog value))
+            if (_dialogs.TryGetValue(dialog.Id, out Dialog dialogValue))
             {
                 // If we are trying to add the same exact instance, it's not a name collision.
                 // No operation required since the instance is already in the dialog set.
-                if (value == dialog)
+                if (dialogValue == dialog)
                 {
                     return this;
                 }

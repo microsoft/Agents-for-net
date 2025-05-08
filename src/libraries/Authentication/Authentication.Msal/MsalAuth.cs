@@ -75,12 +75,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
             // Get or create existing token. 
             _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
-            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults value))
+            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResult))
             {
                 if (!forceRefresh)
                 {
-                    var accessToken = value.MsalAuthResult.AccessToken;
-                    var tokenExpiresOn = value.MsalAuthResult.ExpiresOn;
+                    var accessToken = authResult.MsalAuthResult.AccessToken;
+                    var tokenExpiresOn = authResult.MsalAuthResult.ExpiresOn;
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
