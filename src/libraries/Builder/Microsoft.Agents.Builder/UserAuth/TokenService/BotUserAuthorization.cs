@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="turnContext">The turn context</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The token response if available.</returns>
-        public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        public async Task<TokenResponse> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
             {
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             await SaveFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
 
-            return tokenResponse?.Token;
+            return tokenResponse;
         }
 
         private async Task<TokenResponse> OnGetOrStartFlowAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)

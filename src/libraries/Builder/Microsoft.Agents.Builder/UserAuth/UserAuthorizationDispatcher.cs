@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -111,7 +112,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             IUserAuthorization auth = Get(handlerName);
-            string token;
+            TokenResponse token;
             try
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -135,11 +136,11 @@ namespace Microsoft.Agents.Builder.UserAuth
                 return newResponse;
             }
 
-            if (!string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token?.Token))
             {
                 return new SignInResponse(SignInStatus.Complete)
                 {
-                    Token = token
+                    TokenResponse = token,
                 };
             }
 

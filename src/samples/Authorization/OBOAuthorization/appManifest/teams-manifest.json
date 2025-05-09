@@ -3,7 +3,7 @@
   "manifestVersion": "1.16",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.oauth",
+  "packageName": "com.microsoft.agents.obooauth",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -15,12 +15,12 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "User Authorization (OAuth)",
-    "full": "User Authorization (OAuth)"
+    "short": "User Authorization (OAuth+OBO)",
+    "full": "User Authorization (OAuth+OBO)"
   },
   "description": {
     "short": "Sample demonstrating Azure Bot Services user authorization with using a Agent.",
-    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the Agents Framework"
+    "full": "This sample demonstrates how to integrate with Microsoft Copilot Studio using OBO and CopilotStudioClient."
   },
   "accentColor": "#FFFFFF",
   "bots": [

@@ -41,17 +41,6 @@ namespace Microsoft.Agents.Builder.App
         public AgentApplicationOptions Options { get; private set; }
 
         /// <summary>
-        /// Configures the Logger factory for the application
-        /// </summary>
-        /// <param name="loggerFactory">The Logger factory</param>
-        /// <returns>The ApplicationBuilder instance.</returns>
-        public AgentApplicationBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
-        {
-            Options.LoggerFactory = loggerFactory;
-            return this;
-        }
-
-        /// <summary>
         /// Configures the processing of Adaptive Card requests.
         /// </summary>
         /// <param name="adaptiveCardOptions">The options for Adaptive Cards.</param>

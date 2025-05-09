@@ -17,7 +17,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// Delegate for determining whether user authorization should be enabled for an incoming Activity.
     /// </summary>
     /// <remarks>
-    /// <see cref="AutoSignInOn"/> and <see cref="AutoSignInOff"/> can be used to provide a simple boolean result.
+    /// AutoSignIn is determined by a call to a delegate that will return a bool.  This allow for control over which Activities
+    /// will enable AutoSignIn.  <see cref="AutoSignInOnForAny"/> and <see cref="AutoSignInOff"/> can be used to provide a simple boolean result.
     /// </remarks>
     /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -30,7 +31,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// </summary>
     public class UserAuthorizationOptions
     {
-        public readonly static AutoSignInSelector AutoSignInOn = (context, cancellationToken) => Task.FromResult(true);
+        public readonly static AutoSignInSelector AutoSignInOnForAny = (context, cancellationToken) => Task.FromResult(true);
+        public readonly static AutoSignInSelector AutoSignInOnForMessages = (context, cancellationToken) => Task.FromResult(context.Activity.IsType(ActivityTypes.Message));
         public readonly static AutoSignInSelector AutoSignInOff = (context, cancellationToken) => Task.FromResult(false);
 
         /// <summary>
@@ -48,13 +50,27 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         ///   }
         /// }
         /// </code>
-        /// The "AutoSignIn" property will map to <see cref="AutoSignInOn"/> or <see cref="AutoSignInOff"/>.  To provide a
-        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.
-        /// </remarks>
-        /// <remarks>
-        /// The "Handlers" property is mapped to <see cref="UserAuthorizationDispatcher"/> using the key of `UserAuthorization:Handlers.  
-        /// To provide a custom <see cref="IUserAuthorizationDispatcher"/> use DI.  If a custom IUserAuthorizationDispatcher is provided
-        /// the Handlers node is note used.
+        /// 
+        /// <para>The "AutoSignIn" property will map to <see cref="AutoSignInOnForAny"/> or <see cref="AutoSignInOff"/>.  To provide a
+        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.</para>
+        /// 
+        /// The default Handler:Settings are mapped to <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthSettings"/>.  These
+        /// setting can be included in config:
+        /// <code>
+        /// "UserAuthorization": {
+        ///   "Handlers": {
+        ///     "Settings": {
+        ///       "AzureBotOAuthConnectionName": "{{auzre-bot-connection-name}}",
+        ///       "OBOConnectionName": "{{connections-name}}",
+        ///       "OBOScopes": ["{{obo-scope}}"],
+        ///       "Title": "{{signin-card-title}}",
+        ///       "Text": "{{signin-card-button-text}}",
+        ///       "InvalidSignInRetryMax": 2,
+        ///       "InvalidSignInRetryMessage": "Please send code again",
+        ///       "Timeout": {{timeout-ms}}
+        ///     }
+        ///   }
+        /// </code>
         /// </remarks>
         /// <param name="sp"></param>
         /// <param name="configuration"></param>
@@ -74,7 +90,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelector>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
-            AutoSignIn = selectorInstance ?? (autoSignIn ? AutoSignInOn : AutoSignInOff);
+            AutoSignIn = selectorInstance ?? (autoSignIn ? AutoSignInOnForAny : AutoSignInOff);
         }
 
         /// <summary>
@@ -111,7 +127,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
-            AutoSignIn = AutoSignInOn;
+            AutoSignIn = AutoSignInOnForAny;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }

@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.App
 
     internal class Route
     {
-        public Route(RouteSelector selector, bool isInvokeRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isInvokeRoute, null)
+        public Route(RouteSelector selector, bool isInvokeRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isInvokeRoute)
         {
         }
 
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.App
         {
         }
 
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, string autoSignInHandler = null)
+        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, params string[] autoSignInHandler)
         {
             Selector = selector;
             Handler = handler;
@@ -50,6 +50,6 @@ namespace Microsoft.Agents.Builder.App
 
         public bool IsInvokeRoute { get; private set; }
 
-        public string AutoSignInHandler { get; private set; }
+        public string[] AutoSignInHandler { get; private set; }
     }
 }

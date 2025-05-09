@@ -151,7 +151,7 @@ public class AuthAgent : AgentApplication
         if (handlerName.Equals(_signInHandlerName))
         {
             // We have the access token, now try to get your user name from graph. 
-            string displayName = await GetDisplayName(turnContext);
+            string displayName = await GetDisplayName(turnContext, turnState);
             if (displayName.Equals(_defaultDisplayName))
             {
                 // Handle error response from Graph API
@@ -174,10 +174,10 @@ public class AuthAgent : AgentApplication
     /// </summary>
     /// <param name="turnContext"><see cref="ITurnState"/></param>
     /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    private async Task<string> GetDisplayName(ITurnContext turnContext, ITurnState turnState)
     {
         string displayName = _defaultDisplayName;
-        string accessToken = UserAuthorization.GetTurnToken(_signInHandlerName);
+        string accessToken = await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, _signInHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {

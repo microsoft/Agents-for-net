@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.MarkedNet;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -61,7 +62,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public string Name { get; private set; }
 
         /// <inheritdoc/>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             /*
             if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
@@ -95,14 +96,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <summary>
         /// Get user token
         /// </summary>
-        protected virtual async Task<TokenResponse> GetUserToken(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
+        public virtual async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, "", cancellationToken).ConfigureAwait(false);
+            var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
+            return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> HandleOBO(ITurnContext turnContext, string token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        private async Task<TokenResponse> HandleOBO(ITurnContext turnContext, TokenResponse token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token?.Token))
             {
                 return null;
             }
@@ -113,15 +115,22 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 return token;
             }
 
-            string exchangedToken = null;
             var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            var scopes = exchangeScopes ?? _settings.OBOScopes;
 
             try
             {
                 // Can we even exchange this?
-                if (!IsExchangeableToken(token))
+                if (!IsExchangeableToken(token.Token))
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
+                }
+
+                // need connection and scopes to exchange.  If missing the Agent can do it themselves.
+                if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
+                {
+                    token.IsExchangeable = true;
+                    return token;
                 }
 
                 // Can the named Connection even do this?
@@ -133,7 +142,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 // Do exchange.
                 try
                 {
-                    exchangedToken = await oboExchangeProvider.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(scopes, token.Token).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -142,13 +151,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             finally
             {
-                if (exchangedToken == null)
+                if (token == null)
                 {
                     await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                 }
             }
 
-            return exchangedToken;
+            return token ?? null;
         }
 
         private static bool IsExchangeableToken(string token)

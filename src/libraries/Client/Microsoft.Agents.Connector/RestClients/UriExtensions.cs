@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 
 namespace Microsoft.Agents.Connector.RestClients
@@ -28,6 +29,23 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 return new Uri($"{url}&{name}={argValue}");
             }
+        }
+
+        public static Uri EnsureTrailingSlash(this Uri uri)
+        {
+
+            AssertionHelpers.ThrowIfNull(uri, nameof(uri));
+            string uriString = uri.ToString();
+#if !NETSTANDARD
+            if (!uriString.Contains('/'))
+#else
+            if (!uriString.Contains("/"))
+#endif
+            {
+                uriString += "/";
+            }
+            return new Uri(uriString);
+
         }
     }
 }
