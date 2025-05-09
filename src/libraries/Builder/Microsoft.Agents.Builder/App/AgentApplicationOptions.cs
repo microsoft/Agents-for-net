@@ -10,6 +10,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Agents.Storage.Transcript;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -116,48 +117,46 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="configuration"></param>
         /// <param name="channelAdapter"></param>
         /// <param name="storage">The IStorage used by TurnState and User Authorization.</param>
-        /// <param name="authOptions"></param>
-        /// <param name="cardOptions"></param>
-        /// <param name="loggerFactory"></param>
         /// <param name="fileDownloaders"></param>
+        /// <param name="transcriptStore"></param>
+        /// <param name="autoSignInSelector"></param>
         /// <param name="configKey"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
             IConfiguration configuration, 
             IChannelAdapter channelAdapter, 
             IStorage storage = null, 
-            UserAuthorizationOptions authOptions = null,
-            AdaptiveCardsOptions cardOptions = null,
-            ILoggerFactory loggerFactory = null,
             IList<IInputFileDownloader> fileDownloaders = null,
+            ITranscriptStore transcriptStore = null,
+            AutoSignInSelector autoSignInSelector = null,
             string configKey = "AgentApplication") 
         { 
             Adapter = channelAdapter;
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
-            LoggerFactory = loggerFactory;
 
             var section = configuration.GetSection(configKey);
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), true);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), true);
 
-            if (authOptions != null)
-            {
-                UserAuthorization = authOptions;
-            }
-            else if (section.GetSection("UserAuthorization").Exists())
+            if (section.GetSection("UserAuthorization").Exists())
             {
                 UserAuthorization = new UserAuthorizationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthorization");
+                if (autoSignInSelector != null)
+                {
+                    UserAuthorization.AutoSignIn = autoSignInSelector;
+                }
             }
 
             section = section.GetSection("AdaptiveCards");
             if (section.Exists())
             {
-                AdaptiveCards = cardOptions ?? section.Get<AdaptiveCardsOptions>();
+                AdaptiveCards = section.Get<AdaptiveCardsOptions>();
             }
 
             // Can't get these from config at the moment
             FileDownloaders = fileDownloaders;
+            TranscriptStore = transcriptStore;
         }
 
         /// <summary>
@@ -189,13 +188,6 @@ namespace Microsoft.Agents.Builder.App
         public IList<IInputFileDownloader>? FileDownloaders { get; set; }
 
         /// <summary>
-        /// Optional. Logger factory that will be used in this application.
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
-        public ILoggerFactory? LoggerFactory { get; set; }
-
-        /// <summary>
         /// Optional. If true, the Agent will automatically remove mentions of the Agents name from incoming
         /// messages. Defaults to true.
         /// </summary>
@@ -218,5 +210,10 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Options used to enable user authorization for the application.
         /// </summary>
         public UserAuthorizationOptions UserAuthorization { get; set; }
+
+        /// <summary>
+        /// The transcript store to send Activity logs to.
+        /// </summary>
+        public ITranscriptStore TranscriptStore { get; set; }
     }
 }

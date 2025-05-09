@@ -65,6 +65,11 @@ namespace Microsoft.Agents.Builder.App
                 _userAuth = new UserAuthorization(this, options.UserAuthorization);
             }
 
+            if (options.TranscriptStore != null)
+            {
+                Transcript = new Transcript(this, options.TranscriptStore);
+            }
+
             ApplyRouteAttributes();
         }
 
@@ -95,6 +100,8 @@ namespace Microsoft.Agents.Builder.App
                 return _userAuth;
             }
         }
+
+        internal Transcript Transcript { get; set; }
 
         #endregion
 

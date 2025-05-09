@@ -10,6 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using Microsoft.Agents.Storage.Transcript;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Configuration;
+using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -112,23 +119,25 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="builder"></param>
         /// <param name="fileDownloaders"></param>
         /// <param name="autoSignIn"></param>
+        /// <param name="transcriptStore"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
             this IHostApplicationBuilder builder,
             IList<IInputFileDownloader> fileDownloaders = null,
-            AutoSignInSelector autoSignIn = null)
+            AutoSignInSelector autoSignIn = null,
+            ITranscriptStore transcriptStore = null)
         {
-            if (autoSignIn != null)
+            builder.Services.AddSingleton(sp =>
             {
-                builder.Services.AddSingleton<AutoSignInSelector>(sp => autoSignIn);
-            }
-
-            if (fileDownloaders != null)
-            {
-                builder.Services.AddSingleton(sp => fileDownloaders);
-            }
-
-            builder.Services.AddSingleton<AgentApplicationOptions>();
+                return new AgentApplicationOptions(
+                    sp,
+                    sp.GetService<IConfiguration>(),
+                    sp.GetService<IChannelAdapter>(),
+                    sp.GetService<IStorage>(),
+                    fileDownloaders: fileDownloaders,
+                    transcriptStore: transcriptStore ?? sp.GetService<ITranscriptStore>(),
+                    autoSignInSelector: autoSignIn);
+            });
 
             return builder;
         }
