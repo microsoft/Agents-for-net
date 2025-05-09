@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage.Transcript;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -120,6 +121,12 @@ namespace Microsoft.Agents.Builder.App
             }
 
             return true;
+        }
+
+        internal async Task LogSingle(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            await OnBeforeTurn(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+            await OnAfterTurn(turnContext, turnState, cancellationToken).ConfigureAwait(false);
         }
     }
 }

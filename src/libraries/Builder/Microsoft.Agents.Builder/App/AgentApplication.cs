@@ -714,6 +714,11 @@ namespace Microsoft.Agents.Builder.App
                         var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
                         if (!signInComplete)
                         {
+                            if (Transcript != null)
+                            {
+                                await Transcript.LogSingle(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            }
+
                             return;
                         }
                     }
