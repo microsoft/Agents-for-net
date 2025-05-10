@@ -70,7 +70,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 bool emitStackTrace = true;
                 if (config != null && config["EmitStackTrace"] != null)
                 {
-                    emitStackTrace = bool.Parse(config["EmitStackTrace"]);
+                    if (!bool.TryParse(config["EmitStackTrace"], out emitStackTrace))
+                    {
+                        emitStackTrace = true; // Default to true if parsing fails
+                    }
                 }
                 StringBuilder lastErrorMessage = new StringBuilder(1024); 
                 exception.GetExceptionDetail(sbError,iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
