@@ -22,7 +22,7 @@ namespace TeamsConversationSsoQuickstart
             ILogger<IAgentHttpAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
-            : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, config: configuration)
         {
             base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
 
