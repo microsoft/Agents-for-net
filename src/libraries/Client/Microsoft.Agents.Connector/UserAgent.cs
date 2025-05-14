@@ -65,18 +65,7 @@ namespace Microsoft.Agents.Connector
             var type = typeof(RestConnectorClient);
             var assembly = type.GetTypeInfo().Assembly;
 
-            string version = "0.0.0.0";
-            try
-            {
-                FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-                version = fileVersionInfo.FileVersion;
-            }
-            catch
-            {
-                version = assembly.GetName().Version.ToString();
-            }
-
-            _versionString = new ProductInfoHeaderValue("agents-sdk-net", version);
+            _versionString = new ProductInfoHeaderValue("agents-sdk-net", ThisAssembly.AssemblyFileVersion);
             return _versionString;
         }
 
