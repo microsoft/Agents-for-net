@@ -18,11 +18,6 @@
     </ItemGroup>
 
 	<ItemGroup>
-		<!-- this is not needed in a client sample ** remove when we move the samples to another repo** -->
-		<Compile Remove="$(SamplesRoot)Shared\AspNetExtensions.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
 	</ItemGroup>
 

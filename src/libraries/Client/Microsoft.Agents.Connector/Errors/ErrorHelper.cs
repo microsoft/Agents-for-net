@@ -52,5 +52,15 @@ namespace Microsoft.Agents.Connector.Errors
         internal static AgentErrorDefinition GetSignInResourceAsync_BadRequestError = new AgentErrorDefinition(baseBuilderErrorCode - 14, Properties.Resources.GetSignInResourceAsync_BadRequest, "https://aka.ms/AgentsSDK-Error15");
         internal static AgentErrorDefinition GetAttachmentError = new AgentErrorDefinition(baseBuilderErrorCode - 15, Properties.Resources.GetAttachment_Error, "https://aka.ms/AgentsSDK-Error16");
         internal static AgentErrorDefinition GetAttachmentInfoError = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.GetAttachmentInfoError, "https://aka.ms/AgentsSDK-Error17");
+        internal static AgentErrorDefinition TokenServiceExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 17, Properties.Resources.TokenServiceExchangeFailed, "https://aka.ms/AgentsSDK-Error18");
+        internal static AgentErrorDefinition TokenServiceExchangeUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.TokenServiceExchangeUnexpected, "https://aka.ms/AgentsSDK-Error19");
+        internal static AgentErrorDefinition TokenServiceGetTokenUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.TokenServiceGetTokenUnexpected, "https://aka.ms/AgentsSDK-Error19");
+        internal static AgentErrorDefinition TokenServiceGetAadTokenUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.TokenServiceGetAadTokenUnexpected, "https://aka.ms/AgentsSDK-Error20");
+        internal static AgentErrorDefinition TokenServiceSignOutUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.TokenServiceSignOutUnexpected, "https://aka.ms/AgentsSDK-Error21");
+        internal static AgentErrorDefinition TokenServiceGetTokenStatusUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 21, Properties.Resources.TokenServiceGetTokenStatusUnexpected, "https://aka.ms/AgentsSDK-Error22");
+        internal static AgentErrorDefinition TokenServiceGetTokenOrSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.TokenServiceGetTokenOrSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error23");
+        internal static AgentErrorDefinition TokenServiceGetSignInUrlUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.TokenServiceGetSignInUrlUnexpected, "https://aka.ms/AgentsSDK-Error24");
+        internal static AgentErrorDefinition TokenServiceGetSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.TokenServiceGetSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error25");
+        internal static AgentErrorDefinition TokenServiceExchangeErrorResponse = new AgentErrorDefinition(baseBuilderErrorCode - 25, Properties.Resources.TokenServiceExchangeErrorResponse, "https://aka.ms/AgentsSDK-Error26");
     }
 }

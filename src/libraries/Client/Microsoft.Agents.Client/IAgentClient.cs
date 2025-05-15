@@ -21,8 +21,9 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
         /// <param name="relatesTo"></param>
+        /// <param name="useAnonymous"></param>
         /// <param name="cancellationToken"></param>
-        Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+        Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends an Activity with DeliveryMode "normal" or "expectReplies". Convenience method when a result is not expected.
@@ -30,8 +31,9 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
         /// <param name="relatesTo"></param>
+        /// <param name="useAnonymous"></param>
         /// <param name="cancellationToken"></param>
-        Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+        Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Send an Activity with streaming replies.
@@ -44,8 +46,9 @@ namespace Microsoft.Agents.Client
         /// <param name="activity"></param>
         /// <param name="handler"></param>
         /// <param name="relatesTo"></param>
+        /// <param name="useAnonymous"></param>
         /// <param name="cancellationToken"></param>
-        Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+        Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
@@ -53,7 +56,8 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
         /// <param name="relatesTo"></param>
+        /// <param name="useAnonymous"></param>
         /// <param name="cancellationToken"></param>
-        IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
     }
 }

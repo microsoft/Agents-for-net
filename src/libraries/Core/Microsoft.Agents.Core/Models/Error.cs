@@ -8,6 +8,8 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Object representing error information. </summary>
     public class Error
     {
+        public const string ConsentRequiredCode = "ConsentRequired";
+
         /// <summary> Initializes a new instance of Error. </summary>
         public Error()
         {

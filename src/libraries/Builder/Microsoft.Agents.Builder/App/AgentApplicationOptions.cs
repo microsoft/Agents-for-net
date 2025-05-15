@@ -118,7 +118,6 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="storage">The IStorage used by TurnState and User Authorization.</param>
         /// <param name="authOptions"></param>
         /// <param name="cardOptions"></param>
-        /// <param name="loggerFactory"></param>
         /// <param name="fileDownloaders"></param>
         /// <param name="configKey"></param>
         public AgentApplicationOptions(
@@ -128,13 +127,11 @@ namespace Microsoft.Agents.Builder.App
             IStorage storage = null, 
             UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
-            ILoggerFactory loggerFactory = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             string configKey = "AgentApplication") 
         { 
             Adapter = channelAdapter;
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
-            LoggerFactory = loggerFactory;
 
             var section = configuration.GetSection(configKey);
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
@@ -187,13 +184,6 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Array of input file download plugins to use.
         /// </summary>
         public IList<IInputFileDownloader>? FileDownloaders { get; set; }
-
-        /// <summary>
-        /// Optional. Logger factory that will be used in this application.
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
-        public ILoggerFactory? LoggerFactory { get; set; }
 
         /// <summary>
         /// Optional. If true, the Agent will automatically remove mentions of the Agents name from incoming

@@ -40,13 +40,6 @@ This sample is intended to introduce you to:
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}" 
-      },
-
       "Connections": {
           "ServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
@@ -77,7 +70,6 @@ This sample is intended to introduce you to:
    - Once EchoSkill is started, the manifest is available via a GET to `{host-or-tunnel-url}/manifest/echoskill-manifest-1.0.json`
 
 1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous

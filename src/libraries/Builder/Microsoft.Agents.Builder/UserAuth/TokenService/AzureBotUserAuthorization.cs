@@ -8,7 +8,6 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,7 +60,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public string Name { get; private set; }
 
         /// <inheritdoc/>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             /*
             if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
@@ -70,7 +69,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             */
 
-            if (_botAuthentication != null && (forceSignIn || _botAuthentication.IsValidActivity(turnContext)))
+            if (_botAuthentication != null && (forceSignIn || await _botAuthentication.IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false)))
             {
                 var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -95,31 +94,32 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <summary>
         /// Get user token
         /// </summary>
-        protected virtual async Task<TokenResponse> GetUserToken(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
+        public virtual async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, "", cancellationToken).ConfigureAwait(false);
+            var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
+            return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> HandleOBO(ITurnContext turnContext, string token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        private async Task<TokenResponse> HandleOBO(ITurnContext turnContext, TokenResponse token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token?.Token))
             {
                 return null;
             }
 
+            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            var scopes = exchangeScopes ?? _settings.OBOScopes;
+
             // If OBO is not set return token as-is.
-            if (string.IsNullOrEmpty(_settings.OBOConnectionName) && string.IsNullOrEmpty(exchangeConnection))
+            if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
             {
                 return token;
             }
 
-            string exchangedToken = null;
-            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
-
             try
             {
                 // Can we even exchange this?
-                if (!IsExchangeableToken(token))
+                if (!token.IsExchangeable)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
                 }
@@ -133,29 +133,26 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 // Do exchange.
                 try
                 {
-                    exchangedToken = await oboExchangeProvider.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(scopes, token.Token).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
                 }
-            }
-            finally
-            {
-                if (exchangedToken == null)
+
+                if (token == null)
                 {
-                    await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                    // AcquireTokenOnBehalfOf returned null
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
                 }
             }
+            catch (Exception)
+            {
+                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                throw;
+            }
 
-            return exchangedToken;
-        }
-
-        private static bool IsExchangeableToken(string token)
-        {
-            JwtSecurityToken jwtToken = new(token);
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
-            return (bool)(aud?.StartsWith("api://"));
+            return token ?? null;
         }
 
         private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)

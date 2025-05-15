@@ -100,5 +100,26 @@ namespace Microsoft.Agents.Extensions.Teams
             var channelData = activity.GetChannelData<TeamsChannelData>();
             return channelData?.OnBehalfOf;
         }
+
+        /// <summary>
+        /// Adds the teams Feedback loop flag to the current ChannelData object.
+        /// Channel Data object cannot be populated when this flag is used. 
+        /// </summary>
+        /// <param name="activity"></param>
+        /// <param name="feedbackLoopType"></param>
+        /// <returns>true if it was able to add to Channel Data, other wise false.</returns>
+        public static bool TeamsEnableFeedbackLoop(this IActivity activity, string feedbackLoopType = "default")
+        {
+            if (activity.ChannelData != null)
+                return false;
+            else
+                activity.ChannelData = new 
+                    {
+                    feedbackLoop = new { 
+                            type = feedbackLoopType
+                        }
+                    };
+            return true; 
+        }
     }
 }

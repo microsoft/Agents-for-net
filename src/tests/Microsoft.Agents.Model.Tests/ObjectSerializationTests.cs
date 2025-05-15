@@ -362,6 +362,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(resultingText, outboundJson);
         }
 
+#if SKIP_EMPTY_LISTS
         [Fact]
         public void EmptyListDoesntSerialzie()
         {
@@ -386,7 +387,7 @@ namespace Microsoft.Agents.Model.Tests
             var expected = "{\"suggestedActions\":{\"to\":[\"test\"]}}";
             Assert.Equal(expected, json);
         }
-
+#endif
 
         private Activity RoundTrip(Activity outActivity)
         {
@@ -407,6 +408,10 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotEmpty(activity.MembersRemoved);    
             Assert.NotEmpty(activity.ReactionsAdded);
             Assert.NotEmpty(activity.ReactionsRemoved);
+
+            Assert.NotNull(activity.Attachments);
+            Assert.NotNull(activity.ListenFor);
+            Assert.NotNull(activity.TextHighlights);
 
             // validate .value, .channeldata and the activity additional properties are present
             Assert.NotNull(activity.Value);

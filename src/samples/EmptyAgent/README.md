@@ -1,4 +1,4 @@
-﻿# EchoAgent Sample
+﻿# EmptyAgent Sample
 
 This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request and echo the text of the request back to the caller.
 
@@ -8,7 +8,6 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 
 - [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
 - [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
-- [Bot Framework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases) for Testing Web Chat.
 
 ## Running this sample
 
@@ -20,7 +19,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
     - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your Agent to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
-## Getting Started with Agent1 Sample
+## Getting Started with EmptyAgent Sample
 
 Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
 

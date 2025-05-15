@@ -8,19 +8,17 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace EchoBot;
+namespace EmptyAgent;
 
 public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-
-        // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-        OnActivity(ActivityTypes.Message, OnMessageAsync);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
-    protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -31,7 +29,7 @@ public class MyAgent : AgentApplication
         }
     }
 
-    protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }

@@ -16,19 +16,55 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; internal set; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
+        public static bool UnpackObjectStrings { get; set; } = true;
+
+        private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
             SerializationInitAttribute.InitSerialization();
         }
 
-        public static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
             return options;
+        }
+
+        public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
+        {
+            lock(_optionsLock)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                foreach (var converter in extensionConverters)
+                {
+                    newOptions.Converters.Add(converter);
+                }
+
+                SerializationOptions = newOptions;
+            }
+        }
+
+        public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
+        {
+            lock (_optionsLock)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                SerializationOptions = applyFunc(newOptions);
+            }
         }
 
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
@@ -49,7 +85,9 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new AudioCardConverter());
             options.Converters.Add(new CardActionConverter());
             options.Converters.Add(new ChannelAccountConverter());
+            options.Converters.Add(new ConversationAccountConverter());
             options.Converters.Add(new EntityConverter());
+            options.Converters.Add(new AIEntityConverter());
             options.Converters.Add(new TokenExchangeInvokeResponseConverter());
             options.Converters.Add(new TokenExchangeInvokeRequestConverter());
             options.Converters.Add(new TokenResponseConverter());

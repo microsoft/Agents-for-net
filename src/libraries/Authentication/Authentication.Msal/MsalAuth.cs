@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -75,12 +76,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
             // Get or create existing token. 
             _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
-            if (_cacheList.ContainsKey(instanceUri))
+            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
             {
                 if (!forceRefresh)
                 {
-                    var accessToken = _cacheList[instanceUri].MsalAuthResult.AccessToken;
-                    var tokenExpiresOn = _cacheList[instanceUri].MsalAuthResult.ExpiresOn;
+                    var accessToken = authResultFromCache.MsalAuthResult.AccessToken;
+                    var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
@@ -152,13 +153,13 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
 
-        public async Task<string> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
+        public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
                 var result = await confidentialClient.AcquireTokenOnBehalfOf(scopes, new UserAssertion(token)).ExecuteAsync().ConfigureAwait(false);
-                return result.AccessToken;
+                return new TokenResponse() { Token = result.AccessToken, Expiration = result.ExpiresOn.DateTime };
             }
 
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");

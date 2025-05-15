@@ -71,7 +71,7 @@ public class HostAgent : AgentApplication
         }
 
         // Send whatever the user said to Agent2.
-        await _agentHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
+        await _agentHost.SendToAgent(turnContext, Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
     }
 
     // Handles responses from Agent2.

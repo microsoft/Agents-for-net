@@ -65,6 +65,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var propertyValue = property.GetValue(value);
 
+#if SKIP_EMPTY_LISTS
                     if (propertyValue is IList list)
                     {
                         if (list == null || list.Count == 0)
@@ -72,7 +73,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                             continue;
                         }
                     }
-
+#endif
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {
@@ -84,25 +85,32 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
                         if (property.PropertyType == typeof(object) && propertyValue is string s)
                         {
-                            // Generic property value as a JSON string
-                            try
+                            if (!ProtocolJsonSerializer.UnpackObjectStrings)
                             {
-                                using (var document = JsonDocument.Parse(s))
+                                writer.WriteRawValue(s);
+                            }
+                            else
+                            {
+                                // Generic property value as a JSON string
+                                try
                                 {
-                                    var root = document.RootElement.Clone();
-                                    if (root.ValueKind == JsonValueKind.Object)
+                                    using (var document = JsonDocument.Parse(s))
                                     {
-                                        root.WriteTo(writer);
-                                    }
-                                    else
-                                    {
-                                        writer.WriteStringValue(s);
+                                        var root = document.RootElement.Clone();
+                                        if (root.ValueKind == JsonValueKind.Object)
+                                        {
+                                            root.WriteTo(writer);
+                                        }
+                                        else
+                                        {
+                                            writer.WriteStringValue(s);
+                                        }
                                     }
                                 }
-                            }
-                            catch (JsonException)
-                            {
-                                writer.WriteStringValue(s);
+                                catch (JsonException)
+                                {
+                                    writer.WriteStringValue(s);
+                                }
                             }
                         }
                         else
@@ -191,28 +199,36 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 if (element.ValueKind == JsonValueKind.String)
                 {
-                    var json = element.GetString();
-
-                    try
+                    if (!ProtocolJsonSerializer.UnpackObjectStrings)
                     {
-                        // Check if the underlying JSON is a reference type
-                        using (var document = JsonDocument.Parse(json))
+                        var json = element.GetRawText();
+                        setter(json);
+                    }
+                    else
+                    {
+                        try
                         {
-                            setter(document.RootElement.Clone());
-                            if (document.RootElement.ValueKind == JsonValueKind.Object || document.RootElement.ValueKind == JsonValueKind.Array)
+                            var json = element.GetString();
+
+                            // Check if the underlying JSON is a reference type
+                            using (var document = JsonDocument.Parse(json))
                             {
                                 setter(document.RootElement.Clone());
-                            }
-                            else
-                            {
-                                setter(element.GetString());
+                                if (document.RootElement.ValueKind == JsonValueKind.Object || document.RootElement.ValueKind == JsonValueKind.Array)
+                                {
+                                    setter(document.RootElement.Clone());
+                                }
+                                else
+                                {
+                                    setter(element.GetString());
+                                }
                             }
                         }
-                    }
-                    catch (JsonException)
-                    {
-                        // JSON is a value type
-                        setter(element.GetString());
+                        catch (JsonException)
+                        {
+                            // JSON is a value type
+                            setter(element.GetString());
+                        }
                     }
                 }
                 else if (element.ValueKind == JsonValueKind.Number)
@@ -252,6 +268,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 var CollectionPropertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
                 if (CollectionPropertyValue is IList prospectiveList)
                 {
+#if SKIP_EMPTY_LISTS
                     if (prospectiveList.Count != 0)
                     {
                         property.SetValue(value, CollectionPropertyValue);
@@ -260,6 +277,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         property.SetValue(value, null);
                     }
+#else
+                    property.SetValue(value, CollectionPropertyValue);
+#endif
                 }
                 return;
             }

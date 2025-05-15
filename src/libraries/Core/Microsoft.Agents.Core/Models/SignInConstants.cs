@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Core.Models
         /// Name for the signin invoke to verify the 6-digit authentication code as part of sign-in.
         /// </summary>
         /// <remarks>
-        /// This invoke operation includes a value containing a state property for the magic code.
+        /// This invoke operation includes a value containing a state property for the magic code or <see cref="CancelledByUser"/>
         /// </remarks>
         public const string VerifyStateOperationName = "signin/verifyState";
 
@@ -25,13 +25,23 @@ namespace Microsoft.Agents.Core.Models
         public const string TokenExchangeOperationName = "signin/tokenExchange";
 
         /// <summary>
+        /// Name for sign in failure during Teams SSO.
+        /// </summary>
+        public const string SignInFailure = "signin/failure";
+
+        /// <summary>
         /// The EventActivity name when a token is sent to the Agent.
         /// </summary>
         public const string TokenResponseEventName = "tokens/response";
 
         /// <summary>
-        /// The invoke operation used to exchange a sharepoint token for SSO.
+        /// The invoke operation used to exchange a SharePoint token for SSO.
         /// </summary>
         public const string SharePointTokenExchange = "cardExtension/token";
+
+        /// <summary>
+        /// Can be included in VerifyStateOperationName when user cancelled the signin.
+        /// </summary>
+        public const string CancelledByUser = "CancelledByUser";
     }
 }

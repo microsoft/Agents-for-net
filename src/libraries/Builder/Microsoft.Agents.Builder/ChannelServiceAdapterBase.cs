@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -62,12 +63,7 @@ namespace Microsoft.Agents.Builder
                 activity.Id = null;
                 var response = default(ResourceResponse);
 
-                if (activity.Type == ActivityTypes.Delay)
-                {
-                    var delayMs = Convert.ToInt32(activity.Value, CultureInfo.InvariantCulture);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
-                else if (activity.Type == ActivityTypes.InvokeResponse)
+                if (activity.Type == ActivityTypes.InvokeResponse)
                 {
                     turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
@@ -257,27 +253,24 @@ namespace Microsoft.Agents.Builder
                 //activity.CallerId = ???
             }
 
-            bool useAnonymousAuthCallback = false;
-            if (!claimsIdentity.IsAuthenticated)
+            // If auth is disabled, and we don't have any
+            bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
+            if (useAnonymousAuthCallback)
             {
-                if (activity.ChannelId == Channels.Emulator)
-                {
-                    useAnonymousAuthCallback = true;
-                }
-                else
-                {
-                    Logger.LogWarning("Anonymous access is not allowed for channel: {ChannelId}.", activity.ChannelId);
-                }
+                Logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", activity.ChannelId);
             }
 
             // Create the connector client to use for outbound requests.
-            using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
-                claimsIdentity, 
-                activity.ServiceUrl, 
-                AgentClaims.GetTokenAudience(claimsIdentity), 
-                cancellationToken, 
-                scopes: AgentClaims.GetTokenScopes(claimsIdentity),
-                useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using IConnectorClient connectorClient =
+                ResolveIfConnectorClientIsNeeded(activity) ?  // if Delivery Mode == ExpectReplies, we don't need a connector client.
+                    await ChannelServiceFactory.CreateConnectorClientAsync(
+                    claimsIdentity,
+                    activity.ServiceUrl,
+                    AgentClaims.GetTokenAudience(claimsIdentity),
+                    cancellationToken,
+                    scopes: AgentClaims.GetTokenScopes(claimsIdentity),
+                    useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false)
+                    : null;
 
             // Create a UserTokenClient instance for OAuth flow.
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
@@ -290,6 +283,7 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+
         }
 
         /// <summary>
@@ -335,8 +329,8 @@ namespace Microsoft.Agents.Builder
             var turnContext = new TurnContext(this, activity);
 
             turnContext.Identity = claimsIdentity;
-
-            turnContext.Services.Set(connectorClient);
+            if (connectorClient != null)
+                turnContext.Services.Set(connectorClient);
             turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
 
@@ -372,6 +366,33 @@ namespace Microsoft.Agents.Builder
 
             // No body to return.
             return null;
+        }
+
+
+        /// <summary>
+        /// Determines whether a connector client is needed based on the delivery mode and service URL of the given activity.
+        /// </summary>
+        /// <param name="activity">The activity to evaluate.</param>
+        /// <returns>
+        /// <c>true</c> if a connector client is needed; otherwise, <c>false</c>.
+        /// A connector client is required if the activity's delivery mode is not "ExpectReplies" or "Stream" 
+        /// and the service URL is not null or empty.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="activity"/> is null.</exception>
+        private static bool ResolveIfConnectorClientIsNeeded(IActivity activity)
+        {
+            Microsoft.Agents.Core.AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            switch (activity.DeliveryMode)
+            {
+                case DeliveryModes.ExpectReplies:
+                case DeliveryModes.Stream: 
+                    if (string.IsNullOrEmpty(activity.ServiceUrl))
+                        return false;
+                    break; 
+                default:
+                    break;
+            }
+            return true;
         }
     }
 }

@@ -15,6 +15,7 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using System.Linq;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -39,13 +40,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="logger"></param>
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
+        /// <param name="config"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IAgentHttpAdapter> logger = null,
             AdapterOptions options = null,
-            Builder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            Builder.IMiddleware[] middlewares = null,
+            IConfiguration config = null) 
+            : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
@@ -63,7 +67,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Log any leaked exception from the application.
                 StringBuilder sbError = new StringBuilder(1024);
                 int iLevel = 0;
-                exception.GetExceptionDetail(sbError,iLevel); // ExceptionParser
+                bool emitStackTrace = true;
+                if (config != null && config["EmitStackTrace"] != null)
+                {
+                    if (!bool.TryParse(config["EmitStackTrace"], out emitStackTrace))
+                    {
+                        emitStackTrace = true; // Default to true if parsing fails
+                    }
+                }
+                StringBuilder lastErrorMessage = new StringBuilder(1024); 
+                exception.GetExceptionDetail(sbError,iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
@@ -78,7 +91,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage), CancellationToken.None);
+                    await turnContext.SendActivityAsync(MessageFactory.Text(lastErrorMessage.ToString()), CancellationToken.None);
                     // Send a trace activity
                     await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
                 }
@@ -116,7 +129,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
 
-                // if Auth is not configured, we still need the claims from the JWT token.
+                // If Auth is not configured, we still need the claims from the JWT token.
+                // Currently, the stack does rely on certain Claims.  If the Bearer token
+                // was sent, we can get them from there.  The JWT token is NOT validated though.
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
                 if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
                 {

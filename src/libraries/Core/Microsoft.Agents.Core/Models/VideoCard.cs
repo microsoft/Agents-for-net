@@ -10,7 +10,11 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Video card. </summary>
     public class VideoCard
     {
-        public VideoCard() { }
+        public VideoCard() 
+        {
+            Media = [];
+            Buttons = [];
+        }
 
         /// <summary> Initializes a new instance of VideoCard. </summary>
         /// <param name="title"> Title of this card. </param>

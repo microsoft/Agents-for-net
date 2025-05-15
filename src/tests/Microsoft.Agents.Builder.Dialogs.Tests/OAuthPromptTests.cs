@@ -13,6 +13,7 @@ using Xunit.Sdk;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -188,7 +189,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task OAuthPromptTimesOut_TokenResponseEvent()
         {
             var activity = new Activity() { Type = ActivityTypes.Event, Name = SignInConstants.TokenResponseEventName };
-            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, null);
+            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"));
             await PromptTimeoutEndsDialogTest(activity);
         }
 
@@ -941,7 +942,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 }
             };
 
-            await new TestFlow(adapter, botCallbackHandler)
+            var flow = new TestFlow(adapter, botCallbackHandler)
             .Send("hello")
             .AssertReply(activity =>
             {
@@ -955,9 +956,24 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
             })
             .Delay(500)
-            .Send(oauthPromptActivity)
-            .AssertReply("ended")
-            .StartTestAsync();
+            .Send(oauthPromptActivity);
+
+            if (oauthPromptActivity.Name == SignInConstants.TokenExchangeOperationName)
+            {
+                flow = flow.AssertReply(a =>
+                {
+                    Assert.Equal("invokeResponse", a.Type);
+                    var response = ((Activity)a).Value as InvokeResponse;
+                    Assert.NotNull(response);
+                    Assert.Equal(400, response.Status);
+                    var body = response.Body as TokenExchangeInvokeResponse;
+                    Assert.Equal(ConnectionName, body.ConnectionName);
+                    Assert.NotNull(body.FailureDetail);
+                });
+            }
+            
+            await flow.AssertReply("ended")
+                .StartTestAsync();
         }
 
         private IActivity CreateEventResponse(TestAdapter adapter, IActivity activity, string connectionName, string token)

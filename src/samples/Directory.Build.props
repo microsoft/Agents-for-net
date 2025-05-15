@@ -5,9 +5,4 @@
         <IsPackable>false</IsPackable>
         <SamplesRoot>$(MSBuildThisFileDirectory)</SamplesRoot>
     </PropertyGroup>
-
-    <ItemGroup Condition="'$(SkipAspExtension)' != 'true'">
-        <!-- Common files for all asp.net web based samples of agents.-->
-        <Compile Include="$(SamplesRoot)Shared\AspNetExtensions.cs" Link="AspNetExtensions.cs" />
-    </ItemGroup>
 </Project>
