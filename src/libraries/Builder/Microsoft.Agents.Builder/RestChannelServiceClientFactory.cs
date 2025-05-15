@@ -23,9 +23,9 @@ namespace Microsoft.Agents.Builder
     /// <remarks>
     /// Connector and UserToken client factory.
     /// </remarks>
-    /// <exception cref="ArgumentNullException"></exception>
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="InvalidOperationException">Thrown when an instance of <see cref="IAccessTokenProvider"/> is not found via <see cref="IConnections"/>.</exception>
+    /// <exception cref="System.ArgumentNullException"></exception>
+    /// <exception cref="System.ArgumentException"></exception>
+    /// <exception cref="System.InvalidOperationException">Thrown when an instance of <see cref="IAccessTokenProvider"/> is not found via <see cref="IConnections"/>.</exception>
     public class RestChannelServiceClientFactory : IChannelServiceClientFactory
     {
         private readonly string _tokenServiceEndpoint;
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
                         return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(

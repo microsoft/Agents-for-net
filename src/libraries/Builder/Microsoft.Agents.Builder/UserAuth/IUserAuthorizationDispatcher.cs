@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Builder.UserAuth
 {
     internal interface IUserAuthorizationDispatcher
     {
-        IUserAuthorization Default {  get; }
+        IUserAuthorization Default { get; }
 
         /// <summary>
         /// Get an authentication class via name
         /// </summary>
         /// <param name="handlerName">The name of the user authorization handler</param>
         /// <returns>The user authentication handler</returns>
-        /// <exception cref="InvalidOperationException">When cannot find the class with given name</exception>
+        /// <exception cref="System.InvalidOperationException">When cannot find the class with given name</exception>
         IUserAuthorization Get(string handlerName);
 
         bool TryGet(string handlerName, out IUserAuthorization handler);

@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="options">The options</param>
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         public TeamsAttachmentDownloader(TeamsAttachmentDownloaderOptions options, IConnections connections, IHttpClientFactory httpClientFactory)
         {
             AssertionHelpers.ThrowIfNull(options, nameof(options));

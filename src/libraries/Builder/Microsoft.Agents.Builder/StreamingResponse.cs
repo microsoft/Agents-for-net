@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     internal class StreamingResponse : IStreamingResponse
     {
-        public static readonly int DefaultEndStreamTimeout = (int) TimeSpan.FromMinutes(2).TotalMilliseconds;
+        public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private readonly TurnContext _context;
         private int _nextSequence = 1;
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="text">Text of the update to send.</param>
         /// <param name="cancellationToken"></param>
-        /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
+        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
@@ -208,7 +208,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="text">Partial text of the message to send.</param>
         /// <param name="citations">Citations to include in the message.</param>
-        /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
+        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public void QueueTextChunk(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -248,7 +248,7 @@ namespace Microsoft.Agents.Builder
         /// before sending the final Message.
         /// </remarks>
         /// <returns>A Task representing the async operation</returns>
-        /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
+        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public async Task EndStreamAsync(CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)

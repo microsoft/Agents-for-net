@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">The incoming activity for the turn;
         /// or <c>null</c> for a turn for a proactive message.</param>
         /// <param name="state"></param>
-        /// <exception cref="ArgumentNullException"><paramref name="activity"/> or
+        /// <exception cref="System.ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by Adapter implementations only.</remarks>
         public TurnContext(IChannelAdapter adapter, IActivity activity)
@@ -162,10 +162,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
 
-            var activityToSend = new Activity() 
-            { 
+            var activityToSend = new Activity()
+            {
                 Type = ActivityTypes.Message,
-                Text = textReplyToSend 
+                Text = textReplyToSend
             };
 
             if (!string.IsNullOrEmpty(speak))
