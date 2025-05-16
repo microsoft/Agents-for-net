@@ -122,6 +122,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
+            handlerName ??= DefaultHandlerName;
+
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 // An exchangeable token needs to be exchanged.
@@ -135,7 +137,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 }
 
                 // Get a new token if near expiration, or it's an exchangeable token.
-                var handler = _dispatcher.Get(handlerName ?? DefaultHandlerName);
+                var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {

@@ -123,6 +123,8 @@ namespace Microsoft.Agents.Builder.UserAuth
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Trace.WriteLine($"SignUserInAsync exception: {ex}");
+
                 SignInResponse newResponse = new(SignInStatus.Error)
                 {
                     Error = ex,

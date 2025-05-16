@@ -34,13 +34,28 @@ namespace Microsoft.Agents.Core.Serialization
 
         private static IEnumerable<Type> GetLoadOnInitTypes(Assembly assembly)
         {
-            foreach (Type type in assembly.GetTypes())
+            IList<Type> result = [];
+
+            Type[] types;
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.GetLoadOnInitTypes: {ex.Message}");
+                return result;
+            }
+
+            foreach (Type type in types)
             {
                 if (type.GetCustomAttributes(typeof(SerializationInitAttribute), true).Length > 0)
                 {
-                    yield return type;
+                    result.Add(type);
                 }
             }
+
+            return result;
         }
     }
 }
