@@ -51,7 +51,13 @@ namespace HandlingCards
 
             if (cardCommand.Name.Equals("dynamic_search") && !turnContext.Activity.ChannelId.Equals(Channels.Msteams))
             {
-                await turnContext.SendActivityAsync("Only Teams channels support `Search`", cancellationToken: cancellationToken);
+                await turnContext.SendActivityAsync("Only Teams channels support `dynamic_search`", cancellationToken: cancellationToken);
+                return true;
+            }
+
+            if (cardCommand.Name.Equals("action_execute") && !turnContext.Activity.ChannelId.Equals(Channels.Msteams))
+            {
+                await turnContext.SendActivityAsync("Only Teams channels support `action_execute`", cancellationToken: cancellationToken);
                 return true;
             }
 
@@ -107,7 +113,7 @@ namespace HandlingCards
 
         public static async Task SendActionExecuteCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "ActionExecute.json"));
+            Attachment attachment = CreateAdaptiveCardAttachment(Path.Combine(".", "Resources", "ActionExecuteWithRefresh.json"));
             await turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
         }
 

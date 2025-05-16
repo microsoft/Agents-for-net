@@ -64,6 +64,7 @@ namespace HandlingCards
             AdaptiveCards.OnActionSubmit("DynamicSubmit", DynamicSubmitHandlerAsync);
 
             // Listen for ActionExecute
+            AdaptiveCards.OnActionExecute("refresh", ActionExecuteRefreshHandlerAsync);
             AdaptiveCards.OnActionExecute("signin", ActionExecuteSignInHandlerAsync);
             AdaptiveCards.OnActionExecute("signout", ActionExecuteSignOutHandlerAsync);
 
@@ -170,9 +171,9 @@ namespace HandlingCards
             }
         }
 
-        private Task<AdaptiveCardInvokeResponse> ActionExecuteSignInHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        private Task<AdaptiveCardInvokeResponse> ActionExecuteRefreshHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
-            var filePath = Path.Combine(".", "Resources", "ActionExecuteNew.json");
+            var filePath = Path.Combine(".", "Resources", "ActionExecuteSignIn.json");
             var adaptiveCardJson = File.ReadAllText(filePath);
 
             return Task.FromResult(new AdaptiveCardInvokeResponse()
@@ -183,12 +184,28 @@ namespace HandlingCards
             });
         }
 
-        private Task<AdaptiveCardInvokeResponse> ActionExecuteSignOutHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        private async Task<AdaptiveCardInvokeResponse> ActionExecuteSignInHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
-            return Task.FromResult(new AdaptiveCardInvokeResponse()
+            await turnContext.SendActivityAsync("ActionExecuteSignInHandlerAsync called", cancellationToken: cancellationToken);
+
+            var filePath = Path.Combine(".", "Resources", "ActionExecuteSignOut.json");
+            var adaptiveCardJson = File.ReadAllText(filePath);
+
+            return new AdaptiveCardInvokeResponse()
+            {
+                StatusCode = (int)HttpStatusCode.OK,
+                Type = "application/vnd.microsoft.card.adaptive",
+                Value = adaptiveCardJson,
+            };
+        }
+
+        private async Task<AdaptiveCardInvokeResponse> ActionExecuteSignOutHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+        {
+            await turnContext.SendActivityAsync("ActionExecuteSignOutHandlerAsync called", cancellationToken: cancellationToken);
+            return new AdaptiveCardInvokeResponse()
             {
                 StatusCode = (int)HttpStatusCode.OK
-            });
+            };
         }
     }
 }

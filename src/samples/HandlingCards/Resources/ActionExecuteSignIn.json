@@ -2,18 +2,10 @@
   "$schema": "http: //adaptivecards.io/schemas/adaptive-card.json",
   "version": "1.5",
   "type": "AdaptiveCard",
-  "refresh": {
-    "action": {
-      "fallback": "drop",
-      "type": "Action.Execute",
-      "title": "Sign in to view profile",
-      "verb": "signin"
-    }
-  },
   "body": [
     {
       "type": "TextBlock",
-      "text": "Execute"
+      "text": "Simulated Sign In"
     },
     {
       "type": "ActionSet",
@@ -21,8 +13,8 @@
       "actions": [
         {
           "type": "Action.Execute",
-          "title": "Sign out",
-          "verb": "signout"
+          "title": "Sign In",
+          "verb": "signin"
         }
       ]
     }
