@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;
 
@@ -34,5 +35,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Invoked when ProcessActivity is done.  Ignored if IsProactive.
         /// </summary>
         public Action<InvokeResponse> OnComplete { get; set; }
+
+        /// <summary>
+        /// Headers used for the current <see cref="Activity"/> request.
+        /// </summary>
+        public IHeaderDictionary Headers { get; set; }
     }
 }
