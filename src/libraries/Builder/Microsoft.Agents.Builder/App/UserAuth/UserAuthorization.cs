@@ -122,6 +122,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
+            handlerName ??= DefaultHandlerName;
+
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 // An exchangeable token needs to be exchanged.
@@ -135,7 +137,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 }
 
                 // Get a new token if near expiration, or it's an exchangeable token.
-                var handler = _dispatcher.Get(handlerName ?? DefaultHandlerName);
+                var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
@@ -163,7 +165,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <param name="exchangeConnection"></param>
         /// <param name="exchangeScopes"></param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <exception cref="InvalidOperationException">If a flow is already active.</exception>
+        /// <exception cref="System.InvalidOperationException">If a flow is already active.</exception>
         public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
@@ -314,8 +316,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 // Get token or start flow for specified flow.
                 SignInResponse response = await _dispatcher.SignUserInAsync(
-                    turnContext, 
-                    activeFlowName, 
+                    turnContext,
+                    activeFlowName,
                     forceSignIn: !flowContinuation,
                     exchangeConnection: signInState.RuntimeOBOConnectionName,
                     exchangeScopes: signInState.RuntimeOBOScopes,
@@ -374,7 +376,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     }
 
                     await turnContext.SendActivitiesAsync(
-                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response), 
+                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
                         cancellationToken).ConfigureAwait(false);
                     return false;
                 }

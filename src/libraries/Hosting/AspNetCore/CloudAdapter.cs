@@ -41,14 +41,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IAgentHttpAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null) 
+            IConfiguration config = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
@@ -75,8 +75,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         emitStackTrace = true; // Default to true if parsing fails
                     }
                 }
-                StringBuilder lastErrorMessage = new StringBuilder(1024); 
-                exception.GetExceptionDetail(sbError,iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
+                StringBuilder lastErrorMessage = new StringBuilder(1024);
+                exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);

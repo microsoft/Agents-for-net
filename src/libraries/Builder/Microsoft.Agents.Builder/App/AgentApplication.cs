@@ -743,7 +743,7 @@ namespace Microsoft.Agents.Builder.App
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
-                            if (route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
+                            if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
                             {
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }

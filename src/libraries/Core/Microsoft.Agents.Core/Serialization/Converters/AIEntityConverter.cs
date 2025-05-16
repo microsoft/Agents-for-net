@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 value.AtId = JsonSerializer.Deserialize<string>(ref reader, options);
             }
-            else if (propertyName.Equals(nameof(value.Properties)))
+            else
             {
                 value.Properties.Add(propertyName, JsonSerializer.Deserialize<JsonElement>(ref reader, options));
             }

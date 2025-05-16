@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> SuggestedActions that can be performed. </summary>
     public class SuggestedActions
     {
-        public SuggestedActions() 
+        public SuggestedActions()
         {
             To = [];
             Actions = [];
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Core.Models
         /// shown to. These Ids are relative to the channelId and a subset of
         /// all recipients of the activity.</param>
         /// <param name="actions">Actions that can be shown to the user.</param>
-        /// <exception cref="ArgumentNullException">ArgumentNullException.</exception>
+        /// <exception cref="System.ArgumentNullException">ArgumentNullException.</exception>
         public SuggestedActions(IEnumerable<string> to, IEnumerable<CardAction> actions)
             : this([.. to], [.. actions])
         {

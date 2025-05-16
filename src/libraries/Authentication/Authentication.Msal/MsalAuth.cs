@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// </summary>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="msalConfigurationSection"></param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
             : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
         }
@@ -110,10 +110,11 @@ namespace Microsoft.Agents.Authentication.Msal
             object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
-            ExecuteAuthenticationResults authResultPayload = null; 
+            ExecuteAuthenticationResults authResultPayload = null;
             if (msalAuthClient is IConfidentialClientApplication msalConfidentialClient)
             {
-                if (localScopes.Length == 0) {
+                if (localScopes.Length == 0)
+                {
                     throw new ArgumentException("At least one Scope is required for Client Authentication.");
                 }
 
@@ -252,7 +253,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <param name="instanceUrl"></param>
         /// <param name="scopes">scopes list to create the token for</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
             IList<string> _localScopesResolver = new List<string>();
@@ -264,7 +265,7 @@ namespace Microsoft.Agents.Authentication.Msal
             else
             {
                 var templist = new List<string>();
-                
+
                 if (_connectionSettings.Scopes != null)
                 {
                     foreach (var scope in _connectionSettings.Scopes)

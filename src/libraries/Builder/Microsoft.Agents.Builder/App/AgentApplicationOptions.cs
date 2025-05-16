@@ -134,6 +134,12 @@ namespace Microsoft.Agents.Builder.App
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
 
             var section = configuration.GetSection(configKey);
+            if (!section.Exists())
+            {
+                // This is to compensate for IConfiguration containing the class name as the section name.
+                section = configuration.GetSection(nameof(AgentApplicationOptions));
+            }
+
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), true);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), true);

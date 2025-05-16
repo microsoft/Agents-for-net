@@ -24,12 +24,12 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         public static Uri GetCopilotStudioConnectionUrl(
                 ConnectionSettings settings,
                 string? conversationId,
                 AgentType agentType = AgentType.Published,
-                PowerPlatformCloud cloud = PowerPlatformCloud.Prod, 
+                PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     // FIX for Missing Tenant ID
 #if !NETSTANDARD
-                    if ( directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
+                    if (directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
 #else
                     if (directConnectUrl!.IndexOf("tenants/00000000-0000-0000-0000-000000000000", StringComparison.CurrentCultureIgnoreCase) >= 0)
 #endif
@@ -115,10 +115,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         public static string GetTokenAudience(
             ConnectionSettings? settings,
-            PowerPlatformCloud cloud = PowerPlatformCloud.Unknown, 
+            PowerPlatformCloud cloud = PowerPlatformCloud.Unknown,
             string? cloudBaseAddress = default,
             string? directConnectUrl = default)
         {
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 directConnectUrl ??= settings?.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    if ( DecodeCloudFromURI(new Uri(directConnectUrl)) == PowerPlatformCloud.Unknown)
+                    if (DecodeCloudFromURI(new Uri(directConnectUrl)) == PowerPlatformCloud.Unknown)
                     {
                         PowerPlatformCloud cloudToTest = settings?.Cloud ?? cloud;
 
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="environmentId"></param>
         /// <param name="cloudBaseAddress"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         private static string GetEnvironmentEndpoint(PowerPlatformCloud cloud, string environmentId, string? cloudBaseAddress = default)
         {
             if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
@@ -284,7 +284,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="category"></param>
         /// <param name="cloudBaseAddress"></param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         private static string GetEndpointSuffix(PowerPlatformCloud category, string cloudBaseAddress) => category switch
         {
             PowerPlatformCloud.Local => "api.powerplatform.localhost",
@@ -311,10 +311,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="hostUri">This is the URL to decode a Cloud from</param>
         /// <returns></returns>
-        private static PowerPlatformCloud DecodeCloudFromURI( Uri hostUri )
+        private static PowerPlatformCloud DecodeCloudFromURI(Uri hostUri)
         {
             string Host = hostUri.Host.ToLower();
-            switch(Host)
+            switch (Host)
             {
                 case "api.powerplatform.localhost":
                     return PowerPlatformCloud.Local;
@@ -360,6 +360,6 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
         }
 
-#endregion
+        #endregion
     }
 }

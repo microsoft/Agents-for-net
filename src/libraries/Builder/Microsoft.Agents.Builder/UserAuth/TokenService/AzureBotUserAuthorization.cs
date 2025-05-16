@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private readonly IConnections _connections;
 
         public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
-            : this(name, storage, connections, configurationSection.Get<OAuthSettings>())
+            : this(name, storage, connections, GetOAuthSettings(configurationSection))
         {
 
         }
@@ -168,6 +168,23 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             oboExchangeProvider = null;
             return false;
+        }
+
+        private static OAuthSettings GetOAuthSettings(IConfigurationSection config)
+        {
+            var settings = config.Get<OAuthSettings>();
+
+            if (settings.OBOScopes == null)
+            {
+                // try reading as a string to compensate for users just setting a non-array string
+                var configScope = config.GetSection(nameof(OAuthSettings.OBOScopes)).Get<string>();
+                if (!string.IsNullOrEmpty(configScope))
+                {
+                    settings.OBOScopes = [configScope];
+                }
+            }
+
+            return settings;
         }
     }
 }

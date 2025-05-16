@@ -152,6 +152,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
-            (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}", flowName, response.Cause))];
+            (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];
     }
 }

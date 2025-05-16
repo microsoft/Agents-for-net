@@ -209,7 +209,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(string expected, string description = null, uint timeout = 3000)
         {
             return AssertReply(_adapter.MakeActivity(expected), description ?? expected, timeout);
@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyContains(string expected, string description = null, uint timeout = 3000)
         {
             return AssertReply(
@@ -255,7 +255,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(Activity expected, [CallerMemberName] string description = null, uint timeout = 3000)
         {
             return this.AssertReply(expected, equalityComparer: null, description, timeout);
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(IActivity expected, IEqualityComparer<IActivity> equalityComparer, [CallerMemberName] string description = null, uint timeout = 3000)
         {
             return AssertReply(
@@ -383,7 +383,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, string expected, string description = null, uint timeout = 3000)
         {
             if (expected == null)
@@ -404,7 +404,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Activity expected, string description = null, uint timeout = 3000)
         {
             if (expected == null)
@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Action<IActivity> validateActivity, string description = null, uint timeout = 3000)
         {
             if (validateActivity == null)
@@ -449,7 +449,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, [CallerMemberName] string description = null, uint timeout = 3000)
         {
             if (activities == null)
@@ -478,7 +478,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, ValidateReply validateReply, [CallerMemberName] string description = null, uint timeout = 3000)
         {
             if (activities == null)
@@ -508,7 +508,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
-        /// <exception cref="Exception">The bot did not respond as expected.</exception>
+        /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyOneOf(string[] candidates, string description = null, uint timeout = 3000)
         {
             if (candidates == null)

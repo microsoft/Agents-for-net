@@ -24,17 +24,17 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="System.InvalidOperationException"></exception>
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var inputEvalDataset = $"./Data/{settings.EvaluationDataset}";
         var outputEvalDataset = $"./Data/{settings.EvaluationDataset}_Results.csv";
-        
+
         // Load the input file and parse the data.
         var evalDataset = LoadCsvData(inputEvalDataset);
 
-        
+
         Console.WriteLine("\nRunning evaluation on Agent");
         // Attempt to connect to the copilot studio hosted Agent here
         // if successful, this will loop though all events that the Copilot Studio Agent sends to the client setup the conversation.
@@ -96,26 +96,26 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
                            """ : groundednessEvaluationPrompt;
 
         chatHistory.Add(new ChatMessage(ChatRole.System, systemPrompt));
-        
+
         // Get parameters from evaluation dataset and add as user prompt to chat history
         var userPrompt = $"""
                     Question: '{evalDataPoint.TestUtterance}'
                     Ground truth: '{evalDataPoint.ExpectedResponse}'
                     Agent response: '{evalDataPoint.AgentResponse}'
                 """;
-            
+
         chatHistory.Add(new ChatMessage(ChatRole.User, userPrompt));
 
         // Stream the AI response and add to chat history
         var response = "";
-        await foreach (var item in  chatClient.CompleteStreamingAsync(chatHistory))
+        await foreach (var item in chatClient.CompleteStreamingAsync(chatHistory))
         {
             response += item.Text;
         }
 
         return response;
     }
-    
+
     /// <summary>
     /// This method evaluates the agent's response to see if the sources links returned match the expected sources provided in the ground truth.
     /// </summary>
@@ -125,7 +125,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
     {
         var sourceUrls = evalDataPoint.Sources.Split(';').ToList();
         var urlFound = 0;
-        
+
         foreach (var sourceUrl in sourceUrls)
         {
             if (evalDataPoint.AgentResponse.Contains(sourceUrl))
@@ -136,7 +136,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
 
         return $"{urlFound}/{sourceUrls.Count()}";
     }
-    
+
     /// <summary>
     /// This method loads the input CSV file and returns it as a list of EvalDataset.
     /// </summary>
@@ -155,7 +155,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
             {
                 csv.Context.RegisterClassMap<EvalDatasetCsvMap>();
                 evalDataset = csv.GetRecords<EvalDataset>().ToList();
-                
+
                 Console.WriteLine($"Total evaluation questions Loaded: {evalDataset.Count}");
             }
         }
@@ -166,7 +166,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
 
         return evalDataset;
     }
-    
+
     /// <summary>
     /// This method saves the output CSV file from a list of EvalDataset.
     /// </summary>
@@ -192,26 +192,26 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
             Console.WriteLine($"An error occurred when creating the output CSV file: {ex.Message}");
         }
     }
-    
+
     /// <summary>
     /// This method is responsible for writing formatted data to the console.
     /// This method does not handle all of the possible activity types and formats, it is focused on just a few common types. 
     /// </summary>
     /// <param name="act"></param>
     /// <returns name="response"></returns>
-    
+
     static string GetActivity(IActivity act)
     {
         var response = "";
-        
+
         if (act.Type == "message")
         {
             response = act.Text;
         }
-        
+
         return response;
     }
-    
+
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;

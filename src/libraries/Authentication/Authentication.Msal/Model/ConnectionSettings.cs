@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         /// <summary>
         /// Validates required properties are present in the configuration for the requested authentication type. 
         /// </summary>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public void ValidateConfiguration()
         {
             switch (AuthType)
