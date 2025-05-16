@@ -86,18 +86,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 directConnectUrl ??= settings.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    // FIX for Missing Tenant ID
-#if !NETSTANDARD
-                    if (directConnectUrl.Contains("tenants/00000000-0000-0000-0000-000000000000", StringComparison.OrdinalIgnoreCase))
-#else
-                    if (directConnectUrl!.IndexOf("tenants/00000000-0000-0000-0000-000000000000", StringComparison.CurrentCultureIgnoreCase) >= 0)
-#endif
-                    {
-                        // Direct connection cannot be used, ejecting and forcing the normal settings flow: 
-                        settings.DirectConnectUrl = string.Empty;
-                        return GetCopilotStudioConnectionUrl(settings, conversationId, agentType, cloud, cloudBaseAddress);
-                    }
-                    return CreateUri(directConnectUrl, conversationId);
+                    return CreateUri(directConnectUrl!, conversationId);
                 }
                 else
                 {
@@ -230,17 +219,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 
             // if builder.path ends with /, remove it
 #if !NETSTANDARD
-            if (builder.Path.EndsWith('/'))
+            if (builder.Path.EndsWith('/') || builder.Path.EndsWith('\\'))
 #else
-            if (builder.Path.EndsWith("/"))
+            if (builder.Path.EndsWith("/") || builder.Path.EndsWith("\\"))
 #endif
             {
                 builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
             }
 
-            {
-                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
-            }
             // if builder.path has /conversations, remove it
             if (builder.Path.Contains("/conversations"))
             {
