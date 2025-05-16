@@ -70,6 +70,11 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         public bool SendX5C { get; set; } = false;
 
         /// <summary>
+        /// Token path used for the workload identity, like the MSAL example for AKS, equal to AZURE_FEDERATED_TOKEN_FILE 
+        /// </summary>
+        public string FederatedTokenFile { get; set; }
+        
+        /// <summary>
         /// ClientId of the ManagedIdentity used with FederatedCredentials
         /// </summary>
         public string FederatedClientId { get; set; }
@@ -145,6 +150,20 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
                     {
                         throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
+                case AuthTypes.WorkloadIdentity:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    if (string.IsNullOrEmpty(FederatedTokenFile))
+                    {
+                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile is required");
                     }
                     break;
                 default:
