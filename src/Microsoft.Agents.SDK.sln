@@ -125,6 +125,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBOAuthorization", "samples
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HandlingAttachments", "samples\HandlingAttachments\HandlingAttachments.csproj", "{D5202D4A-2F15-CE1B-F82C-2405C040EB14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HandlingCards", "samples\HandlingCards\HandlingCards.csproj", "{8087E501-AFF3-3A69-BACA-FC83101DF3F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -311,6 +313,10 @@ Global
 		{D5202D4A-2F15-CE1B-F82C-2405C040EB14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5202D4A-2F15-CE1B-F82C-2405C040EB14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5202D4A-2F15-CE1B-F82C-2405C040EB14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -374,6 +380,7 @@ Global
 		{A6785A2A-A4C2-8F38-E9BB-4C5FD229F1F9} = {674A812C-7287-4883-97F9-697D83750648}
 		{0E1394C7-045C-2BDC-65E8-D42B2F31EF46} = {0F9D3F0D-C131-4D3B-A86F-59CC781E8A02}
 		{D5202D4A-2F15-CE1B-F82C-2405C040EB14} = {674A812C-7287-4883-97F9-697D83750648}
+		{8087E501-AFF3-3A69-BACA-FC83101DF3F9} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

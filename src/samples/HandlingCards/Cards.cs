@@ -79,6 +79,12 @@ namespace HandlingCards
                 return true;
             }
 
+            if (cardCommand.Name.Equals("receipt") && !Channels.SupportsReceiptCard(turnContext.Activity.ChannelId))
+            {
+                await turnContext.SendActivityAsync($"The channel '{turnContext.Activity.ChannelId}' does not support receipt cards.", cancellationToken: cancellationToken);
+                return true;
+            }
+
             await cardCommand.CardHandler(turnContext, turnState, cancellationToken);
             return true;
         }

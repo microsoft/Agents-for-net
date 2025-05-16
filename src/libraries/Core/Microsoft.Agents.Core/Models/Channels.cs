@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.RegularExpressions;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
@@ -224,6 +226,21 @@ namespace Microsoft.Agents.Core.Models
             switch (channelId)
             {
                 case Alexa:
+                case Msteams:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        public static bool SupportsReceiptCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Groupme:
                 case Msteams:
                 case Twilio:
                     return false;
