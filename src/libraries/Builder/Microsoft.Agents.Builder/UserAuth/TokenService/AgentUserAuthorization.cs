@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Base class for Agent authentication that handles common logic.
+    /// Handles OAuth for the Agent.
     /// </summary>
-    internal class BotUserAuthorization
+    internal class AgentUserAuthorization : IUserAuthorizationFlow
     {
         // OAuthFlow is used here as a path for back-compat since Dialog.OAuthPrompt uses
         // it.  Long term, OAuthPrompt should probably migrate to the higher level classes
@@ -28,15 +28,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <summary>
         /// Name of the authentication handler
         /// </summary>
-        protected string _name;
+        private readonly string _name;
 
         /// <summary>
         /// Initializes the class
         /// </summary>
-        /// <param name="name">The name of authentication handler</param>
+        /// <param name="name">The name of OAuth handler</param>
         /// <param name="oauthSettings"></param>
         /// <param name="storage"></param>
-        public BotUserAuthorization(string name, OAuthSettings oauthSettings, IStorage storage)
+        public AgentUserAuthorization(string name, OAuthSettings oauthSettings, IStorage storage)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
@@ -47,12 +47,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _dedupe = new Deduplicate(_settings, _storage);
         }
 
-        /// <summary>
-        /// Whether the current activity is a valid activity that supports authentication
-        /// </summary>
-        /// <param name="context">The turn context</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns>True if valid. Otherwise, false.</returns>
+        /// <inheritdoc/>
         public virtual async Task<bool> IsValidActivity(ITurnContext context, CancellationToken cancellationToken = default)
         {
             // Catch user input in Teams where the flow has timed out.  Otherwise we get stuck in "flow active" forever.
@@ -101,13 +96,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Get a token for the user.  This either starts the OAuth flow, or continues it.
-        /// </summary>
-        /// <param name="turnContext">The turn context</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The token response if available.</returns>
-        public async Task<TokenResponse> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        /// <inheritdoc/>
+        public async Task<TokenResponse> OnFlowTurn(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
             {

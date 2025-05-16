@@ -15,13 +15,12 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Handles user authentication using the Token Service.
+    /// Handles OAuth using the Azure Bot Token Service.
     /// </summary>
     public class AzureBotUserAuthorization : IUserAuthorization
     {
         private readonly OAuthSettings _settings;
-        //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
-        private readonly BotUserAuthorization _botAuthentication;
+        private readonly AgentUserAuthorization _agentAuthentication;
         private readonly IConnections _connections;
 
         public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
@@ -38,7 +37,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
         public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings) 
-            : this(settings, new BotUserAuthorization(name, settings, storage))
+            : this(settings, new AgentUserAuthorization(name, settings, storage))
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
@@ -48,13 +47,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// Initializes the class
         /// </summary>
         /// <param name="settings">The settings to initialize the class</param>
-        /// <param name="botAuthentication">The bot authentication instance</param>
-        /// <param name="messageExtensionAuth">The message extension authentication instance</param>
-        internal AzureBotUserAuthorization(OAuthSettings settings, BotUserAuthorization botAuthentication)
+        /// <param name="agentAuthentication">The IUserAuthorizationFlow for the Agent.</param>
+        internal AzureBotUserAuthorization(OAuthSettings settings, AgentUserAuthorization agentAuthentication)
         {
             _settings = settings;
-            //_messageExtensionAuth = messageExtensionAuth;
-            _botAuthentication = botAuthentication;
+            _agentAuthentication = agentAuthentication;
         }
 
         public string Name { get; private set; }
@@ -62,16 +59,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            /*
-            if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
+            if (_agentAuthentication != null && (forceSignIn || await _agentAuthentication.IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false)))
             {
-                return await _messageExtensionAuth.AuthenticateAsync(turnContext).ConfigureAwait(false);
-            }
-            */
-
-            if (_botAuthentication != null && (forceSignIn || await _botAuthentication.IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false)))
-            {
-                var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                var token = await _agentAuthentication.OnFlowTurn(turnContext, cancellationToken).ConfigureAwait(false);
                 return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
 
@@ -81,7 +71,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            await _botAuthentication.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+            await _agentAuthentication.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -91,10 +81,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }
 
-        /// <summary>
-        /// Get user token
-        /// </summary>
-        public virtual async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
             return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -110,7 +98,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
             var scopes = exchangeScopes ?? _settings.OBOScopes;
 
-            // If OBO is not set return token as-is.
+            // If OBO is not supplied (by config or passed) return token as-is.
             if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
             {
                 return token;
@@ -148,7 +136,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             catch (Exception)
             {
-                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                await SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 throw;
             }
 
