@@ -10,22 +10,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
     {
         protected override void ReadExtensionData(ref Utf8JsonReader reader, AIEntity value, string propertyName, JsonSerializerOptions options)
         {
-            if (propertyName.Equals("@type"))
-            {
-                value.AtType = JsonSerializer.Deserialize<string>(ref reader, options);
-            }
-            else if (propertyName.Equals("@context"))
-            {
-                value.AtContext = JsonSerializer.Deserialize<string>(ref reader, options);
-            }
-            else if (propertyName.Equals("@id"))
-            {
-                value.AtId = JsonSerializer.Deserialize<string>(ref reader, options);
-            }
-            else
-            {
-                value.Properties.Add(propertyName, JsonSerializer.Deserialize<JsonElement>(ref reader, options));
-            }
+            value.Properties.Add(propertyName, JsonSerializer.Deserialize<JsonElement>(ref reader, options));
         }
 
         protected override bool TryReadExtensionData(ref Utf8JsonReader reader, AIEntity value, string propertyName, JsonSerializerOptions options)
@@ -55,24 +40,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     extensionData.Value.WriteTo(writer);
                 }
 
-                return true;
-            }
-            else if (propertyName.Equals(nameof(value.AtType)))
-            {
-                writer.WritePropertyName("@type");
-                writer.WriteStringValue(value.AtType);
-                return true;
-            }
-            else if (propertyName.Equals(nameof(value.AtContext)))
-            {
-                writer.WritePropertyName("@context");
-                writer.WriteStringValue(value.AtContext);
-                return true;
-            }
-            else if (propertyName.Equals(nameof(value.AtId)))
-            {
-                writer.WritePropertyName("@id");
-                writer.WriteStringValue(value.AtId);
                 return true;
             }
 
