@@ -45,6 +45,16 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             return entity;
         }
 
+        public override void Write(Utf8JsonWriter writer, Entity value, JsonSerializerOptions options)
+        {
+            if (value is AIEntity aiEntity)
+            {
+                JsonSerializer.Serialize(writer, aiEntity, options); // delegates to AIEntityConverter
+                return;
+            }
+            base.Write(writer, value, options);
+        }
+
         protected override void ReadExtensionData(ref Utf8JsonReader reader, Entity value, string propertyName, JsonSerializerOptions options)
         {
             var extensionData = JsonSerializer.Deserialize<JsonElement>(ref reader, options);

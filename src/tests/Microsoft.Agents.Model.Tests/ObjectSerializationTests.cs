@@ -362,6 +362,17 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(resultingText, outboundJson);
         }
 
+        [Fact]
+        public void ActivityWithDerivedEntitySerializationTest()
+        {
+            var jsonIn = "{\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[\"AIGeneratedContent\"],\"citation\":[],\"type\":\"https://schema.org/Message\"}],\"listenFor\":[],\"textHighlights\":[]}";
+
+            var activity = ProtocolJsonSerializer.ToObject<Activity>(jsonIn);
+            var jsonOut = ProtocolJsonSerializer.ToJson(activity);
+
+            Assert.Equal(jsonIn, jsonOut);
+        }
+
 #if SKIP_EMPTY_LISTS
         [Fact]
         public void EmptyListDoesntSerialzie()
