@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Client
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
             activityClone.DeliveryMode = DeliveryModes.Stream;
 
-            return InnerSendActivityStreamedAsync(activity, useAnonymous, cancellationToken);
+            return InnerSendActivityStreamedAsync(activityClone, useAnonymous, cancellationToken);
         }
 
         public async IAsyncEnumerable<object> InnerSendActivityStreamedAsync(IActivity activity, bool useAnonymous = false, [EnumeratorCancellation] CancellationToken cancellationToken = default)
