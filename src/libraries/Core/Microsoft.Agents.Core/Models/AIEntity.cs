@@ -16,19 +16,19 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Required. Must be "Message".
         /// </summary>
-        //[JsonPropertyName("@type")]
+        [JsonPropertyName("@type")]
         public string AtType { get; set; } = "Message";
 
         /// <summary>
         /// Required. Must be "https://schema.org"
         /// </summary>
-        //[JsonPropertyName("@context")]
+        [JsonPropertyName("@context")]
         public string AtContext { get; set; } = "https://schema.org";
 
         /// <summary>
         /// Must be left blank.
         /// </summary>
-        //[JsonPropertyName("@id")]
+        [JsonPropertyName("@id")]
         public string AtId { get; set; } = "";
 
         /// <summary>

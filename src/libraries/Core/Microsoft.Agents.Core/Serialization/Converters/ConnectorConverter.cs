@@ -7,11 +7,15 @@ using System.Text.Json;
 using System;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Microsoft.Agents.Core.Serialization.Converters
 {
     public abstract class ConnectorConverter<T> : JsonConverter<T> where T : new()
     {
+        private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
+        private static readonly ConcurrentDictionary<(Type, bool, JsonNamingPolicy), Dictionary<string, PropertyInfo>> PropertyNameCache = new();
         public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
@@ -21,14 +25,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var value = new T();
 
-            var properties = options.PropertyNameCaseInsensitive
-                ? new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, PropertyInfo>();
-
-            foreach (var property in typeof(T).GetProperties())
-            {
-                properties.Add(property.Name, property);
-            }
+            var properties = GetPropertyMap(typeof(T), options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
 
             while (reader.Read())
             {
@@ -59,8 +56,17 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             writer.WriteStartObject();
 
-            foreach (var property in value.GetType().GetProperties())
+            var type = value.GetType();
+            var properties = GetCachedProperties(type);
+            var resolvedNames = GetPropertyMap(type, false, options.PropertyNamingPolicy); // case-insensitivity doesn’t matter here
+
+            foreach (var property in properties)
             {
+                if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                {
+                    continue;
+                }
+
                 if (!TryWriteExtensionData(writer, value, property.Name))
                 {
                     var propertyValue = property.GetValue(value);
@@ -77,9 +83,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {
-                        var propertyName = options.PropertyNamingPolicy == JsonNamingPolicy.CamelCase
-                            ? JsonNamingPolicy.CamelCase.ConvertName(property.Name)
-                            : property.Name;
+                        var propertyName = resolvedNames.FirstOrDefault(kv => kv.Value == property).Key ?? property.Name;
 
                         writer.WritePropertyName(propertyName);
 
@@ -291,6 +295,32 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var propertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
             property.SetValue(value, propertyValue);
+        }
+
+        private static PropertyInfo[] GetCachedProperties(Type type)
+        {
+            return PropertyCache.GetOrAdd(type, static t => t.GetProperties());
+        }
+
+        private static Dictionary<string, PropertyInfo> GetPropertyMap(Type type, bool caseInsensitive, JsonNamingPolicy? namingPolicy)
+        {
+            return PropertyNameCache.GetOrAdd((type, caseInsensitive, namingPolicy), static key =>
+            {
+                var (t, insensitive, policy) = key;
+                var comparer = insensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+                var dict = new Dictionary<string, PropertyInfo>(comparer);
+
+                foreach (var prop in GetCachedProperties(t))
+                {
+                    var resolvedName = prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
+                        ?? policy?.ConvertName(prop.Name)
+                        ?? prop.Name;
+
+                    dict[resolvedName] = prop;
+                }
+
+                return dict;
+            });
         }
     }
 }
