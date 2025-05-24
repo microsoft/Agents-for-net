@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         /// <param name="azureApiKey">API key to use when making requests to Azure OpenAI.</param>
         /// <param name="azureDefaultDeployment">Default name of the Azure OpenAI deployment (model) to use.</param>
         /// <param name="azureEndpoint">Deployment endpoint to use.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         public AzureOpenAIModelOptions(
             string azureApiKey,
             string azureDefaultDeployment,

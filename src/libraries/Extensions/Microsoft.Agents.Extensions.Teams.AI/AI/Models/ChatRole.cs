@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         /// Initializes a new instance of <see cref="ChatRole"/>.
         /// </summary>
         /// <param name="value">value</param>
-        /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="value"/> is null.</exception>
         public ChatRole(string value)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
