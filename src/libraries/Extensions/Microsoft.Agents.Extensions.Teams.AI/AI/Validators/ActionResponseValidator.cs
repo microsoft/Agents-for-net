@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Validators
                     });
                 }
 
-                if (!this.Actions.ContainsKey(func.Name))
+                if (!this.Actions.TryGetValue(func.Name, out ChatCompletionAction? action))
                 {
                     return await Task.FromResult(new Validation()
                     {
@@ -93,8 +93,6 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Validators
                 }
 
                 Dictionary<string, JsonElement> parameters = new();
-                ChatCompletionAction action = this.Actions[func.Name];
-
                 if (action.Parameters != null)
                 {
                     JsonResponseValidator validator = new(

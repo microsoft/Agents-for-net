@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
                     {
                         if (delta.Role != null)
                         {
-                            string role = delta.Role.ToString();
+                            string role = delta.Role.ToString()!;
                             message.Role = new ChatRole(role);
                         }
 
@@ -316,7 +316,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
                         // Signal chunk received
                         if (_options.LogRequests!.Value)
                         {
+#pragma warning disable CA2017 // Parameter count mismatch
                             _logger.LogTrace("CHUNK", delta);
+#pragma warning restore CA2017 // Parameter count mismatch
                         }
 
                         Events!.OnChunkReceived(args);
@@ -420,7 +422,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
                 Events!.OnResponseReceived(responseReceivedEventArgs);
 
                 // Let any pending events flush before returning
-                await Task.Delay(TimeSpan.FromSeconds(0));
+                await Task.Delay(TimeSpan.FromSeconds(0), cancellationToken);
             }
 
 
@@ -453,7 +455,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
 
         }
 
-        private ServiceVersion? ConvertStringToServiceVersion(string apiVersion)
+        private static ServiceVersion? ConvertStringToServiceVersion(string apiVersion)
         {
             return apiVersion switch
             {
@@ -463,7 +465,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             };
         }
 
-        private void AddAzureChatExtensionConfigurations(ChatCompletionOptions options, IDictionary<string, JsonElement>? additionalData)
+        private static void AddAzureChatExtensionConfigurations(ChatCompletionOptions options, IDictionary<string, JsonElement>? additionalData)
         {
             if (additionalData == null)
             {
@@ -491,9 +493,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             }
         }
 
-        internal void SetMaxTokens(int maxTokens, ChatCompletionOptions options)
+        internal static void SetMaxTokens(int maxTokens, ChatCompletionOptions options)
         {
-            MethodInfo setMaxTokens = options.GetType().GetMethod("set__deprecatedMaxTokens", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo setMaxTokens = options.GetType().GetMethod("set__deprecatedMaxTokens", BindingFlags.NonPublic | BindingFlags.Instance)!;
             setMaxTokens.Invoke(options, new object[] { maxTokens });
         }
     }

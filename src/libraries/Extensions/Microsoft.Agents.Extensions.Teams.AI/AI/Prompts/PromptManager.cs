@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts
             };
         }
 
-        private void _VerifyDirectoryExists(string directoryPath)
+        private static void _VerifyDirectoryExists(string directoryPath)
         {
             if (Directory.Exists(directoryPath)) { return; }
 

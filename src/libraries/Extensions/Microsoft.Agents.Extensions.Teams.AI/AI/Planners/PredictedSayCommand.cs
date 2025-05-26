@@ -10,6 +10,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
     /// </summary>
     public class PredictedSayCommand : IPredictedCommand
     {
+        private static readonly string[] _defaultEnum = ["SAY"];
+        private static readonly string[] _defaultRequired = ["type", "response"];
+
         /// <summary>
         /// The type to indicate that a SAY command is being returned.
         /// </summary>
@@ -58,7 +61,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                         "type",
                         new JsonSchemaBuilder()
                             .Type(SchemaValueType.String)
-                            .Enum(new string[] { "SAY" })
+                            .Enum(_defaultEnum)
                     ),
                     (
                         "response",
@@ -66,7 +69,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                             .Type(SchemaValueType.String)
                     )
                 )
-                .Required(new string[] { "type", "response" })
+                .Required(_defaultRequired)
                 .Build();
         }
     }

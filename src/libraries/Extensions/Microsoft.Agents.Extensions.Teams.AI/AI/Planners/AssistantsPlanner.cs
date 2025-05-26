@@ -58,12 +58,12 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             {
                 Verify.ParamNotNull(options.Endpoint, "AssistantsPlannerOptions.Endpoint");
                 _client = _CreateClient(options.TokenCredential, options.Endpoint!);
-                _fileClient = _CreateFileClient(options.TokenCredential, options.Endpoint!);
+                _fileClient = CreateFileClient(options.TokenCredential, options.Endpoint!);
             }
             else if (options.ApiKey != null)
             {
                 _client = _CreateClient(options.ApiKey, options.Endpoint);
-                _fileClient = _CreateFileClient(options.ApiKey, options.Endpoint);
+                _fileClient = CreateFileClient(options.ApiKey, options.Endpoint);
             }
             else
             {
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             return state.ThreadId;
         }
 
-        private bool _IsRunCompleted(ThreadRun run)
+        private static bool IsRunCompleted(ThreadRun run)
         {
             RunStatus[] completionStatus = new[] { RunStatus.Completed, RunStatus.Failed, RunStatus.Expired, RunStatus.Cancelled };
             return completionStatus.Contains(run.Status);
@@ -196,8 +196,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
                     return;
                 }
 
-                ThreadRun? run = runs.GetAsyncEnumerator().Current;
-                if (run == null || _IsRunCompleted(run))
+                ThreadRun? run = runs.GetAsyncEnumerator(cancellationToken).Current;
+                if (run == null || IsRunCompleted(run))
                 {
                     return;
                 }
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             return plan;
         }
 
-        private Plan _GeneratePlanFromTools(TState state, IReadOnlyList<RequiredAction> requiredActions)
+        private static Plan GeneratePlanFromTools(TState state, IReadOnlyList<RequiredAction> requiredActions)
         {
             Plan plan = new();
             Dictionary<string, string> toolMap = new();
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             foreach (KeyValuePair<string, string> requiredAction in toolMap)
             {
                 Dictionary<string, string> actionOutputs = state.Temp!.GetValue<Dictionary<string, string>>("actionOutputs");
-                ToolOutput toolOutput = new(requiredAction.Value, actionOutputs.ContainsKey(requiredAction.Key) ? actionOutputs[requiredAction.Key] : string.Empty);
+                ToolOutput toolOutput = new(requiredAction.Value, actionOutputs.TryGetValue(requiredAction.Key, out string? requiredValue) ? requiredValue : string.Empty);
                 toolOutputs.Add(toolOutput);
             }
 
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
 
                 state.SubmitToolOutputs = true;
 
-                return _GeneratePlanFromTools(state, result.RequiredActions);
+                return GeneratePlanFromTools(state, result.RequiredActions);
             }
             else if (result.Status == RunStatus.Completed)
             {
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
 
                 state.SubmitToolOutputs = true;
 
-                return _GeneratePlanFromTools(state, result.RequiredActions);
+                return GeneratePlanFromTools(state, result.RequiredActions);
             }
             else if (result.Status == RunStatus.Completed)
             {
@@ -381,7 +381,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             return azureOpenAI.GetAssistantClient();
         }
 
-        internal OpenAIFileClient _CreateFileClient(string apiKey, string? endpoint = null)
+        internal static OpenAIFileClient CreateFileClient(string apiKey, string? endpoint = null)
         {
             Verify.ParamNotNull(apiKey);
 
@@ -398,7 +398,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             }
         }
 
-        internal OpenAIFileClient _CreateFileClient(TokenCredential tokenCredential, string endpoint)
+        internal static OpenAIFileClient CreateFileClient(TokenCredential tokenCredential, string endpoint)
         {
             Verify.ParamNotNull(tokenCredential);
             Verify.ParamNotNull(endpoint);
@@ -415,7 +415,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
             messages.Add(MessageContent.FromText(state.Temp?.GetValue<string>("input") ?? ""));
 
             // Filter out files that don't have a filename
-            IList<InputFile>? inputFiles = state.Temp?.InputFiles.Where((file) => file.Filename != null && file.Filename != string.Empty).ToList();
+            List<InputFile>? inputFiles = state.Temp?.InputFiles.Where((file) => file.Filename != null && file.Filename != string.Empty).ToList();
             if (inputFiles != null && inputFiles.Count > 0)
             {
                 List<Task<ClientResult<OAI.Files.OpenAIFile>>> fileUploadTasks = new();
@@ -425,16 +425,19 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
                 }
 
                 ClientResult<OAI.Files.OpenAIFile>[] uploadedFiles = await Task.WhenAll(fileUploadTasks);
-                for (int i = 0; i < uploadedFiles.Count(); i++)
+                if (uploadedFiles != null)
                 {
-                    OAI.Files.OpenAIFile file = uploadedFiles[i];
-                    if (inputFiles[i].ContentType.StartsWith("image/"))
+                    for (int i = 0; i < uploadedFiles.Length; i++)
                     {
-                        messages.Add(MessageContent.FromImageFileId(file.Id, MessageImageDetail.Auto));
-                    }
-                    else
-                    {
-                        options.Attachments.Add(new MessageCreationAttachment(file.Id, new List<ToolDefinition>() { new FileSearchToolDefinition() }));
+                        OAI.Files.OpenAIFile file = uploadedFiles[i];
+                        if (inputFiles[i].ContentType.StartsWith("image/"))
+                        {
+                            messages.Add(MessageContent.FromImageFileId(file.Id, MessageImageDetail.Auto));
+                        }
+                        else
+                        {
+                            options.Attachments.Add(new MessageCreationAttachment(file.Id, new List<ToolDefinition>() { new FileSearchToolDefinition() }));
+                        }
                     }
                 }
             }

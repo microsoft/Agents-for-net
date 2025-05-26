@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                 return new("");
             }
 
-            string text = string.Join(this.Separator, rendered.Output.Select(m => this.GetMessageText(m)));
+            string text = string.Join(this.Separator, rendered.Output.Select(m => GetMessageText(m)));
             int prefixLength = tokenizer.Encode(this.Prefix).Count;
             int separatorLength = tokenizer.Encode(this.Separator).Count;
             int length = prefixLength + rendered.Length + (rendered.Output.Count - 1) * separatorLength;

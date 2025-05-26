@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             this.Role = ChatRole.Assistant;
 
             // If finish reason is `toolCall` then there won't be any content.
-            if (chatCompletion.Content.Count() > 0)
+            if (chatCompletion.Content.Count > 0)
             {
                 this.Content = chatCompletion.Content[0].Text;
             }

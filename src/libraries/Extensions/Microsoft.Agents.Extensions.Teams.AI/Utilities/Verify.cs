@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Agents.Core;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
@@ -29,10 +30,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
         /// <exception cref="ArgumentNullException"></exception>
         public static void NotNull(object? variable)
         {
-            if (variable == null)
-            {
-                throw new ArgumentNullException(nameof(variable));
-            }
+            AssertionHelpers.ThrowIfNull(variable!, nameof(variable));
         }
     }
 }

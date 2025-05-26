@@ -20,6 +20,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
     /// </summary>
     public class InnerMonologue
     {
+        private static readonly string[] _requiredInnerMonologue = ["thoughts", "action"];
+
         /// <summary>
         /// Thoughts
         /// </summary>
@@ -48,10 +50,12 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         /// </summary>
         public class InnerMonologueThoughts
         {
-            /// <summary>
-            /// The LLM's current thought.
-            /// </summary>
-            [JsonPropertyName("thought")]
+            private static readonly string[] _requiredInnerMonologueThoughts = ["thought", "reasoning"];
+
+        /// <summary>
+        /// The LLM's current thought.
+        /// </summary>
+        [JsonPropertyName("thought")]
             public string Thought { get; set; }
 
             /// <summary>
@@ -93,7 +97,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
                                 .Description("The LLM's reasoning for the current thought.")
                         )
                     )
-                    .Required(new string[] { "thought", "reasoning" })
+                    .Required(_requiredInnerMonologueThoughts)
                     .Build();
             }
         }
@@ -103,6 +107,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         /// </summary>
         public class InnerMonologueAction
         {
+            private readonly static string[] _requiredInnerMonologueAction = ["name", "parameters"];
+
             /// <summary>
             /// Name of the action to perform.
             /// </summary>
@@ -149,7 +155,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
                                 .Description("Parameters for the action.")
                         )
                     )
-                    .Required(new string[] { "name" })
+                    .Required(_requiredInnerMonologueAction)
                     .Build();
             }
         }
@@ -172,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
                         InnerMonologueAction.Schema()
                     )
                 )
-                .Required(new string[] { "thoughts", "action" })
+                .Required(_requiredInnerMonologue)
                 .Build();
         }
     }
@@ -188,6 +194,17 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         private const string _missingActionFeedback = "The JSON returned had errors. Apply these fixes:\nadd the \"action\" property to \"instance\"";
         private const string _sayRedirectFeedback = "The JSON returned was missing an action. Return a valid JSON object that contains your thoughts and uses the SAY action.";
 
+        private static readonly string[] _requiredMonologueAugmentation = ["text"];
+        private static readonly string[] _defaultSectionAppend = new string[]
+            {
+                "Return a JSON object with your thoughts and the next action to perform.",
+                "Only respond with the JSON format below and base your plan on the actions above.",
+                "If you're not sure what to do, you can always say something by returning a SAY action.",
+                "If you're told your JSON response has errors, do your best to fix them.",
+                "Response Format:",
+                "{\"thoughts\":{\"thought\":\"<your current thought>\",\"reasoning\":\"<self reflect on why you made this decision>\"},\"action\":{\"name\":\"<action name>\",\"parameters\":{\"<name>\":\"<value>\"}}}"
+            };
+
         /// <summary>
         /// Creates an instance of `MonologueAugmentation`
         /// </summary>
@@ -195,7 +212,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         public MonologueAugmentation(List<ChatCompletionAction> actions)
         {
             List<ChatCompletionAction> _actions = new(actions);
-
+            
             _actions.Add(new("SAY")
             {
                 Description = "use to ask the user a question or say something",
@@ -209,20 +226,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
                                 .Description("text to say or question to ask")
                         )
                     )
-                    .Required(new string[] { "text" })
+                    .Required(_requiredMonologueAugmentation)
                     .Build()
             });
 
-            this._section = new(_actions, string.Join("\n", new string[]
-            {
-                "Return a JSON object with your thoughts and the next action to perform.",
-                "Only respond with the JSON format below and base your plan on the actions above.",
-                "If you're not sure what to do, you can always say something by returning a SAY action.",
-                "If you're told your JSON response has errors, do your best to fix them.",
-                "Response Format:",
-                "{\"thoughts\":{\"thought\":\"<your current thought>\",\"reasoning\":\"<self reflect on why you made this decision>\"},\"action\":{\"name\":\"<action name>\",\"parameters\":{\"<name>\":\"<value>\"}}}"
-            }));
-
+            this._section = new(_actions, string.Join("\n", _defaultSectionAppend));
             this._monologueValidator = new(InnerMonologue.Schema(), "No valid JSON objects were found in the response. Return a valid JSON object with your thoughts and the next action to perform.");
             this._actionValidator = new(_actions, true);
         }
@@ -257,7 +265,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
 
                         if (value != null)
                         {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                             text = value.ToString();
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                         }
                     }
 

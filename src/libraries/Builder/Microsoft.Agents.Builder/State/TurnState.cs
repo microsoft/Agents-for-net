@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Builder.State
         public PrivateConversationState Private => GetScope<PrivateConversationState>();
         public TempState Temp => GetScope<TempState>();
 
-        public bool HasValue(string path)
+        public virtual bool HasValue(string path)
         {
             var (scope, property) = GetScopeAndPath(path);
             return GetScope(scope).HasValue(property);
@@ -69,13 +69,13 @@ namespace Microsoft.Agents.Builder.State
             return GetScope(scope).GetValue(property, defaultValueFactory);
         }
 
-        public void SetValue(string path, object value)
+        public virtual void SetValue(string path, object value)
         {
             var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).SetValue(property, value);
         }
 
-        public void DeleteValue(string path)
+        public virtual void DeleteValue(string path)
         {
             var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).DeleteValue(property);

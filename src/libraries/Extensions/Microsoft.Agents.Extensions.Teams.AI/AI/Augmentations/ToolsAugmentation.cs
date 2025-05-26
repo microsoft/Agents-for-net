@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         {
             List<IPredictedCommand> commands = new();
 
-            if (response.Message != null && response.Message.ActionCalls != null && response.Message.ActionCalls.Count() > 0)
+            if (response.Message != null && response.Message.ActionCalls != null && response.Message.ActionCalls.Count > 0)
             {
                 IList<ActionCall> actionCalls = response.Message.ActionCalls;
 

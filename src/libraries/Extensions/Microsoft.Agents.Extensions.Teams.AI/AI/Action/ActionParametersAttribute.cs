@@ -1,4 +1,6 @@
-﻿namespace Microsoft.Agents.Extensions.Teams.AI.Action
+﻿using System;
+
+namespace Microsoft.Agents.Extensions.Teams.AI.Action
 {
     /// <summary>
     /// Attribute to represent the action parameters of an action method.

@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                 return new("");
             }
 
-            string text = string.Join(this.Separator, rendered.Output.Select(m => this.GetMessageText(m)));
+            string text = string.Join(this.Separator, rendered.Output.Select(m => GetMessageText(m)));
             int prefixLength = tokenizer.Encode(this.Prefix).Count;
             int separatorLength = tokenizer.Encode(this.Separator).Count;
             int length = prefixLength + rendered.Length + (rendered.Output.Count - 1) * separatorLength;
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 
             foreach (ChatMessage message in messages)
             {
-                string text = this.GetMessageText(message);
+                string text = GetMessageText(message);
                 IReadOnlyList<int> encoded = tokenizer.Encode(text);
 
                 if (len + encoded.Count > budget)
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
         /// </summary>
         /// <param name="message">the message to parse</param>
         /// <returns>the parsed message text</returns>
-        protected string GetMessageText(ChatMessage message)
+        protected static string GetMessageText(ChatMessage message)
         {
             string text = string.Empty;
 
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
             }
             else if (message.Content is string)
             {
-                text = message.Content.ToString();
+                text = message.Content.ToString()!;
             }
 
             if (message.FunctionCall != null)

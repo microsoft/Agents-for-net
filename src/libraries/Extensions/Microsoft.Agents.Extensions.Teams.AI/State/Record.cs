@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
         {
             Verify.ParamNotNull(key);
 
-            if (base.TryGetValue(key, out object entry))
+            if (base.TryGetValue(key, out object? entry))
             {
                 if (entry is T castedEntry)
                 {

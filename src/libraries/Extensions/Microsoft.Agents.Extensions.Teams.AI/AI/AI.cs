@@ -15,15 +15,15 @@ namespace Microsoft.Agents.Extensions.Teams.AI
     /// </summary>
     /// <remarks>
     /// The AI system is responsible for generating plans, moderating input and output, and
-    /// generating prompts. It can be used free standing or routed to by the <see cref="Application{TState}"/> object.
+    /// generating prompts. It can be used free standing or routed to by the Application{TState} object.
     /// </remarks>
-    /// <typeparam name="TState">Optional. Type of the turn state.</typeparam>
+    //// <typeparam name="TState">Optional. Type of the turn state.</typeparam>
     public class AISystem
     {
-        private readonly IActionCollection<ITurnState> _actions;
+        private readonly ActionCollection<ITurnState> _actions;
 
         /// <summary>
-        /// Creates an instance of the <see cref="AI{TState}"/> class.
+        /// Creates an instance of the AISystem{TState} class.
         /// </summary>
         /// <param name="options">The options to configure.</param>
         /// <param name="loggerFactory">Optional. The logger factory to use.</param>
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         /// Registers the default handler for a named action.
         /// </summary>
         /// <remarks>
-        /// Default handlers can be replaced by calling the <see cref="RegisterAction(string, IActionHandler{TState})"/> method with the same name.
+        /// Default handlers can be replaced by calling the RegisterAction(string, ActionHandler{TState}) method with the same name.
         /// </remarks>
         /// <param name="name">The name of the action.</param>
         /// <param name="handler">The action handler function.</param>
@@ -341,7 +341,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI
             }
         }
 
+#pragma warning disable CA1822 // Mark members as static
         private void _SetTempStateValues(ITurnState turnState, ITurnContext turnContext)
+#pragma warning restore CA1822 // Mark members as static
         {
             TempState? tempState = turnState.Temp;
 

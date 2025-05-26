@@ -14,7 +14,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI;
 public class TeamsApplication : AgentApplication
 {
     private readonly AISystem? _ai = null;
+#if !NETSTANDARD
     private TeamsAgentExtension _teamsAgentExtension { get; init; }
+#else
+    private TeamsAgentExtension _teamsAgentExtension { get; set; } = new TeamsAgentExtension(null!); // Initialize with null, will be set in constructor
+#endif
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TeamsApplication"/> class with the specified options.

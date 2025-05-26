@@ -1,6 +1,11 @@
 ﻿using System.Reflection;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Action
 {
@@ -37,7 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
             foreach (ParameterInfo parameter in parameters)
             {
                 IEnumerable<ActionParameterAttribute> parameterAttributes = parameter.GetCustomAttributes(typeof(ActionParameterAttribute), true).Cast<ActionParameterAttribute>();
-                ActionParameterAttribute parameterAttribute = parameterAttributes.FirstOrDefault();
+                ActionParameterAttribute? parameterAttribute = parameterAttributes.FirstOrDefault();
                 if (parameterAttribute == null)
                 {
                     parameterTypes.Add(Tuple.Create(ActionParameterType.Unknown, parameter.ParameterType));
@@ -92,18 +97,18 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
 
             try
             {
-                object result = _method.Invoke(_containerInstance, parameters.ToArray());
+                object? result = _method.Invoke(_containerInstance, parameters.ToArray());
                 if (_returnType == typeof(string))
                 {
-                    return (string)result;
+                    return (string)result!;
                 }
                 else if (_returnType == typeof(Task<string>))
                 {
-                    return await ((Task<string>)result).ConfigureAwait(false);
+                    return await ((Task<string>)result!).ConfigureAwait(false);
                 }
                 else if (_returnType == typeof(ValueTask<string>))
                 {
-                    return await ((ValueTask<string>)result).ConfigureAwait(false);
+                    return await ((ValueTask<string>)result!).ConfigureAwait(false);
                 }
                 else
                 {

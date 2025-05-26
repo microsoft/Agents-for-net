@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             // and accumulate the arguments as new updates arrive.
             if (toolCallUpdate.FunctionArgumentsUpdate != null && !toolCallUpdate.FunctionArgumentsUpdate.ToMemory().IsEmpty)
             {
-                if (!_indexToFunctionArguments.TryGetValue(toolCallUpdate.Index, out SequenceBuilder<byte> argumentsBuilder))
+                if (!_indexToFunctionArguments.TryGetValue(toolCallUpdate.Index, out SequenceBuilder<byte>? argumentsBuilder))
                 {
                     argumentsBuilder = new SequenceBuilder<byte>();
                     _indexToFunctionArguments[toolCallUpdate.Index] = argumentsBuilder;

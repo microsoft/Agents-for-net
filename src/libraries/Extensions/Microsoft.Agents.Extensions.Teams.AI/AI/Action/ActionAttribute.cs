@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace Microsoft.Agents.Extensions.Teams.AI.Action
 {
     /// <summary>

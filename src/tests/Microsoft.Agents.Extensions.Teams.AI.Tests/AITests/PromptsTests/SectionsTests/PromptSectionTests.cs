@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.PromptsTests.Sectio
 
         public string GetMessage(ChatMessage message)
         {
-            return this.GetMessageText(message);
+            return GetMessageText(message);
         }
     }
 

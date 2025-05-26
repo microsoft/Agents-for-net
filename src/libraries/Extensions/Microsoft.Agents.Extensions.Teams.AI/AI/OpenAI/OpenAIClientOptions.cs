@@ -3,7 +3,7 @@
     /// <summary>
     /// Options for the OpenAI client.
     /// </summary>
-    internal class OpenAIClientOptions
+    public class OpenAIClientOptions
     {
         /// <summary>
         /// OpenAI API key.

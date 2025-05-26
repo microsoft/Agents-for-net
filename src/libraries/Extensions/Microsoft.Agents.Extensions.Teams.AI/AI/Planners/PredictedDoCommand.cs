@@ -10,6 +10,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
     /// </summary>
     public class PredictedDoCommand : IPredictedCommand
     {
+        private readonly static string[] _defaultEnum = ["DO"];
+        private readonly static string[] _defaultRequired = ["type", "action"];
+
         /// <summary>
         /// Type to indicate that a DO command is being returned.
         /// </summary>
@@ -82,7 +85,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                         "type",
                         new JsonSchemaBuilder()
                             .Type(SchemaValueType.String)
-                            .Enum(new string[] { "DO" })
+                            .Enum(_defaultEnum)
                     ),
                     (
                         "action",
@@ -95,7 +98,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                             .Type(SchemaValueType.Object)
                     )
                 )
-                .Required(new string[] { "type", "action" })
+                .Required(_defaultRequired)
                 .Build();
         }
 

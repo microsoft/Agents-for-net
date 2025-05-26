@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
     /// <summary>
     /// The client to make calls to OpenAI's API
     /// </summary>
-    internal partial class OpenAIClient
+    public partial class OpenAIClient
     {
         private const string HttpUserAgent = "Microsoft Teams AI";
         private const string OpenAIModerationEndpoint = "https://api.openai.com/v1/moderations";
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
         public OpenAIClient(OpenAIClientOptions options, ILoggerFactory? loggerFactory = null, HttpClient? httpClient = null)
         {
             _httpClient = httpClient ?? DefaultHttpClient.Instance;
-            _logger = loggerFactory is null ? NullLogger.Instance : loggerFactory.CreateLogger(typeof(OpenAIClient));
+            _logger = loggerFactory is null ? NullLogger.Instance : loggerFactory.CreateLogger<OpenAIClient>();
             _options = options;
         }
 
@@ -68,7 +68,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
 
                 using HttpResponseMessage httpResponse = await _ExecutePostRequestAsync(OpenAIModerationEndpoint, content, null, cancellationToken);
 
+#if NETSTANDARD
                 string responseJson = await httpResponse.Content.ReadAsStringAsync();
+#else
+                string responseJson = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+#endif
                 ModerationResponse result = JsonSerializer.Deserialize<ModerationResponse>(responseJson) ?? throw new SerializationException($"Failed to deserialize moderation result response json: {content}");
 
                 return result;
@@ -133,7 +137,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
             }
 
             HttpStatusCode statusCode = response.StatusCode;
-            string failureReason = response.ReasonPhrase;
+            string failureReason = response.ReasonPhrase!;
             response?.Dispose();
 
             throw new HttpOperationException($"HTTP response failure status code: {(int)statusCode} ({failureReason})", statusCode, failureReason);
@@ -183,7 +187,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
             }
 
             HttpStatusCode statusCode = response.StatusCode;
-            string failureReason = response.ReasonPhrase;
+            string failureReason = response.ReasonPhrase!;
             response?.Dispose();
 
             throw new HttpOperationException($"HTTP response failure status code: {(int)statusCode} ({failureReason})", statusCode, failureReason);

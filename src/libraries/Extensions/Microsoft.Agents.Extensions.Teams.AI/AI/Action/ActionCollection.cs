@@ -1,5 +1,7 @@
 ﻿using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.AI.State;
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Action
@@ -18,11 +20,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         {
             get
             {
-                if (!_actions.ContainsKey(actionName))
+                if (!_actions.TryGetValue(actionName, out ActionEntry<TState>? actionValue))
                 {
                     throw new ArgumentException($"`{actionName}` action does not exist");
                 }
-                return _actions[actionName];
+                return actionValue;
             }
         }
 
@@ -47,7 +49,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
 
         public bool TryGetAction(string actionName, out ActionEntry<TState> actionEntry)
         {
-            return _actions.TryGetValue(actionName, out actionEntry);
+            return _actions.TryGetValue(actionName, out actionEntry!);
         }
     }
 }

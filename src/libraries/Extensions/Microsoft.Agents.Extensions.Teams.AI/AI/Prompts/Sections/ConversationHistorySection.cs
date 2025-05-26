@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 
             foreach (ChatMessage message in history)
             {
-                int length = tokenizer.Encode(this.GetMessageText(message)).Count;
+                int length = tokenizer.Encode(GetMessageText(message)).Count;
 
                 // Add length of any image parts
                 // This accounts for low detail images but not high detail images.

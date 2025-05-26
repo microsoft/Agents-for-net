@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
     /// <summary>
     /// Abstract class representing a tool call in OpenAI's Chat Completion API.
     /// </summary>
-    [Obsolete]
+    [Obsolete(message:"TBD Message")]
     public abstract class ChatCompletionsToolCall
     {
         /// <summary>

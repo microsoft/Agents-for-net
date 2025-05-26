@@ -1,13 +1,12 @@
-﻿using Microsoft.Agents.Extensions.Teams.AI.Planners;
-using Microsoft.Agents.Extensions.Teams.AI.Exceptions;
-using Microsoft.Agents.Extensions.Teams.AI.State;
-using Microsoft.Agents.Extensions.Teams.AI.Utilities;
-using Microsoft.Extensions.Logging;
+﻿#pragma warning disable CA1822 // Mark members as static
 using Microsoft.Agents.Builder;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Agents.Extensions.Teams.AI.Models;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.AI.Exceptions;
+using Microsoft.Agents.Extensions.Teams.AI.Planners;
+using Microsoft.Agents.Extensions.Teams.AI.Utilities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Action
 {
@@ -21,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         {
             _feedbackLoopType = feedbackLoopType;
             _enableFeedbackLoop = enableFeedbackLoop;
-            _logger = loggerFactory is null ? NullLogger.Instance : loggerFactory.CreateLogger(typeof(DefaultActions<TState>));
+            _logger = loggerFactory is null ? NullLogger.Instance : loggerFactory.CreateLogger<DefaultActions<TState>>();
         }
 
         [Action(AIConstants.UnknownActionName, isDefault: true)]
@@ -184,3 +183,4 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         }
     }
 }
+#pragma warning restore CA1822 // Mark members as static

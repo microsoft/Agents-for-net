@@ -2,6 +2,9 @@
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.AI.Models;
 using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 {
@@ -39,7 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                 foreach (ActionCall actionCall in actionCalls)
                 {
                     string output = "";
-                    if (actionOutputs.TryGetValue(actionCall.Id!, out string actionOutput))
+                    if (actionOutputs.TryGetValue(actionCall.Id!, out string? actionOutput))
                     {
                         output = actionOutput;
                     }

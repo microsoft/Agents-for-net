@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Clients
 
                         // End the stream and remove pointer from memory
                         // - We're not listening for the response received event because we can't await the completion of events.
-                        await streamer.EndStreamAsync();
+                        await streamer.EndStreamAsync(cancellationToken);
                         memory.DeleteValue("temp.streamer");
                     }
                 }

@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
         /// <returns>The parsed object or null if the object could not be parsed.</returns>
         public static Dictionary<string, JsonElement>? ParseJSON(string text)
         {
-            int startBrace = text.IndexOf("{");
+            int startBrace = text.IndexOf('{');
 
             if (startBrace >= 0)
             {
@@ -145,12 +145,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
 
                 try
                 {
+#pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
                     Dictionary<string, JsonElement>? obj = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cleaned, new JsonSerializerOptions()
                     {
                         WriteIndented = true,
                         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                         NumberHandling = JsonNumberHandling.AllowReadingFromString
                     });
+#pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
 
                     if (obj?.Count > 0)
                     {

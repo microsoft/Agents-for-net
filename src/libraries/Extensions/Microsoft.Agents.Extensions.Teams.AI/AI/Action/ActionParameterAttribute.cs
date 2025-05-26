@@ -1,9 +1,13 @@
-﻿namespace Microsoft.Agents.Extensions.Teams.AI.Action
+﻿using System;
+
+namespace Microsoft.Agents.Extensions.Teams.AI.Action
 {
     /// <summary>
     /// Attribute that marks a method parameter as an action parameter.
     /// </summary>
+#pragma warning disable CA1018 // Mark attributes with AttributeUsageAttribute
     public class ActionParameterAttribute : Attribute
+#pragma warning restore CA1018 // Mark attributes with AttributeUsageAttribute
     {
         /// <summary>
         /// The attribute type that represents what the action parameter is.

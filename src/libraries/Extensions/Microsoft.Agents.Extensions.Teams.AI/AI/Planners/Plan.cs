@@ -11,6 +11,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
     [JsonConverter(typeof(PlanJsonConverter))]
     public class Plan
     {
+        private static readonly string[] _defaultEnum = ["plan"];
+        private static readonly string[] _defaultRequired = ["type", "commands"];
+
         private static readonly JsonSerializerOptions _serializerOptions = new()
         {
             WriteIndented = true
@@ -51,7 +54,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         /// </summary>
         public string ToJsonString()
         {
+#pragma warning disable CA2263 // Prefer generic overload when type is known
             return JsonSerializer.Serialize(this, typeof(Plan), _serializerOptions);
+#pragma warning restore CA2263 // Prefer generic overload when type is known
         }
 
         /// <summary>
@@ -74,7 +79,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                         "type",
                         new JsonSchemaBuilder()
                             .Type(SchemaValueType.String)
-                            .Enum(new string[] { "plan" })
+                            .Enum(_defaultEnum)
                     ),
                     (
                         "commands",
@@ -90,7 +95,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
                             .MinItems(1)
                     )
                 )
-                .Required(new string[] { "type", "commands" })
+                .Required(_defaultRequired)
                 .Build();
         }
     }

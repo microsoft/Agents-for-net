@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
             var testTokens = 100;
 
             // Act
-            model.SetMaxTokens(testTokens, chatCompletionOptions);
+            OpenAIModel.SetMaxTokens(testTokens, chatCompletionOptions);
 
             // Assert
             MethodInfo info = chatCompletionOptions.GetType().GetMethod("get__deprecatedMaxTokens", BindingFlags.NonPublic | BindingFlags.Instance)!;

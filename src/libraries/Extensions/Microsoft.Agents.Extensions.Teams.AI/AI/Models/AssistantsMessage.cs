@@ -1,4 +1,5 @@
 ﻿using System.ClientModel;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using OpenAI.Assistants;
 using OpenAI.Files;
@@ -31,10 +32,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         {
             this.MessageContent = content;
 
-            if (content == null)
-            {
-                throw new ArgumentNullException(nameof(content));
-            }
+            AssertionHelpers.ThrowIfNull(content, nameof(content)); //, "AssistantsMessage requires a non-null MessageContent.");
 
             string textContent = content.Text ?? "";
             MessageContext context = new();
@@ -83,13 +81,13 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             }
 
             this.AttachedFiles = attachedFiles;
-            this.Attachments = _ConvertAttachedImagesToActivityAttachments(attachedFiles);
+            this.Attachments = ConvertAttachedImagesToActivityAttachments(attachedFiles);
 
             this.Content = textContent;
             this.Context = context;
         }
 
-        private List<Attachment> _ConvertAttachedImagesToActivityAttachments(List<OpenAIFile> attachedFiles)
+        private static List<Attachment> ConvertAttachedImagesToActivityAttachments(List<OpenAIFile> attachedFiles)
         {
             List<Attachment> attachments = new();
 
@@ -135,6 +133,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         /// Represents the contents of an OpenAI File
         /// </summary>
         public BinaryData FileContent;
+
+        private readonly static char[] fileExtensionSeparator = ['.'];
 
         private static readonly Dictionary<string, string> MimeTypes = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -186,14 +186,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         /// <returns>The file's mime type</returns>
         public string? GetMimeType()
         {
-            bool hasExtension = FileInfo.Filename.Contains(".");
+            bool hasExtension = FileInfo.Filename.Contains('.');
             if (!hasExtension)
             {
                 return null;
             }
 
-            string fileExtension = FileInfo.Filename.Split(new char[] { '.' }).Last();
-            if (MimeTypes.TryGetValue(fileExtension, out string mimeType))
+            string fileExtension = FileInfo.Filename.Split(fileExtensionSeparator).Last();
+            if (MimeTypes.TryGetValue(fileExtension, out string? mimeType))
             {
                 return mimeType;
             }

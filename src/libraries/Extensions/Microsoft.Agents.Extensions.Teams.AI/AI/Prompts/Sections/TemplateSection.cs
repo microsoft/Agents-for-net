@@ -1,9 +1,8 @@
 ﻿using Microsoft.Agents.Builder;
-using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
-using Microsoft.Agents.Extensions.Teams.AI.Models;
-using Microsoft.Agents.Extensions.Teams.AI.State;
-using System.Text.Json;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Extensions.Teams.AI.Models;
+using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
+using System.Text.Json;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 {
@@ -57,7 +56,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
         {
             this.template = template;
             this.role = role;
-            this._renderers = this.Parse(template);
+            this._renderers = Parse(template);
         }
 
         /// <inheritdoc />
@@ -80,7 +79,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
             return await Task.FromResult(this.TruncateMessages(messages, tokenizer, maxTokens));
         }
 
-        private List<RenderFunction> Parse(string template)
+        private static List<RenderFunction> Parse(string template)
         {
             List<RenderFunction> renderers = new();
 
@@ -99,7 +98,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                         {
                             if (chunk.Length > 0)
                             {
-                                renderers.Add(this.CreateTextRenderer(chunk));
+                                renderers.Add(CreateTextRenderer(chunk));
                                 chunk = "";
                             }
 
@@ -120,11 +119,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                                 chunk = chunk.Trim();
                                 if (chunk[0] == '$')
                                 {
-                                    renderers.Add(this.CreateVariableRenderer(chunk.Substring(1)));
+                                    renderers.Add(CreateVariableRenderer(chunk.Substring(1)));
                                 }
                                 else
                                 {
-                                    renderers.Add(this.CreateFunctionRenderer(chunk));
+                                    renderers.Add(CreateFunctionRenderer(chunk));
                                 }
 
                                 chunk = "";
@@ -164,13 +163,13 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 
             if (chunk.Length > 0)
             {
-                renderers.Add(this.CreateTextRenderer(chunk));
+                renderers.Add(CreateTextRenderer(chunk));
             }
 
             return renderers;
         }
 
-        private RenderFunction CreateTextRenderer(string text)
+        private static RenderFunction CreateTextRenderer(string text)
         {
             return (context, memory, functions, tokenizer, maxTokens, cancellationToken) =>
             {
@@ -178,7 +177,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
             };
         }
 
-        private RenderFunction CreateVariableRenderer(string name)
+        private static RenderFunction CreateVariableRenderer(string name)
         {
             return (context, memory, functions, tokenizer, maxTokens, cancellationToken) =>
             {
@@ -197,14 +196,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
                 }
                 catch (Exception)
                 {
-                    text = Convert.ToString(value);
+                    text = Convert.ToString(value)!;
                 }
 
-                return Task.FromResult(text);
+                return Task.FromResult(text)!;
             };
         }
 
-        private RenderFunction CreateFunctionRenderer(string param)
+        private static RenderFunction CreateFunctionRenderer(string param)
         {
             string name = "";
             List<string> args = new();
@@ -281,7 +280,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 
             return async (context, memory, functions, tokenizer, maxTokens, cancellationToken) =>
             {
-                dynamic? value = await functions.InvokeFunctionAsync(name, context, memory, tokenizer, args);
+                dynamic? value = await functions.InvokeFunctionAsync(name, context, memory, tokenizer, args, cancellationToken);
                 return await Task.FromResult(Convert.ToString(value));
             };
         }

@@ -5,6 +5,10 @@ using Microsoft.Agents.Extensions.Teams.AI.Models;
 using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
 using Microsoft.Agents.Extensions.Teams.AI.State;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Threading;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
 {

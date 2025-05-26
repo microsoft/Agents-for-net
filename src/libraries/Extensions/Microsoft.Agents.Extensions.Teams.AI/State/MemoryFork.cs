@@ -26,12 +26,12 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
         /// </summary>
         /// <param name="path">Path to the value to delete in the form of `[scope].property`.
         /// If scope is omitted, the value is deleted from the temporary scope.</param>
-        public void DeleteValue(string path)
+        public override void DeleteValue(string path)
         {
             (string scope, string name) = GetScopeAndName(path);
-            if (_fork.ContainsKey(scope) && _fork[scope].ContainsKey(name))
+            if (_fork.TryGetValue(scope, out Record? scopeValue) && scopeValue.ContainsKey(name))
             {
-                _fork[scope].Remove(name);
+                scopeValue.Remove(name);
             }
         }
 
@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
             (string scope, string name) = GetScopeAndName(path);
             if (_fork.ContainsKey(scope))
             {
-                if (_fork[scope].ContainsKey(name))
+                if (_fork[scope].TryGetValue(name, out object? scopeValue))
                 {
-                    return _fork[scope][name];
+                    return scopeValue;
                 }
             }
 
@@ -61,12 +61,12 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
         /// <param name="path">Path to the value to check in the form of `[scope].property`.
         /// If scope is omitted, the value is checked in the temporary scope.</param>
         /// <returns>True if the value exists, false otherwise.</returns>
-        public bool HasValue(string path)
+        public override bool HasValue(string path)
         {
             (string scope, string name) = GetScopeAndName(path);
-            if (_fork.ContainsKey(scope))
+            if (_fork.TryGetValue(scope, out Record? scopeValue))
             {
-                return _fork[scope].ContainsKey(name);
+                return scopeValue.ContainsKey(name);
             }
 
             if (_memory != null)
@@ -83,18 +83,21 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
         /// <param name="path">Path to the value to assign in the form of `[scope].property`.
         /// If scope is omitted, the value is assigned to the temporary scope.</param>
         /// <param name="value">Value to assign.</param>
-        public void SetValue(string path, object value)
+        public override void SetValue(string path, object value)
         {
             (string scope, string name) = GetScopeAndName(path);
-            if (!_fork.ContainsKey(scope))
+            if (!_fork.TryGetValue(scope, out Record? scopeValue))
             {
-                _fork[scope] = new();
+                scopeValue = new();
+                _fork[scope] = scopeValue;
             }
 
-            _fork[scope][name] = value;
+            scopeValue[name] = scopeValue;
         }
 
+#pragma warning disable CA1822 // Mark members as static
         private (string, string) GetScopeAndName(string path)
+#pragma warning restore CA1822 // Mark members as static
         {
             List<string> parts = path.Split('.').ToList();
 

@@ -20,6 +20,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         private readonly ActionAugmentationSection _section;
         private readonly JsonResponseValidator _planValidator;
         private readonly ActionResponseValidator _actionValidator;
+        private readonly string[] defaultSection =
+            [
+                "Use the actions above to create a plan in the following JSON format:",
+                "{\"type\":\"plan\",\"commands\":[{\"type\":\"DO\",\"action\":\"<name>\",\"parameters\":{\"<name>\":<value>}},{\"type\":\"SAY\",\"response\":\"<response>\"}]}"
+            ];
 
         /// <summary>
         /// Creates an instance of `SequenceAugmentation`
@@ -27,11 +32,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         /// <param name="actions"></param>
         public SequenceAugmentation(List<ChatCompletionAction> actions)
         {
-            this._section = new(actions, string.Join("\n", new string[]
-            {
-                "Use the actions above to create a plan in the following JSON format:",
-                "{\"type\":\"plan\",\"commands\":[{\"type\":\"DO\",\"action\":\"<name>\",\"parameters\":{\"<name>\":<value>}},{\"type\":\"SAY\",\"response\":\"<response>\"}]}"
-            }));
+            this._section = new(actions, string.Join("\n", defaultSection));
 
             this._planValidator = new(Plan.Schema(), "Return a JSON object that uses the SAY command to say what you're thinking.");
             this._actionValidator = new(actions, true);
@@ -115,7 +116,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
                 }
                 else if (command.Type == "SAY")
                 {
-                    valid = await this._ValidateSayCommandAsync(command, cancellationToken);
+                    valid = await ValidateSayCommandAsync(command, cancellationToken);
 
                     if (valid != null)
                     {
@@ -177,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
             return null;
         }
 
-        private async Task<Validation?> _ValidateSayCommandAsync(IPredictedCommand command, CancellationToken cancellationToken = default)
+        private static async Task<Validation?> ValidateSayCommandAsync(IPredictedCommand command, CancellationToken cancellationToken = default)
         {
             PredictedSayCommand? sayCommand = command as PredictedSayCommand;
 

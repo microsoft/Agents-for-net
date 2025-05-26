@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
             try
             {
                 DateTime startTime = DateTime.Now;
-                ClientResult<OpenAIEmbeddingCollection> response = await embeddingsClient.GenerateEmbeddingsAsync(inputs);
+                ClientResult<OpenAIEmbeddingCollection> response = await embeddingsClient.GenerateEmbeddingsAsync(inputs, cancellationToken: cancellationToken);
                 List<ReadOnlyMemory<float>> embeddingItems = response.Value.OrderBy(item => item.Index).Select(item => item.ToFloats()).ToList();
 
                 if (_options.LogRequests!.Value)
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
             }
         }
 
-        private ServiceVersion? ConvertStringToServiceVersion(string apiVersion)
+        private static ServiceVersion? ConvertStringToServiceVersion(string apiVersion)
         {
             return apiVersion switch
             {

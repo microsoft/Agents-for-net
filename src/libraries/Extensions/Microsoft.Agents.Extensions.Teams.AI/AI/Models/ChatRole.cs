@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
 
         /// <inheritdoc />
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is ChatRole other && Equals(other);
         }
