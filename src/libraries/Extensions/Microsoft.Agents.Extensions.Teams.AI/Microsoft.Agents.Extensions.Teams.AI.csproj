@@ -7,7 +7,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<NoWarn>NU5125;OPENAI001;CA2254;CS1574;CS1711;CS1591</NoWarn>
+		<NoWarn>NU5125;OPENAI001;CA2254;CS1574;CS1711;CS1591;CA1854</NoWarn>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 
