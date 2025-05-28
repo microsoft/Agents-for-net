@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Storage;
@@ -17,15 +18,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
     {
         public TeamsApplicationOptions(IStorage storage) : base(storage) { }
 
-        public TeamsApplicationOptions(
-            IServiceProvider sp,
-            IConfiguration configuration,
-            IChannelAdapter channelAdapter,
-            IStorage storage,
-            IList<IInputFileDownloader> fileDownloaders = null,
-            ITranscriptStore transcriptStore = null,
-            AutoSignInSelector autoSignInSelector = null,
-            string configKey = "AgentApplication") : base(sp, configuration, channelAdapter, storage, fileDownloaders, transcriptStore, autoSignInSelector, configKey)
+        public TeamsApplicationOptions(IServiceProvider sp, IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, UserAuthorizationOptions authOptions = null, AdaptiveCardsOptions cardOptions = null, IList<IInputFileDownloader> fileDownloaders = null, ITranscriptStore transcriptStore = null, AutoSignInSelector autoSignInSelector = null, string configurationSection = "AgentApplication") 
+            : base(sp, configuration, channelAdapter, storage, authOptions, cardOptions, fileDownloaders, transcriptStore, autoSignInSelector, configurationSection)
         {
         }
 

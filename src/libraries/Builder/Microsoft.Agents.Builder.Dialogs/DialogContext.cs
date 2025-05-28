@@ -420,7 +420,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                             }
 
                             // End the active dialog
-                            await dialogContext.EndActiveDialogAsync(DialogReason.CancelCalled,cancellationToken: cancellationToken).ConfigureAwait(false);
+                            await dialogContext.EndActiveDialogAsync(DialogReason.CancelCalled, cancellationToken: cancellationToken).ConfigureAwait(false);
                         }
                         else
                         {
@@ -544,7 +544,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 if (this.Parent != null)
                 {
                     var dialog = Parent.FindDialog(dialogId);
-                    
+
                     if (dialog != null)
                     {
                         return dialog;
@@ -636,7 +636,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Obtain the CultureInfo in DialogContext.
         /// </summary>
         /// <returns>A string representing the current locale.</returns>
-        /// <exception cref="CultureNotFoundException">Thrown when no locale is resolved and no default value factory is provided.</exception>
+        /// <exception cref="System.CultureNotFoundException">Thrown when no locale is resolved and no default value factory is provided.</exception>
         public string GetLocale()
         {
             string locale;

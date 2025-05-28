@@ -19,16 +19,4 @@
 		<ProjectReference Include="..\..\..\libraries\Storage\Microsoft.Agents.Storage.Blobs\Microsoft.Agents.Storage.Blobs.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Content Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<None Update="TeamsAppManifest\icon-color.png">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="TeamsAppManifest\icon-outline.png">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
 </Project>

@@ -5,6 +5,7 @@ using EmptyAgent;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.Storage.Transcript;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
+
+// Uncomment to add a file-based TranscriptStore
+//builder.Services.AddSingleton<ITranscriptStore, FileTranscriptLogger>();
 
 // Add AgentApplicationOptions from config.
 builder.AddAgentApplicationOptions();

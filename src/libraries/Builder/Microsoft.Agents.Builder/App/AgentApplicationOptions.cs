@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
 using System;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using System.Collections.Generic;
@@ -117,6 +116,8 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="configuration"></param>
         /// <param name="channelAdapter"></param>
         /// <param name="storage">The IStorage used by TurnState and User Authorization.</param>
+        /// <param name="authOptions"></param>
+        /// <param name="cardOptions"></param>
         /// <param name="fileDownloaders"></param>
         /// <param name="transcriptStore"></param>
         /// <param name="autoSignInSelector"></param>
@@ -126,6 +127,8 @@ namespace Microsoft.Agents.Builder.App
             IConfiguration configuration, 
             IChannelAdapter channelAdapter, 
             IStorage storage = null, 
+            UserAuthorizationOptions authOptions = null,
+            AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             ITranscriptStore transcriptStore = null,
             AutoSignInSelector autoSignInSelector = null,
@@ -135,6 +138,12 @@ namespace Microsoft.Agents.Builder.App
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
 
             var section = configuration.GetSection(configKey);
+            if (!section.Exists())
+            {
+                // This is to compensate for IConfiguration containing the class name as the section name.
+                section = configuration.GetSection(nameof(AgentApplicationOptions));
+            }
+
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), true);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), true);

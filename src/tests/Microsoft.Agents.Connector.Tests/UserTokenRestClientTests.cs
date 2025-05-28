@@ -76,7 +76,8 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var tokenResponse = new TokenResponse
             {
-                Token = "test-token"
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
             };
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -291,7 +292,8 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var tokenResponse = new TokenResponse
             {
-                Token = "test-token"
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
             };
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -321,7 +323,8 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var tokenResponse = new TokenResponse
             {
-                Token = "test-token",
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs",
                 ConnectionName = ConnectionName
             };
 
@@ -337,7 +340,7 @@ namespace Microsoft.Agents.Connector.Tests
             var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
             Assert.NotNull(response);
             Assert.Equal(ConnectionName, ((TokenResponse)response).ConnectionName);
-            Assert.Equal("test-token", ((TokenResponse)response).Token);
+            Assert.Equal(tokenResponse.Token, ((TokenResponse)response).Token);
         }
 
         [Fact]
@@ -425,9 +428,12 @@ namespace Microsoft.Agents.Connector.Tests
         [Fact]
         public async Task GetTokenOrSignInResourceAsync_ShouldReturnTokenOrSignInResourceResponse()
         {
+            // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+            var token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs";
+
             var responseContent = new TokenOrSignInResourceResponse
             {
-                TokenResponse = new TokenResponse { Token = "test-token" },
+                TokenResponse = new TokenResponse { Token = token },
                 SignInResource = new SignInResource { SignInLink = "test-link" }
             };
 
@@ -452,6 +458,53 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal(responseContent.TokenResponse.Token, result.TokenResponse.Token);
             Assert.Equal(responseContent.SignInResource.SignInLink, result.SignInResource.SignInLink);
         }
+
+        [Fact]
+        public async Task TokenNotExchangeable()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.False(tokenResponse.IsExchangeable);
+        }
+
+        [Fact]
+        public async Task TokenExchangeable()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDcwNTU2NDksImlhdCI6MTc0NzA1NTY0OX0.fAOK0HU59CgcA6SiU6feDdUmG2ZC5Nc8RzHlOPjfgWk"
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.True(tokenResponse.IsExchangeable);
+        }
+
 
         private static RestUserTokenClient UseClient()
         {

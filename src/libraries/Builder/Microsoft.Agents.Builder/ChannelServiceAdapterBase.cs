@@ -378,17 +378,17 @@ namespace Microsoft.Agents.Builder
         /// A connector client is required if the activity's delivery mode is not "ExpectReplies" or "Stream" 
         /// and the service URL is not null or empty.
         /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="activity"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown if the <paramref name="activity"/> is null.</exception>
         private static bool ResolveIfConnectorClientIsNeeded(IActivity activity)
         {
             Microsoft.Agents.Core.AssertionHelpers.ThrowIfNull(activity, nameof(activity));
             switch (activity.DeliveryMode)
             {
                 case DeliveryModes.ExpectReplies:
-                case DeliveryModes.Stream: 
+                case DeliveryModes.Stream:
                     if (string.IsNullOrEmpty(activity.ServiceUrl))
                         return false;
-                    break; 
+                    break;
                 default:
                     break;
             }

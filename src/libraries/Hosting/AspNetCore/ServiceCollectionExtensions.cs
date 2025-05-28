@@ -123,7 +123,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
             this IHostApplicationBuilder builder,
-            IList<IInputFileDownloader> fileDownloaders = null,
             AutoSignInSelector autoSignIn = null,
             ITranscriptStore transcriptStore = null)
         {
@@ -134,7 +133,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     sp.GetService<IConfiguration>(),
                     sp.GetService<IChannelAdapter>(),
                     sp.GetService<IStorage>(),
-                    fileDownloaders: fileDownloaders,
+                    fileDownloaders: sp.GetService<IList<IInputFileDownloader>>(),
                     transcriptStore: transcriptStore ?? sp.GetService<ITranscriptStore>(),
                     autoSignInSelector: autoSignIn);
             });

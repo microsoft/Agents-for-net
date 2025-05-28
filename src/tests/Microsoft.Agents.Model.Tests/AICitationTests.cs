@@ -44,5 +44,17 @@ namespace Microsoft.Agents.Model.Tests
             var deserializeJson = ProtocolJsonSerializer.ToJson(entityIn);
             Assert.Equal(expected, deserializeJson);
         }
+
+        [Fact]
+        public void AIEntity_Properties()
+        {
+            var jsonIn = "{\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[\"AIGeneratedContent\"],\"citation\":[],\"type\":\"https://schema.org/Message\",\"customProperty\":\"customValue\",\"additional\":{\"myprops\":{\"a\":\"b\"}}}";
+
+            var entity = ProtocolJsonSerializer.ToObject<Entity>(jsonIn);
+            Assert.IsAssignableFrom<AIEntity>(entity);
+
+            var jsonOut = ProtocolJsonSerializer.ToJson(entity);
+            Assert.Equal(jsonIn, jsonOut);
+        }
     }
 }

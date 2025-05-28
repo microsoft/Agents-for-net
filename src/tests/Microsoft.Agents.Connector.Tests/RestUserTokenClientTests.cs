@@ -78,7 +78,8 @@ namespace Microsoft.Agents.Connector.Tests
             {
                 var tokenResponse = new TokenResponse
                 {
-                    Token = "test-token"
+                    // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                    Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
                 };
 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -335,7 +336,8 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var tokenResponse = new
             {
-                Token = "test-token"
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
             };
 
             var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
@@ -348,7 +350,7 @@ namespace Microsoft.Agents.Connector.Tests
             var client = UseClient();
 
             var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
-            Assert.Equal("test-token", response.Token);
+            Assert.Equal(tokenResponse.Token, response.Token);
         }
 
         [Fact]

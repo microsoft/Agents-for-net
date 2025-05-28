@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="turnContext"/> is null.</exception>
         /// <remarks>The adapter calls middleware in the order in which you added it.
         /// The adapter passes in the context object for the turn and a next delegate,

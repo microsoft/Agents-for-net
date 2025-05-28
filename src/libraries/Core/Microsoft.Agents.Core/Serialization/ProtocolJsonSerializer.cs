@@ -85,6 +85,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new AudioCardConverter());
             options.Converters.Add(new CardActionConverter());
             options.Converters.Add(new ChannelAccountConverter());
+            options.Converters.Add(new ConversationAccountConverter());
             options.Converters.Add(new EntityConverter());
             options.Converters.Add(new AIEntityConverter());
             options.Converters.Add(new TokenExchangeInvokeResponseConverter());

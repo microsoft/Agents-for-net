@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <summary> GetAttachmentInfo. </summary>
         /// <param name="attachmentId"> attachment id. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="attachmentId"/> is null. </exception>
+        /// <exception cref="System.ArgumentNullException"> <paramref name="attachmentId"/> is null. </exception>
         /// <remarks> Get AttachmentInfo structure describing the attachment views. </remarks>
         public async Task<AttachmentInfo> GetAttachmentInfoAsync(string attachmentId, CancellationToken cancellationToken = default)
         {
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Connector.RestClients
             using var message = CreateGetAttachmentInfoRequest(attachmentId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch ((int) httpResponse.StatusCode)
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="attachmentId"> attachment id. </param>
         /// <param name="viewId"> View id from attachmentInfo. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="attachmentId"/> or <paramref name="viewId"/> is null. </exception>
+        /// <exception cref="System.ArgumentNullException"> <paramref name="attachmentId"/> or <paramref name="viewId"/> is null. </exception>
         /// <remarks> Get the named view as binary content. </remarks>
         public async Task<Stream> GetAttachmentAsync(string attachmentId, string viewId, CancellationToken cancellationToken = default)
         {

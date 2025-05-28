@@ -187,6 +187,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unexpected state for handler &apos;{0}&apos; .
+        /// </summary>
+        internal static string UnexpectedAuthorizationState {
+            get {
+                return ResourceManager.GetString("UnexpectedAuthorizationState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {

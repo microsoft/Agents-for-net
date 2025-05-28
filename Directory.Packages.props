@@ -44,7 +44,8 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
 	<PackageVersion Include="System.Text.Json" Version="9.0.2" />
     <PackageVersion Include="System.Memory.Data" Version="8.0.1" />
-    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+	<PackageVersion Include="System.Runtime.Caching" Version="8.0.1" />
+	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 	<!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft_AspNetCore_PkgVer)" />
@@ -92,5 +93,13 @@
     <!-- OpenAI -->
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <!-- TeamsAI -->
+    <PackageVersion Include="JsonSchema.Net" Version="6.1.2" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.1" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.1" />
+    <PackageVersion Include="Azure.AI.ContentSafety" Version="1.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
+    <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
+    <PackageVersion Include="Google.Protobuf" Version="3.27.3" />
   </ItemGroup>
 </Project>

@@ -206,4 +206,8 @@
   <data name="ExchangeTokenUnexpectedNull" xml:space="preserve">
     <value>ExchangeToken returned an empty token.</value>
   </data>
+  <data name="UnexpectedAuthorizationState" xml:space="preserve">
+    <value>Unexpected state for handler '{0}' </value>
+    <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
+  </data>
 </root>

@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity containing the suggested actions.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="actions"/> is <c>null</c>.</exception>
         /// <remarks>This method creates a suggested action for each string in <paramref name="actions"/>.
         /// The created action uses the text for the <see cref="CardAction.Value"/> and
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Core.Models
         /// Default is "acceptingInput".</param>
         /// <param name="toList">Optional, the list of recipients.</param>
         /// <returns>A message activity containing the suggested actions.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="actions"/> is <c>null</c>.</exception>
         /// <remarks>This method creates a suggested action for each string in <paramref name="actions"/>.
         /// The created action uses the text for the <see cref="CardAction.Value"/> and
@@ -181,7 +181,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity that contains the suggested actions.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="cardActions"/> is <c>null</c>.</exception>
         public static IActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null)
         {
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Core.Models
         /// Default is "acceptingInput".</param>
         /// <param name="toList">Optional, the list of recipients.</param>
         /// <returns>A message activity that contains the suggested actions.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="cardActions"/> is <c>null</c>.</exception>
         public static IActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
         {
@@ -244,7 +244,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity containing the attachment.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="attachment"/> is <c>null</c>.</exception>
         /// <seealso cref="Attachment(IEnumerable{Attachment}, string, string, string)"/>
         /// <seealso cref="Carousel(IEnumerable{Attachment}, string, string, string)"/>
@@ -267,7 +267,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity containing the attachment.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="attachments"/> is <c>null</c>.</exception>
         /// <seealso cref="Carousel(IEnumerable{Attachment}, string, string, string)"/>
         /// <seealso cref="Attachment(Attachment, string, string, string)"/>
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity containing the attachment.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="attachments"/> is <c>null</c>.</exception>
         /// <example>This code creates and sends a carousel of HeroCards.
         /// <code>
@@ -350,7 +350,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is null.</param>
         /// <returns>A message activity containing the attachment.</returns>
-        /// <exception cref="ArgumentNullException">
+        /// <exception cref="System.ArgumentNullException">
         /// <paramref name="url"/> or <paramref name="contentType"/> is <c>null</c>,
         /// empty, or white space.</exception>
         /// <example>This code creates a message activity that contains an image.

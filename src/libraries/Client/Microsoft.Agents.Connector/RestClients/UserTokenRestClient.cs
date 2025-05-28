@@ -5,7 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Net.Http;
+using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
@@ -16,9 +19,15 @@ using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class UserTokenRestClient(IRestTransport transport) : IUserToken
+    internal class UserTokenRestClient : IUserToken
     {
-        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
+        private readonly IRestTransport _transport;
+        private readonly static MemoryCache _cache = new MemoryCache(nameof(UserTokenRestClient));
+
+        public UserTokenRestClient(IRestTransport transport)
+        {
+            _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        }
 
         internal HttpRequestMessage CreateExchangeRequest(string userId, string connectionName, string channelId, TokenExchangeRequest body)
         {
@@ -53,15 +62,20 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
 #if !NETSTANDARD
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
                     var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(json);
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
 #endif
+                    if (tokenResponse?.Token != null)
+                    {
+                        AddTokenResponseToCache(CacheKey(userId, connectionName, channelId), tokenResponse);
+                    }
+                    return tokenResponse;
 
                 // Consent Required
                 case 400:
@@ -100,6 +114,11 @@ namespace Microsoft.Agents.Connector.RestClients
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
+        
+        private static string CacheKey(string userId, string connectionName, string channelId)
+        {
+            return $"{userId}-{connectionName}-{channelId}";
+        }
 
         internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
         {
@@ -122,6 +141,16 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
+            var cacheKey = CacheKey(userId, connectionName, channelId);
+            if (string.IsNullOrEmpty(code))
+            {
+                var cachedTokenResponse = GetTokenResponseFromCache(cacheKey);
+                if (cachedTokenResponse != null)
+                {
+                    return cachedTokenResponse;
+                }
+            }
+
             using var message = CreateGetTokenRequest(userId, connectionName, channelId, code);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
@@ -129,18 +158,25 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
 #if !NETSTANDARD
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
                     var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif                    
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(json);
-#endif
+                    
+                    var response = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
+
+                    AddTokenResponseToCache(cacheKey, response);
+
+                    return response;
+
                 case 404:
                     // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
+
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
@@ -208,9 +244,11 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> SignOutAsync(string userId, string connectionName = null, string channelId = null, CancellationToken cancellationToken = default)
+        public async Task<object> SignOutAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+
+            _cache.Remove(CacheKey(userId, connectionName, channelId));
 
             using var message = CreateSignOutRequest(userId, connectionName, channelId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -323,26 +361,90 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
             AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
+            var cacheKey = CacheKey(userId, connectionName, channelId);
+            if (string.IsNullOrEmpty(code))
+            {
+                var cachedTokenResponse = GetTokenResponseFromCache(cacheKey);
+                if (cachedTokenResponse != null)
+                {
+                    return new TokenOrSignInResourceResponse() { TokenResponse = cachedTokenResponse };
+                }
+            }
+
             using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                case 404:
 #if !NETSTANDARD
-                    return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
-                    var json = await httpResponse.Content.ReadAsStringAsync();
+                    var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif                    
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-                    return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
-#endif
+
+                    var response = ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
+
+                    AddTokenResponseToCache(cacheKey, response.TokenResponse);
+
+                    return response;
+
+                case 404:
+                    return null;
+
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenOrSignInResourceUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
+        }
+
+        private static TokenResponse GetTokenResponseFromCache(string cacheKey)
+        {
+            var value = _cache.Get(cacheKey);
+            if (value != null)
+            {
+                var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
+                if (toExpiration?.TotalMinutes >= 5) // Align with sliding expiration
+                {
+                    return (TokenResponse)value;
+                }
+
+                _cache.Remove(cacheKey);
+            }
+
+            return null;
+        }
+
+        private static void AddTokenResponseToCache(string cacheKey, TokenResponse tokenResponse)
+        {
+            if (tokenResponse != null && tokenResponse.Token != null)
+            {
+                var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+
+                tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
+
+                if (tokenResponse.Expiration == null)
+                {
+                    // Token Service isn't returning Expiration in TokenResponse
+                    tokenResponse.Expiration = jwtToken.ValidTo;
+                }
+
+                _cache.Add(
+                    new CacheItem(cacheKey) { Value = tokenResponse },
+                    new CacheItemPolicy()
+                    {
+                        SlidingExpiration = TimeSpan.FromMinutes(5)
+                    });
+            }
+        }
+
+        private static bool IsExchangeableToken(JwtSecurityToken jwtToken)
+        {
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud");
+            return aud != null && aud.Value.StartsWith("api://");
         }
     }
 }

@@ -17,14 +17,14 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="System.InvalidOperationException"></exception>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
         Console.Write("\nagent> ");
         // Attempt to connect to the copilot studio hosted agent here
         // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
-        await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent:true, cancellationToken:cancellationToken))
+        await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
         {
             System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
             sw.Restart();
@@ -53,7 +53,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
                 sw.Restart();
             }
         }
-        sw.Stop(); 
+        sw.Stop();
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
             case "message":
                 if (act.TextFormat == "markdown")
                 {
-                    
+
                     Console.WriteLine(act.Text);
                     if (act.SuggestedActions?.Actions.Count > 0)
                     {

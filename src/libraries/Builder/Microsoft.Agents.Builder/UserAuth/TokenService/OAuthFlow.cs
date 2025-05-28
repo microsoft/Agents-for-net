@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            AssertionHelpers.ThrowIfNull(turnContext,nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Attempt to get the users token
             var output = await UserTokenClientWrapper.GetTokenOrSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// active after the turn has been processed.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
         /// user's reply as valid input for the prompt.</para></remarks>
-        /// <exception cref="TimeoutException"/>
+        /// <exception cref="System.TimeoutException"/>
         public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
