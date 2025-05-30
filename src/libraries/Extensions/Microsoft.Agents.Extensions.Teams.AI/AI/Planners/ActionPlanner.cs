@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         /// <param name="ai">The AI system that is generating the plan.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>The plan that was generated.</returns>
-        /// <exception cref="Exception">thrown when there was an issue generating a plan</exception>
+        /// <exception cref="System.Exception">thrown when there was an issue generating a plan</exception>
         public async Task<Plan> ContinueTaskAsync(ITurnContext context, TState state, AISystem ai, CancellationToken cancellationToken = default)
         {
             PromptTemplate template = await this.Options.DefaultPrompt(context, state, this);
