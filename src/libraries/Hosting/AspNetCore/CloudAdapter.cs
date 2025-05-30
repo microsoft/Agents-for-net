@@ -13,8 +13,6 @@ using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -117,8 +115,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
-            ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -126,79 +122,68 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
             else
             {
-                // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
+                var claimsIdentity = HttpHelper.GetIdentity(httpRequest);
 
-                // If Auth is not configured, we still need the claims from the JWT token.
-                // Currently, the stack does rely on certain Claims.  If the Bearer token
-                // was sent, we can get them from there.  The JWT token is NOT validated though.
-                var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
-                if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+                await ProcessAsync(activity, claimsIdentity, httpResponse, agent, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public async Task ProcessAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(httpResponse);
+            ArgumentNullException.ThrowIfNull(agent);
+
+            if (!IsValidChannelActivity(activity))
+            {
+                httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                return;
+            }
+
+            try
+            {
+                if (activity.DeliveryMode == DeliveryModes.Stream)
                 {
-                    var auth = httpRequest.Headers.Authorization;
-                    if (auth.Count != 0)
-                    {
-                        var authHeaderValue = auth.First();
-                        var authValues = authHeaderValue.Split(' ');
-                        if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var jwt = new JwtSecurityToken(authValues[1]);
-                            claimsIdentity = new ClaimsIdentity(jwt.Claims);
-                        }
-                    }
-                }
+                    InvokeResponse invokeResponse = null;
 
-                if (!IsValidChannelActivity(activity))
+                    // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                    // turn is done.
+                    _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
+                    {
+                        StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                        invokeResponse = response;
+                    });
+
+                    // block until turn is complete
+                    await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                    {
+                        await StreamedResponseHandler.StreamActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }, cancellationToken).ConfigureAwait(false);
+
+                    await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                 {
-                    httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
-                    return;
-                }
+                    // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
+                    // Process the inbound activity with the Agent
+                    var invokeResponse = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
-                try
+                    // Write the response, potentially serializing the InvokeResponse
+                    await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                }
+                else
                 {
-                    if (activity.DeliveryMode == DeliveryModes.Stream)
-                    {
-                        InvokeResponse invokeResponse = null;
+                    // Queue the activity to be processed by the ActivityBackgroundService
+                    _activityTaskQueue.QueueBackgroundActivity(identity, activity);
 
-                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
-                        // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
-                        {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
-                            invokeResponse = response;
-                        });
-
-                        // block until turn is complete
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
-                        {
-                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
-                        }, cancellationToken).ConfigureAwait(false);
-
-                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
-                    }
-                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                    {
-                        // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the Agent
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
-
-                        // Write the response, potentially serializing the InvokeResponse
-                        await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
-
-                        // Activity has been queued to process, so return immediately
-                        httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
-                    }
+                    // Activity has been queued to process, so return immediately
+                    httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                 }
-                catch (UnauthorizedAccessException)
-                {
-                    // handle unauthorized here as this layer creates the http response
-                    httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
-                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // handle unauthorized here as this layer creates the http response
+                httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
             }
         }
 

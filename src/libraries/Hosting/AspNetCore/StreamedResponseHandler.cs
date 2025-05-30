@@ -8,10 +8,7 @@ using System;
 using System.Threading.Channels;
 using System.Collections.Concurrent;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Http;
-using System.Text;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -21,8 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     internal class StreamedResponseHandler
     {
         private static readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
-        private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n";
-        private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n";
+        private static readonly IStreamedResponseWriter _defaultWriter = new ActivityStreamedResponseWriter();
 
         public static async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
         {
@@ -55,37 +51,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static async Task StreamActivity(HttpResponse httpResponse, IActivity activity, ILogger logger, CancellationToken cancellationToken)
+        public static async Task StreamActivity(HttpResponse httpResponse, IActivity activity, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(ActivityEventTemplate, ProtocolJsonSerializer.ToJson(activity))), cancellationToken);
-                await httpResponse.Body.FlushAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "StreamActivity");
-                throw;
-            }
-
+            writer ??= _defaultWriter;
+            await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task StreamInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, ILogger logger, CancellationToken cancellationToken)
+        public static async Task StreamInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (invokeResponse?.Body != null)
-                {
-                    await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(InvokeResponseEventTemplate, ProtocolJsonSerializer.ToJson(invokeResponse))), cancellationToken);
-                    await httpResponse.Body.FlushAsync(cancellationToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "StreamInvokeResponse");
-                throw;
-            }
-
+            writer ??= _defaultWriter;
+            await writer.WriteInvokeResponse(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
         }
     }
 }

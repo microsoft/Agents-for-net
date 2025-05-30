@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.Models;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -24,5 +26,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
+
+        Task ProcessAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default);
     }
 }
