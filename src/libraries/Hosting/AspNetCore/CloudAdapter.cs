@@ -154,13 +154,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         invokeResponse = response;
                     });
 
+                    writer ??= StreamedResponseHandler.DefaultWriter;
+                    await writer.StreamBegin(httpResponse).ConfigureAwait(false);
+
                     // block until turn is complete
                     await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                     {
-                        await StreamedResponseHandler.StreamActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }, cancellationToken).ConfigureAwait(false);
 
-                    await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await writer.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
                 else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                 {

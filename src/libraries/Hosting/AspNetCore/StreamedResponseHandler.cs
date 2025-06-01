@@ -8,7 +8,6 @@ using System;
 using System.Threading.Channels;
 using System.Collections.Concurrent;
 using Microsoft.Agents.Core.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -18,7 +17,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     internal class StreamedResponseHandler
     {
         private static readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
-        private static readonly IStreamedResponseWriter _defaultWriter = new ActivityStreamedResponseWriter();
+        public static readonly IStreamedResponseWriter DefaultWriter = new ActivityStreamedResponseWriter();
 
         public static async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
         {
@@ -49,18 +48,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
                 await channel.Writer.WriteAsync(activity, cancellationToken);
             }
-        }
-
-        public static async Task StreamActivity(HttpResponse httpResponse, IActivity activity, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
-        {
-            writer ??= _defaultWriter;
-            await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
-        }
-
-        public static async Task StreamInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
-        {
-            writer ??= _defaultWriter;
-            await writer.WriteInvokeResponse(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
         }
     }
 }

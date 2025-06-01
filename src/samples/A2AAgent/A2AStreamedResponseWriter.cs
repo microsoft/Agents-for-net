@@ -10,20 +10,25 @@ using System.Threading.Tasks;
 
 namespace A2AAgent
 {
-    internal class A2AStreamedResponseWriter(string requestId, string taskId) : IStreamedResponseWriter
+    internal class A2AStreamedResponseWriter(string requestId, string contextId, string taskId) : IStreamedResponseWriter
     {
-        private const string ArtifactUpdateTemplate = "event: message\r\ndata: {0}\r\n";
+        private const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
+
+        public Task StreamBegin(HttpResponse httpResponse)
+        {
+            httpResponse.ContentType = "text/event-stream";
+            return Task.CompletedTask;
+        }
 
         public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken)
         {
-            httpResponse.ContentType ??= "text/event-stream";
-
-            var response = A2AProtocolConverter.CreateStreamResponseFromActivity(requestId, taskId, activity);
-            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(ArtifactUpdateTemplate, response)), cancellationToken).ConfigureAwait(false);
+            var response = A2AProtocolConverter.CreateStreamMessageFromActivity(requestId, contextId, taskId, activity);
+            var sse = string.Format(MessageTemplate, response);
+            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(sse), cancellationToken).ConfigureAwait(false);
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public Task WriteInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, CancellationToken cancellationToken)
+        public Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }

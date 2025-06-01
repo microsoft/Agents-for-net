@@ -10,7 +10,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     public interface IStreamedResponseWriter
     {
+        Task StreamBegin(HttpResponse httpResponse);
+
         Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken);
-        Task WriteInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, CancellationToken cancellationToken);
+
+        Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken);
     }
 }

@@ -12,22 +12,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     internal class ActivityStreamedResponseWriter : IStreamedResponseWriter
     {
-        private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n";
-        private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n";
+        private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n\r\n";
+        private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n\r\n";
+
+        public Task StreamBegin(HttpResponse httpResponse)
+        {
+            httpResponse.ContentType = "text/event-stream";
+            return Task.CompletedTask;
+        }
 
         public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken)
         {
-            httpResponse.ContentType = "text/event-stream";
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(ActivityEventTemplate, ProtocolJsonSerializer.ToJson(activity))), cancellationToken);
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public async Task WriteInvokeResponse(HttpResponse httpResponse, InvokeResponse invokeResponse, CancellationToken cancellationToken)
+        public async Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken)
         {
-            if (invokeResponse?.Body != null)
+            if (data is InvokeResponse invokeResponse)
             {
-                await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(InvokeResponseEventTemplate, ProtocolJsonSerializer.ToJson(invokeResponse))), cancellationToken);
-                await httpResponse.Body.FlushAsync(cancellationToken);
+                if (invokeResponse?.Body != null)
+                {
+                    await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(InvokeResponseEventTemplate, ProtocolJsonSerializer.ToJson(invokeResponse))), cancellationToken);
+                    await httpResponse.Body.FlushAsync(cancellationToken);
+                }
             }
         }
     }

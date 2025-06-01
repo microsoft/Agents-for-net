@@ -49,30 +49,22 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
     .AllowAnonymous();
 
 
-app.MapPost("/rpc", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+app.MapPost("/a2a", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     var jsonRpcRequest = await A2AProtocolConverter.ReadRequestAsync<JsonRpcRequest>(request);
 
-    if (jsonRpcRequest.Method.Equals("tasks/sendSubscribe"))
+    if (jsonRpcRequest.Method.Equals("message/stream"))
     {
-        var (activity, taskId) = A2AProtocolConverter.CreateActivityFromRequest(jsonRpcRequest);
-        await adapter.ProcessAsync(activity, HttpHelper.GetIdentity(request), response, agent, new A2AStreamedResponseWriter(jsonRpcRequest.Id.ToString(), taskId), cancellationToken);
+        var (activity, contextId, taskId) = A2AProtocolConverter.CreateActivityFromRequest(jsonRpcRequest);
+        await adapter.ProcessAsync(activity, HttpHelper.GetIdentity(request), response, agent, new A2AStreamedResponseWriter(jsonRpcRequest.Id.ToString(), contextId, taskId), cancellationToken);
     }
 })
     .AllowAnonymous();
 
-
-app.MapGet("/events", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    System.Diagnostics.Trace.WriteLine("/events");
-})
-    .AllowAnonymous();
-
-
 app.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
-    var agentCard = "{\"name\":\"EmptyAgent\",\"description\":\"Simple Echo Agent\",\"version\":\"0.1.0\", \"capabilities\":{\"tasks/sendSubscribe\":true,\"streaming\":true,\"pushNotifications\":false,\"stateTransitionHistory\":false}}";
+    var agentCard = "{\"name\":\"EmptyAgent\",\"description\":\"Simple Echo Agent\",\"version\":\"0.1.0\", \"url\":\"http://localhost:3978/a2a\", \"defaultInputModes\": [], \"defaultOutputModes\": [], \"skills\": [], \"capabilities\":{\"streaming\":true,\"pushNotifications\":false,\"stateTransitionHistory\":false}}";
     response.ContentType = "application/json";
     await response.Body.WriteAsync(Encoding.UTF8.GetBytes(agentCard), cancellationToken);
     await response.Body.FlushAsync(cancellationToken);
