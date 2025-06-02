@@ -2,15 +2,16 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Hosting.A2A.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace A2AAgent
+namespace Microsoft.Agents.Hosting.A2A
 {
-    internal class A2AStreamedResponseWriter(string requestId, string contextId, string taskId) : IStreamedResponseWriter
+    public class A2AStreamedResponseWriter(string requestId, string contextId, string taskId) : IStreamedResponseWriter
     {
         private const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
 
