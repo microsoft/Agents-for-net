@@ -12,6 +12,19 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Agents.Hosting.A2A.Models;
+using Microsoft.AspNetCore.Http.Metadata;
+using ModelContextProtocol.Protocol;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Agents.Core.Models;
+using Newtonsoft.Json.Schema.Generation;
+using A2AAgent;
+using Microsoft.Extensions.AI;
+using System;
+using System.Linq;
+using Azure.Core;
+using System.Threading.Tasks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -35,8 +48,6 @@ WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
-
 app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
@@ -46,6 +57,75 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2A();
 
+// Map MCP endpoints.  By default MCP will respond on '/mcp'.
+app.MapPost(
+    "/mcp",
+    async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+    {
+        var jsonRpcRequest = await MCPProtocolConverter.ReadRequestAsync<JsonRpcRequest>(request);
+
+        if (jsonRpcRequest.Method.Equals("initialize"))
+        {
+            System.Diagnostics.Trace.WriteLine("MCP: initialize");
+            await WriteInitializeResponse(jsonRpcRequest, request, response, cancellationToken);
+        }
+        else if (jsonRpcRequest.Method.Equals("notifications/initialized"))
+        {
+            System.Diagnostics.Trace.WriteLine("MCP: notifications/initialized");
+        }
+        else if (jsonRpcRequest.Method.Equals("tools/list"))
+        {
+            System.Diagnostics.Trace.WriteLine("MCP: tools/list");
+
+            JSchemaGenerator generator = new();
+            var inputSchema = JsonSerializer.SerializeToElement(JsonSerializer.Deserialize<object>(generator.Generate(typeof(ChatMessage)).ToString()));
+
+            var tools = new ListToolsResult()
+            {
+                Tools = [
+                    new Tool()
+                    {
+                        Name = "message",
+                        InputSchema = inputSchema,
+                    }
+                ]
+            };
+
+            var rpcResponse = new JsonRpcResponse()
+            {
+                Id = jsonRpcRequest.Id,
+                Result = JsonSerializer.SerializeToNode(tools)
+            };
+
+            response.ContentType = "application/json";
+            var json = MCPProtocolConverter.ToJson(rpcResponse);
+            await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
+            await response.Body.FlushAsync(cancellationToken);
+        }
+        else if (jsonRpcRequest.Method.Equals("tools/call"))
+        {
+            System.Diagnostics.Trace.WriteLine("MCP: tools/call");
+
+            //TODO: verify request.Id
+
+            if( !request.Headers.TryGetValue("mcp-session-id", out var sessionId))
+            {
+                sessionId = Guid.NewGuid().ToString("N");
+            }
+
+            var activity = MCPProtocolConverter.CreateActivityFromRequest(jsonRpcRequest, sessionId);
+
+            await adapter.ProcessAsync(activity, HttpHelper.GetIdentity(request), response, agent, new MCPStreamedResponseWriter(), cancellationToken);
+        }
+        else
+        {
+            System.Diagnostics.Trace.WriteLine($"MCP: {jsonRpcRequest.Method}");
+        }
+    })
+        .WithMetadata(new AcceptsMetadata(["application/json"]))
+        .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
+        .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
+
 // Hardcoded for brevity and ease of testing. 
 // In production, this should be set in configuration.
 if (app.Environment.IsDevelopment())
@@ -54,3 +134,42 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+
+static async Task WriteInitializeResponse(JsonRpcRequest rpcRequest, HttpRequest httpRequest, HttpResponse httpResponse, CancellationToken cancellationToken = default)
+{
+    var result = new InitializeResult()
+    {
+        ProtocolVersion = "2024-11-05",
+        Capabilities = new ServerCapabilities()
+        {
+
+        },
+        ServerInfo = new Implementation()
+        {
+            Name = "EmptyAgent",
+            Version = "1.0.0",
+        }
+    };
+
+    var rpcResponse = new JsonRpcResponse()
+    {
+        Id = rpcRequest.Id,
+        Result = JsonSerializer.SerializeToNode(result)
+    };
+
+    var json = MCPProtocolConverter.ToJson(rpcResponse);
+
+    if (httpRequest.Headers.Accept.Contains("text/event-stream"))
+    {
+        httpResponse.ContentType = "text/event-stream";
+        json = string.Format(MCPStreamedResponseWriter.MessageTemplate, json);
+    }
+    else
+    {
+        httpResponse.ContentType = "application/json";
+    }
+
+    await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
+    await httpResponse.Body.FlushAsync(cancellationToken);
+}

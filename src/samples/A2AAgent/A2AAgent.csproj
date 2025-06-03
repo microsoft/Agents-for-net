@@ -12,6 +12,10 @@
 		<EmbeddedResource Remove="wwwroot\**" />
 		<None Remove="wwwroot\**" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json.Schema" />
+	</ItemGroup>
 	
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
