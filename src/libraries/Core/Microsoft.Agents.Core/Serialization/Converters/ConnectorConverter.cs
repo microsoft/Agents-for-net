@@ -7,11 +7,16 @@ using System.Text.Json;
 using System;
 using System.Reflection;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Microsoft.Agents.Core.Serialization.Converters
 {
     public abstract class ConnectorConverter<T> : JsonConverter<T> where T : new()
     {
+        private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
+        private static readonly ConcurrentDictionary<(Type, bool, Type), Dictionary<string, (PropertyInfo, bool)>> JsonPropertyMetadataCache = new();
+        
         public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
@@ -21,14 +26,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var value = new T();
 
-            var properties = options.PropertyNameCaseInsensitive
-                ? new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, PropertyInfo>();
-
-            foreach (var property in typeof(T).GetProperties())
-            {
-                properties.Add(property.Name, property);
-            }
+            var propertyMetadataMap = GetJsonPropertyMetadata(typeof(T), options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
 
             while (reader.Read())
             {
@@ -41,9 +39,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var propertyName = reader.GetString();
 
-                    if (properties.ContainsKey(propertyName))
+                    if (propertyMetadataMap.TryGetValue(propertyName, out var entry))
                     {
-                        ReadProperty(ref reader, value, propertyName, options, properties);
+                        ReadProperty(ref reader, value, propertyName, options, entry.Property);
                     }
                     else
                     {
@@ -59,12 +57,23 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             writer.WriteStartObject();
 
-            foreach (var property in value.GetType().GetProperties())
+            var type = value.GetType();
+            var properties = GetCachedProperties(type);
+            var propertyMetadataMap = GetJsonPropertyMetadata(type, false, options.PropertyNamingPolicy); // case-insensitivity doesn’t matter here
+            var reverseMap = propertyMetadataMap.ToDictionary(kv => kv.Value.Property, kv => (kv.Key, kv.Value.IsIgnored));
+
+            foreach (var property in properties)
             {
+                if (!reverseMap.TryGetValue(property, out var propertyMetadata) || propertyMetadata.IsIgnored)
+                {
+                    continue;
+                }
+
                 if (!TryWriteExtensionData(writer, value, property.Name))
                 {
                     var propertyValue = property.GetValue(value);
 
+#if SKIP_EMPTY_LISTS
                     if (propertyValue is IList list)
                     {
                         if (list == null || list.Count == 0)
@@ -72,37 +81,42 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                             continue;
                         }
                     }
-
+#endif
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {
-                        var propertyName = options.PropertyNamingPolicy == JsonNamingPolicy.CamelCase
-                            ? JsonNamingPolicy.CamelCase.ConvertName(property.Name)
-                            : property.Name;
+                        var propertyName = propertyMetadata.Key ?? property.Name;
 
                         writer.WritePropertyName(propertyName);
 
                         if (property.PropertyType == typeof(object) && propertyValue is string s)
                         {
-                            // Generic property value as a JSON string
-                            try
+                            if (!ProtocolJsonSerializer.UnpackObjectStrings)
                             {
-                                using (var document = JsonDocument.Parse(s))
+                                writer.WriteRawValue(s);
+                            }
+                            else
+                            {
+                                // Generic property value as a JSON string
+                                try
                                 {
-                                    var root = document.RootElement.Clone();
-                                    if (root.ValueKind == JsonValueKind.Object)
+                                    using (var document = JsonDocument.Parse(s))
                                     {
-                                        root.WriteTo(writer);
-                                    }
-                                    else
-                                    {
-                                        writer.WriteStringValue(s);
+                                        var root = document.RootElement.Clone();
+                                        if (root.ValueKind == JsonValueKind.Object)
+                                        {
+                                            root.WriteTo(writer);
+                                        }
+                                        else
+                                        {
+                                            writer.WriteStringValue(s);
+                                        }
                                     }
                                 }
-                            }
-                            catch (JsonException)
-                            {
-                                writer.WriteStringValue(s);
+                                catch (JsonException)
+                                {
+                                    writer.WriteStringValue(s);
+                                }
                             }
                         }
                         else
@@ -191,28 +205,36 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 if (element.ValueKind == JsonValueKind.String)
                 {
-                    var json = element.GetString();
-
-                    try
+                    if (!ProtocolJsonSerializer.UnpackObjectStrings)
                     {
-                        // Check if the underlying JSON is a reference type
-                        using (var document = JsonDocument.Parse(json))
+                        var json = element.GetRawText();
+                        setter(json);
+                    }
+                    else
+                    {
+                        try
                         {
-                            setter(document.RootElement.Clone());
-                            if (document.RootElement.ValueKind == JsonValueKind.Object || document.RootElement.ValueKind == JsonValueKind.Array)
+                            var json = element.GetString();
+
+                            // Check if the underlying JSON is a reference type
+                            using (var document = JsonDocument.Parse(json))
                             {
                                 setter(document.RootElement.Clone());
-                            }
-                            else
-                            {
-                                setter(element.GetString());
+                                if (document.RootElement.ValueKind == JsonValueKind.Object || document.RootElement.ValueKind == JsonValueKind.Array)
+                                {
+                                    setter(document.RootElement.Clone());
+                                }
+                                else
+                                {
+                                    setter(element.GetString());
+                                }
                             }
                         }
-                    }
-                    catch (JsonException)
-                    {
-                        // JSON is a value type
-                        setter(element.GetString());
+                        catch (JsonException)
+                        {
+                            // JSON is a value type
+                            setter(element.GetString());
+                        }
                     }
                 }
                 else if (element.ValueKind == JsonValueKind.Number)
@@ -238,10 +260,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             setter(deserialized);
         }
 
-        protected virtual void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, Dictionary<string, PropertyInfo> properties)
+        protected virtual void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
         {
-            var property = properties[propertyName];
-
             if (TryReadExtensionData(ref reader, value, property.Name, options))
             {
                 return;
@@ -252,6 +272,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 var CollectionPropertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
                 if (CollectionPropertyValue is IList prospectiveList)
                 {
+#if SKIP_EMPTY_LISTS
                     if (prospectiveList.Count != 0)
                     {
                         property.SetValue(value, CollectionPropertyValue);
@@ -260,6 +281,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         property.SetValue(value, null);
                     }
+#else
+                    property.SetValue(value, CollectionPropertyValue);
+#endif
                 }
                 return;
             }
@@ -271,6 +295,40 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var propertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
             property.SetValue(value, propertyValue);
+        }
+
+        private static PropertyInfo[] GetCachedProperties(Type type)
+        {
+            return PropertyCache.GetOrAdd(type, static t => t.GetProperties());
+        }
+
+        private static Dictionary<string, (PropertyInfo Property, bool IsIgnored)> GetJsonPropertyMetadata(Type type, bool caseInsensitive, JsonNamingPolicy? namingPolicy)
+        {
+            var cacheKey = (type, caseInsensitive, namingPolicy?.GetType());
+            return JsonPropertyMetadataCache.GetOrAdd(cacheKey, key =>
+            {
+                var (t, insensitive, _) = key;
+                var comparer = insensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+                var metadata  = new Dictionary<string, (PropertyInfo, bool)>(comparer);
+
+                foreach (var prop in GetCachedProperties(t))
+                {
+                    var resolvedName = prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
+                        ?? namingPolicy?.ConvertName(prop.Name)
+                        ?? prop.Name;
+
+                    if (metadata.ContainsKey(resolvedName))
+                    {
+                        throw new InvalidOperationException(
+                            $"Duplicate JSON property name detected: '{resolvedName}' maps to multiple properties in type '{t.FullName}'."
+                        );
+                    }
+
+                    metadata [resolvedName] = (prop, prop.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always);
+                }
+
+                return metadata;
+            });
         }
     }
 }

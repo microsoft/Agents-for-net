@@ -804,18 +804,18 @@ namespace Microsoft.Agents.Builder.Compat
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, errorResponse);
             }
 
-            ValidateSearchInvokeValue(invokeValue, activity.ChannelId?.ToString());
+            ValidateSearchInvokeValue(invokeValue, activity.ChannelId);
             return invokeValue;
         }
 
-        private static void ValidateSearchInvokeValue(SearchInvokeValue searchInvokeValue, string channelId)
+        private static void ValidateSearchInvokeValue(SearchInvokeValue searchInvokeValue, ChannelId channelId)
         {
             string missingField = null;
 
             if (string.IsNullOrEmpty(searchInvokeValue.Kind))
             {
                 // Teams does not always send the 'kind' field. Default to 'search'.
-                if (Channels.Msteams.Equals(channelId, StringComparison.OrdinalIgnoreCase))
+                if (channelId?.Channel == Channels.Msteams)
                 {
                     searchInvokeValue.Kind = SearchInvokeTypes.Search;
                 }

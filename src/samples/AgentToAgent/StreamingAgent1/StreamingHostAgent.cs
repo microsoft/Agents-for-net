@@ -65,7 +65,7 @@ public class StreamingHostAgent : AgentApplication
         }
 
         // Send the message to the other Agent, and handle Agent2 replies.
-        await foreach (IActivity agentActivity in _agentHost.SendToAgentStreamedAsync(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken))
+        await foreach (IActivity agentActivity in _agentHost.SendToAgentStreamedAsync(turnContext, Agent2Name, echoConversationId, turnContext.Activity, cancellationToken))
         {
             // Agent2 sends EndOfConversation when "end" was received.
             if (agentActivity.IsType(ActivityTypes.EndOfConversation))

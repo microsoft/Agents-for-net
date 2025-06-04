@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(
                         turnContext.Activity.From.Id,
                         _oAuthConnectionName,
-                        turnContext.Activity.ChannelId.ToString(),
+                        turnContext.Activity.ChannelId.Channel,
                         new TokenExchangeRequest { Token = ((JsonElement)aceRequest.Data).GetString() },
                         cancellationToken).ConfigureAwait(false);
                 }

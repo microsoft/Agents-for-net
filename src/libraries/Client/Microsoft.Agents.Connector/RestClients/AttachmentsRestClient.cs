@@ -5,7 +5,6 @@
 
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.IO;
@@ -56,7 +55,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <summary> GetAttachmentInfo. </summary>
         /// <param name="attachmentId"> attachment id. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="attachmentId"/> is null. </exception>
+        /// <exception cref="System.ArgumentNullException"> <paramref name="attachmentId"/> is null. </exception>
         /// <remarks> Get AttachmentInfo structure describing the attachment views. </remarks>
         public async Task<AttachmentInfo> GetAttachmentInfoAsync(string attachmentId, CancellationToken cancellationToken = default)
         {
@@ -68,7 +67,7 @@ namespace Microsoft.Agents.Connector.RestClients
             using var message = CreateGetAttachmentInfoRequest(attachmentId);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch ((int) httpResponse.StatusCode)
+            switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                     {
@@ -80,7 +79,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -98,7 +97,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="attachmentId"> attachment id. </param>
         /// <param name="viewId"> View id from attachmentInfo. </param>
         /// <param name="cancellationToken"> The cancellation token to use. </param>
-        /// <exception cref="ArgumentNullException"> <paramref name="attachmentId"/> or <paramref name="viewId"/> is null. </exception>
+        /// <exception cref="System.ArgumentNullException"> <paramref name="attachmentId"/> or <paramref name="viewId"/> is null. </exception>
         /// <remarks> Get the named view as binary content. </remarks>
         public async Task<Stream> GetAttachmentAsync(string attachmentId, string viewId, CancellationToken cancellationToken = default)
         {
@@ -133,7 +132,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return null;
                 default:
                     {
-                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }

@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="options">The options</param>
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         public TeamsAttachmentDownloader(TeamsAttachmentDownloaderOptions options, IConnections connections, IHttpClientFactory httpClientFactory)
         {
             AssertionHelpers.ThrowIfNull(options, nameof(options));
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith("text/html"));
             if (attachments == null || !attachments.Any())
             {
-                return new List<InputFile>();
+                return [];
             }
 
             string accessToken = "";
@@ -102,46 +102,43 @@ namespace Microsoft.Agents.Extensions.Teams.App
             if (attachment.ContentUrl != null && (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
             {
                 // Get downloadable content link
+                string downloadUrl;
                 var contentProperties = ProtocolJsonSerializer.ToJsonElements(attachment.Content);
                 if (contentProperties == null || !contentProperties.TryGetValue("downloadUrl", out System.Text.Json.JsonElement value))
+                {
+                    downloadUrl = attachment.ContentUrl;
+                }
+                else
+                {
+                    downloadUrl = value.ToString();
+                }
+
+                using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
+                request.Headers.Add("Authorization", $"Bearer {accessToken}");
+
+                HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
+
+                // Failed to download file
+                if (!response.IsSuccessStatusCode)
                 {
                     return null;
                 }
 
-                string? downloadUrl = value.ToString();
-                if (downloadUrl == null)
+                // Convert to a buffer
+                byte[] content = await response.Content.ReadAsByteArrayAsync();
+
+                // Fixup content type
+                string contentType = response.Content.Headers.ContentType.MediaType;
+                if (contentType.StartsWith("image/"))
                 {
-                    downloadUrl = attachment.ContentUrl;
+                    contentType = "image/png";
                 }
 
-                using (HttpRequestMessage request = new(HttpMethod.Get, downloadUrl))
+                return new InputFile(new BinaryData(content), contentType)
                 {
-                    request.Headers.Add("Authorization", $"Bearer {accessToken}");
-
-                    HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
-
-                    // Failed to download file
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        return null;
-                    }
-
-                    // Convert to a buffer
-                    byte[] content = await response.Content.ReadAsByteArrayAsync();
-
-                    // Fixup content type
-                    string contentType = response.Content.Headers.ContentType.MediaType;
-                    if (contentType.StartsWith("image/"))
-                    {
-                        contentType = "image/png";
-                    }
-
-                    return new InputFile(new BinaryData(content), contentType)
-                    {
-                        ContentUrl = attachment.ContentUrl,
-                        Filename = name
-                    };
-                }
+                    ContentUrl = attachment.ContentUrl,
+                    Filename = name
+                };
             }
             else
             {

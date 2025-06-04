@@ -4,9 +4,9 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
 
 This sample:
 - Gets an OAuth token automatically for every message sent by the user
-  > This is done by setting the "AgentApplication.UserAuthorization.AutoSign" setting to true.  This will use the default UserAuthorization Handler to automatically get a token for all incoming Activities.  Use this when your Agents needs the same token for much of it's functionality.
+  > This is done by setting the `AgentApplication:UserAuthorization:AutoSign` setting to true.  This will use the default UserAuthorization Handler to automatically get a token for all incoming Activities.  Use this when your Agents needs the same token for much of it's functionality.
 - Per-Route sign in .  In this sample, this is the `-me` message.
-  > Messages the user sends are routed to a handler of your choice.  This feature allow you to indicate that a particular token is needed for the handler.  Per-Route user authorization will automatically handle the OAuth flow to get the token and make it available to your agent.  Keep in mind that if the the Auto SignIn option is enabled, you actually have two tokens available in the handler.
+  > Messages the user sends are routed to a handler of your choice.  This feature allows you to indicate that a particular token is needed for the handler.  Per-Route user authorization will automatically handle the OAuth flow to get the token and make it available to your Agent.  Keep in mind that if the the Auto SignIn option is enabled, you actually have two tokens available in the handler.
 
 The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authorizes users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
 
@@ -113,7 +113,7 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
 
 ## Interacting with the Agent
 
-- When the conversation starts, you will be greeted with a welcome message which include your name and instructions.
+- When the conversation starts, you will be greeted with a welcome message which include your name and instructions.  If this is the first time you've interacted with the Agent in a conversation, you will be prompts to sign in (WebChat), or with Teams SSO the OAuth will happen silently.
 - Sending `-me` will display additional information about you.
 - Note that if running this in Teams and SSO is setup, you shouldn't see any "sign in" prompts.  This is true in this sample since we are only requesting a basic set of scopes that Teams doesn't require additional consent for.
 

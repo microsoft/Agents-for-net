@@ -44,6 +44,11 @@ namespace Microsoft.Agents.Core.Models
             return new ChannelId(value);
         }
 
+        public static implicit operator string(ChannelId channelId)
+        {
+            return channelId?.ToString();
+        }
+
         public override string ToString()
         {
             if (!string.IsNullOrEmpty(SubChannel))

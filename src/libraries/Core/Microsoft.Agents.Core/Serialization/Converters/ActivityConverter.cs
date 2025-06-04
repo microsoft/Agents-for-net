@@ -39,17 +39,16 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             return false;
         }
 
-        protected override void ReadProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options, Dictionary<string, PropertyInfo> properties)
+        protected override void ReadProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
         {
             if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
             {
-                var property = properties[propertyName];
                 var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
                 property.SetValue(value, new ChannelId((string) propertyValue));
                 return;
             }
 
-            base.ReadProperty(ref reader, value, propertyName, options, properties);
+            base.ReadProperty(ref reader, value, propertyName, options, property);
         }
 
         /// <inheritdoc/>

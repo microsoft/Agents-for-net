@@ -308,7 +308,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task SendToAgent(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             using var client = GetClient(agentName);
             
@@ -318,13 +318,13 @@ namespace Microsoft.Agents.Client
                 activity.DeliveryMode = DeliveryModes.Normal;
             }
 
-            await client.SendActivityAsync<object>(agentConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await client.SendActivityAsync<object>(agentConversationId, activity, useAnonymous: AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<object> SendToAgentStreamedAsync(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             using var client = GetClient(agentName);
-            return client.SendActivityStreamedAsync(agentConversationId, activity, cancellationToken: cancellationToken);
+            return client.SendActivityStreamedAsync(agentConversationId, activity, useAnonymous: AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken: cancellationToken);
         }
 
         public async Task EndAgentConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Client
             await DeleteConversationAsync(turnContext, agentConversationId, cancellationToken).ConfigureAwait(false);
 
             // Send EndOfConversation to the Agent.
-            await SendToAgent(agentName, agentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
+            await SendToAgent(turnContext, agentName, agentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
 
         }
 
@@ -355,7 +355,7 @@ namespace Microsoft.Agents.Client
                     deletionKeys.Add(GetAgentConversationStorageKey(conversation.AgentConversationId));
 
                     // Send EndOfConversation to the Agent.
-                    await SendToAgent(conversation.AgentName, conversation.AgentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
+                    await SendToAgent(turnContext, conversation.AgentName, conversation.AgentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
                 }
             }
 

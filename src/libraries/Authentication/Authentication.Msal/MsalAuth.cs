@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -42,7 +43,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// </summary>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="msalConfigurationSection"></param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
             : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
         }
@@ -75,12 +76,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
             // Get or create existing token. 
             _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
-            if (_cacheList.ContainsKey(instanceUri))
+            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
             {
                 if (!forceRefresh)
                 {
-                    var accessToken = _cacheList[instanceUri].MsalAuthResult.AccessToken;
-                    var tokenExpiresOn = _cacheList[instanceUri].MsalAuthResult.ExpiresOn;
+                    var accessToken = authResultFromCache.MsalAuthResult.AccessToken;
+                    var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
@@ -109,10 +110,11 @@ namespace Microsoft.Agents.Authentication.Msal
             object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
-            ExecuteAuthenticationResults authResultPayload = null; 
+            ExecuteAuthenticationResults authResultPayload = null;
             if (msalAuthClient is IConfidentialClientApplication msalConfidentialClient)
             {
-                if (localScopes.Length == 0) {
+                if (localScopes.Length == 0)
+                {
                     throw new ArgumentException("At least one Scope is required for Client Authentication.");
                 }
 
@@ -152,13 +154,13 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
 
-        public async Task<string> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
+        public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
                 var result = await confidentialClient.AcquireTokenOnBehalfOf(scopes, new UserAssertion(token)).ExecuteAsync().ConfigureAwait(false);
-                return result.AccessToken;
+                return new TokenResponse() { Token = result.AccessToken, Expiration = result.ExpiresOn.DateTime };
             }
 
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");
@@ -251,7 +253,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <param name="instanceUrl"></param>
         /// <param name="scopes">scopes list to create the token for</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
             IList<string> _localScopesResolver = new List<string>();
@@ -263,7 +265,7 @@ namespace Microsoft.Agents.Authentication.Msal
             else
             {
                 var templist = new List<string>();
-                
+
                 if (_connectionSettings.Scopes != null)
                 {
                     foreach (var scope in _connectionSettings.Scopes)

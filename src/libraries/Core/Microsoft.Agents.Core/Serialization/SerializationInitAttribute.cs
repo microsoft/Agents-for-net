@@ -12,9 +12,11 @@ namespace Microsoft.Agents.Core.Serialization
     {
         internal static void InitSerialization()
         {
-            //init newly loaded assemblies
+            // Register handler for new assembly loads.  This is needed because
+            // C# doesn't load a package until accessed.
             AppDomain.CurrentDomain.AssemblyLoad += (s, o) => InitAssembly(o.LoadedAssembly);
-            //and all the ones we currently have loaded
+
+            // Call serialization init on currently loaded assemblies.
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 InitAssembly(assembly);
@@ -32,13 +34,28 @@ namespace Microsoft.Agents.Core.Serialization
 
         private static IEnumerable<Type> GetLoadOnInitTypes(Assembly assembly)
         {
-            foreach (Type type in assembly.GetTypes())
+            IList<Type> result = [];
+
+            Type[] types;
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.GetLoadOnInitTypes: {ex.Message}");
+                return result;
+            }
+
+            foreach (Type type in types)
             {
                 if (type.GetCustomAttributes(typeof(SerializationInitAttribute), true).Length > 0)
                 {
-                    yield return type;
+                    result.Add(type);
                 }
             }
+
+            return result;
         }
     }
 }

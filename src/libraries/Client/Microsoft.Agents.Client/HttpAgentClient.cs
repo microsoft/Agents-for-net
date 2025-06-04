@@ -56,12 +56,13 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public string Name => _settings.Name;
 
+        /*
         public async Task StartConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             var agentConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
             var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, false);
 
-            await SendRequest(conversationUpdate, cancellationToken).ConfigureAwait(false);
+            await SendRequest(conversationUpdate, AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken).ConfigureAwait(false);
         }
 
         public IAsyncEnumerable<object> StartConversationStreamedAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
@@ -69,18 +70,18 @@ namespace Microsoft.Agents.Client
             var agentConversationId = _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).GetAwaiter().GetResult();
             var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, true);
 
-            return InnerSendActivityStreamedAsync(conversationUpdate, cancellationToken);
+            return InnerSendActivityStreamedAsync(conversationUpdate, AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken);
         }
-
+        */
 
         /// <inheritdoc/>
-        public async Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
-            await SendActivityAsync<object>(agentConversationId, activity, relatesTo, cancellationToken).ConfigureAwait(false);
+            await SendActivityAsync<object>(agentConversationId, activity, relatesTo, useAnonymous, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
@@ -91,7 +92,7 @@ namespace Microsoft.Agents.Client
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
 
             // Create the HTTP request from the cloned Activity and send it to the Agent.
-            using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
+            using var response = await SendRequest(activityClone, useAnonymous, cancellationToken).ConfigureAwait(false);
 #if !NETSTANDARD
             var content = response.Content != null ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : null;
 #else
@@ -107,13 +108,13 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            await foreach (var received in SendActivityStreamedAsync(agentConversationId, activity, relatesTo, cancellationToken))
+            await foreach (var received in SendActivityStreamedAsync(agentConversationId, activity, relatesTo, useAnonymous, cancellationToken))
             {
                 if (received is IActivity receivedActivity)
                 {
@@ -180,18 +181,18 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
             activityClone.DeliveryMode = DeliveryModes.Stream;
 
-            return InnerSendActivityStreamedAsync(activity, cancellationToken);
+            return InnerSendActivityStreamedAsync(activityClone, useAnonymous, cancellationToken);
         }
 
-        public async IAsyncEnumerable<object> InnerSendActivityStreamedAsync(IActivity activity, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<object> InnerSendActivityStreamedAsync(IActivity activity, bool useAnonymous = false, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             // Create the HTTP request from the cloned Activity and send it to the Agent.
-            using var response = await SendRequest(activity, cancellationToken).ConfigureAwait(false);
+            using var response = await SendRequest(activity, useAnonymous, cancellationToken).ConfigureAwait(false);
 
             // Read streamed response
 #if !NETSTANDARD
@@ -242,7 +243,7 @@ namespace Microsoft.Agents.Client
             }
         }
 
-        private async Task<HttpResponseMessage> SendRequest(IActivity activity, CancellationToken cancellationToken)
+        private async Task<HttpResponseMessage> SendRequest(IActivity activity, bool useAnonymous, CancellationToken cancellationToken)
         {
             var jsonContent = new StringContent(activity.ToJson(), Encoding.UTF8, "application/json");
             var httpRequestMessage = new HttpRequestMessage
@@ -255,8 +256,11 @@ namespace Microsoft.Agents.Client
             using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentClient));
 
             // Add the auth header to the HTTP request.
-            var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);
-            httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
+            if (!useAnonymous)
+            {
+                var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);
+                httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
+            }
 
             var completionOption = activity.DeliveryMode == DeliveryModes.Stream ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead;
             HttpResponseMessage response;
@@ -298,7 +302,7 @@ namespace Microsoft.Agents.Client
                 {
                     ServiceUrl = relatesTo.ServiceUrl,
                     ActivityId = relatesTo.Id,
-                    ChannelId = relatesTo.ChannelId.ToString(),
+                    ChannelId = relatesTo.ChannelId.Channel,
                     Locale = relatesTo.Locale,
                     Conversation = new ConversationAccount
                     {

@@ -1,4 +1,12 @@
 ﻿{
   "type": "typing",
-  "id": "typing-1"
+  "id": "typing-1",
+  "membersAdded": [],
+  "membersRemoved": [],
+  "reactionsAdded": [],
+  "reactionsRemoved": [],
+  "attachments": [],
+  "entities": [],
+  "listenFor": [],
+  "textHighlights": []
 }

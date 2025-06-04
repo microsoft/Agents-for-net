@@ -35,6 +35,14 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of Activity. </summary>
         public Activity()
         {
+            MembersAdded = [];
+            MembersRemoved = [];
+            ReactionsAdded = [];
+            ReactionsRemoved = [];
+            Attachments = [];
+            Entities = [];
+            ListenFor = [];
+            TextHighlights = [];
         }
 
         /// <summary> Initializes a new instance of Activity. </summary>
@@ -98,10 +106,10 @@ namespace Microsoft.Agents.Core.Models
             Recipient = recipient;
             TextFormat = textFormat;
             AttachmentLayout = attachmentLayout;
-            MembersAdded = membersAdded;
-            MembersRemoved = membersRemoved;
-            ReactionsAdded = reactionsAdded;
-            ReactionsRemoved = reactionsRemoved;
+            MembersAdded = membersAdded ?? [];
+            MembersRemoved = membersRemoved ?? [];
+            ReactionsAdded = reactionsAdded ?? [];
+            ReactionsRemoved = reactionsRemoved ?? [];
             TopicName = topicName;
             Locale = locale;
             Text = text;
@@ -109,8 +117,8 @@ namespace Microsoft.Agents.Core.Models
             InputHint = inputHint;
             Summary = summary;
             SuggestedActions = suggestedActions;
-            Attachments = attachments;
-            Entities = entities;
+            Attachments = attachments ?? [];
+            Entities = entities ?? [];
             ChannelData = channelData;
             Action = action;
             ReplyToId = replyToId;
@@ -123,8 +131,8 @@ namespace Microsoft.Agents.Core.Models
             Expiration = expiration;
             Importance = importance;
             DeliveryMode = deliveryMode;
-            ListenFor = listenFor;
-            TextHighlights = textHighlights;
+            ListenFor = listenFor ?? [];
+            TextHighlights = textHighlights ?? [];
             SemanticAction = semanticAction;
         }
 

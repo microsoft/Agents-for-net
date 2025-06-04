@@ -410,7 +410,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     do
                     {
                         var resultSegment = _containerClient.Value
-                            .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(activity.ChannelId.ToString())}/{SanitizeKey(activity.Conversation.Id)}/")
+                            .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/")
                             .AsPages(token).ConfigureAwait(false);
 
                         token = null;
@@ -513,7 +513,7 @@ namespace Microsoft.Agents.Storage.Transcript
 
         private static string GetBlobName(IActivity activity)
         {
-            var blobName = $"{SanitizeKey(activity.ChannelId.ToString())}/{SanitizeKey(activity.Conversation.Id)}/{activity.Timestamp.Value.Ticks.ToString("x", CultureInfo.InvariantCulture)}-{SanitizeKey(activity.Id)}.json";
+            var blobName = $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/{activity.Timestamp.Value.Ticks.ToString("x", CultureInfo.InvariantCulture)}-{SanitizeKey(activity.Id)}.json";
             return blobName;
         }
 

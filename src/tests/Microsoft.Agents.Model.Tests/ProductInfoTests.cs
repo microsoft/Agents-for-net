@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(Channels.Msteams == activity.ChannelId);
 
             // Is M365Copilot?
-            string m365CopilotJson = $"{{\"channelId\":\"msteams\",\"entities\":[{{\"id\":\"COPILOT\",\"type\":\"{EntityTypes.ProductInfo}\"}}]}}";
+            string m365CopilotJson = "{\"channelId\":\"msteams\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"id\":\"COPILOT\",\"type\":\"ProductInfo\"}],\"listenFor\":[],\"textHighlights\":[]}";
             activity = ProtocolJsonSerializer.ToObject<IActivity>(m365CopilotJson);
             Assert.True(Channels.M365Copilot == activity.ChannelId);
 
@@ -42,11 +42,11 @@ namespace Microsoft.Agents.Model.Tests
 
             // ChannelId construction
             var channelId = new ChannelId(Channels.Msteams);
-            Assert.Equal(Channels.Msteams, channelId.ToString());
+            Assert.Equal(Channels.Msteams, channelId);
 
             // With formatted value
             channelId = new ChannelId(Channels.M365Copilot);
-            Assert.Equal(Channels.M365Copilot, channelId.ToString());
+            Assert.Equal(Channels.M365Copilot, channelId);
             Assert.True(Channels.M365Copilot == activity.ChannelId);
             Assert.Equal(Channels.Msteams, activity.ChannelId.Channel);
             Assert.Equal(Channels.M365CopilotSubChannel, activity.ChannelId.SubChannel);

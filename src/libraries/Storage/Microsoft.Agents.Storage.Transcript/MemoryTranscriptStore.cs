@@ -34,10 +34,10 @@ namespace Microsoft.Agents.Storage.Transcript
 
             lock (_channels)
             {
-                if (!_channels.TryGetValue(activity.ChannelId.ToString(), out var channel))
+                if (!_channels.TryGetValue(activity.ChannelId, out var channel))
                 {
                     channel = [];
-                    _channels[activity.ChannelId.ToString()] = channel;
+                    _channels[activity.ChannelId] = channel;
                 }
 
                 if (!channel.TryGetValue(activity.Conversation.Id, out var transcript))

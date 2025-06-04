@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             // Format prompt to send
             IActivity prompt;
             var choices = options.Choices ?? new List<Choice>();
-            var channelId = turnContext.Activity.ChannelId.ToString();
+            var channelId = turnContext.Activity.ChannelId;
             var choiceOptions = ChoiceOptions ?? _choiceDefaults[culture];
             var choiceStyle = options.Style ?? Style;
             var conversationType = turnContext.Activity.Conversation?.ConversationType;

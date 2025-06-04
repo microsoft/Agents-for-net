@@ -29,8 +29,8 @@ namespace Microsoft.Agents.Core.Models
             Title = title;
             Subtitle = subtitle;
             Text = text;
-            Images = images;
-            Buttons = buttons;
+            Images = images ?? [];
+            Buttons = buttons ?? [];
             Tap = tap;
         }
 

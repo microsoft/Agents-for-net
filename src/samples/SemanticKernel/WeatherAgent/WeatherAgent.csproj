@@ -16,13 +16,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-    <PackageReference Include="Azure.Identity" />
-		<PackageReference Include="Microsoft.IdentityModel.Validators" />
-	</ItemGroup>
-	<ItemGroup>	  
+		<PackageReference Include="Azure.Identity" />
 		<PackageReference Include="AdaptiveCards" />
+		<PackageReference Include="Microsoft.SemanticKernel.Agents.AzureAI" />
 		<PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
-		<PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
 	</ItemGroup>
@@ -32,9 +29,4 @@
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Content Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
 </Project>

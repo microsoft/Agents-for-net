@@ -797,7 +797,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activity1 = new Activity
             {
                 Type = ActivityTypes.Message,
-                Text = "hello a",
+                Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -806,7 +806,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activity2 = new Activity
             {
                 Type = ActivityTypes.Message,
-                Text = "welcome",
+                Text = "HELLO",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -814,13 +814,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
-                Text = "hello b",
+                Type = ActivityTypes.Event,
+                Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
@@ -842,11 +843,67 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(2, texts.Count);
+        }
+
+        [Fact]
+        public async Task Test_OnMessage_StringWord_Selector()
+        {
+            // Arrange
+            var activity1 = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello a",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
+            var activity2 = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "welcome",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
+            var activity3 = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "i say hello b",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext1 = new TurnContext(adapter, activity1);
+            var turnContext2 = new TurnContext(adapter, activity2);
+            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+            var texts = new List<string>();
+            app.OnMessage(new Regex(@"\bhello\b"), (context, _, _) =>
+            {
+                texts.Add(context.Activity.Text);
+                return Task.CompletedTask;
+            });
+
+            // Act
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
-            Assert.Single(texts);
-            Assert.Equal("hello a", texts[0]);
+            Assert.Equal(2, texts.Count);
         }
 
         [Fact]
@@ -962,8 +1019,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activity1 = new Activity
             {
                 Type = ActivityTypes.Message,
-                Text = "hello a",
-                Name = "hello",
+                Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -973,6 +1029,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "welcome",
+                Name = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1001,8 +1058,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             var texts = new List<string>();
             app.OnMessage(new MultipleRouteSelector
             {
-                Strings = new[] { "world" },
-                Regexes = new[] { new Regex("come") },
+                Strings = new[] { "hello" },
+                Regexes = new[] { new Regex(@"\bworld\b") },
                 RouteSelectors = new RouteSelector[] { (context, _) => Task.FromResult(context.Activity?.Name != null) },
             },
             (context, _, _) =>
@@ -1018,7 +1075,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Equal(3, texts.Count);
-            Assert.Equal("hello a", texts[0]);
+            Assert.Equal("hello", texts[0]);
             Assert.Equal("welcome", texts[1]);
             Assert.Equal("hello world", texts[2]);
         }

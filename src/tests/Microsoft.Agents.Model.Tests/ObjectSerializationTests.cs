@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -363,6 +364,74 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
+        public void ActivityWithDerivedEntitySerializationTest()
+        {
+            var jsonIn = "{\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[\"AIGeneratedContent\"],\"citation\":[],\"type\":\"https://schema.org/Message\"}],\"listenFor\":[],\"textHighlights\":[]}";
+
+            var activity = ProtocolJsonSerializer.ToObject<Activity>(jsonIn);
+            var jsonOut = ProtocolJsonSerializer.ToJson(activity);
+
+            Assert.Equal(jsonIn, jsonOut);
+        }
+
+
+
+        [Fact]
+        public void WithDerivedActivitySerializationTest()
+        {
+            List<Activity> activities = [new DerivedActivity
+            {
+                Secret = "secret",
+                Public = "public"
+            }];
+            var jsonOut = ProtocolJsonSerializer.ToJson(activities);
+            var expected = "[{\"@public\":\"public\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[],\"listenFor\":[],\"textHighlights\":[]}]";
+            
+            Assert.Equal(expected, jsonOut);
+        }
+
+        [Fact]
+        public void SerializeDeserializeIsThreadSafeUnderConcurrency()
+        {
+            var text = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", "ComplexActivityPayload.json"));
+
+            var activity = ProtocolJsonSerializer.ToObject<Activity>(text);
+
+            var json = ProtocolJsonSerializer.ToJson(activity);
+
+            const int threadCount = 50;
+            var results = new Activity[threadCount];
+
+            Parallel.For(0, threadCount, i =>
+            {
+                results[i] = RoundTrip(activity);
+            });
+
+            foreach (var result in results)
+            {
+                Assert.NotNull(result);
+                AssertPropertyValues(result);
+            }
+        }
+
+        [Fact]
+        public void DuplicateNameActivitySerializationShouldThrow()
+        {
+            // This should throw an exception because the property name 'id' is duplicated.
+            var activityJson = new DuplicateNameActivity
+            {
+                Id = "12345",
+                MyId = "67890"
+            };
+            // Expect an InvalidOperationException from System.Text.Json (Note: The ConnectorConverter is not used here because the compile-time type is 'object').
+            Assert.Throws<InvalidOperationException>(() => ProtocolJsonSerializer.ToJson(activityJson));
+            // Expect an InvalidOperationException from ConnectorConverter.
+            Assert.Throws<InvalidOperationException>(() => JsonSerializer.Serialize<Activity>(activityJson, ProtocolJsonSerializer.SerializationOptions));
+        }
+
+
+#if SKIP_EMPTY_LISTS
+        [Fact]
         public void EmptyListDoesntSerialzie()
         {
             var activity = new Activity()
@@ -386,7 +455,7 @@ namespace Microsoft.Agents.Model.Tests
             var expected = "{\"suggestedActions\":{\"to\":[\"test\"]}}";
             Assert.Equal(expected, json);
         }
-
+#endif
 
         private Activity RoundTrip(Activity outActivity)
         {
@@ -407,6 +476,10 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotEmpty(activity.MembersRemoved);    
             Assert.NotEmpty(activity.ReactionsAdded);
             Assert.NotEmpty(activity.ReactionsRemoved);
+
+            Assert.NotNull(activity.Attachments);
+            Assert.NotNull(activity.ListenFor);
+            Assert.NotNull(activity.TextHighlights);
 
             // validate .value, .channeldata and the activity additional properties are present
             Assert.NotNull(activity.Value);
@@ -445,5 +518,21 @@ namespace Microsoft.Agents.Model.Tests
 
             public TestObjectClass TestObject { get; set; }
         }
+
+        private class DerivedActivity : Activity
+        {
+            [JsonIgnore]
+            public string Secret { get; set; }
+
+            [JsonPropertyName("@public")]
+            public string Public { get; set; }
+        }
+
+        private class DuplicateNameActivity : Activity
+        {
+
+            [JsonPropertyName("id")]
+            public string MyId { get; set; }
+        }
     }
-}
+}   
