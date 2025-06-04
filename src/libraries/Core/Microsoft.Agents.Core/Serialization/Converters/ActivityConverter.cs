@@ -4,7 +4,6 @@
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
 
@@ -23,6 +22,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     activity.ChannelId.SubChannel = productInfo.Id;
                 }
+
+                activity.Entities.Remove(productInfo);
             }
 
             return activity;
