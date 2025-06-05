@@ -31,6 +31,8 @@
 		<!-- This package is required to support gpt-4o models -->
 		<PackageReference Include="OpenAI" />
 		<PackageReference Include="System.Text.Json" />
+		<!-- This is here to force an updated version of Newtosoft which is being pulled by the AdaptiveCards Transient dependancy -->
+		<PackageReference Include="Newtonsoft.Json" />
 	</ItemGroup>
 
 	<ItemGroup>
