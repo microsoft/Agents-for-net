@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json;
@@ -10,6 +11,24 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 {
     internal class ActivityConverter : ConnectorConverter<Activity>
     {
+        public override Activity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var activity = base.Read(ref reader, typeToConvert, options);
+
+            var productInfo = activity.GetProductInfoEntity();
+            if (productInfo != null)
+            {
+                if (activity.ChannelId != null)
+                {
+                    activity.ChannelId.SubChannel = productInfo.Id;
+                }
+
+                activity.Entities.Remove(productInfo);
+            }
+
+            return activity;
+        }
+
         /// <inheritdoc/>
         protected override bool TryReadCollectionProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options)
         {
@@ -19,6 +38,18 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 return true;
             }
             return false;
+        }
+
+        protected override void ReadProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
+        {
+            if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
+                property.SetValue(value, new ChannelId((string) propertyValue));
+                return;
+            }
+
+            base.ReadProperty(ref reader, value, propertyName, options, property);
         }
 
         /// <inheritdoc/>
@@ -68,6 +99,15 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// <inheritdoc/>
         protected override bool TryWriteExtensionData(Utf8JsonWriter writer, Activity value, string propertyName)
         {
+            if (propertyName.Equals(nameof(value.ChannelId)))
+            {
+                if (value.ChannelId != null)
+                {
+                    writer.WriteString("channelId", value.ChannelId.Channel);
+                }
+                return true;
+            }
+
             if (!propertyName.Equals(nameof(value.Properties)))
             {
                 return false;

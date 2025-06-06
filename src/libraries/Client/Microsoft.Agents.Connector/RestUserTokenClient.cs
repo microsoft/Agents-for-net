@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation("GetTokenOrSignInResourceAsync ConnectionName: {connectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
-            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
+            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId.Channel, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -20,7 +20,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public static Task<TokenResponse> GetUserTokenAsync(ITurnContext context, string connectionName, string magicCode, CancellationToken cancellationToken)
         {
-            return GetUserTokenClient(context).GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, magicCode, cancellationToken);
+            IUserTokenClient userTokenClient = GetUserTokenClient(context);
+            return userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId.Channel, magicCode, cancellationToken);
         }
 
         public static Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(ITurnContext context, string connectionName, string magicCode = null, CancellationToken cancellationToken = default)
@@ -30,12 +31,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public static Task<TokenResponse> ExchangeTokenAsync(ITurnContext context, string connectionName, TokenExchangeRequest tokenExchangeRequest, CancellationToken cancellationToken)
         {
-            return GetUserTokenClient(context).ExchangeTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, tokenExchangeRequest, cancellationToken);
+            IUserTokenClient userTokenClient = GetUserTokenClient(context);
+            return userTokenClient.ExchangeTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId.Channel, tokenExchangeRequest, cancellationToken);
         }
 
         public static Task SignOutUserAsync(ITurnContext context, string connectionName, CancellationToken cancellationToken)
         {
-            return GetUserTokenClient(context).SignOutUserAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, cancellationToken);
+            IUserTokenClient userTokenClient = GetUserTokenClient(context);
+            return userTokenClient.SignOutUserAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId.Channel, cancellationToken);
         }
 
         private static IUserTokenClient GetUserTokenClient(ITurnContext context)
