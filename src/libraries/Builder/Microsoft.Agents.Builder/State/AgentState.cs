@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using System;
@@ -54,7 +55,7 @@ namespace Microsoft.Agents.Builder.State
         [Obsolete("Use AgentState.GetValue and AgentsState.SetValue")]
         public IStatePropertyAccessor<T> CreateProperty<T>(string name)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
             return new AgentStatePropertyAccessor<T>(this, name);
         }
 
@@ -157,7 +158,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public virtual async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var storageKey = GetStorageKey(turnContext);
 
@@ -197,8 +198,8 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            
             var cachedState = GetCachedState();
             if (cachedState != null && (force || cachedState.IsChanged()))
             {
@@ -253,7 +254,7 @@ namespace Microsoft.Agents.Builder.State
         /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
         protected T GetPropertyValue<T>(string propertyName)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             if (!IsLoaded())
             {
@@ -295,7 +296,7 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         protected void DeletePropertyValue(string propertyName)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             var cachedState = GetCachedState();
             cachedState.State.Remove(propertyName);
@@ -309,7 +310,7 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         protected void SetPropertyValue(string propertyName, object value)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             var cachedState = GetCachedState();
             cachedState.State[propertyName] = value;

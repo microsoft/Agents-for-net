@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,8 +22,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns>A result object.</returns>
         public static async Task<TResult> RunAsync<TResult>(Func<Task<TResult>> task, Func<Exception, int, RetryParams> retryExceptionHandler)
         {
-            ArgumentNullException.ThrowIfNull(task);
-            ArgumentNullException.ThrowIfNull(retryExceptionHandler);
+            AssertionHelpers.ThrowIfNull(task, nameof(task));
+            AssertionHelpers.ThrowIfNull(retryExceptionHandler, nameof(retryExceptionHandler));
 
             RetryParams retry;
             var exceptions = new List<Exception>();

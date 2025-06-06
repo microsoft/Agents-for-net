@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
         /// the receiving channel assigned to the activities.</remarks>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
-        public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+        public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
             if (turnContext == null)
             {
@@ -271,17 +271,7 @@ namespace Microsoft.Agents.Builder.Testing
                     activity.Timestamp = DateTime.UtcNow;
                 }
 
-                if (activity.Type == ActivityTypes.Delay)
-                {
-                    // The BotFrameworkAdapter and Console adapter implement this
-                    // directly in the POST method. Replicating that here
-                    // to keep the behavior as close as possible to facilitate
-                    // more realistic tests.
-                    var delayMs = Convert.ToInt32(activity.Value, CultureInfo.InvariantCulture);
-
-                    await Task.Delay(delayMs).ConfigureAwait(false);
-                }
-                else if (activity.Type == ActivityTypes.Trace)
+                if (activity.Type == ActivityTypes.Trace)
                 {
                     if (_sendTraceActivity)
                     {
@@ -296,7 +286,7 @@ namespace Microsoft.Agents.Builder.Testing
                 responses[index] = new ResourceResponse(activity.Id);
             }
 
-            return responses;
+            return Task.FromResult(responses);
         }
 
         /// <summary>

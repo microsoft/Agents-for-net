@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>handoff event.</returns>
         public static IActivity CreateHandoffInitiation(IActivity activity, object handoffContext, Transcript transcript = null)
         {
-            ArgumentNullException.ThrowIfNull(activity);
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             var handoffEvent = CreateHandoffEvent(HandoffEventNames.InitiateHandoff, handoffContext, activity.Conversation);
 
@@ -53,8 +53,8 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>handoff event.</returns>
         public static Activity CreateHandoffStatus(ConversationAccount conversation, string state, string message = null)
         {
-            ArgumentNullException.ThrowIfNull(conversation);
-            ArgumentException.ThrowIfNullOrWhiteSpace(state);
+            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(state, nameof(state));
 
             object value = new { state, message };
 

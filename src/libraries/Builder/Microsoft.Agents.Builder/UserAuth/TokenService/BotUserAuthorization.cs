@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
@@ -35,7 +36,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public BotUserAuthorization(string name, OAuthSettings oauthSettings, IStorage storage)
         {
             _name = name;
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));

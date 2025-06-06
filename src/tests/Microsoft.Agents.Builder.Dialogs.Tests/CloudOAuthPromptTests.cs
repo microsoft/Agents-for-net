@@ -35,8 +35,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
+                x => x.GetTokenOrSignInResourceAsync(It.Is<string>(s => s == connectionName), It.IsAny<IActivity>(), It.Is<string>(s => s == magicCode), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse() { TokenResponse = new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" } });
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(

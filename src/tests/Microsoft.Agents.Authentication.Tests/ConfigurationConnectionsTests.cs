@@ -12,7 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+#if !NETFRAMEWORK
 using System.Runtime.Loader;
+#endif
 using System.Security.Claims;
 using Xunit;
 using Xunit.Abstractions;
@@ -248,8 +250,12 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnValidProviderType()
         {
-            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);                    
+            var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+#if !NETFRAMEWORK
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#else
+            var assemblyLoader = new AuthModuleLoader(AppDomain.CurrentDomain, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#endif
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "MsalAuth");
 
@@ -260,7 +266,11 @@ namespace Microsoft.Agents.Auth.Tests
         public void GetProviderConstructor_ShouldReturnConstructorInfoOnNullType()
         {
             var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+#if !NETFRAMEWORK
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#else
+            var assemblyLoader = new AuthModuleLoader(AppDomain.CurrentDomain, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#endif
 
             var response = assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", null);
 
@@ -278,7 +288,11 @@ namespace Microsoft.Agents.Auth.Tests
         public void GetProviderConstructor_ShouldThrowOnNullAssemblyName()
         {
             var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+#if !NETFRAMEWORK
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#else
+            var assemblyLoader = new AuthModuleLoader(AppDomain.CurrentDomain, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#endif
 
             try
             {
@@ -296,8 +310,11 @@ namespace Microsoft.Agents.Auth.Tests
         public void GetProviderConstructor_ShouldThrowOnInvalidProviderType()
         {
             var serviceProvider = ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: null);
+#if !NETFRAMEWORK
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
-
+#else
+            var assemblyLoader = new AuthModuleLoader(AppDomain.CurrentDomain, serviceProvider.GetService<ILogger<ConfigurationConnections>>());
+#endif
             try
             {
                 assemblyLoader.GetProviderConstructor("name", "Microsoft.Agents.Authentication.Msal", "type");

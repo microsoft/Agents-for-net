@@ -1,6 +1,7 @@
 ﻿// Licensed under the MIT License.
 // Copyright (c) Microsoft Corporation. All rights reserved.
 
+using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,10 +58,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 throw new ArgumentException($"{nameof(options)} cannot be a cancellation token");
             }
 
-            if (outerDc == null)
-            {
-                throw new ArgumentNullException(nameof(outerDc));
-            }
+            AssertionHelpers.ThrowIfNull(outerDc, nameof(outerDc));
 
             await EnsureInitializedAsync(outerDc).ConfigureAwait(false);
 
@@ -383,9 +381,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         {
             DialogState state;
 
-            if (instance.State.ContainsKey(PersistedDialogState))
+            if (instance.State.TryGetValue(PersistedDialogState, out var persistedState))
             {
-                state = instance.State[PersistedDialogState] as DialogState;
+                state = persistedState as DialogState;
             }
             else
             {

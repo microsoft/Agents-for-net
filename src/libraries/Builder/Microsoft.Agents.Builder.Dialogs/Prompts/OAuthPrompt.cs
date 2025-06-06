@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
@@ -109,7 +110,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(dc);
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             if (options is CancellationToken)
             {
@@ -171,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// user's reply as valid input for the prompt.</para></remarks>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(dc);
+            AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Check for timeout
             var state = dc.ActiveDialog.State;

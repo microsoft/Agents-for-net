@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<string> GetSignInUrlAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrEmpty(state);
+            AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
             using var message = CreateGetSignInUrlRequest(state, codeChallenge, emulatorUrl, finalRedirect);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -47,7 +48,11 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
                     {
+#if !NETSTANDARD
                         return await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+                        return await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
                     }
                 default:
                     throw new HttpRequestException($"GetSignInUrlAsync {httpResponse.StatusCode}");
@@ -74,7 +79,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<SignInResource> GetSignInResourceAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrEmpty(state);
+            AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
 
             using var message = CreateGetSignInResourceRequest(state, codeChallenge, emulatorUrl, finalRedirect);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -83,7 +88,11 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
                     {
+#if !NETSTANDARD
                         return ProtocolJsonSerializer.ToObject<SignInResource>(httpResponse.Content.ReadAsStream(cancellationToken));
+#else
+                        return ProtocolJsonSerializer.ToObject<SignInResource>(httpResponse.Content.ReadAsStringAsync().Result);
+#endif
                     }
                 case 400:
                     {

@@ -11,9 +11,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+#if !NETSTANDARD
+using System.Runtime.Loader;
+#endif
 
 namespace Microsoft.Agents.Builder.UserAuth
 {
@@ -86,7 +88,11 @@ namespace Microsoft.Agents.Builder.UserAuth
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
             }
 
+#if !NETSTANDARD
             var assemblyLoader = new UserAuthorizationModuleLoader(AssemblyLoadContext.Default, _logger);
+#else
+            var assemblyLoader = new UserAuthorizationModuleLoader(AppDomain.CurrentDomain, _logger);
+#endif
 
             foreach (var definition in _userAuthHandlers)
             {
@@ -102,8 +108,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             string token;
             try
@@ -139,8 +143,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, string handlerName, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(nameof(turnContext));
-
             IUserAuthorization auth = Get(handlerName);
             await auth.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
