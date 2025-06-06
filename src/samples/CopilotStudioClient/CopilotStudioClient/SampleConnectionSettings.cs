@@ -33,14 +33,14 @@ namespace CopilotStudioClientSample
         /// Create ConnectionSettings from a configuration section.
         /// </summary>
         /// <param name="config"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public SampleConnectionSettings(IConfigurationSection config) :base (config)
+        /// <exception cref="System.ArgumentException"></exception>
+        public SampleConnectionSettings(IConfigurationSection config) : base(config)
         {
             AppClientId = config[nameof(AppClientId)] ?? throw new ArgumentException($"{nameof(AppClientId)} not found in config");
             TenantId = config[nameof(TenantId)] ?? throw new ArgumentException($"{nameof(TenantId)} not found in config");
 
             UseS2SConnection = config.GetValue<bool>(nameof(UseS2SConnection), false);
-            AppClientSecret = config[nameof(AppClientSecret)]; 
+            AppClientSecret = config[nameof(AppClientSecret)];
 
         }
     }

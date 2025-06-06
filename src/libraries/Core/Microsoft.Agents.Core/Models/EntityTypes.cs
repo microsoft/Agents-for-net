@@ -11,5 +11,6 @@ namespace Microsoft.Agents.Core.Models
         public const string GeoCoordinates = "GeoCoordinates";
         public const string StreamInfo = "streaminfo";
         public const string ActivityTreatment = "activityTreatment";
+        public const string AICitation = "https://schema.org/Message";
     }
 }

@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.State
         /// The object uses <paramref name="storage"/> to persist state property values.
         /// The object uses the <paramref name="stateName"/> to cache state within the context for each turn.
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="storage"/> or <paramref name="stateName"/>
+        /// <exception cref="System.ArgumentNullException"><paramref name="storage"/> or <paramref name="stateName"/>
         /// is <c>null</c>.</exception>
         /// <seealso cref="ITurnContext"/>
         public AgentState(IStorage storage, string stateName)
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.State
         /// <typeparam name="T">The value type of the property.</typeparam>
         /// <param name="name">The name of the property.</param>
         /// <returns>An accessor for the property.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
         [Obsolete("Use AgentState.GetValue and AgentsState.SetValue")]
         public IStatePropertyAccessor<T> CreateProperty<T>(string name)
         {
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Builder.State
         public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-            
+
             var cachedState = GetCachedState();
             if (cachedState != null && (force || cachedState.IsChanged()))
             {

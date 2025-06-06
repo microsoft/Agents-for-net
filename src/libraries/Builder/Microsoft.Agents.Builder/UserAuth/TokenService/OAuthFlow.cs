@@ -2,9 +2,12 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -18,38 +21,31 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// service.
     /// </summary>
     /// <remarks>
-    /// The prompt will attempt to retrieve the users current token and if the user isn't signed in, it
+    /// <para>The prompt will attempt to retrieve the users current token and if the user isn't signed in, it
     /// will send them an `OAuthCard|SigninCard` containing a button they can press to signin. Depending on the
-    /// channel, the user will be sent through one of two possible signin flows:
+    /// channel, the user will be sent through one of two possible signin flows:</para>
     ///
-    /// - The automatic signin flow where once the user signs in and the SSO service will forward the Agent
-    /// the users access token using either an `event` or `invoke` activity.
-    /// - The "magic code" flow where once the user signs in they will be prompted by the SSO
+    /// <para>- The automatic signin flow where once the user signs in and the SSO service will forward the Agent
+    /// the users access token using either an `event` or `invoke` activity.</para>
+    /// <para>- The "magic code" flow where once the user signs in they will be prompted by the SSO
     /// service to send the Agent a six digit code confirming their identity. This code will be sent as a
-    /// standard `message` activity.
+    /// standard `message` activity.</para>
     ///
-    /// Both flows are automatically supported by the `OAuthFlow` and the only thing you need to be
+    /// <para>Both flows are automatically supported by the `OAuthFlow` and the only thing you need to be
     /// careful of is that you don't block the `event` and `invoke` activities that the prompt might
-    /// be waiting on.
+    /// be waiting on.</para>
+    /// </remarks>
     /// <param name="settings"></param>
-    /// </remarks>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="OAuthFlow"/> class.
-    /// </remarks>
-    public class OAuthFlow
+    /// <param name="storage"></param>
+    public class OAuthFlow(OAuthSettings settings)
     {
-        private readonly OAuthSettings _settings;
-
-        public OAuthFlow(OAuthSettings settings)
-        {
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        }
+        private readonly OAuthSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
 
         public OAuthSettings Settings => _settings;
 
         public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
-            AssertionHelpers.ThrowIfNull(turnContext,nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             // Attempt to get the users token
             var output = await UserTokenClientWrapper.GetTokenOrSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
@@ -80,7 +76,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// active after the turn has been processed.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
         /// user's reply as valid input for the prompt.</para></remarks>
-        /// <exception cref="TimeoutException"/>
+        /// <exception cref="System.TimeoutException"/>
         public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
@@ -89,7 +85,21 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             var hasTimedOut = HasTimedOut(turnContext, expires);
             if (hasTimedOut)
             {
-                // if the token fetch request times out, complete the prompt with no result.
+                if (IsTokenExchangeRequestInvoke(turnContext))
+                {
+                    // We must respond to the Invoke.
+                    var tokenExchangeRequest = turnContext.Activity.Value != null ? ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value) : null;
+                    await SendInvokeResponseAsync(
+                        turnContext,
+                        HttpStatusCode.BadRequest,
+                        new TokenExchangeInvokeResponse
+                        {
+                            Id = tokenExchangeRequest?.Id,
+                            ConnectionName = _settings.AzureBotOAuthConnectionName,
+                            FailureDetail = "The Agent received a 'signin/tokenExchange' but had timed out.",
+                        }, cancellationToken).ConfigureAwait(false);
+                }
+
                 throw new TimeoutException("OAuthFlow timeout");
             }
 
@@ -222,16 +232,20 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Shared implementation of the RecognizeTokenAsync function. This is intended for internal use, to
-        /// consolidate the implementation of the OAuthPrompt and OAuthInput. Application logic should use
-        /// those dialog classes.
-        /// </summary>
-        /// <param name="settings">OAuthPromptSettings.</param>
-        /// <param name="dc">DialogContext.</param>
-        /// <param name="cancellationToken">CancellationToken.</param>
-        /// <param name="turnContext"></param>
-        /// <returns>PromptRecognizerResult.</returns>
+        // Handles exchanging the code/token for a TokenResponse.
+        //
+        // Teams SSO notes:
+        //    Teams will send an "signin/tokenExchange" Invoke.  If the Token Service Exchange result in a "ConsentRequired" (HTTP 400), Teams
+        //    expects the InvokeResponse.Status to be 412.  This will cause Teams to get Consent and send another "signin/tokenExchange" with
+        //    the exchangeable token.
+        //
+        //    In the event of a critical exception (500 or unknown from Token Service), an InvokeResponse.Status 400 should be returned which
+        //    will cause Teams to stop.
+        //
+        // Return null if the flow is still pending.
+        // Throws:
+        //    ErrorResponseException
+        //    UserCancelledException
         private async Task<TokenResponse> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse result = null;
@@ -239,18 +253,31 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 result = ProtocolJsonSerializer.ToObject<TokenResponse>(turnContext.Activity.Value);
             }
+            else if (IsSignInFailureInvoke(turnContext))
+            {
+                await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
+                var errorResponse = new ErrorResponse() { Error = ProtocolJsonSerializer.ToObject<Error>(turnContext.Activity.Value) };
+                throw new ErrorResponseException($"SignInFailure: ({errorResponse.Error.Code}) {errorResponse.Error.Message}") { Body = errorResponse };
+            }
             else if (IsVerificationInvoke(turnContext))
             {
                 var value = turnContext.Activity.Value.ToJsonElements();
                 var magicCode = value.ContainsKey("state") ? turnContext.Activity.Value.ToJsonElements()["state"].ToString() : null;
+
+                if (!string.IsNullOrEmpty(magicCode) && magicCode.Equals(SignInConstants.CancelledByUser, StringComparison.OrdinalIgnoreCase))
+                {
+                    // This happens either by the user closing the SignIn window, including if there was a error on the sign in process (say
+                    // misconfigured OAuthConnection.  We don't get enough information to know the difference.
+                    await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
+                    throw new UserCancelledException();
+                }
 
                 // Getting the token follows a different flow in Teams. At the signin completion, Teams
                 // will send the bot an "invoke" activity that contains a "magic" code. This code MUST
                 // then be used to try fetching the token from UserToken service within some time
                 // period. We try here. If it succeeds, we return 200 with an empty body. If it fails
                 // with a retriable error, we return 500. Teams will re-send another invoke in this case.
-                // If it fails with a non-retriable error, we return 404. Teams will not (still work in
-                // progress) retry in that case.
+                // If it fails with a non-retriable error, we return 404. Teams will not retry in that case.
                 try
                 {
                     result = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, magicCode, cancellationToken).ConfigureAwait(false);
@@ -294,24 +321,40 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = tokenExchangeRequest.Id,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
+                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the Agents active OAuthFlow. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     TokenResponse tokenExchangeResponse = null;
+
                     try
                     {
-                        var userId = turnContext.Activity.From.Id;
-                        var channelId = turnContext.Activity.ChannelId;
                         var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
                         tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Ignore Exceptions
-                        // If token exchange failed for any reason, tokenExchangeResponse above stays null , and hence we send back a failure invoke response to the caller.
-                        // This ensures that the caller shows 
+                        bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
+                        if (!isConsentRequired)
+                        {
+                            // Unclear if this will ever happen except for a hard transient error since the deduping would have done
+                            // this already.  Leaving for some defensive coding.
+                            // This is a critical error.  Either request failure, or OAuth Connection misconfiguration.
+                            // A 400 seems to cause Teams to not retry.  412 or 500 does not.
+                            // Callers should catch and clean up state because all bets are off.  This is a hammer and
+                            // more work may be possible for a more nuanced handling.
+                            await SendInvokeResponseAsync(
+                                turnContext,
+                                HttpStatusCode.BadRequest,
+                                new TokenExchangeInvokeResponse
+                                {
+                                    Id = tokenExchangeRequest.Id,
+                                    ConnectionName = _settings.AzureBotOAuthConnectionName,
+                                    FailureDetail = ex.Message,
+                                }, cancellationToken).ConfigureAwait(false);
+                            throw;
+                        }
                     }
 
                     if (tokenExchangeResponse == null || string.IsNullOrEmpty(tokenExchangeResponse.Token))
@@ -369,22 +412,28 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return result;
         }
 
-        private static bool IsTokenResponseEvent(ITurnContext turnContext)
+        public static bool IsTokenResponseEvent(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
             return activity.Type == ActivityTypes.Event && activity.Name == SignInConstants.TokenResponseEventName;
         }
 
-        private static bool IsVerificationInvoke(ITurnContext turnContext)
+        public static bool IsVerificationInvoke(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
             return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.VerifyStateOperationName;
         }
 
-        private static bool IsTokenExchangeRequestInvoke(ITurnContext turnContext)
+        public static bool IsTokenExchangeRequestInvoke(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
             return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.TokenExchangeOperationName;
+        }
+
+        public static bool IsSignInFailureInvoke(ITurnContext turnContext)
+        {
+            var activity = turnContext.Activity;
+            return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.SignInFailure;
         }
 
         private static bool ChannelSupportsOAuthCard(string channelId)
@@ -405,7 +454,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             };
         }
 
-        private static bool HasTimedOut(ITurnContext context, DateTime expires)
+        internal static bool HasTimedOut(ITurnContext context, DateTime expires)
         {
             var isMessage = context.Activity.Type == ActivityTypes.Message;
 

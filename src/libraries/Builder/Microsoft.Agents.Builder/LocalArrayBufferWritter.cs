@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder
         /// with an initial capacity specified.
         /// </summary>
         /// <param name="initialCapacity">The minimum capacity with which to initialize the underlying buffer.</param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// Thrown when <paramref name="initialCapacity"/> is not positive (i.e. less than or equal to 0).
         /// </exception>
         public LocalArrayBufferWriter(int initialCapacity)
@@ -111,10 +111,10 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Notifies <see cref="IBufferWriter{T}"/> that <paramref name="count"/> amount of data was written to the output <see cref="Span{T}"/>/<see cref="Memory{T}"/>
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// Thrown when <paramref name="count"/> is negative.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="System.InvalidOperationException">
         /// Thrown when attempting to advance past the end of the underlying buffer.
         /// </exception>
         /// <remarks>
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Builder
         /// Returns a <see cref="Memory{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
         /// If no <paramref name="sizeHint"/> is provided (or it's equal to <code>0</code>), some non-empty buffer is returned.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// Thrown when <paramref name="sizeHint"/> is negative.
         /// </exception>
         /// <remarks>
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Builder
         /// Returns a <see cref="Span{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
         /// If no <paramref name="sizeHint"/> is provided (or it's equal to <code>0</code>), some non-empty buffer is returned.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// Thrown when <paramref name="sizeHint"/> is negative.
         /// </exception>
         /// <remarks>

@@ -35,18 +35,18 @@ namespace EvalClient
         /// <summary>
         /// Groundedness Evaluation Prompt
         /// </summary>
-        public string? GroundednessEvaluationPrompt { get; set; }        
+        public string? GroundednessEvaluationPrompt { get; set; }
         /// <summary>
         /// Groundedness Evaluation Prompt
         /// </summary>
-        public string? EvaluationDataset { get; set; }  
-        
+        public string? EvaluationDataset { get; set; }
+
         /// <summary>
         /// Create ConnectionSettings from a configuration section.
         /// </summary>
         /// <param name="config"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public EvalClientConfig(IConfigurationSection config) :base (config)
+        /// <exception cref="System.ArgumentException"></exception>
+        public EvalClientConfig(IConfigurationSection config) : base(config)
         {
             TenantId = config[nameof(TenantId)] ?? throw new ArgumentException($"{nameof(TenantId)} not found in config");
             AppClientId = config[nameof(AppClientId)] ?? throw new ArgumentException($"{nameof(AppClientId)} not found in config");

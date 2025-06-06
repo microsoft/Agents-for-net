@@ -6,6 +6,7 @@ using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,8 +86,10 @@ namespace Microsoft.Agents.Authentication
             }
         }
 
-        public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
+        public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems, ILogger<ConfigurationConnections> logger = null)
         {
+            _logger = logger ?? NullLogger<ConfigurationConnections>.Instance;
+
             _connections = [];
             if (accessTokenProviders != null)
             {

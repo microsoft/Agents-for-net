@@ -47,7 +47,6 @@
   ],
   "locale": "en-US",
   "text": "validation",
-  "attachments": [],
   "entities": [
     {
       "type": "ClientCapabilities",
@@ -77,7 +76,7 @@
       "TestObject": null
     }
   },
-  "listenFor": [],
+  "listenFor": null,
   "textHighlights": [],
   "cci_bot_id": "215797fa-5550-4f12-a967-c15437884964",
   "cci_tenant_id": "9f6be790-4a16-4dd6-9850-44a0d2649aef",

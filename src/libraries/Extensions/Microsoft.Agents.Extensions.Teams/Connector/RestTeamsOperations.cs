@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
             try
             {
-                var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
+                using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
                 using var httpResponse = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 switch ((int)httpResponse.StatusCode)
                 {

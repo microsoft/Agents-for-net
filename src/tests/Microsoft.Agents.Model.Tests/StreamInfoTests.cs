@@ -55,7 +55,11 @@ namespace Microsoft.Agents.Model.Tests
             };
 
             var json = ProtocolJsonSerializer.ToJson(activity);
+#if SKIP_EMPTY_LISTS
             Assert.Equal("{\"type\":\"typing\",\"entities\":[{\"streamId\":\"streamId\",\"streamType\":\"streamType\",\"streamSequence\":1,\"streamResult\":\"streamResult\",\"type\":\"streaminfo\"}]}", json);
+#else
+            Assert.Equal("{\"type\":\"typing\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"streamId\":\"streamId\",\"streamType\":\"streamType\",\"streamSequence\":1,\"streamResult\":\"streamResult\",\"type\":\"streaminfo\"}],\"listenFor\":[],\"textHighlights\":[]}", json);
+#endif
         }
     }
 }

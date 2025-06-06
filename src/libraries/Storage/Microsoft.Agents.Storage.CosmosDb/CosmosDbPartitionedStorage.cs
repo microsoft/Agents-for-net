@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
     /// </summary>
     public class CosmosDbPartitionedStorage : IStorage, IDisposable
     {
-        private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.CreateConnectorOptions();
+        private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
 
         private Container _container;

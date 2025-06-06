@@ -197,11 +197,17 @@
     <value>Handler name '{0}' not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid.</value>
     <comment>Raised when AgentApplication:UserAuthorization:DefaultHandlerName isn't found or fails to create.</comment>
   </data>
-  <data name="AnonymousNotAllowed" xml:space="preserve">
-    <value>Raised when JWT authentication has not been enabled for the sending channel.</value>
-    <comment>Anonymous access is not allowed for this channel.</comment>
-  </data>
   <data name="ExtensionAlreadyRegistered" xml:space="preserve">
     <value>An instance of this extention has allready been registred for this application. {0}</value>
+  </data>
+  <data name="UserTokenClientNotAvailable" xml:space="preserve">
+    <value>An instance of IUserTokenClient is not available.  This is most likely due to the registered IChannelServiceClientFactory not creating one.</value>
+  </data>
+  <data name="ExchangeTokenUnexpectedNull" xml:space="preserve">
+    <value>ExchangeToken returned an empty token.</value>
+  </data>
+  <data name="UnexpectedAuthorizationState" xml:space="preserve">
+    <value>Unexpected state for handler '{0}' </value>
+    <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
   </data>
 </root>

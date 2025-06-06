@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     }
                 default:
-                    throw new HttpRequestException($"GetSignInUrlAsync {httpResponse.StatusCode}");
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetSignInUrlUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -99,8 +99,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetSignInResourceAsync_BadRequestError, cancellationToken: cancellationToken);
                     }
                 default:
-
-                    throw new HttpRequestException($"GetSignInResourceAsync {httpResponse.StatusCode}");
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetSignInResourceUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
     }

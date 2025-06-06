@@ -7,10 +7,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 
+
 namespace Microsoft.Agents.Authentication
 {
+    /// <summary>
+    /// Provides utility methods for working with claims in the context of Agent authentication.
+    /// </summary>
     public static class AgentClaims
     {
+        /// <summary>
+        /// Retrieves the AppId from the given claims identity.
+        /// </summary>
+        /// <param name="claimsIdentity">The claims identity containing the token information.</param>
+        /// <returns>The AppId as a string, or null if not found.</returns>
+        /// <remarks>
+        /// For requests from the channel, the AppId is in the Audience claim of the JWT token.
+        /// For the emulator, it is in the AppId claim. For unauthenticated requests, anonymous claimsIdentity is provided if auth is disabled.
+        /// </remarks>
         public static string GetAppId(ClaimsIdentity claimsIdentity)
         {
             // Verify we have a sensible Claims Identity
@@ -112,6 +125,11 @@ namespace Microsoft.Agents.Authentication
             return appId != audience;
         }
 
+        /// <summary>
+        /// Retrieves the audience of the token from the given claims identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <returns>The token audience as a string.</returns>
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)
@@ -119,6 +137,11 @@ namespace Microsoft.Agents.Authentication
                 : AuthenticationConstants.BotFrameworkScope;
         }
 
+        /// <summary>
+        /// Retrieves the token scopes from the given claims identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <returns>A list of token scopes, or null if no scopes are found.</returns>
         public static IList<string> GetTokenScopes(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)
@@ -126,6 +149,11 @@ namespace Microsoft.Agents.Authentication
                 : null;
         }
 
+        /// <summary>
+        /// Determines whether anonymous access is allowed based on the given claims identity.
+        /// </summary>
+        /// <param name="identity">The claims identity to evaluate.</param>
+        /// <returns>True if anonymous access is allowed, otherwise false.</returns>
         public static bool AllowAnonymous(ClaimsIdentity identity)
         {
             return !identity.IsAuthenticated && !identity.Claims.Any();

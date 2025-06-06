@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
         Task LoadStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
         Task SaveStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
     }
 }

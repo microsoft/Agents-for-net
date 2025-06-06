@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Model.Tests
             var outJson = ProtocolJsonSerializer.ToJson(outReference);
 
             // Specifically, should include: "bot": {} and not "agent": {}
-            var outExpected = "{\"activityId\":\"id\",\"user\":{\"id\":\"user\"},\"bot\":{\"id\":\"agent\"},\"conversation\":{\"id\":\"conversation\",\"properties\":{}},\"channelId\":\"channelId\",\"serviceUrl\":\"serviceUrl\",\"locale\":\"locale\"}";
+            var outExpected = "{\"activityId\":\"id\",\"user\":{\"id\":\"user\"},\"bot\":{\"id\":\"agent\"},\"conversation\":{\"id\":\"conversation\"},\"channelId\":\"channelId\",\"serviceUrl\":\"serviceUrl\",\"locale\":\"locale\"}";
 
             Assert.Equal(outExpected, outJson);
 
@@ -58,7 +58,11 @@ namespace Microsoft.Agents.Model.Tests
             };
 
             var outJson = ProtocolJsonSerializer.ToJson(activity);
-            var outExpected = "{\"relatesTo\":{\"activityId\":\"id\",\"user\":{\"id\":\"user\"},\"bot\":{\"id\":\"agent\"},\"conversation\":{\"id\":\"conversation\",\"properties\":{}},\"channelId\":\"channelId\",\"serviceUrl\":\"serviceUrl\",\"locale\":\"locale\"}}";
+#if SKIP_EMPTY_LISTS
+            var outExpected = "{\"relatesTo\":{\"activityId\":\"id\",\"user\":{\"id\":\"user\"},\"bot\":{\"id\":\"agent\"},\"conversation\":{\"id\":\"conversation\"},\"channelId\":\"channelId\",\"serviceUrl\":\"serviceUrl\",\"locale\":\"locale\"}}";
+#else
+            var outExpected = "{\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[],\"relatesTo\":{\"activityId\":\"id\",\"user\":{\"id\":\"user\"},\"bot\":{\"id\":\"agent\"},\"conversation\":{\"id\":\"conversation\"},\"channelId\":\"channelId\",\"serviceUrl\":\"serviceUrl\",\"locale\":\"locale\"},\"listenFor\":[],\"textHighlights\":[]}";
+#endif
             Assert.Equal(outExpected, outJson);
         }
     }
