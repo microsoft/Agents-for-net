@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication.Msal.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.IO;
 
 namespace Microsoft.Agents.Authentication.Msal.Model
 {
@@ -163,7 +164,12 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     }
                     if (string.IsNullOrEmpty(FederatedTokenFile))
                     {
-                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile is required");
+                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile option is required");
+                       
+                    }
+                    if (!File.Exists(FederatedTokenFile))
+                    {
+                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedToken file is not present");
                     }
                     break;
                 default:
