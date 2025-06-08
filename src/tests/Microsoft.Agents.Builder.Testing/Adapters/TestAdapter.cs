@@ -203,9 +203,9 @@ namespace Microsoft.Agents.Builder.Testing
             return null;
         }
 
-        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken, string audience = null)
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken)
         {
-            await ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            await ProcessProactiveAsync(claimsIdentity, continuationActivity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="async"></param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             var context = CreateTurnContext(continuationActivity);
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);

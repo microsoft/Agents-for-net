@@ -196,6 +196,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Channel &apos;{0}&apos; does not support &apos;{1}&apos;.
+        /// </summary>
+        internal static string UnsupportedChannelFeature {
+            get {
+                return ResourceManager.GetString("UnsupportedChannelFeature", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {

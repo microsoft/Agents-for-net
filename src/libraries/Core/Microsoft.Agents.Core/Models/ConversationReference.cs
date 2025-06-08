@@ -66,13 +66,13 @@ namespace Microsoft.Agents.Core.Models
         /// Creates <see cref="Activity"/> from conversation reference as it is posted to an Agent.
         /// </summary>
         /// <returns>Continuation activity.</returns>
-        public Activity GetContinuationActivity()
+        public IActivity GetContinuationActivity()
         {
             return new Activity()
             {
                 Type = ActivityTypes.Event,
                 Name = ActivityEventNames.ContinueConversation.ToString(),
-                Id = Guid.NewGuid().ToString(),
+                Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,

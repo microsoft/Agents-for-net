@@ -1601,6 +1601,16 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 return Task.CompletedTask;
             }
 
+            public Task CreateConversationAsync(ITurnContext turnContext, ConversationParameters conversationParameters, IAgent agent, string channelId = null, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task CreateConversationAsync(ITurnContext turnContext, ConversationParameters conversationParameters, AgentCallbackHandler callback, string channelId = null, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
             public Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();

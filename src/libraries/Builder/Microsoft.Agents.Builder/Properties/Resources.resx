@@ -210,4 +210,8 @@
     <value>Unexpected state for handler '{0}' </value>
     <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
   </data>
+  <data name="UnsupportedChannelFeature" xml:space="preserve">
+    <value>Channel '{0}' does not support '{1}'</value>
+    <comment>Raised when trying to use a feature that is not supported by the current channel.</comment>
+  </data>
 </root>

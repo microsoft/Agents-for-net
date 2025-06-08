@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// CloudAdapter handles this override asynchronously.
+        /// CloudAdapter handles this override via the Queue.
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
@@ -211,16 +211,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
         /// <returns></returns>
-        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken)
         {
             if (_adapterOptions.Async)
             {
                 // Queue the activity to be processed by the ActivityBackgroundService
-                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
+                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true);
                 return Task.CompletedTask;
             }
 
-            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
+            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken);
         }
 
         protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)

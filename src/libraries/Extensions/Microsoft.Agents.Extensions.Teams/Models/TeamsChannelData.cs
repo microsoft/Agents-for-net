@@ -62,6 +62,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <summary>
         /// Gets or sets type of event.
         /// </summary>
+        /// <remarks>
+        /// <para>MessageUpdate: editMessage | undeleteMessage</para>
+        /// <para>MessageDelete: softDeleteMessage</para>
+        /// <para>MessageUpdate: channelCreated | channelDeleted | channelRenamed | channelRestored | teamArchived | teamDeleted | teamHardDeleted | teamRenamed | teamRestored | teamUnarchived</para>
+        /// </remarks>
         /// <value>The type of event.</value>
         public string EventType { get; set; }
 

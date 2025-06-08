@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Client.Tests
 
                 // Mock the adapter ContinueConversationAsync method
                 // This code block catches and executes the custom bot callback created by the service handler.
-                adapter.Setup(a => a.ContinueConversationAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<ConversationReference>(), It.IsAny<string>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
+                adapter.Setup(a => a.ContinueConversationAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<ConversationReference>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
                     .Callback<ClaimsIdentity, ConversationReference, string, AgentCallbackHandler, CancellationToken>(async (token, conv, audience, botCallbackHandler, cancel) =>
                     {
                         // Create and capture the TurnContext so we can run assertions on it.

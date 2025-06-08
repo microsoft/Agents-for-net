@@ -252,7 +252,6 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
                 throw new ArgumentNullException(nameof(teamsChannelId));
             }
 
-            ConversationReference conversationReference = null;
             var newActivityId = string.Empty;
             var serviceUrl = turnContext.Activity.ServiceUrl;
             var conversationParameters = new ConversationParameters
@@ -262,16 +261,17 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
                 Activity = (Activity)activity,
             };
 
-            await turnContext.Adapter.CreateConversationAsync(
-                agentAppId,
-                Channels.Msteams,
-                serviceUrl,
-                null,
+            var conversationReference = await turnContext.Adapter.CreateConversationAsync(
+                turnContext,
                 conversationParameters,
-                (t, ct) =>
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            await turnContext.Adapter.ContinueConversationAsync(
+                turnContext.Identity,
+                conversationReference,
+                (context, ct) =>
                 {
-                    conversationReference = t.Activity.GetConversationReference();
-                    newActivityId = t.Activity.Id;
+                    newActivityId = context.Activity.Id;
                     return Task.CompletedTask;
                 },
                 cancellationToken).ConfigureAwait(false);

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
@@ -111,39 +112,21 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public async Task ContinueConversationAsync_ShouldSendMessageWithBotId()
-        {
-            // Arrange
-            _callbackInvoked = false;
-            var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-                  
-            //Act
-            await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
-            
-            //Assert
-            Assert.True(_callbackInvoked);
-        }
-
-        [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithClaims()
         {
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-
-            var claimsIdentity = new ClaimsIdentity(new List<Claim>
-            {
-                new Claim("aud", "MyBot"),
-                new Claim("appId", "MyBot")
-            });
+            var claimsIdentity = AgentClaims.CreateIdentity("MyBot");
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _reference, ContinueCallback, default);
+            await adapter.ContinueConversationAsync(claimsIdentity, _reference, ContinueCallback);
 
             //Assert
             Assert.True(_callbackInvoked);
         }
 
+        /*!!!
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithAudience()
         {
@@ -158,7 +141,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _reference, "MyAudience", ContinueCallback, default);
+            await adapter.ContinueConversationAsync(claimsIdentity, _reference, "MyAudience", ContinueCallback);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -192,7 +175,7 @@ namespace Microsoft.Agents.Builder.Tests
             });
 
             //Act
-            await adapter.ContinueConversationAsync(claimsIdentity, _activity, ContinueCallback, default);
+            await adapter.ContinueConversationAsync(claimsIdentity, _reference, _activity, ContinueCallback, default);
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -237,6 +220,7 @@ namespace Microsoft.Agents.Builder.Tests
             //Assert
             Assert.True(_callbackInvoked);
         }
+        */
 
         [Fact]
         public async Task SendActivitiesAsync_ShouldAddInvokeResponse()

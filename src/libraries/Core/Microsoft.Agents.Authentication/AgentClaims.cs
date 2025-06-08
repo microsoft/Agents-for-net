@@ -158,5 +158,16 @@ namespace Microsoft.Agents.Authentication
         {
             return !identity.IsAuthenticated && !identity.Claims.Any();
         }
+
+        public static ClaimsIdentity CreateIdentity(string clientId, bool anonymous = false)
+        {
+            return anonymous
+                ? new ClaimsIdentity()
+                : new ClaimsIdentity(
+                [
+                    new(AuthenticationConstants.AudienceClaim, clientId),
+                    new(AuthenticationConstants.AppIdClaim, clientId),
+                ]);
+        }
     }
 }

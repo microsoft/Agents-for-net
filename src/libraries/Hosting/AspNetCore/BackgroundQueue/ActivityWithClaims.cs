@@ -28,7 +28,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public IActivity Activity { get; set; }
         
         public bool IsProactive { get; set; }
-        public string ProactiveAudience { get; set; }
 
         /// <summary>
         /// Invoked when ProcessActivity is done.  Ignored if IsProactive.

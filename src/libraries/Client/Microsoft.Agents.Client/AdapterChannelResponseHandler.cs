@@ -43,20 +43,20 @@ namespace Microsoft.Agents.Client
 
         private readonly IChannelAdapter _adapter;
         private readonly IAgent _agent;
-        private readonly IAgentHost _channelHost;
+        private readonly IAgentHost _agentHost;
         private readonly ILogger<AdapterChannelResponseHandler> _logger;
 
         public AdapterChannelResponseHandler(IChannelAdapter adapter, IAgent agent, IAgentHost channelHost, ILogger<AdapterChannelResponseHandler> logger)
         {
             _adapter = adapter;
             _agent = agent;
-            _channelHost = channelHost;
+            _agentHost = channelHost;
             _logger = logger;
         }
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var conversationReference = await _channelHost.GetConversationReferenceAsync(conversationId, cancellationToken);
+            var conversationReference = await _agentHost.GetConversationReferenceAsync(conversationId, cancellationToken);
             if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.
@@ -76,15 +76,11 @@ namespace Microsoft.Agents.Client
             eventActivity.ApplyConversationReference(conversationReference.ConversationReference, isIncoming: true);
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
-            // Perhaps a better way to do this, but what ChannelServiceAdapterBase does in ContinueConversation.
-            var hostClaimsIdentity = AgentClaims.AllowAnonymous(claimsIdentity) 
-                ? new ClaimsIdentity()
-                : new ClaimsIdentity(
-                [
-                    new(AuthenticationConstants.AudienceClaim, _channelHost.HostClientId),
-                    new(AuthenticationConstants.AppIdClaim, _channelHost.HostClientId),
-                ]);
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
 
+            // This is processing the incoming activity directly with the Adapter.
+            // An alternative would be to use Adapter.ProcessProactiveAsync(hostClaimsIdentity, eventActivity, _agent) for possible asynchronous
+            // handling (if CloudAdapter is being used).
             await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _agent.OnTurnAsync, cancellationToken);
 
             // This implementation isn't keeping track of Activities, so just make up an ActivityId.
