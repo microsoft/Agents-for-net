@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Builder.UserAuth
                 return Default;
             }
 
-            return GetHandlerInstance(handleName);
+            return GetHandlerInstance(handleName.Trim());
         }
 
         public bool TryGet(string handlerName, out IUserAuthorization handler)
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Builder.UserAuth
                 return true;
             }
 
-            if (_userAuthHandlers.TryGetValue(handlerName, out UserAuthorizationDefinition handlerDefinition))
+            if (_userAuthHandlers.TryGetValue(handlerName.Trim(), out UserAuthorizationDefinition handlerDefinition))
             {
                 handler = GetHandlerInstance(handlerName, handlerDefinition);
                 return true;
