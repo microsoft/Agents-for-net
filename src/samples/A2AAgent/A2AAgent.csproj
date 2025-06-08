@@ -14,13 +14,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json.Schema" />
-	</ItemGroup>
-	
-	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
 		<ProjectReference Include="..\..\libraries\Hosting\A2A\Microsoft.Agents.Hosting.A2A.csproj" />
 		<ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
+		<ProjectReference Include="..\..\libraries\Hosting\MCP\Microsoft.Agents.Hosting.MCP.csproj" />
 	</ItemGroup>
 
 </Project>

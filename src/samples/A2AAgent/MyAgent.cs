@@ -8,7 +8,7 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace EmptyAgent;
+namespace A2AAgent;
 
 public class MyAgent : AgentApplication
 {

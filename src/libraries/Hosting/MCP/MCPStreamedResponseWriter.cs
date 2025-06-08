@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace A2AAgent
+namespace Microsoft.Agents.Hosting.MCP
 {
     public class MCPStreamedResponseWriter() : IStreamedResponseWriter
     {

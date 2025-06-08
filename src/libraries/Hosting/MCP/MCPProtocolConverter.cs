@@ -12,7 +12,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace A2AAgent
+namespace Microsoft.Agents.Hosting.MCP
 {
     public class MCPProtocolConverter
     {
