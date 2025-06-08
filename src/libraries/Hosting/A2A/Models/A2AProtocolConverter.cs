@@ -15,9 +15,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
+    [SerializationInit]
     public class A2AProtocolConverter
     {
         private static readonly JsonSerializerOptions s_ElementSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
+
+        public static void Init()
+        {
+            ProtocolJsonSerializer.ApplyExtensionOptions((inOptions) =>
+            {
+                return new JsonSerializerOptions(inOptions)
+                {
+                    AllowOutOfOrderMetadataProperties = true,
+                };
+            });
+        }
 
         public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
         {
