@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// Internal producer/consumer queue to read Activities sent by the Adapter during DeliveryMode.Stream
     /// </summary>
-    internal class StreamedResponseHandler
+    public class StreamedResponseHandler
     {
         private static readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
         public static readonly IStreamedResponseWriter DefaultWriter = new ActivityStreamedResponseWriter();

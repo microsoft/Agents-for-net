@@ -53,7 +53,9 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             var isIngress = true;
             var contextId = request.Message.ContextId ?? Guid.NewGuid().ToString("N");
             var taskId = request.Message.TaskId ?? Guid.NewGuid().ToString("N");
-            return (CreateActivity(contextId, channelId, userId, request.Message.Parts, isIngress, isStreaming), contextId, taskId);
+            var activity = CreateActivity(contextId, channelId, userId, request.Message.Parts, isIngress, isStreaming);
+            activity.ChannelData = jsonRpcPayload;
+            return (activity, contextId, taskId);
         }
 
         public static JsonRpcRequest CreateCallFromActivity(string sessionId, string taskId, IActivity activity)

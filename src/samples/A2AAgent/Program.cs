@@ -12,18 +12,15 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Agents.Hosting.A2A.Models;
 using Microsoft.AspNetCore.Http.Metadata;
 using ModelContextProtocol.Protocol;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Agents.Core.Models;
 using Newtonsoft.Json.Schema.Generation;
 using A2AAgent;
 using Microsoft.Extensions.AI;
 using System;
 using System.Linq;
-using Azure.Core;
 using System.Threading.Tasks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -44,7 +41,11 @@ builder.AddAgent<MyAgent>();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
+// Add the A2A adapter to handles A2A requests
+builder.Services.AddA2AAdapter();
+
 WebApplication app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 
@@ -55,7 +56,7 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
     .AllowAnonymous();
 
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2A();
+app.MapA2A(requireAuth: false);
 
 // Map MCP endpoints.  By default MCP will respond on '/mcp'.
 app.MapPost(
@@ -126,10 +127,10 @@ app.MapPost(
         .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
         .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
 
-// Hardcoded for brevity and ease of testing. 
-// In production, this should be set in configuration.
 if (app.Environment.IsDevelopment())
 {
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
     app.Urls.Add($"http://localhost:3978");
 }
 
