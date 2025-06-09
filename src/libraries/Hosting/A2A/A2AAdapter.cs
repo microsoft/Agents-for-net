@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
@@ -16,15 +17,8 @@ using System.Text;
 
 namespace Microsoft.Agents.Hosting.A2A
 {
-    public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
+    public class A2AAdapter(IActivityTaskQueue activityTaskQueue) : ChannelAdapter, IA2AHttpAdapter
     {
-        private readonly IActivityTaskQueue _activityTaskQueue;
-
-        public A2AAdapter(IActivityTaskQueue activityTaskQueue) 
-        {
-            _activityTaskQueue = activityTaskQueue;
-        }
-
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             if (httpRequest.Method != HttpMethods.Post)
@@ -38,14 +32,14 @@ namespace Microsoft.Agents.Hosting.A2A
                 if (jsonRpcRequest.Method.Equals("message/stream"))
                 {
                     var (activity, contextId, taskId) = A2AProtocolConverter.CreateActivityFromRequest(jsonRpcRequest, isStreaming: true);
-                    await ProcessAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new A2AStreamedResponseWriter(jsonRpcRequest.Id.ToString(), contextId, taskId), cancellationToken);
+                    await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new A2AStreamedResponseWriter(jsonRpcRequest.Id.ToString(), contextId, taskId), cancellationToken);
                 }
             }
         }
 
-        public async Task ProcessAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
+        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, A2AStreamedResponseWriter writer, CancellationToken cancellationToken = default)
         {
-            if (!IsValidChannelActivity(activity) || activity.DeliveryMode != DeliveryModes.Stream)
+            if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                 return;
@@ -55,13 +49,12 @@ namespace Microsoft.Agents.Hosting.A2A
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
-            _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
+            activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
                 StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
 
-            writer ??= StreamedResponseHandler.DefaultWriter;
             await writer.StreamBegin(httpResponse).ConfigureAwait(false);
 
             // block until turn is complete
@@ -100,30 +93,6 @@ namespace Microsoft.Agents.Hosting.A2A
         {
             await StreamedResponseHandler.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
-        }
-
-        //TODO: copied from CloudAdapter.  Consolidate.
-        private static bool IsValidChannelActivity(IActivity activity)
-        {
-            if (activity == null)
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing activity");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing activity type");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Conversation?.Id))
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing Conversation.Id");
-                return false;
-            }
-
-            return true;
         }
     }
 }

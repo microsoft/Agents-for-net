@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
@@ -54,10 +55,10 @@ namespace Microsoft.Agents.Hosting.MCP
                     {
                         Tools = [
                             new Tool()
-                    {
-                        Name = "message",
-                        InputSchema = inputSchema,
-                    }
+                            {
+                                Name = "message",
+                                InputSchema = inputSchema,
+                            }
                         ]
                     };
 
@@ -96,7 +97,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
         private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPStreamedResponseWriter writer, CancellationToken cancellationToken = default)
         {
-            if (!IsValidChannelActivity(activity) || activity.DeliveryMode != DeliveryModes.Stream)
+            if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                 return;
@@ -165,30 +166,6 @@ namespace Microsoft.Agents.Hosting.MCP
         {
             await StreamedResponseHandler.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
-        }
-
-        //TODO: copied from CloudAdapter.  Consolidate.
-        private static bool IsValidChannelActivity(IActivity activity)
-        {
-            if (activity == null)
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing activity");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing activity type");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Conversation?.Id))
-            {
-                System.Diagnostics.Trace.WriteLine("BadRequest: Missing Conversation.Id");
-                return false;
-            }
-
-            return true;
         }
     }
 }

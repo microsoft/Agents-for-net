@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
@@ -125,68 +126,59 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = HttpHelper.GetIdentity(httpRequest);
 
-                await ProcessAsync(activity, claimsIdentity, httpResponse, agent, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        public async Task ProcessAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, IStreamedResponseWriter writer = null, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(agent);
-
-            if (!IsValidChannelActivity(activity))
-            {
-                httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
-                return;
-            }
-
-            try
-            {
-                if (activity.DeliveryMode == DeliveryModes.Stream)
+                if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
                 {
-                    InvokeResponse invokeResponse = null;
+                    httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                    return;
+                }
 
-                    // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
-                    // turn is done.
-                    _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
+                try
+                {
+                    if (activity.DeliveryMode == DeliveryModes.Stream)
                     {
-                        StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
-                        invokeResponse = response;
-                    });
+                        InvokeResponse invokeResponse = null;
 
-                    writer ??= StreamedResponseHandler.DefaultWriter;
-                    await writer.StreamBegin(httpResponse).ConfigureAwait(false);
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        {
+                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
 
-                    // block until turn is complete
-                    await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await StreamedResponseHandler.DefaultWriter.StreamBegin(httpResponse).ConfigureAwait(false);
+
+                        // block until turn is complete
+                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        {
+                            await StreamedResponseHandler.DefaultWriter.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        await StreamedResponseHandler.DefaultWriter.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
-                        await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    }, cancellationToken).ConfigureAwait(false);
+                        // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
+                        // Process the inbound activity with the Agent
+                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
-                    await writer.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        // Write the response, potentially serializing the InvokeResponse
+                        await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Queue the activity to be processed by the ActivityBackgroundService
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+
+                        // Activity has been queued to process, so return immediately
+                        httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
+                    }
                 }
-                else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                catch (UnauthorizedAccessException)
                 {
-                    // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                    // Process the inbound activity with the Agent
-                    var invokeResponse = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
-
-                    // Write the response, potentially serializing the InvokeResponse
-                    await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                    // handle unauthorized here as this layer creates the http response
+                    httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
                 }
-                else
-                {
-                    // Queue the activity to be processed by the ActivityBackgroundService
-                    _activityTaskQueue.QueueBackgroundActivity(identity, activity);
-
-                    // Activity has been queued to process, so return immediately
-                    httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // handle unauthorized here as this layer creates the http response
-                httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
             }
         }
 
@@ -219,29 +211,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
-
-            return true;
-        }
-
-        private bool IsValidChannelActivity(IActivity activity)
-        {
-            if (activity == null)
-            {
-                Logger.LogWarning("BadRequest: Missing activity");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
-            {
-                Logger.LogWarning("BadRequest: Missing activity type");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Conversation?.Id))
-            {
-                Logger.LogWarning("BadRequest: Missing Conversation.Id");
-                return false;
-            }
 
             return true;
         }
