@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System;
+using Microsoft.Agents.Core.HeaderPropagation;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
@@ -28,6 +29,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             httpClient.AddDefaultUserAgent();
+            httpClient.AddHeaderPropagation();
 
             return httpClient;
         }
