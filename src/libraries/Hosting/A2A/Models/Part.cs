@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
@@ -11,14 +12,13 @@ namespace Microsoft.Agents.Hosting.A2A.Models
     [JsonDerivedType(typeof(DataPart), typeDiscriminator: "data")]
     public abstract record Part
     {
+        public IDictionary<string, object> Metadata { get; set; }
     }
 
     public record TextPart : Part
     {
         [JsonPropertyName("text")]
         public required string Text { get; init; }
-
-        //metadata
     }
 
     public record FilePart : Part

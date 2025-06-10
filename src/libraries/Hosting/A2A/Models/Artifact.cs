@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 {
     public record Artifact
     {
-        public static Artifact Empty => new() { ArtifactId = Guid.NewGuid().ToString("N") };
+        public static readonly Artifact Empty = new() { ArtifactId = Guid.NewGuid().ToString("N") };
 
         [JsonPropertyName("artifactId")]
         public required string ArtifactId { get; init; }

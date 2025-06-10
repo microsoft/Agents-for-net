@@ -15,14 +15,14 @@ namespace Microsoft.Agents.Hosting.MCP
     {
         public const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
 
-        public Task StreamBegin(HttpResponse httpResponse)
+        public Task StreamBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
             httpResponse.StatusCode = (int) HttpStatusCode.OK;
             httpResponse.ContentType = "text/event-stream";
             return Task.CompletedTask;
         }
 
-        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken)
+        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
             var response = MCPProtocolConverter.CreateStreamMessageFromActivity(activity);
             var sse = string.Format(MessageTemplate, response);
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Hosting.MCP
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken)
+        public Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

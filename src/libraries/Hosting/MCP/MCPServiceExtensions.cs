@@ -5,15 +5,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using ModelContextProtocol.Protocol;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Microsoft.Agents.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Hosting.AspNetCore;
-using System.Text.Json;
-using System.Text;
-using System;
 
 namespace Microsoft.Agents.Hosting.MCP
 {

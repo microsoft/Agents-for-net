@@ -138,6 +138,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         InvokeResponse invokeResponse = null;
 
+                        await StreamedResponseHandler.DefaultWriter.StreamBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
                         // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
@@ -145,8 +147,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
-
-                        await StreamedResponseHandler.DefaultWriter.StreamBegin(httpResponse).ConfigureAwait(false);
 
                         // block until turn is complete
                         await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>

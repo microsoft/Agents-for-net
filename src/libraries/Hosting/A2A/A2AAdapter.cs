@@ -47,6 +47,8 @@ namespace Microsoft.Agents.Hosting.A2A
 
             InvokeResponse invokeResponse = null;
 
+            await writer.StreamBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
             activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
@@ -54,8 +56,6 @@ namespace Microsoft.Agents.Hosting.A2A
                 StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
-
-            await writer.StreamBegin(httpResponse).ConfigureAwait(false);
 
             // block until turn is complete
             await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>

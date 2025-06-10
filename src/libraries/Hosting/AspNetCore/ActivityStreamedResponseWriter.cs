@@ -15,19 +15,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n\r\n";
         private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n\r\n";
 
-        public Task StreamBegin(HttpResponse httpResponse)
+        public Task StreamBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
             httpResponse.ContentType = "text/event-stream";
             return Task.CompletedTask;
         }
 
-        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken)
+        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(ActivityEventTemplate, ProtocolJsonSerializer.ToJson(activity))), cancellationToken);
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public async Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken)
+        public async Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
             if (data is InvokeResponse invokeResponse)
             {

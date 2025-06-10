@@ -26,7 +26,8 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="ModelContextProtocol" />
 		<PackageReference Include="ModelContextProtocol.AspNetCore" />
-    </ItemGroup>
+		<PackageReference Include="Newtonsoft.Json.Schema" />
+	</ItemGroup>
 
 	<ItemGroup>
 	  <None Include="README.md" />

@@ -15,6 +15,7 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
+        OnMessage("-stream", OnStreamAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -29,8 +30,23 @@ public class MyAgent : AgentApplication
         }
     }
 
+    private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Informative", cancellationToken);
+        turnContext.StreamingResponse.QueueTextChunk("a quick");
+        await Task.Delay(600);
+        turnContext.StreamingResponse.QueueTextChunk("a quick a quick brown fox ");
+        await Task.Delay(600);
+        turnContext.StreamingResponse.QueueTextChunk("a quick a quick brown fox jumped over something");
+        await Task.Delay(600);
+        await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
+    }
+
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}");
+        activity.Entities = [new StreamInfo() { StreamId = "streamId" }];
+
+        await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
 }

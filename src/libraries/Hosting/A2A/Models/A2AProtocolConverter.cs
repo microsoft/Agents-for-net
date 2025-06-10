@@ -4,22 +4,36 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using ModelContextProtocol.Protocol;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema.Generation;
+using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
-    [SerializationInit]
+    //[SerializationInit]
     public class A2AProtocolConverter
     {
-        private static readonly JsonSerializerOptions s_ElementSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
+        private static readonly JsonSerializerOptions s_SerializerOptions = new()
+        {
+            AllowOutOfOrderMetadataProperties = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
 
+        /*
         public static void Init()
         {
             ProtocolJsonSerializer.ApplyExtensionOptions((inOptions) =>
@@ -30,6 +44,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 };
             });
         }
+        */
 
         public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
         {
@@ -49,6 +64,40 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             }
         }
 
+        public static IDictionary<string, object> ToMetadata(object data, string contentType)
+        {
+            JSchemaGenerator generator = new();
+            generator.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            generator.DefaultRequired = Newtonsoft.Json.Required.Default;
+            generator.SchemaIdGenerationHandling = SchemaIdGenerationHandling.None;
+
+            var schema = JsonSerializer.Deserialize<Dictionary<string, JsonNode>>(generator.Generate(data.GetType()).ToString());
+            schema.Remove("definitions");
+            if (schema.TryGetValue("properties", out var properties))
+            {
+                // skip Core Model additional properties
+                var jsonObject = properties.AsObject();
+                jsonObject.Remove("properties");
+                jsonObject.Remove("$type");
+                jsonObject.Remove("$typeAssembly");
+            }
+
+            return new Dictionary<string, object>
+            {
+                { "mimeType", "application/json"},
+                { "contentType", contentType },
+                { "type", "object" },
+                {
+                    "schema",
+                    new Dictionary<string, object> 
+                    {
+                        { "type", "object" },
+                        { "properties", schema["properties"] } 
+                    }
+                }
+            };
+        }
+
         public static (IActivity, string? contextId, string? taskId) CreateActivityFromRequest(JsonRpcRequest jsonRpcPayload, string userId = "user", string channelId = "a2a", bool isStreaming = true)
         {
             if (jsonRpcPayload.Params == null)
@@ -56,7 +105,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 throw new ArgumentException("Params is null");
             }
 
-            var request = JsonSerializer.Deserialize<MessageSendParams>(JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_ElementSerializerOptions), s_ElementSerializerOptions);
+            var request = JsonSerializer.Deserialize<MessageSendParams>(JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_SerializerOptions), s_SerializerOptions);
             if (request?.Message?.Parts == null)
             {
                 throw new ArgumentException("Failed to parse request body");
@@ -83,7 +132,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Message = new Message() { Role = "user", Parts = artifact.Parts }
             };
 
-            var parameters = JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(call, s_ElementSerializerOptions), s_ElementSerializerOptions)
+            var parameters = JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(call, s_SerializerOptions), s_SerializerOptions)
                     ?? throw new ArgumentException("Failed to create record value");
 
             return new JsonRpcRequest()
@@ -94,9 +143,9 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             };
         }
 
-        public static string CreateStreamStatusUpdateFromActivity(string requestId, string contextId, string taskId, IActivity activity)
+        public static string CreateStreamStatusUpdateFromActivity(string requestId, string contextId, string taskId, string taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
         {
-            var artifact = CreateArtifactFromActivity(activity) ?? throw new ArgumentException("Invalid activity to convert to payload");
+            var artifact = CreateArtifactFromActivity(activity, artifactId);
 
             var task = new TaskStatusUpdateEvent()
             {
@@ -104,26 +153,23 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 ContextId = contextId,
                 Status = new TaskStatus()
                 {
-                    State = string.Equals(InputHints.ExpectingInput, activity.InputHint, StringComparison.OrdinalIgnoreCase) ? TaskState.InputRequired : TaskState.Working,
-                    Message = new Message()
-                    {
-                        MessageId = Guid.NewGuid().ToString("N"),
-                        Parts = artifact.Parts,
-                        Role = RoleTypes.Agent
-                    }
-                }
+                    State = taskState,
+                    Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = RoleTypes.Agent }
+                },
+                Final = isFinal
             };
 
-            return ProtocolJsonSerializer.ToJson(new SendStreamingMessageResponse()
-            {
-                Id = requestId,
-                Result = task
-            });
+            return ToJson(
+                new SendStreamingMessageResponse()
+                {
+                    Id = requestId,
+                    Result = task
+                });
         }
 
-        public static string CreateStreamArtifactUpdateFromActivity(string requestId, string contextId, string taskId, IActivity activity, bool append = false, bool lastChunk = false)
+        public static string CreateStreamArtifactUpdateFromActivity(string requestId, string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
         {
-            var artifact = CreateArtifactFromActivity(activity) ?? throw new ArgumentException("Invalid activity to convert to payload");
+            var artifact = CreateArtifactFromActivity(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
 
             var task = new TaskArtifactUpdateEvent()
             {
@@ -134,11 +180,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 LastChunk = lastChunk
             };
 
-            return ProtocolJsonSerializer.ToJson(new SendStreamingMessageResponse()
-            {
-                Id = requestId,
-                Result = task
-            });
+            return ToJson(new SendStreamingMessageResponse() { Id = requestId, Result = task });
         }
 
         public static string CreateStreamMessageFromActivity(string requestId, string contextId, string taskId, IActivity activity)
@@ -154,7 +196,38 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Role = RoleTypes.Agent
             };
 
-            return ProtocolJsonSerializer.ToJson(new SendStreamingMessageResponse()
+            return ToJson(new SendStreamingMessageResponse()
+            {
+                Id = requestId,
+                Result = message
+            });
+        }
+
+        public static string CreateStreamTaskFromActivity(string requestId, string contextId, string taskId, string taskState, IActivity activity = null)
+        {
+            var artifact = CreateArtifactFromActivity(activity);
+
+            var message = new TaskResponse()
+            {
+                Id = taskId,
+                ContextId = contextId,
+                Status = new TaskStatus() 
+                { 
+                    State = taskState,
+                    Message = artifact == null 
+                        ? null 
+                        : new Message()
+                            {
+                                TaskId = taskId,
+                                ContextId = contextId,
+                                MessageId = Guid.NewGuid().ToString("N"),
+                                Parts = artifact.Parts,
+                                Role = RoleTypes.Agent
+                            }
+                },
+            };
+
+            return ToJson(new SendStreamingMessageResponse()
             {
                 Id = requestId,
                 Result = message
@@ -163,7 +236,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 
         public static string ToJson(object obj)
         {
-            return ProtocolJsonSerializer.ToJson(obj);
+            return JsonSerializer.Serialize(obj, s_SerializerOptions);
         }
 
         private static bool IsTerminalState(string? state)
@@ -235,7 +308,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             return activity;
         }
 
-        public static Artifact? CreateArtifactFromActivity(IActivity activity)
+        public static Artifact? CreateArtifactFromActivity(IActivity activity, string artifactId = null)
         {
             var artifact = Artifact.Empty;
 
@@ -256,7 +329,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 {
                     Parts = artifact.Parts.Add(new DataPart()
                     {
-                        Data = activity.Value
+                        Data = ProtocolJsonSerializer.ToJsonElements(activity.Value)
                     })
                 };
             }
@@ -281,8 +354,26 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 };
             }
 
+            /*
+            foreach (var entity in activity?.Entities ?? Enumerable.Empty<Entity>())
+            {
+                artifact = artifact with
+                {
+                    Parts = artifact.Parts.Add(new DataPart
+                    {
+                        Metadata = ToMetadata(entity, $"application/vnd.microsoft.entity.{entity.Type}"),
+                        Data = ProtocolJsonSerializer.ToJsonElements(entity)
+                    })
+                };
+            }
+            */
+
             if (artifact != Artifact.Empty)
             {
+                artifact = artifact with
+                {
+                    ArtifactId = artifactId ?? Guid.NewGuid().ToString("N")
+                };
                 return artifact;
             }
 

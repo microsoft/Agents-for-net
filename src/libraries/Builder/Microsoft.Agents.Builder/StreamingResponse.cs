@@ -453,6 +453,12 @@ namespace Microsoft.Agents.Builder
                 // WebChat will use whatever StreamId is created.
                 StreamId = Guid.NewGuid().ToString();
             }
+            else if (string.Equals(turnContext.Activity.ChannelId, Channels.A2A, StringComparison.OrdinalIgnoreCase))
+            {
+                Interval = 500;
+                IsStreamingChannel = true;
+                StreamId = Guid.NewGuid().ToString();
+            }
             else
             {
                 // Support streaming for DeliveryMode.Stream
