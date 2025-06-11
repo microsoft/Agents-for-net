@@ -19,7 +19,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace FullAuthentication;
+namespace TeamsAgent;
 
 public static class AspNetExtensions
 {
@@ -59,11 +59,11 @@ public static class AspNetExtensions
     /// `OpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
     /// `AzureBotServiceTokenHandling` defaults to true and should always be true until Azure Bot Service sends Entra ID token.
     /// </remarks>
-    public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
+    public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null!)
     {
         IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
-        List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>();
-        List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
+        List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>()!;
+        List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>()!;
 
         if (!tokenValidationSection.Exists())
         {
@@ -85,7 +85,7 @@ public static class AspNetExtensions
                 "https://login.microsoftonline.com/69e9b82d-4842-4902-8d1e-abc5b98a55e8/v2.0",
             ];
 
-            string tenantId = tokenValidationSection["TenantId"];
+            string? tenantId = tokenValidationSection["TenantId"];
             if (!string.IsNullOrEmpty(tenantId))
             {
                 validTokenIssuers.Add(string.Format(CultureInfo.InvariantCulture, AuthenticationConstants.ValidTokenIssuerUrlTemplateV1, tenantId));
@@ -102,14 +102,14 @@ public static class AspNetExtensions
         bool azureBotServiceTokenHandling = tokenValidationSection.GetValue("AzureBotServiceTokenHandling", true);
 
         // If the `AzureBotServiceOpenIdMetadataUrl` setting is not specified, use the default based on `IsGov`.  This is what is used to authenticate ABS tokens.
-        string azureBotServiceOpenIdMetadataUrl = tokenValidationSection["AzureBotServiceOpenIdMetadataUrl"];
+        string? azureBotServiceOpenIdMetadataUrl = tokenValidationSection["AzureBotServiceOpenIdMetadataUrl"];
         if (string.IsNullOrEmpty(azureBotServiceOpenIdMetadataUrl))
         {
             azureBotServiceOpenIdMetadataUrl = isGov ? AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl : AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl;
         }
 
         // If the `OpenIdMetadataUrl` setting is not specified, use the default based on `IsGov`.  This is what is used to authenticate Entra ID tokens.
-        string openIdMetadataUrl = tokenValidationSection["OpenIdMetadataUrl"];
+        string? openIdMetadataUrl = tokenValidationSection["OpenIdMetadataUrl"];
         if (string.IsNullOrEmpty(openIdMetadataUrl))
         {
             openIdMetadataUrl = isGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
@@ -155,8 +155,8 @@ public static class AspNetExtensions
                         return;
                     }
 
-                    string[] parts = authorizationHeader?.Split(' ');
-                    if (parts.Length != 2 || parts[0] != "Bearer")
+                    string[]? parts = authorizationHeader?.Split(' ');
+                    if (parts?.Length != 2 || parts[0] != "Bearer")
                     {
                         // Default to AadTokenValidation handling
                         context.Options.TokenValidationParameters.ConfigurationManager ??= options.ConfigurationManager as BaseConfigurationManager;
@@ -164,8 +164,8 @@ public static class AspNetExtensions
                         return;
                     }
 
-                    JwtSecurityToken token = new(parts[1]);
-                    string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value;
+                    JwtSecurityToken? token = new(parts[1]);
+                    string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value!;
 
                     if (azureBotServiceTokenHandling && AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
                     {
