@@ -102,30 +102,6 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             return (activity, contextId, taskId);
         }
 
-        public static JsonRpcRequest CreateCallFromActivity(string sessionId, string taskId, IActivity activity)
-        {
-            var artifact = CreateArtifactFromActivity(activity);
-            if (artifact == null)
-            {
-                throw new ArgumentException("Invalid activity to convert to payload");
-            }
-
-            var call = new MessageSendParams()
-            {
-                Message = new Message() { Role = "user", Parts = artifact.Parts }
-            };
-
-            var parameters = JsonSerializer.Deserialize<JsonNode>(JsonSerializer.Serialize(call, s_SerializerOptions), s_SerializerOptions)
-                    ?? throw new ArgumentException("Failed to create record value");
-
-            return new JsonRpcRequest()
-            {
-                Id = new RequestId(activity.Id ?? Guid.NewGuid().ToString("N")),
-                Method = "tasks/send",
-                Params = parameters,
-            };
-        }
-
         public static string CreateStreamStatusUpdateFromActivity(string requestId, string contextId, string taskId, string taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
         {
             var artifact = CreateArtifactFromActivity(activity, artifactId);
@@ -223,9 +199,6 @@ namespace Microsoft.Agents.Hosting.A2A.Models
         {
             return JsonSerializer.Serialize(obj, s_SerializerOptions);
         }
-
-        private static bool IsTerminalState(string? state)
-            => state != TaskState.Submitted && state != TaskState.Working && state != TaskState.InputRequired;
 
         private static Activity CreateActivity(
             string? contextId,

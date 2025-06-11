@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
@@ -13,6 +14,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
         [JsonPropertyName("configuration")]
         public MessageSendConfiguration? Configuration { get; init; }
 
-        //metadata
+        [JsonPropertyName("metadata")]
+        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
     }
 }

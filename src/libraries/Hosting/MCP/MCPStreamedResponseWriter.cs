@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.MCP
 {
-    public class MCPChannelResponseWriter() : IChannelResponseWriter
+    public class MCPStreamedResponseWriter() : IChannelResponseWriter
     {
         public const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
 

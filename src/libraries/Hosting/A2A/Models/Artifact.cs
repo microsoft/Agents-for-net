@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
@@ -22,6 +23,8 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 
         [JsonPropertyName("parts")]
         public ImmutableArray<Part> Parts { get; init; } = [];
-    }
 
+        [JsonPropertyName("metadata")]
+        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
+    }
 }

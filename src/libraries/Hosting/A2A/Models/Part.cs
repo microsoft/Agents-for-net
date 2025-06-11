@@ -12,7 +12,8 @@ namespace Microsoft.Agents.Hosting.A2A.Models
     [JsonDerivedType(typeof(DataPart), typeDiscriminator: "data")]
     public abstract record Part
     {
-        public IDictionary<string, object> Metadata { get; set; }
+        [JsonPropertyName("metadata")]
+        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
     }
 
     public record TextPart : Part

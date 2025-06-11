@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
                     var activity = MCPProtocolConverter.CreateActivityFromRequest(rpcRequest, sessionId);
 
-                    await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new MCPChannelResponseWriter(), cancellationToken);
+                    await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new MCPStreamedResponseWriter(), cancellationToken);
                 }
                 else
                 {
@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Hosting.MCP
             }
         }
 
-        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPChannelResponseWriter writer, CancellationToken cancellationToken = default)
+        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPStreamedResponseWriter writer, CancellationToken cancellationToken = default)
         {
             if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
             {
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Hosting.MCP
             if (httpRequest.Headers.Accept.Contains("text/event-stream"))
             {
                 httpResponse.ContentType = "text/event-stream";
-                json = string.Format(MCPChannelResponseWriter.MessageTemplate, json);
+                json = string.Format(MCPStreamedResponseWriter.MessageTemplate, json);
             }
             else
             {

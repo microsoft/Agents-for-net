@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
@@ -29,6 +30,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
         [JsonPropertyName("final")]
         public bool? Final { get; init; }
 
-        //metadata
+        [JsonPropertyName("metadata")]
+        public IDictionary<string, object>? Metadata { get; set; }
     }
 }
