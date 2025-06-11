@@ -138,23 +138,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         InvokeResponse invokeResponse = null;
 
-                        await StreamedResponseHandler.DefaultWriter.StreamBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+                        await ChannelResponseQueue.DefaultWriter.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
                         // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
 
                         // block until turn is complete
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
-                            await StreamedResponseHandler.DefaultWriter.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+                            await ChannelResponseQueue.DefaultWriter.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
-                        await StreamedResponseHandler.DefaultWriter.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        await ChannelResponseQueue.DefaultWriter.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
@@ -210,7 +210,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await ChannelResponseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

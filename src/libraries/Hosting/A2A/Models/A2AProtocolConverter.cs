@@ -4,13 +4,10 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using ModelContextProtocol.Protocol;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -22,7 +19,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
-    //[SerializationInit]
     public class A2AProtocolConverter
     {
         private static readonly JsonSerializerOptions s_SerializerOptions = new()
@@ -32,19 +28,6 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true
         };
-
-        /*
-        public static void Init()
-        {
-            ProtocolJsonSerializer.ApplyExtensionOptions((inOptions) =>
-            {
-                return new JsonSerializerOptions(inOptions)
-                {
-                    AllowOutOfOrderMetadataProperties = true,
-                };
-            });
-        }
-        */
 
         public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
         {
@@ -154,7 +137,8 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Status = new TaskStatus()
                 {
                     State = taskState,
-                    Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = RoleTypes.Agent }
+                    Timestamp = DateTimeOffset.UtcNow,
+                    Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = RoleTypes.Agent },
                 },
                 Final = isFinal
             };
@@ -214,6 +198,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Status = new TaskStatus() 
                 { 
                     State = taskState,
+                    Timestamp = DateTimeOffset.UtcNow,
                     Message = artifact == null 
                         ? null 
                         : new Message()

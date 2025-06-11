@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
                     var activity = MCPProtocolConverter.CreateActivityFromRequest(rpcRequest, sessionId);
 
-                    await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new MCPStreamedResponseWriter(), cancellationToken);
+                    await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new MCPChannelResponseWriter(), cancellationToken);
                 }
                 else
                 {
@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Hosting.MCP
             }
         }
 
-        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPStreamedResponseWriter writer, CancellationToken cancellationToken = default)
+        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPChannelResponseWriter writer, CancellationToken cancellationToken = default)
         {
             if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
             {
@@ -105,23 +105,23 @@ namespace Microsoft.Agents.Hosting.MCP
 
             InvokeResponse invokeResponse = null;
 
-            await writer.StreamBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+            await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
             activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
-                StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
 
             // block until turn is complete
-            await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+            await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
             {
                 await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
 
-            await writer.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         private static async Task ProcessInitializeRequestAsync(JsonRpcRequest rpcRequest, HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Hosting.MCP
             if (httpRequest.Headers.Accept.Contains("text/event-stream"))
             {
                 httpResponse.ContentType = "text/event-stream";
-                json = string.Format(MCPStreamedResponseWriter.MessageTemplate, json);
+                json = string.Format(MCPChannelResponseWriter.MessageTemplate, json);
             }
             else
             {
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            await StreamedResponseHandler.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
+            await ChannelResponseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
         }
     }

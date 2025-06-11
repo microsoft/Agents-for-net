@@ -57,14 +57,15 @@ namespace Microsoft.Agents.Hosting.A2A
                 System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
                 await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
             })
-            .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
+                .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
 
             a2aGroup.MapGet("", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
             {
                 System.Diagnostics.Trace.WriteLine("/");
                 await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
             })
-            .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
+                .WithMetadata(new AcceptsMetadata(["application/json"]))
+                .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
 
             return a2aGroup;
         }

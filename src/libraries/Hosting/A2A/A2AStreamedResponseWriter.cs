@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A
 {
-    public class A2AStreamedResponseWriter(string requestId, string contextId, string taskId) : IStreamedResponseWriter
+    public class A2AStreamedResponseWriter(string requestId, string contextId, string taskId) : IChannelResponseWriter
     {
         private const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
         private const string UpdateTemplate = "event: {0}\r\ndata: {1}\r\n\r\n";
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
         private bool _inStreamingResponse = false;
 
-        public async Task StreamBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
+        public async Task ResponseBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
             httpResponse.ContentType = "text/event-stream";
             var task = A2AProtocolConverter.CreateStreamTaskFromActivity(requestId, contextId, taskId, TaskState.Submitted);
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Hosting.A2A
             var entity = activity.GetStreamingEntity();
             if (entity != null)
             {
-                var isFinal = entity.StreamType == StreamTypes.Final;
+                var isLastChunk = entity.StreamType == StreamTypes.Final;
                 var isInformative = entity.StreamType == StreamTypes.Informative;
 
                 if (!_inStreamingResponse || isInformative)
@@ -45,12 +45,12 @@ namespace Microsoft.Agents.Hosting.A2A
                     await WriteEvent(httpResponse, status, cancellationToken).ConfigureAwait(false);
                 }
 
-                var update = A2AProtocolConverter.CreateStreamArtifactUpdateFromActivity(requestId, contextId, taskId, activity, artifactId:entity.StreamId, append:false, lastChunk:isFinal);
+                var update = A2AProtocolConverter.CreateStreamArtifactUpdateFromActivity(requestId, contextId, taskId, activity, artifactId:entity.StreamId, append:false, lastChunk:isLastChunk);
                 var artifact = string.Format(UpdateTemplate, TaskStatusUpdateEvent.TaskStatusUpdateEventKind, update);
 
                 await WriteEvent(httpResponse, artifact, cancellationToken).ConfigureAwait(false);
 
-                if (isFinal)
+                if (isLastChunk)
                 {
                     _inStreamingResponse = false;
                 }
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Hosting.A2A
             }
         }
 
-        public async Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
+        public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
             var final = A2AProtocolConverter.CreateStreamStatusUpdateFromActivity(requestId, contextId, taskId, TaskState.Completed, isFinal:true);
             var status = string.Format(UpdateTemplate, TaskStatusUpdateEvent.TaskStatusUpdateEventKind, final);

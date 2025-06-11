@@ -14,6 +14,8 @@ using Microsoft.Agents.Hosting.A2A.Models;
 using ModelContextProtocol.Protocol;
 using System.Net;
 using System.Text;
+using System.Collections.ObjectModel;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Hosting.A2A
 {
@@ -47,23 +49,23 @@ namespace Microsoft.Agents.Hosting.A2A
 
             InvokeResponse invokeResponse = null;
 
-            await writer.StreamBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+            await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
             activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
-                StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
 
             // block until turn is complete
-            await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+            await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
             {
                 await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
 
-            await writer.StreamEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
@@ -75,6 +77,13 @@ namespace Microsoft.Agents.Hosting.A2A
                 Description = "Simple Echo Agent",
                 Version = "0.2.0",
                 Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
+                SecuritySchemes = new Dictionary<string, SecurityScheme>
+                {
+                    {
+                        "jwt",
+                        new HTTPAuthSecurityScheme() { Scheme = "bearer" }
+                    }
+                },
                 DefaultInputModes = [],
                 DefaultOutputModes = [],
                 Skills = [],
@@ -85,13 +94,14 @@ namespace Microsoft.Agents.Hosting.A2A
             };
 
             httpResponse.ContentType = "application/json";
-            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(A2AProtocolConverter.ToJson(agentCard)), cancellationToken);
+            var json = A2AProtocolConverter.ToJson(agentCard);
+            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            await StreamedResponseHandler.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
+            await ChannelResponseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
         }
     }

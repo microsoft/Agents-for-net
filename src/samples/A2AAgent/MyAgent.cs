@@ -45,8 +45,6 @@ public class MyAgent : AgentApplication
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}");
-        activity.Entities = [new StreamInfo() { StreamId = "streamId" }];
-
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
 }

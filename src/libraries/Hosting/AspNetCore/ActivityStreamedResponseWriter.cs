@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    internal class ActivityStreamedResponseWriter : IStreamedResponseWriter
+    internal class ActivityStreamedResponseWriter : IChannelResponseWriter
     {
         private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n\r\n";
         private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n\r\n";
 
-        public Task StreamBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
+        public Task ResponseBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
             httpResponse.ContentType = "text/event-stream";
             return Task.CompletedTask;
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public async Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
+        public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
             if (data is InvokeResponse invokeResponse)
             {

@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.MCP
 {
-    public class MCPStreamedResponseWriter() : IStreamedResponseWriter
+    public class MCPChannelResponseWriter() : IChannelResponseWriter
     {
         public const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
 
-        public Task StreamBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
+        public Task ResponseBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
             httpResponse.StatusCode = (int) HttpStatusCode.OK;
             httpResponse.ContentType = "text/event-stream";
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Hosting.MCP
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
-        public Task StreamEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
+        public Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
