@@ -36,7 +36,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 builder.Services.AddA2AAdapter();
 
 // Add the MCP adapter to handle MCP requests
-builder.Services.AddA2AAdapter();
+builder.Services.AddMCPAdapter();
 
 WebApplication app = builder.Build();
 
