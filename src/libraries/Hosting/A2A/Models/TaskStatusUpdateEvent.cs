@@ -8,9 +8,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 {
     public record TaskStatusUpdateEvent
     {
-        public const string TaskStatusUpdateEventKind = "status-update";
-
-        public string Kind { get; } = TaskStatusUpdateEventKind;
+        public string Kind { get; } = "status-update";
 
         /// <summary>
         /// Task ID being updated

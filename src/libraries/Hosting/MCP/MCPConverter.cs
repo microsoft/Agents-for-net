@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.MCP
 {
-    public class MCPProtocolConverter
+    public class MCPConverter
     {
         private static readonly JsonSerializerOptions s_ElementSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
 

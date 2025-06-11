@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
     public record TaskStatus
     {
         [JsonPropertyName("state")]
-        public required string State { get; init; }
+        public required TaskState State { get; init; }
 
         [JsonPropertyName("message")]
         public Message? Message { get; init; }

@@ -8,9 +8,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 {
     public record TaskArtifactUpdateEvent
     {
-        public const string TaskArtifactUpdateEventKind = "artifact-update";
-
-        public string Kind { get; } = TaskArtifactUpdateEventKind;
+        public string Kind { get; } = "artifact-update";
 
         /// <summary>
         /// Task ID being updated

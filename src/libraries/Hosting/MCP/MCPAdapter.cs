@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Hosting.MCP
             }
             else
             {
-                var rpcRequest = await MCPProtocolConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+                var rpcRequest = await MCPConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
 
                 if (rpcRequest.Method.Equals("initialize"))
                 {
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Hosting.MCP
                     };
 
                     httpResponse.ContentType = "application/json";
-                    var json = MCPProtocolConverter.ToJson(rpcResponse);
+                    var json = MCPConverter.ToJson(rpcResponse);
                     await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
                     await httpResponse.Body.FlushAsync(cancellationToken);
                 }
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Hosting.MCP
                         sessionId = Guid.NewGuid().ToString("N");
                     }
 
-                    var activity = MCPProtocolConverter.CreateActivityFromRequest(rpcRequest, sessionId);
+                    var activity = MCPConverter.CreateActivityFromRequest(rpcRequest, sessionId);
 
                     await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new MCPStreamedResponseWriter(), cancellationToken);
                 }
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Hosting.MCP
                 Result = JsonSerializer.SerializeToNode(result)
             };
 
-            var json = MCPProtocolConverter.ToJson(rpcResponse);
+            var json = MCPConverter.ToJson(rpcResponse);
 
             if (httpRequest.Headers.Accept.Contains("text/event-stream"))
             {

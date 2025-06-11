@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
         public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var response = MCPProtocolConverter.CreateStreamMessageFromActivity(activity);
+            var response = MCPConverter.CreateStreamMessageFromActivity(activity);
             var sse = string.Format(MessageTemplate, response);
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(sse), cancellationToken).ConfigureAwait(false);
             await httpResponse.Body.FlushAsync(cancellationToken);

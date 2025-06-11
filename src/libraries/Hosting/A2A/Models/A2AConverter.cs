@@ -19,14 +19,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
-    public class A2AProtocolConverter
+    public class A2AConverter
     {
         private static readonly JsonSerializerOptions s_SerializerOptions = new()
         {
             AllowOutOfOrderMetadataProperties = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            Converters =
+            {
+                new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower)
+            }
         };
 
         public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
@@ -81,7 +85,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             };
         }
 
-        public static (IActivity, string? contextId, string? taskId) CreateActivityFromRequest(JsonRpcRequest jsonRpcPayload, string userId = "user", string channelId = "a2a", bool isStreaming = true)
+        public static (IActivity, string? contextId, string? taskId) ActivityFromRequest(JsonRpcRequest jsonRpcPayload, string userId = "user", string channelId = "a2a", bool isStreaming = true)
         {
             if (jsonRpcPayload.Params == null)
             {
@@ -102,11 +106,11 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             return (activity, contextId, taskId);
         }
 
-        public static string CreateStreamStatusUpdateFromActivity(string requestId, string contextId, string taskId, string taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
+        public static TaskStatusUpdateEvent StatusUpdateFromActivity(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
         {
-            var artifact = CreateArtifactFromActivity(activity, artifactId);
+            var artifact = ArtifactFromActivity(activity, artifactId);
 
-            var task = new TaskStatusUpdateEvent()
+            return new TaskStatusUpdateEvent()
             {
                 TaskId = taskId,
                 ContextId = contextId,
@@ -118,20 +122,13 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 },
                 Final = isFinal
             };
-
-            return ToJson(
-                new SendStreamingMessageResponse()
-                {
-                    Id = requestId,
-                    Result = task
-                });
         }
 
-        public static string CreateStreamArtifactUpdateFromActivity(string requestId, string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
+        public static TaskArtifactUpdateEvent ArtifactUpdateFromActivity(string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
         {
-            var artifact = CreateArtifactFromActivity(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
+            var artifact = ArtifactFromActivity(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
 
-            var task = new TaskArtifactUpdateEvent()
+            return new TaskArtifactUpdateEvent()
             {
                 TaskId = taskId,
                 ContextId = contextId,
@@ -139,15 +136,13 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Append = append,
                 LastChunk = lastChunk
             };
-
-            return ToJson(new SendStreamingMessageResponse() { Id = requestId, Result = task });
         }
 
-        public static string CreateStreamMessageFromActivity(string requestId, string contextId, string taskId, IActivity activity)
+        public static Message MessageFromActivity(string contextId, string taskId, IActivity activity)
         {
-            var artifact = CreateArtifactFromActivity(activity) ?? throw new ArgumentException("Invalid activity to convert to payload");
+            var artifact = ArtifactFromActivity(activity) ?? throw new ArgumentException("Invalid activity to convert to payload");
 
-            var message = new Message()
+            return new Message()
             {
                 TaskId = taskId,
                 ContextId = contextId,
@@ -155,44 +150,45 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 Parts = artifact.Parts,
                 Role = RoleTypes.Agent
             };
-
-            return ToJson(new SendStreamingMessageResponse()
-            {
-                Id = requestId,
-                Result = message
-            });
         }
 
-        public static string CreateStreamTaskFromActivity(string requestId, string contextId, string taskId, string taskState, IActivity activity = null)
+        public static TaskResponse TaskFromActivity(string contextId, string taskId, TaskState taskState, IActivity activity)
         {
-            var artifact = CreateArtifactFromActivity(activity);
+            var artifact = ArtifactFromActivity(activity);
+            return TaskForState(contextId, taskId, taskState, artifact);
+        }
 
-            var message = new TaskResponse()
+        public static TaskResponse TaskForState(string contextId, string taskId, TaskState taskState, Artifact artifact = null)
+        {
+            return new TaskResponse()
             {
                 Id = taskId,
                 ContextId = contextId,
-                Status = new TaskStatus() 
-                { 
+                Status = new TaskStatus()
+                {
                     State = taskState,
                     Timestamp = DateTimeOffset.UtcNow,
-                    Message = artifact == null 
-                        ? null 
+                    Message = artifact == null
+                        ? null
                         : new Message()
-                            {
-                                TaskId = taskId,
-                                ContextId = contextId,
-                                MessageId = Guid.NewGuid().ToString("N"),
-                                Parts = artifact.Parts,
-                                Role = RoleTypes.Agent
-                            }
+                        {
+                            TaskId = taskId,
+                            ContextId = contextId,
+                            MessageId = Guid.NewGuid().ToString("N"),
+                            Parts = artifact.Parts,
+                            Role = RoleTypes.Agent
+                        }
                 },
             };
+        }
 
-            return ToJson(new SendStreamingMessageResponse()
+        public static SendStreamingMessageResponse StreamingMessageResponse(string requestId, object payload)
+        {
+            return new SendStreamingMessageResponse()
             {
                 Id = requestId,
-                Result = message
-            });
+                Result = payload
+            };
         }
 
         public static string ToJson(object obj)
@@ -266,7 +262,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             return activity;
         }
 
-        public static Artifact? CreateArtifactFromActivity(IActivity activity, string artifactId = null)
+        public static Artifact? ArtifactFromActivity(IActivity activity, string artifactId = null)
         {
             var artifact = Artifact.Empty;
 

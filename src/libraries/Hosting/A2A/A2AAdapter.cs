@@ -14,7 +14,6 @@ using Microsoft.Agents.Hosting.A2A.Models;
 using ModelContextProtocol.Protocol;
 using System.Net;
 using System.Text;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Hosting.A2A
@@ -29,11 +28,11 @@ namespace Microsoft.Agents.Hosting.A2A
             }
             else
             {
-                var jsonRpcRequest = await A2AProtocolConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+                var jsonRpcRequest = await A2AConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
 
                 if (jsonRpcRequest.Method.Equals("message/stream"))
                 {
-                    var (activity, contextId, taskId) = A2AProtocolConverter.CreateActivityFromRequest(jsonRpcRequest, isStreaming: true);
+                    var (activity, contextId, taskId) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: true);
                     await ProcessStreamedAsync(activity, HttpHelper.GetIdentity(httpRequest), httpResponse, agent, new A2AStreamedResponseWriter(jsonRpcRequest.Id.ToString(), contextId, taskId), cancellationToken);
                 }
             }
@@ -94,7 +93,7 @@ namespace Microsoft.Agents.Hosting.A2A
             };
 
             httpResponse.ContentType = "application/json";
-            var json = A2AProtocolConverter.ToJson(agentCard);
+            var json = A2AConverter.ToJson(agentCard);
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
