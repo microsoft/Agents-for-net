@@ -9,21 +9,17 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-
-// Add AgentApplicationOptions from appsettings config section "AgentApplication".
+// Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<CardsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -32,17 +28,16 @@ builder.AddAgent<CardsAgent>();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-var app = builder.Build();
-
 // Configure the HTTP request pipeline.
+
+var app = builder.Build();
 
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
-})
-    .AllowAnonymous();
+});
 
 if (app.Environment.IsDevelopment())
 {
