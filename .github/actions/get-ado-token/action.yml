@@ -31,30 +31,6 @@ runs:
       with:
         azPSVersion: "latest"
         inlineScript: |
-          function Parse-JWTtoken {
-          
-              [cmdletbinding()]
-              param([Parameter(Mandatory=$true)][string]$token)
-          
-              #Payload
-              $tokenPayload = $token.Split(".")[1].Replace('-', '+').Replace('_', '/')
-              #Fix padding as needed, keep adding "=" until string length modulus 4 reaches 0
-              while ($tokenPayload.Length % 4) { Write-Verbose "Invalid length for a Base-64 char array or string, adding ="; $tokenPayload += "=" }
-              Write-Verbose "Base64 encoded (padded) payoad:"
-              Write-Verbose $tokenPayload
-              #Convert to Byte array
-              $tokenByteArray = [System.Convert]::FromBase64String($tokenPayload)
-              #Convert to string array
-              $tokenArray = [System.Text.Encoding]::ASCII.GetString($tokenByteArray)
-              Write-Verbose "Decoded array in JSON format:"
-              Write-Verbose $tokenArray
-              #Convert from JSON to PSObject
-              $tokobj = $tokenArray | ConvertFrom-Json
-              Write-Verbose "Decoded Payload:"
-              
-              return $tokobj
-          }
-
           function decodeToken([string]$token) { 
             $t = $token.split('.')[1]
             while($t.Length % 4 -ne 0) { $t += '=' } 
@@ -64,6 +40,3 @@ runs:
           $accessToken = az account get-access-token --resource="https://${{inputs.organization}}.visualstudio.com" --query accessToken
           decodeToken($accessToken)
           "token=$accessToken" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-        #  $accessToken = (Get-AzAccessToken -ResourceUrl "https://${{inputs.organization}}.visualstudio.com").Token
-        #  "token=$accessToken" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
