@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Builder;
 
-namespace DialogRootBot.Controllers;
+namespace DialogRootBot;
 
 // This Controller exposes the HTTP endpoints for the Connector that DialogSkillBot uses to
 // communicate (send replies) with DialogRootBot.
