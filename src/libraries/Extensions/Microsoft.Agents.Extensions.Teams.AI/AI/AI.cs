@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         /// <param name="name">The name of the action.</param>
         /// <param name="handler">The action handler function.</param>
         /// <returns>The current instance object.</returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="System.InvalidOperationException"></exception>
         public AISystem RegisterAction(string name, IActionHandler<ITurnState> handler)
         {
             Verify.ParamNotNull(name);
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         /// </summary>
         /// <param name="instance">Instance of a class containing these functions.</param>
         /// <returns>The current instance object.</returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="System.InvalidOperationException"></exception>
         public AISystem ImportActions(object instance)
         {
             Verify.ParamNotNull(instance);

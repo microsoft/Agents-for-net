@@ -52,6 +52,9 @@ namespace Microsoft.Agents.Authentication
         /// </summary>
         public string TenantId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// List of scopes to use for the connection.
+        /// </summary>
         public List<string> Scopes { get; set; } = [];
     }
 }
