@@ -11,7 +11,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
@@ -19,7 +19,9 @@ using System.Threading;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
-builder.Logging.AddConsole();
+
+// Add AgentApplicationOptions from appsettings section "AgentApplication".
+builder.AddAgentApplicationOptions();
 
 // Register FileDownloaders
 builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
@@ -27,31 +29,33 @@ builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
     new TeamsAttachmentDownloader(new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" }, sp.GetService<IConnections>(), sp.GetService<IHttpClientFactory>())
 ]);
 
-// Add ApplicationOptions
-builder.AddAgentApplicationOptions();
-
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<AttachmentsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operate correctly
+// that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-var app = builder.Build();
-
 // Configure the HTTP request pipeline.
 
+WebApplication app = builder.Build();
+
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
+// This receives incoming messages from Azure Bot Service or other SDK Agents
 app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
-})
-    .AllowAnonymous();
+});
 
-// Hardcoded for brevity and ease of testing. 
-// In production, this should be set in configuration.
-app.Urls.Add($"http://localhost:3978");
+if (app.Environment.IsDevelopment())
+{
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
+    app.Urls.Add($"http://localhost:3978");
+}
 
 app.Run();
