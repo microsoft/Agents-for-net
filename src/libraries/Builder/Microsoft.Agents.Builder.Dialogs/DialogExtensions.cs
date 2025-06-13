@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         private static bool SendEoCToParent(ITurnContext turnContext)
         {
-            if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
+            if (turnContext.Identity as ClaimsIdentity != null && (AgentClaims.AllowAnonymous(turnContext.Identity) || AgentClaims.IsAgentClaim(turnContext.Identity)))
             {
                 // EoC Activities returned by skills are bounced back to the Agent by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
