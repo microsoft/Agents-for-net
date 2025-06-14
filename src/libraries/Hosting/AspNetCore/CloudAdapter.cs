@@ -9,12 +9,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -117,8 +116,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
-            ArgumentNullException.ThrowIfNull(httpResponse);
-            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -126,29 +123,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
             else
             {
-                // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
+                var claimsIdentity = HttpHelper.GetIdentity(httpRequest);
 
-                // If Auth is not configured, we still need the claims from the JWT token.
-                // Currently, the stack does rely on certain Claims.  If the Bearer token
-                // was sent, we can get them from there.  The JWT token is NOT validated though.
-                var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
-                if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
-                {
-                    var auth = httpRequest.Headers.Authorization;
-                    if (auth.Count != 0)
-                    {
-                        var authHeaderValue = auth.First();
-                        var authValues = authHeaderValue.Split(' ');
-                        if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var jwt = new JwtSecurityToken(authValues[1]);
-                            claimsIdentity = new ClaimsIdentity(jwt.Claims);
-                        }
-                    }
-                }
-
-                if (!IsValidChannelActivity(activity))
+                if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
@@ -160,21 +138,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         InvokeResponse invokeResponse = null;
 
+                        await ChannelResponseQueue.DefaultWriter.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
                         // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
 
                         // block until turn is complete
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
-                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
+                            await ChannelResponseQueue.DefaultWriter.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
-                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
+                        await ChannelResponseQueue.DefaultWriter.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
@@ -230,30 +210,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
-
-            return true;
-        }
-
-        private bool IsValidChannelActivity(IActivity activity)
-        {
-            if (activity == null)
-            {
-                Logger.LogWarning("BadRequest: Missing activity");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
-            {
-                Logger.LogWarning("BadRequest: Missing activity type");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Conversation?.Id))
-            {
-                Logger.LogWarning("BadRequest: Missing Conversation.Id");
-                return false;
-            }
+            await ChannelResponseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

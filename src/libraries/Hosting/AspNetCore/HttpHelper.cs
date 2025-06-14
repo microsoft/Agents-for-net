@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -16,7 +19,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// Helper class with methods to help with reading and responding to HTTP requests.
     /// </summary>
-    internal static class HttpHelper
+    public static class HttpHelper
     {
         /// <summary>
         /// Accepts an incoming HttpRequest and deserializes it using the <see cref="ProtocolJsonSerializer"/>.
@@ -71,6 +74,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
                 }
             }
+        }
+
+        public static ClaimsIdentity GetIdentity(HttpRequest httpRequest)
+        {
+            var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
+            if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+            {
+                // If Auth is not configured, we still need the claims from the JWT token.
+                // Currently, the stack does rely on certain Claims.  If the Bearer token
+                // was sent, we can get them from there.  The JWT token is NOT validated though.
+                var auth = httpRequest.Headers.Authorization;
+                if (auth.Count != 0)
+                {
+                    var authHeaderValue = auth.First();
+                    var authValues = authHeaderValue.Split(' ');
+                    if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var jwt = new JwtSecurityToken(authValues[1]);
+                        claimsIdentity = new ClaimsIdentity(jwt.Claims);
+                    }
+                }
+            }
+
+            return claimsIdentity;
         }
     }
 }
