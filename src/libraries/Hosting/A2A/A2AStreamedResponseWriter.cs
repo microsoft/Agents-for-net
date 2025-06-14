@@ -47,14 +47,16 @@ namespace Microsoft.Agents.Hosting.A2A
 
                 if (!isLastChunk)
                 {
-                    //TBD:  We don't know "last chunk" until the final streaming Activity is sent, which probably should be a Message (see next block)
+                    //TBD:  We don't know "last chunk" until the final streaming Activity is sent, which probably should be a Message (see `else` block)
                     var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(contextId, taskId, activity, artifactId: entity.StreamId, append: false, lastChunk: isLastChunk);
+
                     await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     // Send the final streaming Activity as a A2A Message
                     var message = A2AConverter.MessageFromActivity(contextId, taskId, activity);
+
                     await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
                     _inStreamingResponse = false;
                 }

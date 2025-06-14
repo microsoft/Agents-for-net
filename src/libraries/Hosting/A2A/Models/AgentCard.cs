@@ -56,12 +56,17 @@ namespace Microsoft.Agents.Hosting.A2A.Models
         [JsonPropertyName("capabilities")]
         public required AgentCapabilities Capabilities { get; init; } = new AgentCapabilities();
 
-        //security
+        /// <summary>
+        /// Security requirements for contacting the agent.
+        /// </summary>
+        [JsonPropertyName("security")]
+        public IReadOnlyDictionary<string, ImmutableArray<string>>? Security { get; init; }
 
         /// <summary>
         /// Security scheme details used for authenticating with this agent. Undefined implies no 
         /// A2A-advertised auth (not recommended for production).
         /// </summary>
+        [JsonPropertyName("securitySchemes")]
         public IReadOnlyDictionary<string, SecurityScheme>? SecuritySchemes { get; init;}
 
         /// <summary>

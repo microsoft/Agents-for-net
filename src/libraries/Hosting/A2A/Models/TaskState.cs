@@ -3,6 +3,9 @@
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
+    /// <summary>
+    /// Defines the possible lifecycle states of a Task.
+    /// </summary>
     public enum TaskState
     {
         Submitted,

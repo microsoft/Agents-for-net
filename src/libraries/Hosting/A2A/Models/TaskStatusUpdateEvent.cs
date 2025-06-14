@@ -6,6 +6,10 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Models
 {
+    /// <summary>
+    /// Carries information about a change in the task's status during streaming. 
+    /// This is one of the possible result types in a <see cref="SendStreamingMessageResponse"/>.
+    /// </summary>
     public record TaskStatusUpdateEvent
     {
         public string Kind { get; } = "status-update";
@@ -22,13 +26,23 @@ namespace Microsoft.Agents.Hosting.A2A.Models
         [JsonPropertyName("contextId")]
         public required string ContextId { get; init; }
 
+        /// <summary>
+        /// The new TaskStatus object.
+        /// </summary>
         [JsonPropertyName("status")]
         public required TaskStatus Status { get; init; }
 
+        /// <summary>
+        /// If true, indicates this is the terminal status update for the current stream cycle. 
+        /// The server typically closes the SSE connection after this.
+        /// </summary>
         [JsonPropertyName("final")]
         public bool? Final { get; init; }
 
+        /// <summary>
+        /// Event-specific metadata.
+        /// </summary>
         [JsonPropertyName("metadata")]
-        public IDictionary<string, object>? Metadata { get; set; }
+        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
     }
 }

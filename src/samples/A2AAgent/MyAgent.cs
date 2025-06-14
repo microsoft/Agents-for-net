@@ -32,13 +32,16 @@ public class MyAgent : AgentApplication
 
     private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Informative", cancellationToken);
+        turnContext.StreamingResponse.EnableGeneratedByAILabel = true;
+        await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Please wait while I process your request.", cancellationToken);
         turnContext.StreamingResponse.QueueTextChunk("a quick");
         await Task.Delay(600);
-        turnContext.StreamingResponse.QueueTextChunk("a quick a quick brown fox ");
+        turnContext.StreamingResponse.QueueTextChunk(" brown fox ");
         await Task.Delay(600);
-        turnContext.StreamingResponse.QueueTextChunk("a quick a quick brown fox jumped over something");
+        turnContext.StreamingResponse.QueueTextChunk("jumped over something[1]");
         await Task.Delay(600);
+
+        turnContext.StreamingResponse.AddCitations([new Citation("1", "title", "https://example.com/fox-jump")]);
         await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
     }
 

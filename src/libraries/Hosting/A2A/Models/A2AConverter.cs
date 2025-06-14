@@ -8,6 +8,7 @@ using ModelContextProtocol.Protocol;
 using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -21,6 +22,9 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 {
     public class A2AConverter
     {
+        private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
+        private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> _schemas = [];
+
         private static readonly JsonSerializerOptions s_SerializerOptions = new()
         {
             AllowOutOfOrderMetadataProperties = true,
@@ -51,14 +55,14 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             }
         }
 
-        public static IDictionary<string, object> ToMetadata(object data, string contentType)
+        public static IReadOnlyDictionary<string, object> ToMetadata(Type dataType, string contentType)
         {
             JSchemaGenerator generator = new();
             generator.ContractResolver = new CamelCasePropertyNamesContractResolver();
             generator.DefaultRequired = Newtonsoft.Json.Required.Default;
             generator.SchemaIdGenerationHandling = SchemaIdGenerationHandling.None;
 
-            var schema = JsonSerializer.Deserialize<Dictionary<string, JsonNode>>(generator.Generate(data.GetType()).ToString());
+            var schema = JsonSerializer.Deserialize<Dictionary<string, JsonNode>>(generator.Generate(dataType).ToString());
             schema.Remove("definitions");
             if (schema.TryGetValue("properties", out var properties))
             {
@@ -71,8 +75,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
 
             return new Dictionary<string, object>
             {
-                { "mimeType", "application/json"},
-                { "contentType", contentType },
+                { "mimeType", contentType},
                 { "type", "object" },
                 {
                     "schema",
@@ -118,12 +121,23 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 {
                     State = taskState,
                     Timestamp = DateTimeOffset.UtcNow,
-                    Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = RoleTypes.Agent },
+                    Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = Message.RoleType.Agent },
                 },
                 Final = isFinal
             };
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="contextId"></param>
+        /// <param name="taskId"></param>
+        /// <param name="activity"></param>
+        /// <param name="artifactId"></param>
+        /// <param name="append">true means append parts to artifact; false (default) means replace.</param>
+        /// <param name="lastChunk"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static TaskArtifactUpdateEvent ArtifactUpdateFromActivity(string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
         {
             var artifact = ArtifactFromActivity(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
@@ -148,7 +162,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 ContextId = contextId,
                 MessageId = Guid.NewGuid().ToString("N"),
                 Parts = artifact.Parts,
-                Role = RoleTypes.Agent
+                Role = Message.RoleType.Agent
             };
         }
 
@@ -176,7 +190,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                             ContextId = contextId,
                             MessageId = Guid.NewGuid().ToString("N"),
                             Parts = artifact.Parts,
-                            Role = RoleTypes.Agent
+                            Role = Message.RoleType.Agent
                         }
                 },
             };
@@ -262,7 +276,7 @@ namespace Microsoft.Agents.Hosting.A2A.Models
             return activity;
         }
 
-        public static Artifact? ArtifactFromActivity(IActivity activity, string artifactId = null)
+        public static Artifact? ArtifactFromActivity(IActivity activity, string artifactId = null, bool includeEntities = true)
         {
             var artifact = Artifact.Empty;
 
@@ -308,19 +322,26 @@ namespace Microsoft.Agents.Hosting.A2A.Models
                 };
             }
 
-            /*
-            foreach (var entity in activity?.Entities ?? Enumerable.Empty<Entity>())
+            if (includeEntities)
             {
-                artifact = artifact with
+                foreach (var entity in activity?.Entities ?? Enumerable.Empty<Entity>())
                 {
-                    Parts = artifact.Parts.Add(new DataPart
+                    if (!_schemas.TryGetValue(entity.GetType(), out var cachedMetadata))
                     {
-                        Metadata = ToMetadata(entity, $"application/vnd.microsoft.entity.{entity.Type}"),
-                        Data = ProtocolJsonSerializer.ToJsonElements(entity)
-                    })
-                };
+                        cachedMetadata = ToMetadata(entity.GetType(), string.Format(EntityTypeTemplate, entity.Type));
+                        _schemas.TryAdd(entity.GetType(), cachedMetadata);
+                    }
+
+                    artifact = artifact with
+                    {
+                        Parts = artifact.Parts.Add(new DataPart
+                        {
+                            Metadata = cachedMetadata,
+                            Data = ProtocolJsonSerializer.ToJsonElements(entity)
+                        })
+                    };
+                }
             }
-            */
 
             if (artifact != Artifact.Empty)
             {
