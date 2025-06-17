@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     public record MessageSendParams
     {

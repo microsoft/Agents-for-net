@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// Represents a distinct piece of content within a Message or Artifact. A Part is a union type 

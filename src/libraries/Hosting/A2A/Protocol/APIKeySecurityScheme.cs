@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
-    public record OpenIdConnectSecurityScheme : SecurityScheme
+    public record APIKeySecurityScheme : SecurityScheme
     {
     }
 }

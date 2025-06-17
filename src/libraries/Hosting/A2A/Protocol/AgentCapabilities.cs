@@ -4,7 +4,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     public class AgentCapabilities
     {

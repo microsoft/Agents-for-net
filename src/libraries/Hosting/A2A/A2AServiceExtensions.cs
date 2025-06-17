@@ -36,12 +36,8 @@ namespace Microsoft.Agents.Hosting.A2A
                 a2aGroup.AllowAnonymous();
             }
 
-            var streamGroup = a2aGroup.MapGroup("")
-                .WithDisplayName(b => $"A2A SSE HTTP | {b.DisplayName}")
-                .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status404NotFound, typeof(JsonRpcError), contentTypes: ["application/json"]));
-
             // Messages
-            streamGroup.MapPost(
+            a2aGroup.MapPost(
                 "",
                 async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
                 {
@@ -51,6 +47,14 @@ namespace Microsoft.Agents.Hosting.A2A
                 .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
                 .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
 
+            // Get
+            a2aGroup.MapGet("/", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+            {
+                await adapter.ProcessAsync(request, response, agent, cancellationToken);
+            })
+                .WithMetadata(new AcceptsMetadata(["application/json"]))
+                .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["application/json"]));
+
             // AgentCard
             a2aGroup.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
             {
@@ -59,6 +63,7 @@ namespace Microsoft.Agents.Hosting.A2A
             })
                 .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
 
+            /*
             a2aGroup.MapGet("", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
             {
                 System.Diagnostics.Trace.WriteLine("/");
@@ -66,6 +71,7 @@ namespace Microsoft.Agents.Hosting.A2A
             })
                 .WithMetadata(new AcceptsMetadata(["application/json"]))
                 .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
+            */
 
             return a2aGroup;
         }

@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// This is the structure of the JSON object found in the data field of each Server-Sent Event 

@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// Information about the organization or entity providing the agent.

@@ -4,7 +4,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// Represents the current state and associated context (e.g., a message from the agent) of a Task.

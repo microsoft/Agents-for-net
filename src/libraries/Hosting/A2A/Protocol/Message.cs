@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// Represents a single communication turn or a piece of contextual information between a 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Hosting.A2A.Protocol;
 
 namespace Microsoft.Agents.Hosting.A2A
 {

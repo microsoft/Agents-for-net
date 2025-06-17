@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Models
+namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
     /// Specifies an extension to the A2A protocol supported by the agent.
