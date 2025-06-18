@@ -31,5 +31,12 @@ runs:
       with:
         azPSVersion: "latest"
         inlineScript: |
-          $accessToken = (Get-AzAccessToken -ResourceUrl "https://${{inputs.organization}}.visualstudio.com").Token
+          function decodeToken([string]$token) { 
+            $t = $token.split('.')[1]
+            while($t.Length % 4 -ne 0) { $t += '=' } 
+            ConvertFrom-Json ([System.Text.Encoding]::Ascii.GetString([System.Convert]::FromBase64String($t)))
+          }
+
+          $accessToken = az account get-access-token --resource="https://${{inputs.organization}}.visualstudio.com" --query accessToken
+          decodeToken($accessToken)
           "token=$accessToken" | Out-File -FilePath $env:GITHUB_OUTPUT -Append

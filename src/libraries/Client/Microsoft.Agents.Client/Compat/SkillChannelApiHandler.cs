@@ -86,7 +86,10 @@ namespace Microsoft.Agents.Client.Compat
                 await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
             });
 
-            await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
+            await _adapter.ContinueConversationAsync(hostClaimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<ResourceResponse> OnUpdateActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string activityId, IActivity activity, CancellationToken cancellationToken = default)
@@ -103,7 +106,10 @@ namespace Microsoft.Agents.Client.Compat
                 resourceResponse = await turnContext.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
             });
 
-            await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
+            await _adapter.ContinueConversationAsync(hostClaimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         }
@@ -120,7 +126,10 @@ namespace Microsoft.Agents.Client.Compat
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
 
-            await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
+            await _adapter.ContinueConversationAsync(hostClaimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
             return member;
         }
@@ -157,7 +166,10 @@ namespace Microsoft.Agents.Client.Compat
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
 
-            await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
+            await _adapter.ContinueConversationAsync(hostClaimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
             return member;
         }
@@ -257,7 +269,10 @@ namespace Microsoft.Agents.Client.Compat
                 }
             });
 
-            await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
+            await _adapter.ContinueConversationAsync(hostClaimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
         }
