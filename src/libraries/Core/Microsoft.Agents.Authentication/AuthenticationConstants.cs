@@ -4,10 +4,10 @@
 namespace Microsoft.Agents.Authentication
 {
     /// <summary>
-    /// Values and Constants used for Authentication and Authorization by the Activity Protocol.
+    /// Values and constants used for authentication and authorization by the activity protocol.
     /// </summary>
     public static class AuthenticationConstants
-    {        
+    {
         /// <summary>
         /// Bot Framework OAuth scope to request.
         /// </summary>
@@ -65,15 +65,12 @@ namespace Microsoft.Agents.Authentication
         /// Authorized party - the party to which the ID Token was issued.
         /// This claim follows the general format set forth in the OpenID Spec. http://openid.net/specs/openid-connect-core-1_0.html#IDToken.
         /// </remarks>
-                
         public const string AuthorizedParty = "azp";
 
         /// <summary>
         /// Audience Claim. 
         /// </summary>
         /// <remarks>
-        /// From RFC 7519.
-        ///     https://tools.ietf.org/html/rfc7519#section-4.1.3
         /// The "aud" (audience) claim identifies the recipients that the JWT is
         /// intended for. Each principal intended to process the JWT MUST
         /// identify itself with a value in the audience claim. If the principal
@@ -85,8 +82,9 @@ namespace Microsoft.Agents.Authentication
         /// single case-sensitive string containing a StringOrURI value. The
         /// interpretation of audience values is generally application specific.
         /// Use of this claim is OPTIONAL.
+        /// 
+        /// For more details, see <a href="https://tools.ietf.org/html/rfc7519#section-4.1.3">RFC 7519 Section 4.1.3</a>.
         /// </remarks>
-       
         public const string AudienceClaim = "aud";
 
         /// <summary>
