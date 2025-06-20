@@ -26,6 +26,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         public static async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
         {
+            // TBD: There is a non-real world race condition if CompleteHandlerForConversation is called before this
+            // method.  In which case, this will block forever.
+
             var channel = _conversations.GetOrAdd(channelConversationId, Channel.CreateUnbounded<IActivity>());
 
             while (await channel.Reader.WaitToReadAsync(cancellationToken))

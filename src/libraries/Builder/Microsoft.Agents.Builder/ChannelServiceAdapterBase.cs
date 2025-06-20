@@ -334,7 +334,8 @@ namespace Microsoft.Agents.Builder
             turnContext.Identity = claimsIdentity;
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
-            turnContext.Services.Set(userTokenClient);
+            if (userTokenClient != null)
+                turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
 
             return turnContext;
@@ -349,12 +350,6 @@ namespace Microsoft.Agents.Builder
 
         private static InvokeResponse ProcessTurnResults(TurnContext turnContext)
         {
-            // Handle ExpectedReplies scenarios where the all the activities have been buffered and sent back at once in an invoke response.
-            if (turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
-            {
-                return new InvokeResponse { Status = (int)HttpStatusCode.OK, Body = new ExpectedReplies(turnContext.BufferedReplyActivities) };
-            }
-
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
@@ -370,7 +365,6 @@ namespace Microsoft.Agents.Builder
             // No body to return.
             return null;
         }
-
 
         /// <summary>
         /// Determines whether a connector client is needed based on the delivery mode and service URL of the given activity.

@@ -75,8 +75,6 @@ namespace Microsoft.Agents.Builder
 
             if (turnContext is TurnContext tc)
             {
-                BufferedReplyActivities = tc.BufferedReplyActivities;
-
                 // keep private middleware pipeline hooks.
                 _onSendActivities = tc._onSendActivities;
                 _onUpdateActivity = tc._onUpdateActivity;
@@ -119,12 +117,6 @@ namespace Microsoft.Agents.Builder
             get;
             private set;
         }
-
-        /// <summary>
-        /// Gets a list of activities to send when `context.Activity.DeliveryMode == 'expectReplies'.
-        /// </summary>
-        /// <value>A list of activities.</value>
-        internal List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
 
         /// <inheritdoc/>
         public ITurnContext OnSendActivities(SendActivitiesHandler handler)
@@ -245,59 +237,32 @@ namespace Microsoft.Agents.Builder
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()
             {
-                if (Activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                if (!Responded)
                 {
-                    var responses = new ResourceResponse[bufferedActivities.Count];
-                    var sentNonTraceActivity = false;
-
-                    for (var index = 0; index < responses.Length; index++)
-                    {
-                        var activity = bufferedActivities[index];
-                        BufferedReplyActivities.Add(activity);
-
-                        // Ensure the TurnState has the InvokeResponseKey, since this activity
-                        // is not being sent through the adapter, where it would be added to TurnState.
-                        if (activity.Type == ActivityTypes.InvokeResponse)
-                        {
-                            StackState[ChannelAdapter.InvokeResponseKey] = activity;
-                        }
-
-                        responses[index] = new ResourceResponse();
-
-                        sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
-                    }
-
-                    if (sentNonTraceActivity)
-                    {
-                        Responded = true;
-                    }
-
-                    return responses;
+                    Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
                 }
-                else
+
+                // IAgents can set the InvokeResponse by sending the internal "InvokeResponse" Activity type.
+                // But InvokeResponse is returned in the response body, not as an Activity.  Record
+                // the InvokeResponse value.
+                var invokeResponses = bufferedActivities.Where((a) => a.IsType(ActivityTypes.InvokeResponse));
+                if (!StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    // Send from the list which may have been manipulated via the event handlers.
-                    // Note that 'responses' was captured from the root of the call, and will be
-                    // returned to the original caller.
-                    var responses = await Adapter.SendActivitiesAsync(this, bufferedActivities.ToArray(), cancellationToken).ConfigureAwait(false);
-                    var sentNonTraceActivity = false;
-
-                    for (var index = 0; index < responses.Length; index++)
+                    var firstResponse = invokeResponses.FirstOrDefault();
+                    if (firstResponse != null)
                     {
-                        var activity = bufferedActivities[index];
-
-                        activity.Id = responses[index].Id;
-
-                        sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
+                        StackState[ChannelAdapter.InvokeResponseKey] = firstResponse;
                     }
-
-                    if (sentNonTraceActivity)
-                    {
-                        Responded = true;
-                    }
-
-                    return responses;
                 }
+
+                // TBD: Should probably remove Activities of Type "InvokeResponse".  However, these are currently
+                // being sent, so this could be a breaking change if a caller is expecting that. InvokeResponse should
+                // just be returned in the Response, not as an Activity.
+
+                // Send from the list which may have been manipulated via the event handlers.
+                // Note that 'responses' was captured from the root of the call, and will be
+                // returned to the original caller.
+                return await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
             }
         }
 

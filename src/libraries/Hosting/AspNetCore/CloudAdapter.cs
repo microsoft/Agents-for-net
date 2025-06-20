@@ -178,11 +178,49 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
-                        // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the Agent
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                        InvokeResponse invokeResponse = null;
+                        var expectedReplies = new ExpectedReplies();
 
-                        // Write the response, potentially serializing the InvokeResponse
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        {
+                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
+
+                        // Queue responses in ExpectedReplies
+                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, (response) =>
+                        {
+                            if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                            {
+                                expectedReplies.Activities.Add(response);
+                            }
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        if (invokeResponse != null)
+                        {
+                            if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                            {
+                                // The case for Invoke with ExpectReplies
+                                expectedReplies.Body = invokeResponse.Body;
+                                invokeResponse = new InvokeResponse()
+                                {
+                                    Status = invokeResponse.Status,
+                                    Body = expectedReplies
+                                };
+                            }
+                        }
+                        else
+                        {
+                            // This would be the case for ExpectReplies on a non-Invoke
+                            invokeResponse = new InvokeResponse()
+                            {
+                                Status = (int)HttpStatusCode.OK,
+                                Body = expectedReplies
+                            };
+                        }
+
                         await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
                     }
                     else
@@ -203,17 +241,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// CloudAdapter handles this override asynchronously.
+        /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
+        /// as <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
         /// <param name="agent"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
-        /// <returns></returns>
         public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
-            if (_adapterOptions.Async)
+            if (_adapterOptions.Async && (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal))
             {
                 // Queue the activity to be processed by the ActivityBackgroundService
                 _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
@@ -225,7 +264,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream && incomingActivity.DeliveryMode != DeliveryModes.ExpectReplies)
             {
                 return false;
             }
