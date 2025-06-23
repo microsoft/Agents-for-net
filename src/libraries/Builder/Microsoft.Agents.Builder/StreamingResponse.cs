@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Builder
                 }
 
                 // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
-                if (UpdatesSent() > 0 || FinalMessage != null)
+                if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
                 {
                     await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
