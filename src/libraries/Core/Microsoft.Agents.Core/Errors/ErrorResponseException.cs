@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Core.Errors
                     }
                     else
                     {
-                        if (string.IsNullOrEmpty(errorBody.ToString()))
+                        if (string.IsNullOrEmpty(errorBody?.ToString()))
                         {
                             // try to get just the error message from the response
                             Error error = ProtocolJsonSerializer.ToObject<Error>(responseContent);
