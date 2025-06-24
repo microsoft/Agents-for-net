@@ -58,21 +58,24 @@ namespace Microsoft.Agents.Core.Errors
 #else
                 string responseContent = httpResponse.Content?.ReadAsStringAsync().Result;
 #endif
-                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(responseContent);
-                if (errorBody != null && errorBody.Error != null)
+                if (!string.IsNullOrEmpty(responseContent))
                 {
-                    ex.Body = errorBody;
-                }
-                else
-                { 
-                    if ( string.IsNullOrEmpty(errorBody.ToString()))
+                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(responseContent);
+                    if (errorBody != null && errorBody.Error != null)
                     {
-                        // try to get just the error message from the response
-                        Error error = ProtocolJsonSerializer.ToObject<Error>(responseContent);
-                        if (error != null && error.Message != null)
+                        ex.Body = errorBody;
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(errorBody.ToString()))
                         {
-                            errorBody = new ErrorResponse(error);
-                            ex.Body = errorBody;
+                            // try to get just the error message from the response
+                            Error error = ProtocolJsonSerializer.ToObject<Error>(responseContent);
+                            if (error != null && error.Message != null)
+                            {
+                                errorBody = new ErrorResponse(error);
+                                ex.Body = errorBody;
+                            }
                         }
                     }
                 }
