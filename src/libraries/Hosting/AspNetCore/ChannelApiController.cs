@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
@@ -42,7 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return null;
             }
 
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnSendToConversationAsync(claimsIdentity, conversationId, activity).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -63,7 +62,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return null;
             }
 
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnReplyToActivityAsync(claimsIdentity, conversationId, activityId, activity).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -84,7 +83,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return null;
             }
 
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnUpdateActivityAsync(claimsIdentity, conversationId, activityId, activity).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -98,7 +97,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpDelete("v3/conversations/{conversationId}/activities/{activityId}")]
         public virtual async Task DeleteActivityAsync(string conversationId, string activityId)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             await _handler.OnDeleteActivityAsync(claimsIdentity, conversationId, activityId).ConfigureAwait(false);
         }
 
@@ -114,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpGet("v3/conversations/{conversationId}/activities/{activityId}/members")]
         public virtual async Task<IActionResult> GetActivityMembersAsync(string conversationId, string activityId)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnGetActivityMembersAsync(claimsIdentity, conversationId, activityId).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -127,7 +126,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpPost("v3/conversations")]
         public virtual async Task<IActionResult> CreateConversationAsync([FromBody] ConversationParameters parameters)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnCreateConversationAsync(claimsIdentity, parameters).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -140,7 +139,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpGet("v3/conversations")]
         public virtual async Task<IActionResult> GetConversationsAsync(string continuationToken = null)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnGetConversationsAsync(claimsIdentity, continuationToken).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -153,7 +152,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpGet("v3/conversations/{conversationId}/members")]
         public virtual async Task<IActionResult> GetConversationMembersAsync(string conversationId)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnGetConversationMembersAsync(claimsIdentity, conversationId).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -167,7 +166,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpGet("v3/conversations/{conversationId}/members/{userId}")]
         public virtual async Task<IActionResult> GetConversationMemberAsync(string userId, string conversationId)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnGetConversationMemberAsync(claimsIdentity, userId, conversationId).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -182,7 +181,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpGet("v3/conversations/{conversationId}/pagedmembers")]
         public virtual async Task<IActionResult> GetConversationPagedMembersAsync(string conversationId, int pageSize = -1, string continuationToken = null)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnGetConversationPagedMembersAsync(claimsIdentity, conversationId, pageSize, continuationToken).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -196,7 +195,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpDelete("v3/conversations/{conversationId}/members/{memberId}")]
         public virtual async Task DeleteConversationMemberAsync(string conversationId, string memberId)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             await _handler.OnDeleteConversationMemberAsync(claimsIdentity, conversationId, memberId).ConfigureAwait(false);
         }
 
@@ -209,7 +208,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpPost("v3/conversations/{conversationId}/activities/history")]
         public virtual async Task<IActionResult> SendConversationHistoryAsync(string conversationId, [FromBody] Transcript history)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnSendConversationHistoryAsync(claimsIdentity, conversationId, history).ConfigureAwait(false);
             return new JsonResult(result);
         }
@@ -223,7 +222,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [HttpPost("v3/conversations/{conversationId}/attachments")]
         public virtual async Task<IActionResult> UploadAttachmentAsync(string conversationId, [FromBody] AttachmentData attachmentUpload)
         {
-            var claimsIdentity = User?.Identity as ClaimsIdentity;
+            var claimsIdentity = HttpHelper.GetClaimsIdentity(Request);
             var result = await _handler.OnUploadAttachmentAsync(claimsIdentity, conversationId, attachmentUpload).ConfigureAwait(false);
             return new JsonResult(result);
         }
