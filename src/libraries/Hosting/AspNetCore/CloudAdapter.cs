@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
-            _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
+            _adapterOptions = options ?? new AdapterOptions();
 
             if (middlewares != null)
             {
@@ -156,76 +156,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (activity.DeliveryMode == DeliveryModes.Stream)
+                    if (activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         InvokeResponse invokeResponse = null;
 
-                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        IChannelResponseWriter writer = activity.DeliveryMode == DeliveryModes.Stream
+                            ? new ActivityStreamedResponseWriter()
+                            : new ExpectRepliesResponseWriter(activity);
+
+                        await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
 
                         // block until turn is complete
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
-                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
+                            await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
-                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
-                    }
-                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                    {
-                        InvokeResponse invokeResponse = null;
-                        var expectedReplies = new ExpectedReplies();
-
-                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
-                        // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
-                        {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
-                            invokeResponse = response;
-                        });
-
-                        // Queue responses in ExpectedReplies
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, (response) =>
-                        {
-                            if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                            {
-                                expectedReplies.Activities.Add(response);
-                            }
-                        }, cancellationToken).ConfigureAwait(false);
-
-                        if (invokeResponse != null)
-                        {
-                            if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                            {
-                                // The case for Invoke with ExpectReplies
-                                expectedReplies.Body = invokeResponse.Body;
-                                invokeResponse = new InvokeResponse()
-                                {
-                                    Status = invokeResponse.Status,
-                                    Body = expectedReplies
-                                };
-                            }
-                        }
-                        else
-                        {
-                            // This would be the case for ExpectReplies on a non-Invoke
-                            invokeResponse = new InvokeResponse()
-                            {
-                                Status = (int)HttpStatusCode.OK,
-                                Body = expectedReplies
-                            };
-                        }
-
-                        await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                        await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        // Queue the activity to be processed by the ActivityBackgroundService
+                        // Queue the activity to be processed by the ActivityBackgroundService.  There is no response body in
+                        // this case and the request is handled in the background.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
 
                         // Activity has been queued to process, so return immediately
@@ -252,7 +212,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="audience"></param>
         public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
-            if (_adapterOptions.Async && (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal))
+            // DeliveryModes.Normal can be pushed to the Queue which allows the calling request to continue without blocking.
+            if (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal)
             {
                 // Queue the activity to be processed by the ActivityBackgroundService
                 _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
@@ -262,14 +223,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
-        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        protected override async Task<bool> ChannelResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
+            // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are handled as Normal.
             if (incomingActivity.DeliveryMode != DeliveryModes.Stream && incomingActivity.DeliveryMode != DeliveryModes.ExpectReplies)
             {
                 return false;
             }
 
-            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await ChannelResponseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

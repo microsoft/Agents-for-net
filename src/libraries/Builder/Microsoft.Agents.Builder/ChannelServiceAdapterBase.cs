@@ -2,14 +2,11 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
@@ -73,8 +70,9 @@ namespace Microsoft.Agents.Builder
                 }
                 else
                 {
-                    if (!await StreamedResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
+                    if (!await ChannelResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
+                        // Respond via ConnectorClient
                         if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
                         {
                             var connectorClient = turnContext.Services.Get<IConnectorClient>();
@@ -307,7 +305,13 @@ namespace Microsoft.Agents.Builder
             ]);
         }
 
+        [Obsolete("Use ChannelResponseAsync")]
         protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            return ChannelResponseAsync(incomingActivity, outActivity, cancellationToken);
+        }
+
+        protected virtual Task<bool> ChannelResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }

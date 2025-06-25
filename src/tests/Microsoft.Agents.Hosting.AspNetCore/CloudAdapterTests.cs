@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public void OnTurnError_ShouldSetMiddlewares()
         {
-            var record = UseRecord();
+            var record = UseRecord(middlewares: [new Mock<Builder.IMiddleware>().Object]);
 
             Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<Builder.IMiddleware>);
         }
@@ -219,9 +219,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ShouldSetInvokeResponse()
         {
-            // Returns an InvokeResponse with Body of "TokenResponse"
-            var agent = new RespondingActivityHandler();
+            // Arrange: Invoke with DeliveryModes.Normal, returns an InvokeResponse with Body of "TokenResponse"
 
+            var agent = new RespondingActivityHandler();
             var record = UseRecord();
             var context = CreateHttpContext(new Activity()
             {
@@ -242,27 +242,38 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     });
                 });
 
+            var mockConnectorClient = new Mock<IConnectorClient>();
+            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                    new ResourceResponse("replyResourceId")
+                ));
+            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                        new ResourceResponse("sendResourceId")
+                    ));
+
             record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
-                .Returns(Task.FromResult(new Mock<IConnectorClient>().Object));
+                .Returns(Task.FromResult(mockConnectorClient.Object));
 
+            // Test
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
+            // This is testing what was actually written to the HttpResponse
             context.Response.Body.Seek(0, SeekOrigin.Begin);
             var reader = new StreamReader(context.Response.Body);
             var streamText = reader.ReadToEnd();
 
-            var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
-
-            Assert.NotNull(expectedReplies);
-            Assert.NotEmpty(expectedReplies.Activities);
-            Assert.NotNull(expectedReplies.Body);
-
-            var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(expectedReplies.Body);
+            var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(streamText);
             Assert.NotNull(tokenResponse);
             Assert.Equal("token", tokenResponse.Token);
+
+            // RespondingActivityHandler would have sent a single Activity
+            mockConnectorClient.Verify(
+                c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()), 
+                Times.Once());
         }
 
         [Fact]

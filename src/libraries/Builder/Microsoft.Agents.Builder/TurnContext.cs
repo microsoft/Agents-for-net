@@ -242,23 +242,6 @@ namespace Microsoft.Agents.Builder
                     Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
                 }
 
-                // IAgents can set the InvokeResponse by sending the internal "InvokeResponse" Activity type.
-                // But InvokeResponse is returned in the response body, not as an Activity.  Record
-                // the InvokeResponse value.
-                var invokeResponses = bufferedActivities.Where((a) => a.IsType(ActivityTypes.InvokeResponse));
-                if (!StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var firstResponse = invokeResponses.FirstOrDefault();
-                    if (firstResponse != null)
-                    {
-                        StackState[ChannelAdapter.InvokeResponseKey] = firstResponse;
-                    }
-                }
-
-                // TBD: Should probably remove Activities of Type "InvokeResponse".  However, these are currently
-                // being sent, so this could be a breaking change if a caller is expecting that. InvokeResponse should
-                // just be returned in the Response, not as an Activity.
-
                 // Send from the list which may have been manipulated via the event handlers.
                 // Note that 'responses' was captured from the root of the call, and will be
                 // returned to the original caller.
