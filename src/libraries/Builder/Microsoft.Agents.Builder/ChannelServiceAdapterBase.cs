@@ -313,7 +313,8 @@ namespace Microsoft.Agents.Builder
 
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            return Task.FromResult(false);
+            // ChannelServiceAdapterBase can't handle Stream or ExpectReplies.  Keep SendActivities from trying to send via ConnectorClient.
+            return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
