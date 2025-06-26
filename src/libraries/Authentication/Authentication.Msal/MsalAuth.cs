@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,6 +38,8 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
+        private DateTimeOffset _lastReadWorkloadIdentity;
+        private string _lastJwtWorkLoadIdentity = null;
 
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
@@ -235,6 +238,18 @@ namespace Microsoft.Agents.Authentication.Msal
                         return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
                     }
                     cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    cAppBuilder.WithClientAssertion(() =>
+                    {
+                        // read only once every 5 minutes, less heavy for I/O
+                        if (_lastJwtWorkLoadIdentity != null && DateTimeOffset.UtcNow.Subtract(_lastReadWorkloadIdentity) <= TimeSpan.FromMinutes(5)) 
+                            return _lastJwtWorkLoadIdentity;
+                        _lastReadWorkloadIdentity = DateTimeOffset.UtcNow;
+                        _lastJwtWorkLoadIdentity = File.ReadAllText(_connectionSettings.FederatedTokenFile);
+                        return _lastJwtWorkLoadIdentity;
+                    });
                 }
                 else
                 {
