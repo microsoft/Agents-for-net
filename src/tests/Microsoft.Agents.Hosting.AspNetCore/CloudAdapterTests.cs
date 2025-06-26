@@ -277,6 +277,75 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
+        public async Task ProcessAsync_ShouldStreamResponses()
+        {
+            // Returns an ExpectedReplies with one Activity, and Body of "TokenResponse"
+            var agent = new RespondingActivityHandler();
+
+            var record = UseRecord();
+            var context = CreateHttpContext(new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                DeliveryMode = DeliveryModes.Stream,
+                Conversation = new(id: "test")
+            });
+
+            record.Queue
+                .Setup(p => p.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<IActivity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
+                .Callback<ClaimsIdentity, IActivity, bool, string, Type, Action<InvokeResponse>>((identity, activity, proactive, proactiveAudience, agentType, onComplete) =>
+                {
+                    Task.Run(async () =>
+                    {
+                        // Simulate what the actual Queue does
+                        var response = await record.Adapter.ProcessActivityAsync(identity, activity, agent.OnTurnAsync, CancellationToken.None);
+                        onComplete(response);
+                    });
+                });
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(context.Response.Body);
+            var streamText = reader.ReadToEnd();
+
+            int lineNumber = 0;
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (lineNumber == 0)
+                {
+                    Assert.StartsWith("event: activity", line);
+                }
+                else if (lineNumber == 1)
+                {
+                    Assert.StartsWith("data: ", line);
+                    var activity = ProtocolJsonSerializer.ToObject<Activity>(line.Substring(6));
+                    Assert.NotNull(activity);
+                    Assert.Equal("Test Response", activity.Text);
+                }
+                else if (lineNumber == 2)
+                {
+                    Assert.Equal(0, line.Length);
+                }
+                else if (lineNumber == 3)
+                {
+                    Assert.StartsWith("event: invokeResponse", line);
+                }
+                else if (lineNumber == 4)
+                {
+                    Assert.StartsWith("data: ", line);
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(line.Substring(6));
+                    Assert.NotNull(tokenResponse);
+                    Assert.Equal("token", tokenResponse.Token);
+                }
+
+                lineNumber++;
+            }
+        }
+
+        [Fact]
         public async Task ProcessAsync_ShouldQueueActivity()
         {
             var record = UseRecord();
