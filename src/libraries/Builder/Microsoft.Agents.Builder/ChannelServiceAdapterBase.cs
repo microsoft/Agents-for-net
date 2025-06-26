@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Builder
                 }
                 else
                 {
-                    if (!await ChannelResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
+                    if (!await HostResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
                         // Respond via ConnectorClient
                         if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
@@ -305,13 +305,13 @@ namespace Microsoft.Agents.Builder
             ]);
         }
 
-        [Obsolete("Use ChannelResponseAsync")]
+        [Obsolete("Use HostResponseAsync")]
         protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            return ChannelResponseAsync(incomingActivity, outActivity, cancellationToken);
+            return HostResponseAsync(incomingActivity, outActivity, cancellationToken);
         }
 
-        protected virtual Task<bool> ChannelResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }

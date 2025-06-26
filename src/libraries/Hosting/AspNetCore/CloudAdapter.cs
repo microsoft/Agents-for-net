@@ -223,9 +223,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
-        protected override async Task<bool> ChannelResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are handled as Normal.
+            // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are treated as Normal and
+            // ChannelServiceAdapterBase will handle that.
             if (incomingActivity.DeliveryMode != DeliveryModes.Stream && incomingActivity.DeliveryMode != DeliveryModes.ExpectReplies)
             {
                 return false;
