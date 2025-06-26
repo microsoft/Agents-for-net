@@ -26,7 +26,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
-    [Collection("Sequential")]
     public class CloudAdapterTests
     {
         [Fact]
