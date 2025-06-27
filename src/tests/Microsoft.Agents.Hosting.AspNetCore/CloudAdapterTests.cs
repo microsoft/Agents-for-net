@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure;
-using Azure.Core;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Connector;
@@ -15,9 +13,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -195,12 +193,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var agent = new RespondingActivityHandler();
 
             var record = UseRecord(agent);
-            var context = CreateHttpContext(new Activity()
+
+            var activity = new Activity()
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 Conversation = new(id: "1")
-            });
+            };
+            var context = CreateHttpContext(activity);
 
             var source = new CancellationTokenSource();
             await record.Service.StartAsync(source.Token);
@@ -221,22 +221,28 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(expectedReplies.Body);
             Assert.NotNull(tokenResponse);
-            Assert.Equal("token", tokenResponse.Token);
+            Assert.Equal($"token:{activity.Conversation.Id}", tokenResponse.Token);
         }
 
         [Fact]
         public async Task ProcessAsync_ShouldSetInvokeResponse()
         {
-            // Arrange: Invoke with DeliveryModes.Normal, returns an InvokeResponse with Body of "TokenResponse"
-
             var agent = new RespondingActivityHandler();
             var record = UseRecord(agent);
-            var context = CreateHttpContext(new Activity()
+
+            // Making sure each request is handled separately
+            var requests = new Dictionary<string, DefaultHttpContext>();
+            for (int i = 1; i <= 10; i++)
             {
-                Type = ActivityTypes.Invoke,
-                DeliveryMode = DeliveryModes.Normal,
-                Conversation = new(id: "1")
-            });
+                var activity = new Activity()
+                {
+                    Type = ActivityTypes.Invoke,
+                    DeliveryMode = DeliveryModes.Normal,
+                    Conversation = new(id: i.ToString())
+                };
+                var context = CreateHttpContext(activity);
+                requests.Add(i.ToString(), context);
+            }
 
             var mockConnectorClient = new Mock<IConnectorClient>();
             mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
@@ -255,24 +261,34 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Test
             var source = new CancellationTokenSource();
             await record.Service.StartAsync(source.Token);
-            await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+
+            var tasks = new List<Task>();
+            foreach (var request in requests)
+            {
+                tasks.Add(record.Adapter.ProcessAsync(request.Value.Request, request.Value.Response, agent, CancellationToken.None));
+            }
+            await Task.WhenAll(tasks);
+
             await record.Service.StopAsync(source.Token);
 
-            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+            foreach (var request in requests)
+            {
+                Assert.Equal(StatusCodes.Status200OK, request.Value.Response.StatusCode);
 
-            // This is testing what was actually written to the HttpResponse
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var reader = new StreamReader(context.Response.Body);
-            var streamText = reader.ReadToEnd();
+                // This is testing what was actually written to the HttpResponse
+                request.Value.Response.Body.Seek(0, SeekOrigin.Begin);
+                var reader = new StreamReader(request.Value.Response.Body);
+                var streamText = reader.ReadToEnd();
 
-            var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(streamText);
-            Assert.NotNull(tokenResponse);
-            Assert.Equal("token", tokenResponse.Token);
+                var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(streamText);
+                Assert.NotNull(tokenResponse);
+                Assert.Equal($"token:{request.Key}", tokenResponse.Token);
+            }
 
             // RespondingActivityHandler would have sent a single Activity
             mockConnectorClient.Verify(
-                c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()), 
-                Times.Once());
+                c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(requests.Count));
         }
 
         [Fact]
@@ -434,7 +450,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 return new InvokeResponse()
                 {
                     Status = (int) HttpStatusCode.OK,
-                    Body = new TokenResponse() {  Token = "token" }
+                    Body = new TokenResponse() {  Token = $"token:{turnContext.Activity.Conversation.Id}" }
                 };
             }
         }
