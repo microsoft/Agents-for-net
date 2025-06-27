@@ -190,7 +190,7 @@
     <comment>Raised when User Authorization is using a provider that does not support IOBOExchange</comment>
   </data>
   <data name="OBOExchangeFailed" xml:space="preserve">
-    <value>OBO exchange failed for connection '{0}' with scopes {1}.</value>
+    <value>OBO exchange failed for connection '{0}' with scopes {1}.  Check your connection name and scope(s) for correctness.</value>
     <comment>Raised when an OBO exchange was attempted.</comment>
   </data>
   <data name="UserAuthorizationDefaultHandlerNotFound" xml:space="preserve">
