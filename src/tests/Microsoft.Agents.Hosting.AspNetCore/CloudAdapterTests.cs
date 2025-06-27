@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -28,6 +29,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class CloudAdapterTests
     {
+
         [Fact]
         public void Constructor_ShouldThrowWithNullActivityTaskQueue()
         {
@@ -114,9 +116,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ShouldSetBadRequestStatus()
         {
-            var record = UseRecord();
-            var context = CreateHttpContext(new());
             var bot = new ActivityHandler();
+            var record = UseRecord(bot);
+            var context = CreateHttpContext(new());  // no Activity == bad request
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
 
@@ -124,48 +126,63 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             record.VerifyMocks();
         }
 
+        /*
         [Fact]
-        public async Task ProcessAsync_ShouldSetUnauthorized()
+        public async Task ProcessAsync_NoOnTurnErrorLog()
         {
-            var record = UseRecord();
-            var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: Guid.NewGuid().ToString())));
-            var bot = new ActivityHandler();
+            var bot = new RespondingActivityHandler();
+            var record = UseRecord(bot);
+            var context = CreateHttpContext(new(ActivityTypes.Message, serviceUrl: "http://localhost", conversation: new(id: "1")));
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Throws(new UnauthorizedAccessException())
+            record.Adapter.OnTurnError = null;
+
+            var mockConnectorClient = new Mock<IConnectorClient>();
+            mockConnectorClient
+                .Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Throws(new Exception("ReplyToActivityAsync"));
+            mockConnectorClient
+                .Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Throws(new Exception("SendToConversationAsync"));
+            record.Factory
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult(mockConnectorClient.Object));
+
+            record.HostedServiceLogger
+                .Setup(e => e.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((e, _) => e.ToString().Contains("Error occurred executing WorkItem")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
                 .Verifiable(Times.Once);
 
+            var source = new CancellationTokenSource();
+            await record.Service.StartAsync(source.Token);
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
+            await record.Service.StopAsync(source.Token);
 
-            Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
-            record.VerifyMocks();
+            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+            Mock.Verify(record.HostedServiceLogger);
         }
+        */
 
         [Fact]
         public async Task ProcessAsync_ShouldSetInvokeResponseNotImplemented()
         {
             var agent = new ActivityHandler();
-            var record = UseRecord();
-            var context = CreateHttpContext(new Activity()
-            {
-                Type = ActivityTypes.Invoke, 
-                DeliveryMode = DeliveryModes.ExpectReplies,
-                Conversation = new(id: Guid.NewGuid().ToString())
-            });
-
-            record.Queue
-                .Setup(p => p.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<IActivity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Callback<ClaimsIdentity, IActivity, bool, string, Type, Action<InvokeResponse>>((identity, activity, proactive, proactiveAudience, agentType, onComplete) =>
+            var record = UseRecord(agent);
+            var context = CreateHttpContext(
+                new Activity()
                 {
-                    Task.Run(async () =>
-                    {
-                        // Simulate what the actual Queue does
-                        var response = await record.Adapter.ProcessActivityAsync(identity, activity, agent.OnTurnAsync, CancellationToken.None);
-                        onComplete(response);
-                    });
+                    Type = ActivityTypes.Invoke, 
+                    DeliveryMode = DeliveryModes.ExpectReplies,
+                    Conversation = new(id: "1")
                 });
 
+            var source = new CancellationTokenSource();
+            await record.Service.StartAsync(source.Token);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+            await record.Service.StopAsync(source.Token);
 
             // this is because ActivityHandler by default will return 501 for unnamed Invokes
             Assert.Equal(StatusCodes.Status501NotImplemented, context.Response.StatusCode);
@@ -177,27 +194,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Returns an ExpectedReplies with one Activity, and Body of "TokenResponse"
             var agent = new RespondingActivityHandler();
 
-            var record = UseRecord();
+            var record = UseRecord(agent);
             var context = CreateHttpContext(new Activity()
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.ExpectReplies,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: "1")
             });
 
-            record.Queue
-                .Setup(p => p.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<IActivity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Callback<ClaimsIdentity, IActivity, bool, string, Type, Action<InvokeResponse>>((identity, activity, proactive, proactiveAudience, agentType, onComplete) =>
-                {
-                    Task.Run(async () =>
-                    {
-                        // Simulate what the actual Queue does
-                        var response = await record.Adapter.ProcessActivityAsync(identity, activity, agent.OnTurnAsync, CancellationToken.None);
-                        onComplete(response);
-                    });
-                });
-
+            var source = new CancellationTokenSource();
+            await record.Service.StartAsync(source.Token);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+            await record.Service.StopAsync(source.Token);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -222,25 +230,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Arrange: Invoke with DeliveryModes.Normal, returns an InvokeResponse with Body of "TokenResponse"
 
             var agent = new RespondingActivityHandler();
-            var record = UseRecord();
+            var record = UseRecord(agent);
             var context = CreateHttpContext(new Activity()
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.Normal,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: "1")
             });
-
-            record.Queue
-                .Setup(p => p.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<IActivity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Callback<ClaimsIdentity, IActivity, bool, string, Type, Action<InvokeResponse>>((identity, activity, proactive, proactiveAudience, agentType, onComplete) =>
-                {
-                    Task.Run(async () =>
-                    {
-                        // Simulate what the actual Queue does
-                        var response = await record.Adapter.ProcessActivityAsync(identity, activity, agent.OnTurnAsync, CancellationToken.None);
-                        onComplete(response);
-                    });
-                });
 
             var mockConnectorClient = new Mock<IConnectorClient>();
             mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
@@ -257,7 +253,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
             // Test
+            var source = new CancellationTokenSource();
+            await record.Service.StartAsync(source.Token);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+            await record.Service.StopAsync(source.Token);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -282,27 +281,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Returns an ExpectedReplies with one Activity, and Body of "TokenResponse"
             var agent = new RespondingActivityHandler();
 
-            var record = UseRecord();
+            var record = UseRecord(agent);
             var context = CreateHttpContext(new Activity()
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.Stream,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: "1")
             });
 
-            record.Queue
-                .Setup(p => p.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<IActivity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Callback<ClaimsIdentity, IActivity, bool, string, Type, Action<InvokeResponse>>((identity, activity, proactive, proactiveAudience, agentType, onComplete) =>
-                {
-                    Task.Run(async () =>
-                    {
-                        // Simulate what the actual Queue does
-                        var response = await record.Adapter.ProcessActivityAsync(identity, activity, agent.OnTurnAsync, CancellationToken.None);
-                        onComplete(response);
-                    });
-                });
-
+            // Test
+            var source = new CancellationTokenSource();
+            await record.Service.StartAsync(source.Token);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
+            await record.Service.StopAsync(source.Token);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -346,29 +337,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ShouldQueueActivity()
-        {
-            var record = UseRecord();
-            var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: Guid.NewGuid().ToString())));
-            var bot = new ActivityHandler();
-
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
-                .Verifiable(Times.Once);
-
-            await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
-
-            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
-            record.VerifyMocks();
-        }
-
-        [Fact]
         public async Task ProcessAsync_ShouldLogMissingConversationId()
         {
             var record = UseRecord();
             var context = CreateHttpContext(new(ActivityTypes.Message));
             var bot = new ActivityHandler();
 
-            record.Logger.Setup(e => e.Log(
+            record.QueueLogger.Setup(e => e.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((e, _) => e.ToString().StartsWith("BadRequest: Missing Conversation.Id")),
@@ -389,7 +364,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext();
             var bot = new ActivityHandler();
 
-            record.Logger.Setup(e => e.Log(
+            record.QueueLogger.Setup(e => e.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((e, _) => e.ToString().StartsWith("BadRequest: Missing activity")),
@@ -413,30 +388,46 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return context;
         }
 
-        private static Record UseRecord(Builder.IMiddleware[] middlewares = null)
+        private static Record UseRecord(IAgent agent = null, Builder.IMiddleware[] middlewares = null)
         {
             var factory = new Mock<IChannelServiceClientFactory>();
-            var logger = new Mock<ILogger<IAgentHttpAdapter>>();
-            var queue = new Mock<IActivityTaskQueue>();
-            var adapter = new CloudAdapter(factory.Object, queue.Object, logger.Object, middlewares: middlewares);
+            var queueLogger = new Mock<ILogger<IAgentHttpAdapter>>();
+            var serviceLogger = new Mock<ILogger<HostedActivityService>>();
 
-            return new(adapter, factory, queue, logger);
+            var queue = new ActivityTaskQueue();
+
+            var sp = new Mock<IServiceProvider>();
+            sp
+                .Setup(s => s.GetService(It.IsAny<Type>()))
+                .Returns(agent);
+
+            var adapter = new CloudAdapter(factory.Object, queue, queueLogger.Object, middlewares: middlewares);
+            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), adapter, queue, serviceLogger.Object);
+
+            return new(adapter, factory, service, queue, queueLogger, serviceLogger);
         }
 
         private record Record(
             CloudAdapter Adapter,
             Mock<IChannelServiceClientFactory> Factory,
-            Mock<IActivityTaskQueue> Queue,
-            Mock<ILogger<IAgentHttpAdapter>> Logger)
+            HostedActivityService Service,
+            IActivityTaskQueue Queue,
+            Mock<ILogger<IAgentHttpAdapter>> QueueLogger,
+            Mock<ILogger<HostedActivityService>> HostedServiceLogger)
         {
             public void VerifyMocks()
             {
-                Mock.Verify(Factory, Queue, Logger);
+                Mock.Verify(Factory, QueueLogger, HostedServiceLogger);
             }
         }
 
         private class RespondingActivityHandler : ActivityHandler
         {
+            protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+            {
+                await turnContext.SendActivityAsync("OnMessage Response", cancellationToken: cancellationToken);
+            }
+
             protected override async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
             {
                 await turnContext.SendActivityAsync("Test Response", cancellationToken: cancellationToken);

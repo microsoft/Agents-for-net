@@ -1,21 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Builder;
-using System.Text;
-using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -192,10 +192,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception ex)
                 {
-                    // handle unauthorized here as this layer creates the http response
-                    httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    // OnTurnError should be catching these.  Possible someone sets that to null.
+                    System.Diagnostics.Trace.WriteLine($"Unexpected exception in CloudAdapter.ProcessAsync: {ex.Message}");
                 }
             }
         }

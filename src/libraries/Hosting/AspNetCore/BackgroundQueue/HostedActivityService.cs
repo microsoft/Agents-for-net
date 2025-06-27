@@ -95,6 +95,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 {
                     try
                     {
+                        var existing = _activitiesProcessing.Where(kv => kv.Key.Activity.Conversation.Id.Equals(activityWithClaims.Activity.Conversation.Id)).Any();
+                        if (existing)
+                        {
+                            _logger.LogWarning("Task for '{ConversationId}' already in progress", activityWithClaims.Activity.Conversation.Id);
+                        }
+
                         // The read lock will not be acquirable if the app is shutting down.
                         // New tasks should not be starting during shutdown.
                         if (_lock.TryEnterReadLock(500))
@@ -114,7 +120,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         }
                         else
                         {
-                            _logger.LogError("Work item not processed.  Server is shutting down.");
+                            _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
                         }
                     }
                     finally
