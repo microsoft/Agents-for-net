@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
         /// <param name="key">key to look for</param>
         /// <param name="value">value associated with key</param>
         /// <returns>True if a value of given type is associated with key.</returns>
-        /// <exception cref="InvalidCastException"></exception>
+        /// <exception cref="System.InvalidCastException"></exception>
         public bool TryGetValue<T>(string key, out T value)
         {
             Verify.ParamNotNull(key);
@@ -25,7 +25,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
                 {
                     value = castedEntry;
                     return true;
-                };
+                }
+                ;
 
                 throw new InvalidCastException($"Failed to cast generic object to type '{typeof(T)}'");
             }
@@ -54,7 +55,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
             else
             {
                 return default;
-            };
+            }
+            ;
         }
 
         /// <summary>
