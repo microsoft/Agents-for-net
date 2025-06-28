@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
+    [Collection("CloudAdapter Collection")]
     public class CloudAdapterTests
     {
 
@@ -130,7 +131,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var bot = new RespondingActivityHandler();
             var record = UseRecord(bot);
-            var context = CreateHttpContext(new(ActivityTypes.Message, serviceUrl: "http://localhost", conversation: new(id: "1")));
+            var context = CreateHttpContext(new(ActivityTypes.Message, serviceUrl: "http://localhost", conversation: new(id: Guid.NewGuid().ToString())));
 
             record.Adapter.OnTurnError = null;
 
@@ -154,10 +155,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
                 .Verifiable(Times.Once);
 
-            var source = new CancellationTokenSource();
-            await record.Service.StartAsync(source.Token);
+            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
-            await record.Service.StopAsync(source.Token);
+            await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
             Mock.Verify(record.HostedServiceLogger);
@@ -174,13 +174,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 {
                     Type = ActivityTypes.Invoke, 
                     DeliveryMode = DeliveryModes.ExpectReplies,
-                    Conversation = new(id: "1")
+                    Conversation = new(id: Guid.NewGuid().ToString())
                 });
 
-            var source = new CancellationTokenSource();
-            await record.Service.StartAsync(source.Token);
+            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
-            await record.Service.StopAsync(source.Token);
+            await record.Service.StopAsync(CancellationToken.None);
 
             // this is because ActivityHandler by default will return 501 for unnamed Invokes
             Assert.Equal(StatusCodes.Status501NotImplemented, context.Response.StatusCode);
@@ -198,14 +197,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.ExpectReplies,
-                Conversation = new(id: "1")
+                Conversation = new(id: Guid.NewGuid().ToString())
             };
             var context = CreateHttpContext(activity);
 
-            var source = new CancellationTokenSource();
-            await record.Service.StartAsync(source.Token);
+            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
-            await record.Service.StopAsync(source.Token);
+            await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -234,14 +232,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var requests = new Dictionary<string, DefaultHttpContext>();
             for (int i = 1; i <= 10; i++)
             {
+                var convoId = $"{Guid.NewGuid()}:{i}";
                 var activity = new Activity()
                 {
                     Type = ActivityTypes.Invoke,
                     DeliveryMode = DeliveryModes.Normal,
-                    Conversation = new(id: i.ToString())
+                    Conversation = new(id: convoId)
                 };
                 var context = CreateHttpContext(activity);
-                requests.Add(i.ToString(), context);
+                requests.Add(convoId, context);
             }
 
             var mockConnectorClient = new Mock<IConnectorClient>();
@@ -259,17 +258,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
             // Test
-            var source = new CancellationTokenSource();
-            await record.Service.StartAsync(source.Token);
+            await record.Service.StartAsync(CancellationToken.None);
 
-            var tasks = new List<Task>();
             foreach (var request in requests)
             {
-                tasks.Add(record.Adapter.ProcessAsync(request.Value.Request, request.Value.Response, agent, CancellationToken.None));
+                await record.Adapter.ProcessAsync(request.Value.Request, request.Value.Response, agent, CancellationToken.None);
             }
-            await Task.WhenAll(tasks);
 
-            await record.Service.StopAsync(source.Token);
+            await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
             {
@@ -302,21 +298,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 Type = ActivityTypes.Invoke,
                 DeliveryMode = DeliveryModes.Stream,
-                Conversation = new(id: "1")
+                Conversation = new(id: Guid.NewGuid().ToString())
             });
 
             // Test
-            var source = new CancellationTokenSource();
-            await record.Service.StartAsync(source.Token);
+            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
-            await record.Service.StopAsync(source.Token);
+            await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
             context.Response.Body.Seek(0, SeekOrigin.Begin);
             var reader = new StreamReader(context.Response.Body);
-            var streamText = reader.ReadToEnd();
 
+            string conversationId = null;
             int lineNumber = 0;
             string line;
             while ((line = reader.ReadLine()) != null)
@@ -331,6 +326,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     var activity = ProtocolJsonSerializer.ToObject<Activity>(line.Substring(6));
                     Assert.NotNull(activity);
                     Assert.Equal("Test Response", activity.Text);
+                    conversationId = activity.Conversation.Id;
+                    Assert.NotNull(conversationId);
                 }
                 else if (lineNumber == 2)
                 {
@@ -343,13 +340,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 else if (lineNumber == 4)
                 {
                     Assert.StartsWith("data: ", line);
-                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(line.Substring(6));
+                    var invokeResponse = ProtocolJsonSerializer.ToObject<InvokeResponse>(line.Substring(6));
+                    Assert.NotNull(invokeResponse);
+
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(invokeResponse.Body);
                     Assert.NotNull(tokenResponse);
-                    Assert.Equal("token", tokenResponse.Token);
+                    Assert.Equal($"token:{conversationId}", tokenResponse.Token);
                 }
 
                 lineNumber++;
             }
+
+            Assert.NotNull (conversationId);
+            Assert.Equal(6, lineNumber);
         }
 
         [Fact]
@@ -410,13 +413,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var queueLogger = new Mock<ILogger<IAgentHttpAdapter>>();
             var serviceLogger = new Mock<ILogger<HostedActivityService>>();
 
-            var queue = new ActivityTaskQueue();
-
             var sp = new Mock<IServiceProvider>();
             sp
                 .Setup(s => s.GetService(It.IsAny<Type>()))
                 .Returns(agent);
 
+            var queue = new ActivityTaskQueue();
             var adapter = new CloudAdapter(factory.Object, queue, queueLogger.Object, middlewares: middlewares);
             var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), adapter, queue, serviceLogger.Object);
 

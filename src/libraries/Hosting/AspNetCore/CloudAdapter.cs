@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+        private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
         /// 
@@ -53,6 +54,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions();
+            _responseQueue = new ChannelResponseQueue();
 
             if (middlewares != null)
             {
@@ -170,12 +172,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
+                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
 
                         // block until turn is complete
-                        await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
                             await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
@@ -232,7 +234,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await ChannelResponseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await _responseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }
