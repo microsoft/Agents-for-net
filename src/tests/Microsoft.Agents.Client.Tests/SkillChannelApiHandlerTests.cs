@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Equal(activity.Text, mockObjects.UpdateActivity.Text);
         }
 
-        [Fact]
+        [Fact(Skip = "Mock Adapter.ContinueConversation is not waiting")]
         public async Task TestGetConversationMemberAsync()
         {
             // Arrange
