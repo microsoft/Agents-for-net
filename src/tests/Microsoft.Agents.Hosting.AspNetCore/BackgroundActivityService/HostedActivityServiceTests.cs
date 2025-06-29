@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ExecuteAsync_ShouldProcessQueuedActivity()
         {
-            var record = UseRecord();
+            var record = UseRecord(new ActivityHandler());
             var claims = new ClaimsIdentity();
             var activity = new Activity();
             var source = new CancellationTokenSource();
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ExecuteAsync_ShouldLogErrorWhenProcessingQueuedActivity()
         {
-            var record = UseRecord();
+            var record = UseRecord(new ActivityHandler());
             var claims = new ClaimsIdentity();
             var activity = new Activity();
             var source = new CancellationTokenSource();
@@ -151,14 +151,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             record.VerifyMocks();
         }
 
-        private static Record UseRecord()
+        private static Record UseRecord(IAgent agent = null)
         {
             var config = new ConfigurationBuilder().Build();
             var queue = new ActivityTaskQueue();
             var bot = new Mock<ActivityHandler>();
             var adapter = new Mock<IChannelAdapter>();
             var logger = new Mock<ILogger<HostedActivityService>>();
+
             var sp = new Mock<IServiceProvider>();
+            sp
+                .Setup(s => s.GetService(It.IsAny<Type>()))
+                .Returns(agent);
 
             var service = new HostedActivityService(sp.Object, config, adapter.Object, queue, logger.Object);
             return new(service, queue, bot, adapter, logger);

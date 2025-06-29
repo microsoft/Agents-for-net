@@ -18,21 +18,21 @@ namespace Microsoft.Agents.Client.Tests
 
         public Action<IActivity, int> SendAssert { get; set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             _sendRequest++;
 
             if (SendAssert != null)
             {
 #if !NETFRAMEWORK
-                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(await request.Content.ReadAsStreamAsync());
 #else
-                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStreamAsync().Result);
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(await request.Content.ReadAsStreamAsync());
 #endif
                 SendAssert(activity, _sendRequest);
             }
 
-            return Task.FromResult(HttpResponseMessage);
+            return HttpResponseMessage;
         }
     }
 }

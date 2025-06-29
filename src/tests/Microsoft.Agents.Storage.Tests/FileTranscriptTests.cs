@@ -2,28 +2,30 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Storage.Transcript;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests
 {
+    [CollectionDefinition("Non-Parallel Collection", DisableParallelization = true)]
+    [Collection("Non-Parallel Collection")]
     public class FileTranscriptTests : TranscriptBaseTests
     {
         public FileTranscriptTests()
             : base()
         {
             this.Store = new FileTranscriptLogger(Folder);
-            var folder = Path.Combine(Path.GetTempPath(), nameof(FileTranscriptTests));
-            if (Directory.Exists(folder))
+            if (Directory.Exists(Folder))
             {
-                Directory.Delete(folder, true);
+                Directory.Delete(Folder, true);
             }
         }
 
         public static string Folder
         {
-            get { return Path.Combine(Path.GetTempPath(), nameof(FileTranscriptTests)); }
+            get { return Path.Combine(nameof(FileTranscriptTests)); }
         }
 
         [Fact]

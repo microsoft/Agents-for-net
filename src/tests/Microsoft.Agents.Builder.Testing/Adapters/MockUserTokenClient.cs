@@ -160,14 +160,14 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             });
         }
 
-        public Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
         {
-            var tokenResponse = GetUserTokenAsync(activity.From.Id, connectionName, activity.ChannelId, code, cancellationToken).Result;
+            var tokenResponse = await GetUserTokenAsync(activity.From.Id, connectionName, activity.ChannelId, code, cancellationToken);
             if (tokenResponse is not null)
             {
-                return Task.FromResult(new TokenOrSignInResourceResponse { TokenResponse = tokenResponse });
+                return new TokenOrSignInResourceResponse { TokenResponse = tokenResponse };
             }
-            return Task.FromResult(new TokenOrSignInResourceResponse
+            return new TokenOrSignInResourceResponse
             {
                 SignInResource = new SignInResource
                 {
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
                         Uri = $"api://{connectionName}/resource"
                     }
                 }
-            });
+            };
         }
 
         public Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)

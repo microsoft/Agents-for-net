@@ -22,9 +22,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingStart", adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new AgentApplication(new(() => turnState.Result)
+            var app = new AgentApplication(new(() => turnState)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -56,9 +56,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingEnd", adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new AgentApplication(new(() => turnState.Result)
+            var app = new AgentApplication(new(() => turnState)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -90,9 +90,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantJoin", adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new AgentApplication(new(() => turnState.Result)
+            var app = new AgentApplication(new(() => turnState)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -124,9 +124,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantLeave", adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
-            var app = new AgentApplication(new(() => turnState.Result)
+            var app = new AgentApplication(new(() => turnState)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
