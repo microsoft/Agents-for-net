@@ -15,7 +15,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -169,13 +168,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var agent = new ActivityHandler();
             var record = UseRecord(agent);
-            var context = CreateHttpContext(
-                new Activity()
-                {
-                    Type = ActivityTypes.Invoke, 
-                    DeliveryMode = DeliveryModes.ExpectReplies,
-                    Conversation = new(id: Guid.NewGuid().ToString())
-                });
+
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                Conversation = new(id: Guid.NewGuid().ToString())
+            };
+            var context = CreateHttpContext(activity);
+                
 
             await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, agent, CancellationToken.None);
@@ -256,6 +257,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
+
 
             // Test
             await record.Service.StartAsync(CancellationToken.None);

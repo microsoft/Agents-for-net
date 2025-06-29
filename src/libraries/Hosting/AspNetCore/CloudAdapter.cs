@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -172,8 +173,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
+                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                         });
 
                         // block until turn is complete

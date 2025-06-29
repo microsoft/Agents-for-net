@@ -24,6 +24,7 @@ using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client.Compat;
+using System.IO;
 
 namespace Microsoft.Agents.Client.Tests
 {
@@ -426,11 +427,6 @@ namespace Microsoft.Agents.Client.Tests
 
             private IConnectorClient CreateMockConnectorClient()
             {
-                var httpResponse = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-                {
-                    Content = new StringContent(ProtocolJsonSerializer.ToJson(TestMember))
-                };
-
                 Func<HttpRequestMessage, HttpResponseMessage> sendRequest = request =>
                 {
                     var response = new HttpResponseMessage(HttpStatusCode.OK);

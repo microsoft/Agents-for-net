@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Client.Compat
             var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
-                await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
+                await turnContext.DeleteActivityAsync(activityId, ct).ConfigureAwait(false);
             });
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Client.Compat
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = activityId;
                 turnContext.Activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppId(claimsIdentity)}";
-                resourceResponse = await turnContext.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                resourceResponse = await turnContext.UpdateActivityAsync(activity, ct).ConfigureAwait(false);
             });
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Client.Compat
             {
                 var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
-                member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
+                member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, ct).ConfigureAwait(false);
             });
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Client.Compat
             {
                 var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
-                member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
+                member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, ct).ConfigureAwait(false);
             });
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.

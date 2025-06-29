@@ -57,8 +57,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Status = 200,
                 Body = taskModuleResponseMock.Object
             };
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
@@ -113,9 +113,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             });
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
-            var app = new AgentApplication(new(() => turnState.Result)
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
@@ -151,8 +151,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 ChannelId = "channelId",
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
@@ -214,8 +214,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Status = 200,
                 Body = taskModuleResponseMock.Object
             };
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
@@ -271,8 +271,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 ChannelId = "channelId",
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
@@ -309,8 +309,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 ChannelId = "channelId",
             });
             var taskModuleResponseMock = new Mock<TaskModuleResponse>();
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState)
             {
                 StartTypingTimer = false,
             });
