@@ -21,8 +21,17 @@ using Microsoft.Extensions.AI;
 
 namespace Microsoft.Agents.Hosting.MCP
 {
-    public class MCPAdapter(IActivityTaskQueue activityTaskQueue) : ChannelAdapter, IMCPHttpAdapter
+    public class MCPAdapter : ChannelAdapter, IMCPHttpAdapter
     {
+        private readonly ChannelResponseQueue _responseQueue;
+        private readonly IActivityTaskQueue _activityTaskQueue;
+
+        public MCPAdapter(IActivityTaskQueue activityTaskQueue)
+        {
+            _activityTaskQueue = activityTaskQueue;
+            _responseQueue = new ChannelResponseQueue();
+        }
+
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string routePattern, CancellationToken cancellationToken = default)
         {
             if (httpRequest.Method != HttpMethods.Post)
@@ -109,14 +118,14 @@ namespace Microsoft.Agents.Hosting.MCP
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
-            activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
+            _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
-                ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
+                _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
 
             // block until turn is complete
-            await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+            await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
             {
                 await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
@@ -164,7 +173,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            await ChannelResponseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
+            await _responseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
         }
     }

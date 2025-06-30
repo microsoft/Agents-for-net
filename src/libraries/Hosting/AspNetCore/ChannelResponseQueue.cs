@@ -16,10 +16,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// </summary>
     public class ChannelResponseQueue
     {
-        private static readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
+        private readonly ConcurrentDictionary<string, Channel<IActivity>> _conversations = new();
         public static readonly IChannelResponseWriter DefaultWriter = new ActivityStreamedResponseWriter();
 
-        public static async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
+        public async Task HandleResponsesAsync(string channelConversationId, Action<IActivity> action, CancellationToken cancellationToken)
         {
             var channel = _conversations.GetOrAdd(channelConversationId, Channel.CreateUnbounded<IActivity>());
 
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static void CompleteHandlerForConversation(string channelConversationId)
+        public void CompleteHandlerForConversation(string channelConversationId)
         {
             if (_conversations.TryGetValue(channelConversationId, out var channel))
             {
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static async Task SendActivitiesAsync(string conversationId, IActivity[] activities, CancellationToken cancellationToken)
+        public async Task SendActivitiesAsync(string conversationId, IActivity[] activities, CancellationToken cancellationToken)
         {
             var channel = _conversations.GetOrAdd(conversationId, Channel.CreateUnbounded<IActivity>());
 

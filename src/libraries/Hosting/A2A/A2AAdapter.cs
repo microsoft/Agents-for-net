@@ -23,11 +23,13 @@ namespace Microsoft.Agents.Hosting.A2A
     {
         private readonly TaskStore _taskStore;
         private readonly IActivityTaskQueue _activityTaskQueue;
+        private readonly ChannelResponseQueue _responseQueue;
 
         public A2AAdapter(IActivityTaskQueue activityTaskQueue, IStorage storage)
         {
             _activityTaskQueue = activityTaskQueue;
             _taskStore = new TaskStore(storage);
+            _responseQueue = new ChannelResponseQueue();
         }
 
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
@@ -135,12 +137,12 @@ namespace Microsoft.Agents.Hosting.A2A
             // turn is done.
             _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
-                ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
+                _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
             });
 
             // block until turn is complete
-            await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+            await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
             {
                 await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
@@ -169,7 +171,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            await ChannelResponseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
+            await _responseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
             return [];
         }
     }

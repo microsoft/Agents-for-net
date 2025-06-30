@@ -30,6 +30,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+        private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
         /// 
@@ -52,6 +53,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
+            _responseQueue = new ChannelResponseQueue();
 
             if (middlewares != null)
             {
@@ -116,6 +118,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
+            ArgumentNullException.ThrowIfNull(httpResponse);
+            ArgumentNullException.ThrowIfNull(agent);
 
             if (httpRequest.Method != HttpMethods.Post)
             {
@@ -144,12 +148,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            ChannelResponseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
+                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                         });
 
                         // block until turn is complete
-                        await ChannelResponseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
                             await ChannelResponseQueue.DefaultWriter.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
@@ -210,7 +214,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await ChannelResponseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await _responseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }
