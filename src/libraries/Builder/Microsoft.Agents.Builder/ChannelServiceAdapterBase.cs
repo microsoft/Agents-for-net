@@ -334,7 +334,8 @@ namespace Microsoft.Agents.Builder
             turnContext.Identity = claimsIdentity;
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
-            turnContext.Services.Set(userTokenClient);
+            if (userTokenClient != null)
+                turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
 
             return turnContext;
