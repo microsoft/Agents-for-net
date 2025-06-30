@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Net.Http;
@@ -51,14 +52,32 @@ namespace Microsoft.Agents.Core.Errors
             var ex = CreateErrorResponseException(message, innerException, errors);
             try
             {
+
 #if !NETSTANDARD
-                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content?.ReadAsStream(cancellationToken));
+                string responseContent = httpResponse.Content?.ReadAsStringAsync(cancellationToken).Result;
 #else
-                ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content?.ReadAsStringAsync().Result);
+                string responseContent = httpResponse.Content?.ReadAsStringAsync().Result;
 #endif
-                if (errorBody != null && errorBody.Error != null)
+                if (!string.IsNullOrEmpty(responseContent))
                 {
-                    ex.Body = errorBody;
+                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(responseContent);
+                    if (errorBody != null && errorBody.Error != null)
+                    {
+                        ex.Body = errorBody;
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(errorBody?.ToString()))
+                        {
+                            // try to get just the error message from the response
+                            Error error = ProtocolJsonSerializer.ToObject<Error>(responseContent);
+                            if (error != null && error.Message != null)
+                            {
+                                errorBody = new ErrorResponse(error);
+                                ex.Body = errorBody;
+                            }
+                        }
+                    }
                 }
             }
             catch (JsonException)
