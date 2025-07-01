@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Authentication
     public interface IConnectionSettings
     {
         /// <summary>
-        /// Entra Authentication Endpoint to use,  If not populated the Entra Public Cloud endpoint is assumed. 
+        /// Entra Authentication Endpoint to use.  If not populated, the Entra Public Cloud endpoint is assumed. 
         /// This example of Public Cloud Endpoint is https://login.microsoftonline.com
         /// </summary>
         /// <seealso cref="Uri" href="https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud"/>
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Authentication
         List<string> Scopes { get; set; }
         /// <summary>
         /// Tenant ID of endpoint to use when acquiring an access token.
-        /// if not supplied "common" is used. 
+        /// If not supplied, "common" is used. 
         /// </summary>
         string TenantId { get; set; }
     }
