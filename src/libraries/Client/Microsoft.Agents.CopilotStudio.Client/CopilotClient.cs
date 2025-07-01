@@ -149,7 +149,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         }
                     }
                 };
-                req.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
+                req.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(req, cancellationToken);
             }
         }
