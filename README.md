@@ -6,20 +6,7 @@ The M365 Agent SDK is a comprehensive framework for building enterprise-grade ag
 
 For more information please see the parent project information here [Microsoft 365 Agents SDK](https://aka.ms/agents)
 
-## Current Project State is PUBLIC PREVIEW
-
-We are in preview with this codebase right now.
-
-**This code base is a frequently updated replica of the master codebase**
-
-**PREVIEW means:**
-
-- **Do not use this code in a production environment or for production purposes.**
-- Things are not yet stable and while we try hard to not break things, **we will break them** from time to time as we evolve this code base. Please be as  patient with us as possible.
-- We are still revising things in this code base and reorganizing it.
-- We may Add or Remove Features and capabilities from this code base during Preview.
-
-## Using this code
+## Current Project State is GENERALLY AVAILABLE (GA)
 
 ### Public Nuget feed.
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**
