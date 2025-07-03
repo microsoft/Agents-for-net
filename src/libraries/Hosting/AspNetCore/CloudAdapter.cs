@@ -1,19 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Builder;
-using System.Text;
-using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -29,6 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+        private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
         /// 
@@ -43,14 +46,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IAgentHttpAdapter> logger = null,
+            ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
             IConfiguration config = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
-            _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
+            _adapterOptions = options ?? new AdapterOptions();
+            _responseQueue = new ChannelResponseQueue();
 
             if (middlewares != null)
             {
@@ -73,7 +77,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         emitStackTrace = true; // Default to true if parsing fails
                     }
                 }
-                StringBuilder lastErrorMessage = new StringBuilder(1024);
+                StringBuilder lastErrorMessage = new(1024);
                 exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
@@ -84,14 +88,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 // Writing formatted exception message to log with error codes and help links. 
 #pragma warning disable CA2254 // Template should be a static expression
-                logger.LogError(resolvedErrorMessage);
+                Logger.LogError(resolvedErrorMessage);
 #pragma warning restore CA2254 // Template should be a static expression
 
                 if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text(lastErrorMessage.ToString()), CancellationToken.None);
-                    // Send a trace activity
-                    await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                    try
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Text(lastErrorMessage.ToString()), CancellationToken.None);
+                        await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                    }
+                    catch
+                    {
+                        System.Diagnostics.Trace.WriteLine($"Unable to send error Activity for: {lastErrorMessage}");
+                    }
                 }
                 sbError.Clear();
             };
@@ -137,64 +147,92 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (activity.DeliveryMode == DeliveryModes.Stream)
+                    if (activity.IsType(ActivityTypes.Invoke) || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         InvokeResponse invokeResponse = null;
 
-                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        IChannelResponseWriter writer = activity.DeliveryMode == DeliveryModes.Stream
+                            ? new ActivityStreamedResponseWriter()
+                            : new ExpectRepliesResponseWriter(activity);
+
+                        // Turn Begin
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug("Turn Begin: {ConversationId}/{ActivityId}", activity.Conversation.Id, activity.Id);
+                        }
+
+                        await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                            {
+                                Logger.LogDebug("Turn Background Complete: {ConversationId}/{ActivityId}", activity.Conversation.Id, activity.Id);
+                            }
+
                             invokeResponse = response;
+                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                         });
 
-                        // block until turn is complete
-                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        // Handle responses (blocking)
+                        await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
-                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                            {
+                                Logger.LogDebug("Turn Response: {ConversationId}/{ActivityId}: {Activity}", activity.Conversation.Id, activity.Id, ProtocolJsonSerializer.ToJson(activity));
+                            }
+
+                            await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
-                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
-                    }
-                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
-                    {
-                        // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
-                        // Process the inbound activity with the Agent
-                        var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                        // Turn done
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug("Turn End: {ConversationId}/{ActivityId} with InvokeResponse: {InvokeResponse}", activity.Conversation.Id, activity.Id, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                        }
 
-                        // Write the response, potentially serializing the InvokeResponse
-                        await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
+                        await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        // Queue the activity to be processed by the ActivityBackgroundService
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug("Turn Request: {ConversationId}/{ActivityId}: {Activity}", activity.Conversation.Id, activity.Id, ProtocolJsonSerializer.ToJson(activity));
+                        }
+
+                        // Queue the activity to be processed by the ActivityBackgroundService.  There is no response body in
+                        // this case and the request is handled in the background.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception ex)
                 {
-                    // handle unauthorized here as this layer creates the http response
-                    httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    // OnTurnError should be catching these.  Possible someone sets that to null.
+                    Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
+                    httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                 }
             }
         }
 
         /// <summary>
-        /// CloudAdapter handles this override asynchronously.
+        /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
+        /// as <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
         /// <param name="continuationActivity"></param>
         /// <param name="agent"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
-        /// <returns></returns>
         public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
         {
-            if (_adapterOptions.Async)
+            // DeliveryModes.Normal can be pushed to the Queue which allows the calling request to continue without blocking.
+            if (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal)
             {
                 // Queue the activity to be processed by the ActivityBackgroundService
                 _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
@@ -204,14 +242,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
-        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are treated as Normal and
+            // ChannelServiceAdapterBase will handle that.
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream && incomingActivity.DeliveryMode != DeliveryModes.ExpectReplies)
             {
                 return false;
             }
 
-            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await _responseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

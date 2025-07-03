@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Client
                     string jsonRaw = line[6..];
                     yield return ProtocolJsonSerializer.ToObject<InvokeResponse>(jsonRaw);
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(line))
                 {
                     _logger.LogWarning("AgentClient {AgentName}: Unexpected stream data {StreamType}, {LineValue}", Name, streamType, line.Trim());
                 }

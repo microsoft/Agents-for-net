@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Storage.Tests
             _ = new BlobsStorage(
                 ConnectionString,
                 "containerName",
-                new JsonSerializerOptions());
+                jsonSerializerOptions: new JsonSerializerOptions());
 
             // No dataConnectionString. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsStorage(null, "containerName"));

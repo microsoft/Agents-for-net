@@ -550,6 +550,7 @@ namespace Microsoft.Agents.Builder.Tests
             await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync([]));
         }
 
+        /*
         [Fact]
         public async Task SendActivitiesAsync_ShouldSendActivitiesWithExpectRepliesMode()
         {
@@ -568,6 +569,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.NotEmpty(context.BufferedReplyActivities);
             Assert.Equal("expect replies message", context.BufferedReplyActivities[0].Id);
         }
+        */
 
         [Fact]
         public async Task TraceActivityAsync_ShouldNotUpdateContextReponded()

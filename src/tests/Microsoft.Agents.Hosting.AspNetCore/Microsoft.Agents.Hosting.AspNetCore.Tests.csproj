@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplTests.DirectToEngine</ComponentAreaName>
+		<ComponentAreaName>CplTests.AspNetCore</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
