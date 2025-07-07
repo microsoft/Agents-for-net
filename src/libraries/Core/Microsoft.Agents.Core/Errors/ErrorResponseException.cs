@@ -21,6 +21,8 @@ namespace Microsoft.Agents.Core.Errors
     /// <param name="innerException">Inner exception.</param>
     public class ErrorResponseException(string message, System.Exception innerException = null) : Exception(message, innerException)
     {
+        public int? StatusCode { get; set; }
+
         /// <summary>
         /// Gets or sets the body object.
         /// </summary>
@@ -50,6 +52,8 @@ namespace Microsoft.Agents.Core.Errors
         public static ErrorResponseException CreateErrorResponseException(HttpResponseMessage httpResponse, AgentErrorDefinition message, System.Exception innerException = null, CancellationToken cancellationToken = default, params string[] errors)
         {
             var ex = CreateErrorResponseException(message, innerException, errors);
+            ex.StatusCode = (int) httpResponse.StatusCode;
+
             try
             {
 

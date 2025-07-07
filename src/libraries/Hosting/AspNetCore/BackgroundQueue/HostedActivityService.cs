@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -134,11 +135,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
 
                     if (activityWithClaims.IsProactive)
                     {
                         await _adapter.ProcessProactiveAsync(
-                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
                             ((IAgent)agent).OnTurnAsync, 

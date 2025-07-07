@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -149,6 +150,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<CloudAdapter, T>();
             services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+        }
+
+        /// <summary>
+        /// Adds a middleware that collects headers to be propagated.
+        /// </summary>
+        /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
+        public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
+        {
+            ArgumentNullException.ThrowIfNull(app);
+
+            return app.UseMiddleware<HeaderPropagationMiddleware>();
         }
 
         /// <summary>

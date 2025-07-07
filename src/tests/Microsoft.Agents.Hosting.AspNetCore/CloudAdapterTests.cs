@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>(), It.IsAny<IHeaderDictionary>()))
                 .Throws(new UnauthorizedAccessException())
                 .Verifiable(Times.Once);
 
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>(), It.IsAny<Action<InvokeResponse>>(), It.IsAny<IHeaderDictionary>()))
                 .Verifiable(Times.Once);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);

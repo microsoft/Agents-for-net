@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,12 +22,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Action<InvokeResponse> onComplete = null)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Action<InvokeResponse> onComplete = null, IHeaderDictionary headers = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
+            
+            // Copy to prevent unexpected side effects from later mutations of the original headers.
+            var copyHeaders = headers != null ? new HeaderDictionary(headers.ToDictionary()) : [];
 
-            _activities.Enqueue(new ActivityWithClaims { AgentType = agent, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete });
+            _activities.Enqueue(new ActivityWithClaims { AgentType = agent, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete, Headers = copyHeaders });
             _signal.Release();
         }
 
