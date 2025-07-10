@@ -10,6 +10,8 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     /// </summary>
     public class Surface
     {
+        private Surface() { }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Surface"/> class.
         /// </summary>

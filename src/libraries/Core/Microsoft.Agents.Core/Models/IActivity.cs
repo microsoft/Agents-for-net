@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -284,6 +285,8 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         string ValueType { get; set; }
 
+        string RequestId { get; set; }
+
         /// <summary>
         /// Updates this Activity with the delivery information from an existing <see cref="ConversationReference"/>.
         /// </summary>
@@ -303,15 +306,6 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <returns>A conversation reference for the conversation that contains this Activity.</returns>
         ConversationReference GetConversationReference();
-
-        /*
-        /// <summary>
-        /// Create a ConversationReference based on this Activity's Conversation info and the ResourceResponse from sending an Activity.
-        /// </summary>
-        /// <param name="reply">ResourceResponse returned from sendActivity.</param>
-        /// <returns>A ConversationReference that can be stored and used later to delete or update the Activity.</returns>
-        ConversationReference GetReplyConversationReference(ResourceResponse reply);
-        */
 
         /// <summary>
         /// Creates a new message Activity as a response to this Activity.

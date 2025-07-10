@@ -12,6 +12,7 @@ using System;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Client
 {
@@ -56,6 +57,11 @@ namespace Microsoft.Agents.Client
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("ChannelApiResponse: ConversationId={ConversationId}, Activity='{Activity}'", activity.Conversation.Id, ProtocolJsonSerializer.ToJson(activity));
+            }
+
             var conversationReference = await _channelHost.GetConversationReferenceAsync(conversationId, cancellationToken);
             if (conversationReference == null)
             {

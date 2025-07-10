@@ -1,18 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
@@ -112,7 +114,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         }
                         else
                         {
-                            _logger.LogError("Work item not processed.  Server is shutting down.");
+                            _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
                         }
                     }
                     finally
@@ -159,8 +161,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 catch (Exception ex)
                 {
-                    // Agent Errors should be processed in the Adapter.OnTurnError.
+                    // Agent Errors should be processed in the Adapter.OnTurnError.  Unlikely this will be hit.
                     _logger.LogError(ex, "Error occurred executing WorkItem.");
+
+                    InvokeResponse invokeResponse = null;
+                    if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
+                    {
+                        invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
+                    }
+
+                    if (activityWithClaims.OnComplete != null)
+                    {
+                        await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
+                    }
                 }
             }, stoppingToken);
         }
