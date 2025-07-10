@@ -178,15 +178,6 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to StreamingResponse in Teams requires QueueInformativeUpdate to be called first..
-        /// </summary>
-        internal static string TeamsRequiresInformativeFirst {
-            get {
-                return ResourceManager.GetString("TeamsRequiresInformativeFirst", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Unexpected state for handler &apos;{0}&apos; .
         /// </summary>
         internal static string UnexpectedAuthorizationState {

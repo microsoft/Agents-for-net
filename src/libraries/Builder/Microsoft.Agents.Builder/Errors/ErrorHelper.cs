@@ -44,7 +44,6 @@ namespace Microsoft.Agents.Builder.Errors
 
         // StreamingMessages
         internal static AgentErrorDefinition StreamingResponseEnded = new AgentErrorDefinition(baseBuilderErrorCode - 6, Properties.Resources.StreamingResponseEnded, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition TeamsRequiresInformativeFirst = new AgentErrorDefinition(baseBuilderErrorCode - 7, Properties.Resources.TeamsRequiresInformativeFirst, "https://aka.ms/AgentsSDK-Error01");
 
         // UserAuth (base, not Application)
         internal static AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(baseBuilderErrorCode - 8, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
