@@ -447,7 +447,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase);
+            _isTeamsChannel = turnContext.Activity.ChannelId != null && turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams);
 
             if (_isTeamsChannel)
             {
@@ -457,7 +457,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (string.Equals(turnContext.Activity.ChannelId, Channels.Webchat, StringComparison.OrdinalIgnoreCase))
+            else if (turnContext.Activity.ChannelId == Channels.Webchat)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
