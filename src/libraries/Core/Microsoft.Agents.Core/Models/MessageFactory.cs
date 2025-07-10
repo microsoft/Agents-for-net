@@ -398,7 +398,7 @@ namespace Microsoft.Agents.Core.Models
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount(id: activity.Recipient?.Id, name: activity.Recipient?.Name),
                 Recipient = new ChannelAccount(id: activity.From?.Id, name: activity.From?.Name),
-                ReplyToId = !string.Equals(activity.Type.ToString(), ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || activity.ChannelId != "directline" && activity.ChannelId != "webchat" ? activity.Id : null,
+                ReplyToId = !activity.IsType(ActivityTypes.ConversationUpdate) || activity.ChannelId != "directline" && activity.ChannelId != "webchat" ? activity.Id : null,
                 ServiceUrl = activity.ServiceUrl,
                 ChannelId = activity.ChannelId,
                 Conversation = activity.Conversation,

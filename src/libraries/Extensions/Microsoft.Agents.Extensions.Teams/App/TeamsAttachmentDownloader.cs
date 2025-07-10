@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <inheritdoc />
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            if (turnContext.Activity.ChannelId.Channel != Channels.Msteams)
+            if (!turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams))
             {
                 return [];
             }
