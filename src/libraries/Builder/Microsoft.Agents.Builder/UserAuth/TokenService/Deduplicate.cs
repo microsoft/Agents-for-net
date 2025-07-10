@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static bool ShouldDeduplicate(ITurnContext turnContext)
         {
             // Teams
-            if (turnContext.Activity.ChannelId.Channel == Channels.Msteams
+            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
                 && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;

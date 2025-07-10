@@ -815,7 +815,7 @@ namespace Microsoft.Agents.Builder.Compat
             if (string.IsNullOrEmpty(searchInvokeValue.Kind))
             {
                 // Teams does not always send the 'kind' field. Default to 'search'.
-                if (channelId?.Channel == Channels.Msteams)
+                if (channelId.IsParentChannel(Channels.Msteams))
                 {
                     searchInvokeValue.Kind = SearchInvokeTypes.Search;
                 }

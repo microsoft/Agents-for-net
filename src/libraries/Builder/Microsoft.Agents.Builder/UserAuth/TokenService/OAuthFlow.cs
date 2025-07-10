@@ -438,7 +438,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private static bool ChannelSupportsOAuthCard(ChannelId channelId)
         {
-            return channelId.Channel switch
+            return channelId.ToString() switch
             {
                 Channels.Cortana or Channels.Skype or Channels.Skypeforbusiness => false,
                 _ => true,

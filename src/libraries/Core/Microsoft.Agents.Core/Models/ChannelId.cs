@@ -17,6 +17,11 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
+        public bool IsParentChannel(string channelId)
+        {
+            return string.Equals(Channel, channelId, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static bool operator == (ChannelId obj1, ChannelId obj2)
         {
             return string.Equals(obj1?.ToString(), obj2?.ToString(), StringComparison.OrdinalIgnoreCase);
