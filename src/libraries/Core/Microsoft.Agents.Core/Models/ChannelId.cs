@@ -22,6 +22,11 @@ namespace Microsoft.Agents.Core.Models
             return string.Equals(Channel, channelId, StringComparison.OrdinalIgnoreCase);
         }
 
+        public bool IsSubChannel()
+        {
+            return !string.IsNullOrEmpty(SubChannel);
+        }
+
         public static bool operator == (ChannelId obj1, ChannelId obj2)
         {
             return string.Equals(obj1?.ToString(), obj2?.ToString(), StringComparison.OrdinalIgnoreCase);

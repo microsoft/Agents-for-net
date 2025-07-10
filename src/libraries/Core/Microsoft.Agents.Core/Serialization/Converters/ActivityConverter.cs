@@ -22,11 +22,27 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     activity.ChannelId.SubChannel = productInfo.Id;
                 }
-
-                activity.Entities.Remove(productInfo);
             }
 
             return activity;
+        }
+
+        public override void Write(Utf8JsonWriter writer, Activity value, JsonSerializerOptions options)
+        {
+            if (value.ChannelId != null && value.ChannelId.IsSubChannel())
+            {
+                var productInfo = value.GetProductInfoEntity();
+                if (productInfo != null)
+                {
+                    productInfo.Id = value.ChannelId.SubChannel;
+                }
+                else
+                {
+                    value.Entities.Add(new ProductInfo() { Id = value.ChannelId.SubChannel });
+                }
+            }
+
+            base.Write(writer, value, options);
         }
 
         /// <inheritdoc/>
@@ -45,7 +61,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
             {
                 var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
-                property.SetValue(value, new ChannelId((string) propertyValue));
+                property.SetValue(value, new ChannelId(propertyValue));
                 return;
             }
 

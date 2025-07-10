@@ -12,11 +12,6 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ChannelIdTests()
         {
-            //Channels values
-            //public const string Msteams = "msteams";
-            //public const string M365CopilotSubChannel = "COPILOT";
-            //public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
-
             // Is Teams?
             string msTeamsJson = "{\"channelId\":\"msteams\"}";
             var activity = ProtocolJsonSerializer.ToObject<IActivity>(msTeamsJson);
@@ -27,36 +22,30 @@ namespace Microsoft.Agents.Model.Tests
             activity = ProtocolJsonSerializer.ToObject<IActivity>(msTeamsJson);
             Assert.True(Channels.Msteams == activity.ChannelId);
 
-            // Is M365Copilot?
-            string m365CopilotJson = "{\"channelId\":\"msteams\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"id\":\"COPILOT\",\"type\":\"ProductInfo\"}],\"listenFor\":[],\"textHighlights\":[]}";
-            activity = ProtocolJsonSerializer.ToObject<IActivity>(m365CopilotJson);
-            Assert.True(Channels.M365Copilot == activity.ChannelId);
-
-            // Base channel vs subchannel eval
-            Assert.Equal(Channels.Msteams, activity.ChannelId.Channel);
-            Assert.Equal(Channels.M365CopilotSubChannel, activity.ChannelId.SubChannel);
-
-            // Serialize back out correctly
-            var json = ProtocolJsonSerializer.ToJson(activity);
-            Assert.Equal(m365CopilotJson, json);
-
             // ChannelId construction
             var channelId = new ChannelId(Channels.Msteams);
             Assert.Equal(Channels.Msteams, channelId);
 
+            // Can change SubChannel
+            channelId = new ChannelId(Channels.M365Copilot);
+            Assert.Equal(Channels.M365Copilot, channelId.ToString());
+            channelId.SubChannel = "TEST";
+            Assert.Equal("msteams:TEST", channelId.ToString());
+
             // With formatted value
             channelId = new ChannelId(Channels.M365Copilot);
             Assert.Equal(Channels.M365Copilot, channelId);
-            Assert.True(Channels.M365Copilot == activity.ChannelId);
-            Assert.Equal(Channels.Msteams, activity.ChannelId.Channel);
-            Assert.Equal(Channels.M365CopilotSubChannel, activity.ChannelId.SubChannel);
+            Assert.True(Channels.M365Copilot == channelId);
+            Assert.Equal(Channels.Msteams, channelId.Channel);
+            Assert.True(activity.ChannelId.IsParentChannel(Channels.Msteams));
+            Assert.Equal(Channels.M365CopilotSubChannel, channelId.SubChannel);
 
             // nulls
             activity = new Activity() { ChannelId = null };
             Assert.False(Channels.Msteams == activity.ChannelId);
 
             activity = new Activity() { ChannelId = Channels.Msteams };
-            Assert.False(activity.ChannelId == null);
+            Assert.NotNull(activity.ChannelId);
 
             // Equality
             var channelId1 = new ChannelId(Channels.Msteams);
@@ -64,6 +53,37 @@ namespace Microsoft.Agents.Model.Tests
             var channelId3 = new ChannelId(Channels.M365Copilot);
             Assert.Equal(channelId1, channelId2);
             Assert.NotEqual(channelId1, channelId3);
+
+            // conversion
+            channelId = new ChannelId(Channels.M365Copilot);
+            string str = channelId;
+            Assert.Equal(str, channelId.ToString());
+        }
+
+        [Fact]
+        public void SubChannelTest()
+        {
+            // Is M365Copilot?
+            string m365CopilotJson = "{\"channelId\":\"msteams\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"id\":\"COPILOT\",\"type\":\"ProductInfo\"}],\"listenFor\":[],\"textHighlights\":[]}";
+            var activity = ProtocolJsonSerializer.ToObject<IActivity>(m365CopilotJson);
+            Assert.True(Channels.M365Copilot == activity.ChannelId);
+
+            // Base channel vs subchannel eval
+            Assert.Equal(Channels.Msteams, activity.ChannelId.Channel);
+            Assert.Equal(Channels.M365CopilotSubChannel, activity.ChannelId.SubChannel);
+            Assert.True(activity.ChannelId.IsParentChannel(Channels.Msteams));
+
+            // Serialize back out correctly
+            var json = ProtocolJsonSerializer.ToJson(activity);
+            Assert.Equal(m365CopilotJson, json);
+
+            // Can update ProductInfo from ChannelIds
+            activity.ChannelId.SubChannel = "TEST";
+            activity = ProtocolJsonSerializer.ToObject<IActivity>(ProtocolJsonSerializer.ToJson(activity));
+            var productInfo = activity.GetProductInfoEntity();
+            Assert.NotNull(productInfo);
+            Assert.Equal("TEST", productInfo.Id);
+            Assert.Equal("msteams:TEST", activity.ChannelId);
         }
     }
 }

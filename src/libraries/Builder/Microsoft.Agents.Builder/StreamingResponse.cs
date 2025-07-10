@@ -447,7 +447,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = (bool) turnContext.Activity.ChannelId?.IsParentChannel(Channels.Msteams);
+            _isTeamsChannel = turnContext.Activity.ChannelId != null && turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams);
 
             if (_isTeamsChannel)
             {
