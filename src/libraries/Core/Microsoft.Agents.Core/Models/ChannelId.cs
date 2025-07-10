@@ -36,7 +36,8 @@ namespace Microsoft.Agents.Core.Models
 
         public override int GetHashCode()
         {
-            return Channel.GetHashCode();
+            var channelId = ToString();
+            return channelId == null ? 0 : channelId.GetHashCode();
         }
 
         public static implicit operator ChannelId(string value)

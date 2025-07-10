@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Connector
         }
 
         /// <inheritdoc />
-        public async Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, string channelId, string magicCode, CancellationToken cancellationToken)
+        public async Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, ChannelId channelId, string magicCode, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetUserTokenAsync));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Connector
         }
 
         /// <inheritdoc />
-        public async Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)
+        public async Task SignOutUserAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SignOutUserAsync));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Connector
         }
 
         /// <inheritdoc />
-        public async Task<TokenStatus[]> GetTokenStatusAsync(string userId, string channelId, string includeFilter, CancellationToken cancellationToken)
+        public async Task<TokenStatus[]> GetTokenStatusAsync(string userId, ChannelId channelId, string includeFilter, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetTokenStatusAsync));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Connector
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, string channelId, CancellationToken cancellationToken)
+        public async Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, ChannelId channelId, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetAadTokensAsync));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Connector
         }
 
         /// <inheritdoc />
-        public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken)
+        public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(ExchangeTokenAsync));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation("GetTokenOrSignInResourceAsync ConnectionName: {connectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
-            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId.Channel, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
+            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

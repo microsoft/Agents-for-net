@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.App
 
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.ChannelId == Channels.Msteams)
+            if (turnContext.Activity.ChannelId.Channel == Channels.Msteams)
             {
                 return [];
             }

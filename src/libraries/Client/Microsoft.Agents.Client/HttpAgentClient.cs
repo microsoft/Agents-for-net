@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Client
                 {
                     ServiceUrl = relatesTo.ServiceUrl,
                     ActivityId = relatesTo.Id,
-                    ChannelId = relatesTo.ChannelId.Channel,
+                    ChannelId = relatesTo.ChannelId,
                     Locale = relatesTo.Locale,
                     Conversation = new ConversationAccount
                     {
