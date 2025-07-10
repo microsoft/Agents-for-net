@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         {
                             if (!ProtocolJsonSerializer.UnpackObjectStrings)
                             {
-                                writer.WriteRawValue(s);
+                                writer.WriteStringValue(s);
                             }
                             else
                             {
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     if (!ProtocolJsonSerializer.UnpackObjectStrings)
                     {
-                        var json = element.GetRawText();
+                        var json = element.GetString();
                         setter(json);
                     }
                     else

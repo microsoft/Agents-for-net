@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 foreach (IActivity activity in activities)
                 {
-                    if (activity.Type == ActivityTypes.Message)
+                    if (activity.Type == ActivityTypes.Message || (activity.Type == ActivityTypes.Typing && activity.GetStreamingEntity() != null))
                     {
                         // This will block ITurnContext.SendActivity until the typing timer is done.
                         _send.WaitOne();

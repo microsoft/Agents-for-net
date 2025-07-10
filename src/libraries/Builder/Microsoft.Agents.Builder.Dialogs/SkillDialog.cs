@@ -242,7 +242,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // (the dialog stack won't get updated with the skillDialog and things won't work if you don't)
             await DialogOptions.ConversationState.SaveChangesAsync(context, true, cancellationToken).ConfigureAwait(false);
 
-            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, useAnonymous:AgentClaims.AllowAnonymous(context.Identity), cancellationToken:cancellationToken).ConfigureAwait(false);
 
             // Inspect the skill response status
             if (!response.IsSuccessStatusCode())

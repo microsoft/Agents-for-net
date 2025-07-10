@@ -139,8 +139,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     RequestUri = uriStart,
                     Headers =
                     {
-                        Accept = { s_EventStream },
-                        UserAgent = { UserAgentHelper.UserAgentHeader }
+                        Accept = { s_EventStream }
                     },
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(body)))
                     {
@@ -150,6 +149,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         }
                     }
                 };
+                req.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(req, cancellationToken);
             }
         }
@@ -198,8 +198,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     RequestUri = uriExecute,
                     Headers =
                 {
-                    Accept = { s_EventStream },
-                    UserAgent = { UserAgentHelper.UserAgentHeader }
+                    Accept = { s_EventStream }
                 },
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
                     {
@@ -209,6 +208,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }
                     }
                 };
+                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(qreq, ct);
             }
         }

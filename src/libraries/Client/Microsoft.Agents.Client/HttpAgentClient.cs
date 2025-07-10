@@ -15,6 +15,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -254,6 +255,8 @@ namespace Microsoft.Agents.Client
             };
 
             using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentClient));
+
+            httpClient.AddHeaderPropagation();
 
             // Add the auth header to the HTTP request.
             if (!useAnonymous)

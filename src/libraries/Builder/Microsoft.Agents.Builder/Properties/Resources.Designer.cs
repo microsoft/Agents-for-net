@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}.  Check your connection name and scope(s) for correctness..
         /// </summary>
         internal static string OBOExchangeFailed {
             get {

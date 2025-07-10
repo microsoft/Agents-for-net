@@ -40,13 +40,6 @@ The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botfr
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "TokenValidation": {
-        "Audiences": [
-          "{{ClientId}}" // this is the Client ID used for the Azure Bot
-        ],
-        "TenantId": "{{TenantId}}"
-      },
-
       "Connections": {
           "ServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",

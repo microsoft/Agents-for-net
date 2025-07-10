@@ -156,7 +156,18 @@ namespace Microsoft.Agents.Authentication
         /// <returns>True if anonymous access is allowed, otherwise false.</returns>
         public static bool AllowAnonymous(ClaimsIdentity identity)
         {
-            return !identity.IsAuthenticated && !identity.Claims.Any();
+            return identity != null && !identity.IsAuthenticated && !identity.Claims.Any();
+        }
+
+        public static ClaimsIdentity CreateIdentity(string clientId, bool anonymous = false)
+        {
+            return anonymous
+                ? new ClaimsIdentity()
+                : new ClaimsIdentity(
+                [
+                    new(AuthenticationConstants.AudienceClaim, clientId),
+                    new(AuthenticationConstants.AppIdClaim, clientId),
+                ]);
         }
     }
 }

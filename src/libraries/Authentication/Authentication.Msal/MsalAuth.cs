@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,6 +38,7 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
+        private ClientAssertionProviderBase _clientAssertion;
 
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
@@ -229,12 +231,17 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
                 {
-                    async Task<String> FetchExternalTokenAsync()
-                    {
-                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
-                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
-                    }
-                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId, null, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+                }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
                 else
                 {
