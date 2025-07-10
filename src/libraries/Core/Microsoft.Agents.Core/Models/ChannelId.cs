@@ -4,11 +4,14 @@ namespace Microsoft.Agents.Core.Models
 {
     public class ChannelId
     {
+        private readonly bool _subchannelSupport;
+
         public string Channel { get; set; }
         public string SubChannel { get; set; }
 
-        public ChannelId(string channelId)
+        public ChannelId(string channelId, bool subchannelSupport = true)
         {
+            _subchannelSupport = subchannelSupport;
             if (!string.IsNullOrEmpty(channelId))
             {
                 var split = channelId.Split(':');
@@ -62,7 +65,7 @@ namespace Microsoft.Agents.Core.Models
 
         public override string ToString()
         {
-            if (!string.IsNullOrEmpty(SubChannel))
+            if (_subchannelSupport && !string.IsNullOrEmpty(SubChannel))
             {
                 return $"{Channel}:{SubChannel}";
             }

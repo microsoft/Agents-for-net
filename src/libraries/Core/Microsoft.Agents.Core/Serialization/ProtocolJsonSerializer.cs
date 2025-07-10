@@ -18,6 +18,7 @@ namespace Microsoft.Agents.Core.Serialization
         public const string ApplicationJson = "application/json";
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
+        public static bool SubChannelSupport { get; set; } = true;
 
         private static readonly object _optionsLock = new object();
 

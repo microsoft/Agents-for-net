@@ -29,9 +29,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         public override void Write(Utf8JsonWriter writer, Activity value, JsonSerializerOptions options)
         {
+            var productInfo = value.GetProductInfoEntity();
             if (value.ChannelId != null && value.ChannelId.IsSubChannel())
             {
-                var productInfo = value.GetProductInfoEntity();
                 if (productInfo != null)
                 {
                     productInfo.Id = value.ChannelId.SubChannel;
@@ -40,6 +40,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     value.Entities.Add(new ProductInfo() { Id = value.ChannelId.SubChannel });
                 }
+            }
+            else if (productInfo != null)
+            {
+                value.Entities.Remove(productInfo);
             }
 
             base.Write(writer, value, options);
@@ -61,7 +65,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
             {
                 var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
-                property.SetValue(value, new ChannelId(propertyValue));
+                property.SetValue(value, new ChannelId(propertyValue, ProtocolJsonSerializer.SubChannelSupport));
                 return;
             }
 
