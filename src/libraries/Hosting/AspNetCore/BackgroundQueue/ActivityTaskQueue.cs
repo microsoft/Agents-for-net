@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Action<InvokeResponse> onComplete = null, IHeaderDictionary headers = null)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Action<InvokeResponse> onComplete = null, IHeaderDictionary headers = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             // Copy to prevent unexpected side effects from later mutations of the original headers.
             var copyHeaders = headers != null ? new HeaderDictionary(headers.ToDictionary()) : [];
 
-            _activities.Enqueue(new ActivityWithClaims { AgentType = agent, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete, Headers = copyHeaders });
+            _activities.Enqueue(new ActivityWithClaims { AgentType = agentType, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete, Headers = copyHeaders });
             _signal.Release();
         }
 
