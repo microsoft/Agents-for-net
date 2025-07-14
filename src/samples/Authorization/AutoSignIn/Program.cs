@@ -8,18 +8,17 @@ using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
-using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
-using Microsoft.Agents.Storage.Transcript;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 using System.Threading;
+using static FullAuthentication.AspNetExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +29,9 @@ builder.Services.AddHttpClient();
 // that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+var clientId = "{{redacted-but-use-env-anyway}}";
+var tenantId = "{{redacted-but-use-env-anyway}}";
 
 // Register Connections
 builder.Services.AddSingleton<IConnections>(sp =>
@@ -42,8 +44,8 @@ builder.Services.AddSingleton<IConnections>(sp =>
                 {
                     AuthType = AuthTypes.ClientSecret,
                     ClientSecret = "{{redacted-but-use-env-anyway}}",
-                    Authority = "https://login.microsoftonline.com/6d49904d-ce08-4e4d-bcf0-26c4142fc209",
-                    ClientId = "{{redacted-but-use-env-anyway}}",
+                    Authority = $"https://login.microsoftonline.com/{tenantId}",
+                    ClientId = clientId,
                     Scopes = [$"{AuthenticationConstants.BotFrameworkScope}/.default"]   // should add/change a constant for this.
                 })
             }
@@ -100,36 +102,40 @@ builder.Services.AddSingleton(sp =>
     };
 });
 
-// Register IChannelServiceClientFactory
-builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
-
-// Using extension for CloudAdapter (because of internal HostedServices bits)
-// Custom Adapters would do it directly: `builder.Services.AddSingleton<IChannelAdapter>(blahblah)`
-// CloudAdapter subclasses would use `AddCloudAdapter<MySpecialCloudAdapter>()`
-builder.Services.AddCloudAdapter();
-
 // Add the AgentApplication
-builder.Services.AddTransient<IAgent, AuthAgent>();
-
-// And just for fun register a compat TranscriptLogger (because I haven't submitted the AgentApplication friendly version)
-builder.Services.AddSingleton<Microsoft.Agents.Builder.IMiddleware[]>([
-    new TranscriptLoggerMiddleware(new FileTranscriptLogger())
-]);
+builder.AddAgent<AuthAgent>();
 
 
 // Configure the HTTP request pipeline.
 
+// Add AspNet token validation for Azure Bot Service and Entra.
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(new TokenValidation()
+{
+    Audiences = [clientId],
+    TenantId = tenantId
+});
+
 WebApplication app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var route = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    route.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
