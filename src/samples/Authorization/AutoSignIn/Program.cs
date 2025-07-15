@@ -110,7 +110,7 @@ builder.AddAgent<AuthAgent>();
 
 // Add AspNet token validation for Azure Bot Service and Entra.
 builder.Services.AddControllers();
-builder.Services.AddAgentAspNetAuthentication(new TokenValidation()
+builder.Services.AddAgentAspNetAuthentication(new TokenValidationOptions()
 {
     Audiences = [clientId],
     TenantId = tenantId
