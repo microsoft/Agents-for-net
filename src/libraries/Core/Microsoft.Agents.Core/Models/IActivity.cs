@@ -68,6 +68,7 @@ namespace Microsoft.Agents.Core.Models
         /// The DeliveryMode field contains any one of an enumerated set of values to signal to the recipient 
         /// alternate delivery paths for the Activity or response. The value of the deliveryMode field is of type 
         /// string, with defined values of 'normal', 'notification' and 'expectReplies'. The default value is normal.
+        /// See <see cref="DeliveryModes"/> for possible values
         /// </summary>
         string DeliveryMode { get; set; }
 
