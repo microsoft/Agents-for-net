@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,9 +25,6 @@ namespace Microsoft.Agents.Builder
     ///
     ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
     /// </summary>
-    /// <remarks>
-    /// Teams channels require that <see cref="QueueInformativeUpdateAsync"/> is called before calling <see cref="QueueTextChunk"/>.
-    /// </remarks>
     /// <remarks>
     /// Only Teams and WebChat support streaming messages.  However, channels that do not support
     /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
@@ -48,7 +46,6 @@ namespace Microsoft.Agents.Builder
         private bool _ended = false;
         private Timer _timer;
         private bool _messageUpdated = false;
-        private bool _informativeSent = false;
         private bool _isTeamsChannel;
         private bool _cancelled;
 
@@ -179,8 +176,6 @@ namespace Microsoft.Agents.Builder
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
-                _informativeSent = true;
-
                 queueFunc = () =>
                 {
                     return new Activity
@@ -227,11 +222,6 @@ namespace Microsoft.Agents.Builder
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
-                if (!_informativeSent && _isTeamsChannel)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsRequiresInformativeFirst, null);
-                }
-
                 // buffer all chunks
                 Message += text;
 
@@ -240,7 +230,9 @@ namespace Microsoft.Agents.Builder
 
                 _messageUpdated = true;
 
-                StartStream();
+                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+                // and we're just now starting the stream.  It uses Interval after the first stream message.
+                StartStream(250);
             }
         }
 
@@ -284,9 +276,8 @@ namespace Microsoft.Agents.Builder
 
                     _ended = true;
 
-                    if (UpdatesSent() == 0 || _cancelled)
+                    if (!IsStreamStarted() || _cancelled)
                     {
-                        // nothing was queued.  nothing to "end".
                         return;
                     }
                 }
@@ -449,7 +440,12 @@ namespace Microsoft.Agents.Builder
         {
             _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId;
 
-            if (_isTeamsChannel)
+            if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
+            {
+                // No point in streaming for ExpectReplies.  Treat as non-streaming channel.
+                IsStreamingChannel = false;
+            }
+            else if (_isTeamsChannel)
             {
                 // Teams MUST use the Activity.Id returned from the first Informative message for
                 // subsequent intermediate messages.  Do not set StreamId here.
@@ -457,7 +453,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (turnContext.Activity.ChannelId == Channels.Webchat)
+            else if (Channels.Webchat == turnContext.Activity.ChannelId || Channels.Directline == turnContext.Activity.ChannelId)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
@@ -465,11 +461,15 @@ namespace Microsoft.Agents.Builder
                 // WebChat will use whatever StreamId is created.
                 StreamId = Guid.NewGuid().ToString();
             }
-            else
+            else if (string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
                 // Support streaming for DeliveryMode.Stream
-                IsStreamingChannel = string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase);
+                IsStreamingChannel = true;
                 Interval = 100;
+            }
+            else
+            {
+                IsStreamingChannel = false;
             }
         }
 
@@ -478,11 +478,11 @@ namespace Microsoft.Agents.Builder
             return _timer != null;
         }
 
-        private void StartStream()
+        private void StartStream(int interval = 0)
         {
             if (_timer == null && IsStreamingChannel)
             {
-                _timer = new Timer(SendIntermediateMessage, null, Interval, System.Threading.Timeout.Infinite);
+                _timer = new Timer(SendIntermediateMessage, null, interval == 0 ? Interval : interval, System.Threading.Timeout.Infinite);
             }
         }
 
@@ -509,23 +509,28 @@ namespace Microsoft.Agents.Builder
                     activity = _queue[0]();
                     _queue.RemoveAt(0);
 
-                    // Limit intermediate message to the interval
-                    _timer.Change(Interval, System.Threading.Timeout.Infinite);
+                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
+                    // longer than the Interval. MSAL can take longer than the interval in some cases,
+                    // which case out of sequence messages.
+                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
                 else if (_ended)
                 {
                     _queueEmpty.Set();
                     StopStream();
+                    return;
                 }
                 else
                 {
                     // Nothing is in the queue, and not ending, so chances are
                     // the chunking is slow.  We can speed up the interval to
                     // pick up the next chunk faster.
-                    _timer.Change(200, System.Threading.Timeout.Infinite);
+                    _timer.Change(200, Timeout.Infinite);
+                    return;
                 }
             }
 
+            // Looks a bit odd, but can't call await inside a lock.
             await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -546,6 +551,9 @@ namespace Microsoft.Agents.Builder
                     {
                         StreamId = response.Id;
                     }
+
+                    // Restart the timer with normal Interval (if running)
+                    _timer?.Change(Interval, Timeout.Infinite);
                 }
                 catch (Exception ex)
                 {
@@ -558,6 +566,10 @@ namespace Microsoft.Agents.Builder
                         if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
                         {
                             System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Trace.WriteLine("User cancelled stream on the client side.");
                         }
                     }
 

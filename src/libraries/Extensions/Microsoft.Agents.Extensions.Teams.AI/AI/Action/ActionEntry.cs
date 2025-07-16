@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         /// The <see cref="ActionEntry{TState}"/> if the given method adheres to the <see cref="ActionHandler{TState}"/> delegate
         /// and has the <see cref="ActionAttribute"/>. Otherwise, returns null.
         /// </returns>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="System.Exception"></exception>
         public static ActionEntry<TState>? FromNativeMethod(MethodInfo methodSignature, object methodContainerInstance)
         {
             if (methodSignature == null)

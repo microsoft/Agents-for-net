@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
@@ -16,7 +17,6 @@ using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -68,6 +68,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
+            var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
+            return result.AccessToken;
+        }
+
+        internal async Task<AuthenticationResult> InternalGetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
+        {
             if (!Uri.IsWellFormedUriString(resourceUrl, UriKind.RelativeOrAbsolute))
             {
                 throw new ArgumentException("Invalid instance URL");
@@ -96,7 +102,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
-                        return accessToken;
+                        return authResultFromCache.MsalAuthResult;
                     }
                 }
                 else
@@ -152,9 +158,13 @@ namespace Microsoft.Agents.Authentication.Msal
                 _cacheList.TryAdd(instanceUri, authResultPayload);
             }
 
-            return authResultPayload.MsalAuthResult.AccessToken;
+            return authResultPayload.MsalAuthResult;
         }
 
+        public TokenCredential GetTokenCredential()
+        {
+            return new MsalTokenCredential(this);
+        }
 
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {

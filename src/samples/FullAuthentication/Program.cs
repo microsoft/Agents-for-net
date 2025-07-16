@@ -45,15 +45,18 @@ app.UseAuthorization();
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-app.MapPost(
+var activityRoute = app.MapPost(
     "/api/messages",
     async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
     {
         await adapter.ProcessAsync(request, response, agent, cancellationToken);
-    })
-    .RequireAuthorization();  // Require authorization for the incoming message endpoint
+    });
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    activityRoute.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.

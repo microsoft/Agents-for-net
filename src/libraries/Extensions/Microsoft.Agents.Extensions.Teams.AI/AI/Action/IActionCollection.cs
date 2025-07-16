@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         /// </summary>
         /// <param name="actionName">The name of the action.</param>
         /// <returns>The action entry in this collection.</returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         ActionEntry<TState> this[string actionName] { get; }
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         /// <param name="actionName">The name of the action.</param>
         /// <param name="handler">The action handler.</param>
         /// <param name="allowOverrides">Whether or not this action's properties can be overridden. Default to false.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
         void AddAction(string actionName, IActionHandler<TState> handler, bool allowOverrides = false);
 
         /// <summary>

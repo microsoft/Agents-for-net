@@ -20,6 +20,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" />
+		<PackageReference Include="Azure.Identity" />
 	</ItemGroup>
 
 	<ItemGroup>

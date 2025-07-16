@@ -2,10 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -26,55 +29,65 @@ public static class AspNetExtensions
     private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _openIdMetadataCache = new();
 
     /// <summary>
-    /// Adds token validation typical for ABS/SMBA and agent-to-agent.
-    /// default to Azure Public Cloud.
+    /// Adds AspNet token validation typical for ABS/SMBA and agent-to-agent using settings in configuration.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     /// <param name="tokenValidationSectionName">Name of the config section to read.</param>
     /// <param name="logger">Optional logger to use for authentication event logging.</param>
     /// <remarks>
-    /// Configuration:
+    /// <para>This extension reads <see cref="TokenValidationOptions"/> settings from configuration.  If configuration is missing JWT token
+    /// is not enabled.</para>
+    /// The minimum, but typical, configuration is:
     /// <code>
-    ///   "TokenValidation": {
-    ///     "Audiences": [
-    ///       "{required:agent-appid}"
-    ///     ],
-    ///     "TenantId": "{recommended:tenant-id}",
-    ///     "ValidIssuers": [
-    ///       "{default:Public-AzureBotService}"
-    ///     ],
-    ///     "IsGov": {optional:false},
-    ///     "AzureBotServiceOpenIdMetadataUrl": optional,
-    ///     "OpenIdMetadataUrl": optional,
-    ///     "AzureBotServiceTokenHandling": "{optional:true}"
-    ///     "OpenIdMetadataRefresh": "optional-12:00:00"
-    ///   }
+    /// "TokenValidation": {
+    ///    "Audiences": [
+    ///      "{{ClientId}}" // this is the Client ID used for the Azure Bot
+    ///    ],
+    ///    "TenantId": "{{TenantId}}"
+    /// }
     /// </code>
-    /// 
-    /// `IsGov` can be omitted, in which case public Azure Bot Service and Azure Cloud metadata urls are used.
-    /// `ValidIssuers` can be omitted, in which case the Public Azure Bot Service issuers are used.
-    /// `TenantId` can be omitted if the Agent is not being called by another Agent.  Otherwise it is used to add other known issuers.  Only when `ValidIssuers` is omitted.
-    /// `AzureBotServiceOpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
-    /// `OpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
-    /// `AzureBotServiceTokenHandling` defaults to true and should always be true until Azure Bot Service sends Entra ID token.
     /// </remarks>
-    public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
+    public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation")
     {
         IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
-        List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>();
-        List<string> audiences = tokenValidationSection.GetSection("Audiences").Get<List<string>>();
 
-        if (!tokenValidationSection.Exists())
+        if (!tokenValidationSection.Exists() || !tokenValidationSection.GetValue("Enabled", true))
         {
-            logger?.LogError("Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json", tokenValidationSectionName);
-            throw new InvalidOperationException($"Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json");
+            // Noop if TokenValidation section missing or disabled.
+            System.Diagnostics.Trace.WriteLine("AddAgentAspNetAuthentication: Auth disabled");
+            return;
+        }
+
+        services.AddAgentAspNetAuthentication(tokenValidationSection.Get<TokenValidationOptions>());
+    }
+
+    /// <summary>
+    /// Adds AspNet token validation typical for ABS/SMBA and agent-to-agent.
+    /// </summary>
+    public static void AddAgentAspNetAuthentication(this IServiceCollection services, TokenValidationOptions validationOptions)
+    {
+        AssertionHelpers.ThrowIfNull(validationOptions, nameof(validationOptions));
+
+        // Must have at least one Audience.
+        if (validationOptions.Audiences == null || validationOptions.Audiences.Count == 0)
+        {
+            throw new ArgumentException($"{nameof(TokenValidationOptions)}:Audiences requires at least one ClientId");
+        }
+
+        // Audience values must be GUID's
+        foreach (var audience in validationOptions.Audiences)
+        {
+            if (!Guid.TryParse(audience, out _))
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:Audiences values must be a GUID");
+            }
         }
 
         // If ValidIssuers is empty, default for ABS Public Cloud
-        if (validTokenIssuers == null || validTokenIssuers.Count == 0)
+        if (validationOptions.ValidIssuers == null || validationOptions.ValidIssuers.Count == 0)
         {
-            validTokenIssuers =
+            validationOptions.ValidIssuers =
             [
                 "https://api.botframework.com",
                 "https://sts.windows.net/d6d49420-f39b-4df7-a1dc-d59a935871db/",
@@ -85,37 +98,26 @@ public static class AspNetExtensions
                 "https://login.microsoftonline.com/69e9b82d-4842-4902-8d1e-abc5b98a55e8/v2.0",
             ];
 
-            string tenantId = tokenValidationSection["TenantId"];
-            if (!string.IsNullOrEmpty(tenantId))
+            if (!string.IsNullOrEmpty(validationOptions.TenantId) && Guid.TryParse(validationOptions.TenantId, out _))
             {
-                validTokenIssuers.Add(string.Format(CultureInfo.InvariantCulture, AuthenticationConstants.ValidTokenIssuerUrlTemplateV1, tenantId));
-                validTokenIssuers.Add(string.Format(CultureInfo.InvariantCulture, AuthenticationConstants.ValidTokenIssuerUrlTemplateV2, tenantId));
+                validationOptions.ValidIssuers.Add(string.Format(CultureInfo.InvariantCulture, AuthenticationConstants.ValidTokenIssuerUrlTemplateV1, validationOptions.TenantId));
+                validationOptions.ValidIssuers.Add(string.Format(CultureInfo.InvariantCulture, AuthenticationConstants.ValidTokenIssuerUrlTemplateV2, validationOptions.TenantId));
             }
         }
 
-        if (audiences == null || audiences.Count == 0)
-        {
-            throw new ArgumentException($"{tokenValidationSectionName}:Audiences requires at least one value");
-        }
-
-        bool isGov = tokenValidationSection.GetValue("IsGov", false);
-        bool azureBotServiceTokenHandling = tokenValidationSection.GetValue("AzureBotServiceTokenHandling", true);
-
         // If the `AzureBotServiceOpenIdMetadataUrl` setting is not specified, use the default based on `IsGov`.  This is what is used to authenticate ABS tokens.
-        string azureBotServiceOpenIdMetadataUrl = tokenValidationSection["AzureBotServiceOpenIdMetadataUrl"];
-        if (string.IsNullOrEmpty(azureBotServiceOpenIdMetadataUrl))
+        if (string.IsNullOrEmpty(validationOptions.AzureBotServiceOpenIdMetadataUrl))
         {
-            azureBotServiceOpenIdMetadataUrl = isGov ? AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl : AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl;
+            validationOptions.AzureBotServiceOpenIdMetadataUrl = validationOptions.IsGov ? AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl : AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl;
         }
 
         // If the `OpenIdMetadataUrl` setting is not specified, use the default based on `IsGov`.  This is what is used to authenticate Entra ID tokens.
-        string openIdMetadataUrl = tokenValidationSection["OpenIdMetadataUrl"];
-        if (string.IsNullOrEmpty(openIdMetadataUrl))
+        if (string.IsNullOrEmpty(validationOptions.OpenIdMetadataUrl))
         {
-            openIdMetadataUrl = isGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
+            validationOptions.OpenIdMetadataUrl = validationOptions.IsGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
         }
 
-        TimeSpan openIdRefreshInterval = tokenValidationSection.GetValue("OpenIdMetadataRefresh", BaseConfigurationManager.DefaultAutomaticRefreshInterval);
+        var openIdMetadataRefresh = validationOptions.OpenIdMetadataRefresh ?? BaseConfigurationManager.DefaultAutomaticRefreshInterval;
 
         _ = services.AddAuthentication(options =>
         {
@@ -131,8 +133,8 @@ public static class AspNetExtensions
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.FromMinutes(5),
-                ValidIssuers = validTokenIssuers,
-                ValidAudiences = audiences,
+                ValidIssuers = validationOptions.ValidIssuers,
+                ValidAudiences = validationOptions.Audiences,
                 ValidateIssuerSigningKey = true,
                 RequireSignedTokens = true,
             };
@@ -167,24 +169,24 @@ public static class AspNetExtensions
                     JwtSecurityToken token = new(parts[1]);
                     string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value;
 
-                    if (azureBotServiceTokenHandling && AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
+                    if (validationOptions.AzureBotServiceTokenHandling && AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
                     {
                         // Use the Azure Bot authority for this configuration manager
-                        context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(azureBotServiceOpenIdMetadataUrl, key =>
+                        context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(validationOptions.AzureBotServiceOpenIdMetadataUrl, key =>
                         {
-                            return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
+                            return new ConfigurationManager<OpenIdConnectConfiguration>(validationOptions.AzureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
                             {
-                                AutomaticRefreshInterval = openIdRefreshInterval
+                                AutomaticRefreshInterval = openIdMetadataRefresh
                             };
                         });
                     }
                     else
                     {
-                        context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(openIdMetadataUrl, key =>
+                        context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(validationOptions.OpenIdMetadataUrl, key =>
                         {
-                            return new ConfigurationManager<OpenIdConnectConfiguration>(openIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
+                            return new ConfigurationManager<OpenIdConnectConfiguration>(validationOptions.OpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
                             {
-                                AutomaticRefreshInterval = openIdRefreshInterval
+                                AutomaticRefreshInterval = openIdMetadataRefresh
                             };
                         });
                     }
@@ -194,20 +196,61 @@ public static class AspNetExtensions
 
                 OnTokenValidated = context =>
                 {
-                    logger?.LogDebug("TOKEN Validated");
                     return Task.CompletedTask;
                 },
                 OnForbidden = context =>
                 {
-                    logger?.LogWarning("Forbidden: {m}", context.Result.ToString());
                     return Task.CompletedTask;
                 },
                 OnAuthenticationFailed = context =>
                 {
-                    logger?.LogWarning("Auth Failed {m}", context.Exception.ToString());
                     return Task.CompletedTask;
                 }
             };
         });
+    }
+
+    public class TokenValidationOptions
+    {
+        public IList<string> Audiences { get; set; }
+
+        /// <summary>
+        /// TenantId of the Azure Bot.  Optional but recommended. 
+        /// </summary>
+        public string TenantId { get; set; }
+
+        /// <summary>
+        /// Additional valid issuers.  Optional, in which case the Public Azure Bot Service issuers are used.
+        /// </summary>
+        public IList<string> ValidIssuers { get; set; }
+
+        /// <summary>
+        /// Can be omitted, in which case public Azure Bot Service and Azure Cloud metadata urls are used.
+        /// </summary>
+        public bool IsGov { get; set; } = false;
+
+        /// <summary>
+        /// Azure Bot Service OpenIdMetadataUrl.  Optional, in which case default value depends on IsGov.
+        /// </summary>
+        /// <see cref="AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl"/>
+        /// <see cref="AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl"/>
+        public string AzureBotServiceOpenIdMetadataUrl { get; set; }
+
+        /// <summary>
+        /// Entra OpenIdMetadataUrl.  Optional, in which case default value depends on IsGov.
+        /// </summary>
+        /// <see cref="AuthenticationConstants.PublicOpenIdMetadataUrl"/>
+        /// <see cref="AuthenticationConstants.GovOpenIdMetadataUrl"/>
+        public string OpenIdMetadataUrl { get; set; }
+
+        /// <summary>
+        /// Determines if Azure Bot Service tokens are handled.  Defaults to true and should always be true until Azure Bot Service sends Entra ID token.
+        /// </summary>
+        public bool AzureBotServiceTokenHandling { get; set; } = true;
+
+        /// <summary>
+        /// OpenIdMetadata refresh interval.  Defaults to 12 hours.
+        /// </summary>
+        public TimeSpan? OpenIdMetadataRefresh { get; set; }
     }
 }

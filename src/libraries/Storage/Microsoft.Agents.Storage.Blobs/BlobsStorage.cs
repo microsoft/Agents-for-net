@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
         /// <param name="options">Client options that define the transport pipeline policies for authentication, retries, etc., that are applied to every request.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
-        public BlobsStorage(Uri blobContainerUri, TokenCredential tokenCredential, StorageTransferOptions storageTransferOptions, BlobClientOptions options = default, JsonSerializerOptions jsonSerializerOptions = null)
+        public BlobsStorage(Uri blobContainerUri, TokenCredential tokenCredential, StorageTransferOptions storageTransferOptions = default, BlobClientOptions options = default, JsonSerializerOptions jsonSerializerOptions = null)
         {
             AssertionHelpers.ThrowIfNull(blobContainerUri, nameof(blobContainerUri));
             AssertionHelpers.ThrowIfNull(tokenCredential, nameof(tokenCredential));

@@ -61,7 +61,7 @@ public class StreamingAgent : AgentApplication
     {
         try
         {
-            // Raise an informative update to the calling client,  if the client support StreamingResponses this will apper as a contextual notification. 
+            // Raise an informative update to the calling client,  if the client support StreamingResponses this will appear as a contextual notification. 
             await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Hold on for an awesome poem about Apollo...", cancellationToken);
 
             // Setup system messages and the user request,
