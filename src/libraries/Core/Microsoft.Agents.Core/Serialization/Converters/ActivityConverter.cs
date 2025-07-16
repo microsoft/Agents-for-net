@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             if (propertyName.Equals("channelId", System.StringComparison.OrdinalIgnoreCase))
             {
                 var propertyValue = JsonSerializer.Deserialize<string>(ref reader, options);
-                property.SetValue(value, new ChannelId(propertyValue, ProtocolJsonSerializer.SubChannelSupport));
+                property.SetValue(value, new ChannelId(propertyValue, ProtocolJsonSerializer.ChannelIdIncludesProduct));
                 return;
             }
 

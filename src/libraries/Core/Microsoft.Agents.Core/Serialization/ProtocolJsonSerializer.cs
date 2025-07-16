@@ -18,7 +18,15 @@ namespace Microsoft.Agents.Core.Serialization
         public const string ApplicationJson = "application/json";
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
-        public static bool SubChannelSupport { get; set; } = true;
+
+        /// <summary>
+        /// Provides a way to turn off the {channelId}:{product} notation.  If false,
+        /// ChannelId.ToString() is just the {channelId} value.  However, serialization of the 
+        /// ProductInfo Entity is still accounted for.  ChannelId.SubChannel is still populated
+        /// with the ProductInfo.Id value in any case.
+        /// It is not recommended to set false without guidance.
+        /// </summary>
+        public static bool ChannelIdIncludesProduct { get; set; } = true;
 
         private static readonly object _optionsLock = new object();
 

@@ -85,5 +85,37 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal("TEST", productInfo.Id);
             Assert.Equal("msteams:TEST", activity.ChannelId);
         }
+
+        [Fact]
+        public void FullNotationOffTest()
+        {
+            ProtocolJsonSerializer.ChannelIdIncludesProduct = false;
+
+            // Is M365Copilot?
+            string m365CopilotJson = "{\"channelId\":\"msteams\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"id\":\"COPILOT\",\"type\":\"ProductInfo\"}],\"listenFor\":[],\"textHighlights\":[]}";
+            var activity = ProtocolJsonSerializer.ToObject<IActivity>(m365CopilotJson);
+
+            // This should just be "msteams"
+            Assert.True(Channels.Msteams == activity.ChannelId);
+
+            // Base channel vs subchannel eval
+            Assert.Equal(Channels.Msteams, activity.ChannelId.Channel);
+            Assert.Equal(Channels.M365CopilotSubChannel, activity.ChannelId.SubChannel);
+            Assert.True(activity.ChannelId.IsParentChannel(Channels.Msteams));
+
+            // Serialize back out correctly
+            var json = ProtocolJsonSerializer.ToJson(activity);
+            Assert.Equal(m365CopilotJson, json);
+
+            // Can update ProductInfo from ChannelIds
+            activity.ChannelId.SubChannel = "TEST";
+            activity = ProtocolJsonSerializer.ToObject<IActivity>(ProtocolJsonSerializer.ToJson(activity));
+            var productInfo = activity.GetProductInfoEntity();
+            Assert.NotNull(productInfo);
+            Assert.Equal("TEST", productInfo.Id);
+            Assert.Equal("msteams", activity.ChannelId);
+
+            ProtocolJsonSerializer.ChannelIdIncludesProduct = true;
+        }
     }
 }
