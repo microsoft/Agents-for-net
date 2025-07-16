@@ -87,6 +87,25 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
+        public void SubChannelWithoutEntityTest()
+        {
+            IActivity activity = new Activity()
+            {
+                ChannelId = Channels.M365Copilot
+            };
+
+            var json = ProtocolJsonSerializer.ToJson(activity);
+
+            // Verify has ProductInfo Entity
+            string m365CopilotJson = "{\"channelId\":\"msteams\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[{\"id\":\"COPILOT\",\"type\":\"ProductInfo\"}],\"listenFor\":[],\"textHighlights\":[]}";
+            Assert.Equal(m365CopilotJson, json);
+
+            activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
+            Assert.True(Channels.M365Copilot == activity.ChannelId);
+            Assert.NotNull(activity.GetProductInfoEntity());
+        }
+
+        [Fact]
         public void FullNotationOffTest()
         {
             ProtocolJsonSerializer.ChannelIdIncludesProduct = false;
