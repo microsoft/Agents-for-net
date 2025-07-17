@@ -481,6 +481,10 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(activity.ListenFor);
             Assert.NotNull(activity.TextHighlights);
 
+            Assert.NotEmpty(activity.Entities);
+            Assert.NotNull(activity.GetProductInfoEntity());
+            Assert.Equal("directline:subchannel", activity.ChannelId);
+
             // validate .value, .channeldata and the activity additional properties are present
             Assert.NotNull(activity.Value);
             var valueTestObject = ProtocolJsonSerializer.ToObject<TestObjectClass>(activity.Value);
