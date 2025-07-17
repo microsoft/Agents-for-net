@@ -55,8 +55,8 @@
       "supportsTts": true
     },
     {
-      "type": "subChannelInfo",
-      "channelId": "subchannel"
+      "type": "ProductInfo",
+      "id": "subchannel"
     }
   ],
   "channelData": {
