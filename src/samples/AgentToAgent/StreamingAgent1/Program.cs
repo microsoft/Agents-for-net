@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.AspNetAuthentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -35,21 +36,30 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Configure the HTTP request pipeline.
 
-var app = builder.Build();
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
-// For the AgentResponseController to receive responses from Agent2
-app.UseRouting();
-app.MapControllers();
+WebApplication app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    incomingRoute.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
@@ -57,4 +67,3 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
-

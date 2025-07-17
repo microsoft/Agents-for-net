@@ -4,11 +4,8 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -22,7 +19,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace FullAuthentication;
+namespace Microsoft.Agents.AspNetAuthentication;
 
 public static class AspNetExtensions
 {

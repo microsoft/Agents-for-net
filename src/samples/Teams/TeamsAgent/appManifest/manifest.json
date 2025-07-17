@@ -1,9 +1,8 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.20",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.teams",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",

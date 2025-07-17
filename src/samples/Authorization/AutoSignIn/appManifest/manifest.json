@@ -1,9 +1,8 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.oauth",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -23,6 +22,14 @@
     "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities built with the AgentSDK"
   },
   "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "${{AAD_APP_CLIENT_ID}}",
+        "type": "bot"
+      }
+    ]
+  },
   "bots": [
     {
       "botId": "${{AAD_APP_CLIENT_ID}}",

@@ -1,9 +1,8 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.attachments",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -15,14 +14,22 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "AgentSDK Handling Attachments",
-    "full": "AgentSDK Handling Attachments"
+    "short": "AgentSDK EmptyAgent",
+    "full": "AgentSDK EmptyAgent"
   },
   "description": {
-    "short": "Sample demonstrating AgentSDK and attachments handling",
-    "full": "Sample demonstrating AgentSDK and attachments handling"
+    "short": "Sample demonstrating a simple Agent that echos back user messages.",
+    "full": "Sample demonstrating AgentSDK + Teams to demonstrate a simple Agent that echos back user messages."
   },
   "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "${{AAD_APP_CLIENT_ID}}",
+        "type": "bot"
+      }
+    ]
+  },
   "bots": [
     {
       "botId": "${{AAD_APP_CLIENT_ID}}",

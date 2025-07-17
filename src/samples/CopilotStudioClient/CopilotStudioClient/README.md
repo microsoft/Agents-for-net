@@ -42,6 +42,7 @@ This step will require permissions to Create application identities in your Azur
         1. In the permissions list choose `Delegated Permissions`, `CopilotStudio` and Check `CopilotStudio.Copilots.Invoke`
         1. Click `Add Permissions`
     1. (Optional) Click `Grant Admin consent for copilotsdk`
+    1. On the Authentication page, under `Advanced settings`, make sure the `Enable the following mobile and desktop flows` toggle is set to `Yes`.
     1. Close Azure Portal
 
 > [!TIP]
@@ -57,14 +58,11 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 ```json
   "CopilotStudioClientSettings": {
     "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-    "SchemaName": "", // Schema Name of the Copilot to use. See the note at the bottom of this section for help finding the Schema Name.
+    "SchemaName": "", // Schema Name of the Copilot to use
     "TenantId": "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
     "AppClientId": "" // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
   }
 ```
-
-> [!TIP]
-> To find your agent's schema name, navigate to your agent's settings and under `Advanced`, expand `Metadata` and you will see your agent's `Environment ID`, `Tenant ID`, `Agent app ID` and `Schema name`. Copy the value of `Schema name` and use that for `SchemaName` in your `appSettings.json` or `launchSettings.json` file.
 
 ## Create an Application Registration in Entra ID - Service Principal Login
 
@@ -107,12 +105,12 @@ This step will require permissions to Create application identities in your Azur
 With the above information, you can now run the client `CopilostStudioClientSample`.
 
 1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
-1. Configure the placeholder values for the various keys based on what was recorded during the setup phase.
+1. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
 
 ```json
   "CopilotStudioClientSettings": {
     "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-    "SchemaName": "", // Schema Name of the Copilot to use. See the note at the bottom of this section for help finding the Schema Name.
+    "SchemaName": "", // Schema Name of the Copilot to use
     "TenantId": "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
     "UseS2SConnection": true,
     "AppClientId": "" // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
@@ -120,12 +118,11 @@ With the above information, you can now run the client `CopilostStudioClientSamp
   }
 ```
 
+
+
 3. Run the CopilotStudioClientSample.exe program.
 
 This should challenge you for login in a new browser window or tab and once completed, connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
-
-> [!TIP]
-> To find your agent's schema name, navigate to your agent's settings and under `Advanced`, expand `Metadata` and you will see your agent's `Environment ID`, `Tenant ID`, `Agent app ID` and `Schema name`. Copy the value of `Schema name` and use that for `SchemaName` in your `appSettings.json` or `launchSettings.json` file.
 
 ## Authentication
 

@@ -1,9 +1,8 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
-  "manifestVersion": "devPreview",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.0",
   "id": "${{AAD_APP_CLIENT_ID}}",
-  "packageName": "com.microsoft.agents.attachments",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -15,12 +14,12 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "AgentSDK Handling Attachments",
-    "full": "AgentSDK Handling Attachments"
+    "short": "User Authorization (OAuth+OBO)",
+    "full": "User Authorization (OAuth+OBO)"
   },
   "description": {
-    "short": "Sample demonstrating AgentSDK and attachments handling",
-    "full": "Sample demonstrating AgentSDK and attachments handling"
+    "short": "Sample demonstrating Azure Bot Services user authorization with using a Agent.",
+    "full": "This sample demonstrates how to integrate with Microsoft Copilot Studio using OBO and CopilotStudioClient."
   },
   "accentColor": "#FFFFFF",
   "copilotAgents": {
@@ -46,6 +45,11 @@
     "messageTeamMembers"
   ],
   "validDomains": [
+    "token.botframework.com",
     "<<BOT_DOMAIN>>"
-  ]
+  ],
+  "webApplicationInfo": {
+    "id": "${{AAD_APP_CLIENT_ID}}",
+    "resource": "api://botid-${{AAD_APP_CLIENT_ID}}"
+  }
 }
