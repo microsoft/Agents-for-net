@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Core.Errors
                 string.IsNullOrEmpty(generalEx.HelpLink) ? "Not Provided" : generalEx.HelpLink.ToString().Trim(),
                 generalEx.HResult == 0 ? null : generalEx.HResult,
                 string.IsNullOrEmpty(generalEx.StackTrace) ? "Not Provided" : generalEx.StackTrace.ToString().Trim()
-                , sw, level);
+                , sw, level, includeStackTrace);
 
             lastErrorMsg.Append(string.IsNullOrEmpty(localErrorMessage) ? "Not Provided" : localErrorMessage.ToString().Trim());
 

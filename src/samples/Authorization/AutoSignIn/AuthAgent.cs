@@ -132,7 +132,7 @@ public class AuthAgent : AgentApplication
             return;
         }
 
-        var meInfo = $"Name: {displayName}\r\nJob Title: {graphInfo["jobTitle"].GetValue<string>()}\r\nEmail: {graphInfo["mail"].GetValue<string>()}";
+        var meInfo = $"Name: {displayName}\r\nJob Title: {graphInfo["jobTitle"]?.GetValue<string>()}\r\nEmail: {graphInfo["mail"]?.GetValue<string>()}";
         await turnContext.SendActivityAsync(meInfo, cancellationToken: cancellationToken);
     }
 
