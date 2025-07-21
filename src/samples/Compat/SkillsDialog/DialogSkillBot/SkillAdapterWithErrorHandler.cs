@@ -23,7 +23,7 @@ namespace DialogSkillBot
         public SkillAdapterWithErrorHandler(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IAgentHttpAdapter> logger,
+            ILogger<CloudAdapter> logger,
             IStorage storage,
             ConversationState conversationState,
             IAgentHost agentHost,
