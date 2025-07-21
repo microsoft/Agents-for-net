@@ -1,24 +1,35 @@
-<Project xmlns='http://schemas.microsoft.com/developer/msbuild/2003' ToolsVersion="15.0">
-  <Target Name="SetEnviromentVars" BeforeTargets="PreBuildEvent">
-    <Message Importance="normal" Text="Setting ReproRoot and BuildConfiguration Environment varables for use during build" />
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+
+  <!-- Target to set environment variables before PreBuildEvent -->
+  <Target Name="SetEnvironmentVars" BeforeTargets="PreBuildEvent">
+    <Message Importance="normal" Text="Setting RepoRootDirectory and BuildConfiguration environment variables for use during build." />
     <SetEnvironmentVar EnvironmentVarName="BuildConfiguration" EnvironmentVarValue="$(Configuration)" />
     <SetEnvironmentVar EnvironmentVarName="RepoRootDirectory" EnvironmentVarValue="$(RepoRoot)" />
   </Target>
 
-  <!-- Adds a environment variable and value to the current process execution --> 
-  <UsingTask TaskName="SetEnvironmentVar" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+  <!-- Custom task to add environment variables to the current process execution -->
+  <UsingTask TaskName="SetEnvironmentVar"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
-      <EnvironmentVarName Required="true" />
-      <EnvironmentVarValue Required="true" />
+      <EnvironmentVarName ParameterType="System.String" Required="true" />
+      <EnvironmentVarValue ParameterType="System.String" Required="true" />
     </ParameterGroup>
     <Task>
-      <Using Namespace="System"/>
-      <Using Namespace="System.IO"/>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
-Log.LogMessage($"{EnvironmentVarName} = {EnvironmentVarValue}");
-Environment.SetEnvironmentVariable(EnvironmentVarName, EnvironmentVarValue, EnvironmentVariableTarget.Process);
-]]>
+          if (!string.IsNullOrWhiteSpace(EnvironmentVarName))
+          {
+              Log.LogMessage(MessageImportance.High, $"[SetEnv] {EnvironmentVarName} = {EnvironmentVarValue}");
+              Environment.SetEnvironmentVariable(EnvironmentVarName, EnvironmentVarValue, EnvironmentVariableTarget.Process);
+          }
+          else
+          {
+              Log.LogWarning("[SetEnv] Skipped setting environment variable due to missing name.");
+          }
+        ]]>
       </Code>
     </Task>
   </UsingTask>
