@@ -962,7 +962,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
         private static DefaultHttpContext CreateHttpContext(Activity activity = null)
         {
-            var content = activity == null ? "" : JsonSerializer.Serialize(activity);
+            var content = activity == null ? "" : ProtocolJsonSerializer.ToJson(activity);
             var context = new DefaultHttpContext();
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(content));
             context.Request.Method = HttpMethods.Post;

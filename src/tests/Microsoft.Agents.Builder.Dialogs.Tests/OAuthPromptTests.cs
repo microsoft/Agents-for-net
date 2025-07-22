@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
 
                 // Add a magic code to the adapter
-                adapter.AddUserToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
             })
             .Send(MagicCode)
             .AssertReply("Logged in.")
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             AgentCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
                 // Add a magic code to the adapter preemptively so that we can test if the message that triggers BeginDialogAsync uses magic code detection
-                adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId, turnContext.Activity.From.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId.Channel, turnContext.Activity.From.Id, Token, MagicCode);
 
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
@@ -320,7 +320,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
 
                 // Add an exchangable token to the adapter
-                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
+                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, ExchangeToken, Token);
             })
             .Send(new Activity()
             {
@@ -950,10 +950,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
 
                 // Add a magic code to the adapter
-                adapter.AddUserToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
 
                 // Add an exchangable token to the adapter
-                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
+                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, ExchangeToken, Token);
             })
             .Delay(500)
             .Send(oauthPromptActivity);
@@ -979,7 +979,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         private IActivity CreateEventResponse(TestAdapter adapter, IActivity activity, string connectionName, string token)
         {
             // add the token to the TestAdapter
-            adapter.AddUserToken(connectionName, activity.ChannelId, activity.Recipient.Id, token);
+            adapter.AddUserToken(connectionName, activity.ChannelId.Channel, activity.Recipient.Id, token);
 
             // send an event TokenResponse activity to the botCallback handler
             var eventActivity = activity.CreateReply();

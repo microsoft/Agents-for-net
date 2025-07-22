@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// choices for the channel to display, or the title of any choice is too long.
         /// <para>If the algorithm decides to use a list, for 3 or fewer choices with short titles it will use an inline
         /// list; otherwise, a numbered list.</para></remarks>
-        public static IActivity ForChannel(string channelId, IList<Choice> list, string text = null, string speak = null, ChoiceFactoryOptions options = null, string conversationType = default, IList<string> toList = default)
+        public static IActivity ForChannel(ChannelId channelId, IList<Choice> list, string text = null, string speak = null, ChoiceFactoryOptions options = null, string conversationType = default, IList<string> toList = default)
         {
             channelId ??= string.Empty;
             list ??= new List<Choice>();

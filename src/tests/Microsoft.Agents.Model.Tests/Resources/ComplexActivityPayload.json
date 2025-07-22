@@ -53,6 +53,10 @@
       "requiresBotState": true,
       "supportsListening": true,
       "supportsTts": true
+    },
+    {
+      "type": "ProductInfo",
+      "id": "subchannel"
     }
   ],
   "channelData": {
