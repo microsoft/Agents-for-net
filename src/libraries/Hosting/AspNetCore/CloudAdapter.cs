@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         // Queue the activity to be processed by the ActivityTaskQueue, and stop ChannelResponseQueue when the
                         // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
                         {
                             invokeResponse = response;
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         // Queue the activity to be processed by the ActivityBackgroundService.  There is no response body in
                         // this case and the request is handled in the background.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, agentType: agent.GetType(), headers: httpRequest.Headers);
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
