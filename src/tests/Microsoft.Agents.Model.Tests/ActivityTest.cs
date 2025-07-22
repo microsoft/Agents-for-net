@@ -127,15 +127,17 @@ namespace Microsoft.Agents.Model.Tests
                     Id = "cr_def",
                 },
                 ActivityId = "cr_12345",
-                Locale = "en-us"
+                Locale = "en-us",
+                DeliveryMode = DeliveryModes.ExpectReplies,
             };
 
             var activityToSend = activity.ApplyConversationReference(conversationReference, true);
+            conversationReference = activityToSend.GetConversationReference();
 
             Assert.Equal(conversationReference.ChannelId, activity.ChannelId);
             Assert.Equal(conversationReference.ServiceUrl, activity.ServiceUrl);
             Assert.Equal(conversationReference.Conversation.Id, activity.Conversation.Id);
-
+            Assert.Equal(conversationReference.DeliveryMode, activity.DeliveryMode);
             Assert.Equal(conversationReference.User.Id, activity.From.Id);
             Assert.Equal(conversationReference.Agent.Id, activity.Recipient.Id);
             Assert.Equal(conversationReference.ActivityId, activity.Id);

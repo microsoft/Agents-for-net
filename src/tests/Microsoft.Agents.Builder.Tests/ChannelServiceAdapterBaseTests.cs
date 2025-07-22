@@ -21,7 +21,8 @@ namespace Microsoft.Agents.Builder.Tests
         private readonly ConversationReference _reference = new ConversationReference
         {
             Conversation = new ConversationAccount(id: "conversation-id"),
-            ActivityId = "activity-id"
+            ActivityId = "activity-id",
+            ServiceUrl = "http://mybot.com"
         };
 
         private readonly Activity _activity = new Activity

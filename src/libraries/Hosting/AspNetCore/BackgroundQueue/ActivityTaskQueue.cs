@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Action<InvokeResponse> onComplete = null, IHeaderDictionary headers = null)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agent = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);

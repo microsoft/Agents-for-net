@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplTests.DirectToEngine</ComponentAreaName>
+		<ComponentAreaName>CplTests.AspNetCore</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
@@ -27,6 +27,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
       <ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
+      <ProjectReference Include="..\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
