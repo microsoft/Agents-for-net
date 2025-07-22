@@ -11,7 +11,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace TeamsConversationSsoQuickstart.Dialogs
+namespace BotConversationSsoQuickstart.Dialogs
 {
     public class MainDialog : LogoutDialog
     {

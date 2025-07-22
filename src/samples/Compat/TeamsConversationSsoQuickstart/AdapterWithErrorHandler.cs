@@ -11,7 +11,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Agents.Builder.Compat;
 
-namespace TeamsConversationSsoQuickstart
+namespace BotConversationSsoQuickstart
 {
     public class AdapterWithErrorHandler : CloudAdapter
     {

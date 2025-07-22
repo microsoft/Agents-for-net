@@ -7,7 +7,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
 
-namespace TeamsConversationSsoQuickstart.Dialogs
+namespace BotConversationSsoQuickstart.Dialogs
 {
     public class LogoutDialog : ComponentDialog
     {

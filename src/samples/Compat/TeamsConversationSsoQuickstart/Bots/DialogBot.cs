@@ -11,7 +11,7 @@ using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder;
 
-namespace TeamsConversationSsoQuickstart.Bots
+namespace BotConversationSsoQuickstart.Bots
 {
     // This IBot implementation can run any type of Dialog. The use of type parameterization is to allows multiple different bots
     // to be run at different endpoints within the same project. This can be achieved by defining distinct Controller types

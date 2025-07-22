@@ -2,20 +2,10 @@
 
 This samples demonstrates a Bot Framework SDK bot migrating to Agents SDK.
 
-This sample demonstrates how to integrate Azure AD authentication in Microsoft Teams using a bot with Single Sign-On (SSO) capabilities. Built with the Co-Pilot SDK, it showcases OAuth SSO, Adaptive Cards, and Microsoft Graph API interactions. The sample includes reusable components, like the TeamsActivityHandler, for handling Invoke Activity in Teams. It provides a step-by-step setup guide to authenticate users with identity providers such as Microsoft Entra ID, GitHub, and others.
-
-This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/microsoft/agents), it shows how to get started with SSO in a bot for Microsoft Teams.
-
-The focus of this sample is how to use the Microsoft 365 Agents SDK support for OAuth SSO in your bot. Teams behaves slightly differently than other channels in this regard. Specifically an Invoke Activity is sent to the bot rather than the Event Activity used by other channels. _This Invoke Activity must be forwarded to the dialog if the OAuthPrompt is being used._ This is done by subclassing the ActivityHandler and this sample includes a reusable TeamsActivityHandler. This class is a candidate for future inclusion in the Agents SDK.
-
-The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authenticates users to various identity providers such as Microsoft Entra ID, GitHub, Uber, etc. The OAuth token is then used to make basic Microsoft Graph queries.
-
 ## Included Features
 * Teams SSO
 * Adaptive Card
 * Graph API
-
-![Teams Conversation Bot SSO Sample](Images/BotConversationSsoQuickStart.gif)
 
 ## Prerequisites
 

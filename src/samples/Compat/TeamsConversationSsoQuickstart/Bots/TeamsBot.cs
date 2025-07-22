@@ -10,7 +10,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
-namespace TeamsConversationSsoQuickstart.Bots
+namespace BotConversationSsoQuickstart.Bots
 {
     // This bot is derived (view DialogBot<T>) from the TeamsActivityHandler class currently included as part of this sample.
     public class TeamsBot<T> : DialogBot<T> where T : Dialog
