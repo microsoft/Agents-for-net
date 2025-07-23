@@ -132,8 +132,16 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 202:
                     {
 #if !NETSTANDARD
+                        if (httpResponse.Content.ReadAsStream(cancellationToken).Length == 0)
+                        {
+                            return new ResourceResponse() { Id = string.Empty };
+                        }
                         return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
+                        if (httpResponse.Content.ReadAsStringAsync().Result.Length == 0)
+                        {
+                            return new ResourceResponse() { Id = string.Empty };
+                        }
                         return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
 #endif
                     }

@@ -61,4 +61,5 @@ else
     app.Urls.Add($"http://localhost:3978");
 }
 
+app.UseStaticFiles();
 app.Run();
