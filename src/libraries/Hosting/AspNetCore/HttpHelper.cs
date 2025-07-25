@@ -76,15 +76,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static ClaimsIdentity GetIdentity(HttpRequest httpRequest)
+        /// <summary>
+        /// Get the <see cref="ClaimsIdentity"/> from the <see cref="HttpRequest"/>.
+        /// </summary>
+        /// <param name="request">The HttpRequest.</param>
+        /// <returns>The ClaimsIdentity from the request.</returns>
+        public static ClaimsIdentity GetClaimsIdentity(HttpRequest request)
         {
-            var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
-            if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+            // If Auth is not configured, we still need the claims from the JWT token.
+            // Currently, the stack does rely on certain Claims. If the Bearer token
+            // was sent, we can get them from there. The JWT token is NOT validated though.
+
+            var claimsIdentity = request.HttpContext.User?.Identity as ClaimsIdentity;
+
+            if (claimsIdentity != null && !claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
             {
-                // If Auth is not configured, we still need the claims from the JWT token.
-                // Currently, the stack does rely on certain Claims.  If the Bearer token
-                // was sent, we can get them from there.  The JWT token is NOT validated though.
-                var auth = httpRequest.Headers.Authorization;
+                var auth = request.Headers.Authorization;
                 if (auth.Count != 0)
                 {
                     var authHeaderValue = auth.First();

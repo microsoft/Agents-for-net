@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
@@ -16,7 +17,6 @@ using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -38,8 +38,7 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
-        private DateTimeOffset _lastReadWorkloadIdentity;
-        private string _lastJwtWorkLoadIdentity = null;
+        private ClientAssertionProviderBase _clientAssertion;
 
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
@@ -69,6 +68,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
+            var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
+            return result.AccessToken;
+        }
+
+        internal async Task<AuthenticationResult> InternalGetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
+        {
             if (!Uri.IsWellFormedUriString(resourceUrl, UriKind.RelativeOrAbsolute))
             {
                 throw new ArgumentException("Invalid instance URL");
@@ -97,7 +102,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
-                        return accessToken;
+                        return authResultFromCache.MsalAuthResult;
                     }
                 }
                 else
@@ -153,9 +158,13 @@ namespace Microsoft.Agents.Authentication.Msal
                 _cacheList.TryAdd(instanceUri, authResultPayload);
             }
 
-            return authResultPayload.MsalAuthResult.AccessToken;
+            return authResultPayload.MsalAuthResult;
         }
 
+        public TokenCredential GetTokenCredential()
+        {
+            return new MsalTokenCredential(this);
+        }
 
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
@@ -232,24 +241,17 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
                 {
-                    async Task<String> FetchExternalTokenAsync()
-                    {
-                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
-                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
-                    }
-                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId, null, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
                 {
-                    cAppBuilder.WithClientAssertion(() =>
-                    {
-                        // read only once every 5 minutes, less heavy for I/O
-                        if (_lastJwtWorkLoadIdentity != null && DateTimeOffset.UtcNow.Subtract(_lastReadWorkloadIdentity) <= TimeSpan.FromMinutes(5)) 
-                            return _lastJwtWorkLoadIdentity;
-                        _lastReadWorkloadIdentity = DateTimeOffset.UtcNow;
-                        _lastJwtWorkLoadIdentity = File.ReadAllText(_connectionSettings.FederatedTokenFile);
-                        return _lastJwtWorkLoadIdentity;
-                    });
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
                 else
                 {
