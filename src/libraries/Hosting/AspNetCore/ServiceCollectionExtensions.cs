@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -49,8 +49,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAgentCore<TAdapter>(builder);
 
-            // Add the Agent 
-            builder.Services.AddTransient<IAgent, TAgent>();
+            // Add the IAgent 
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IAgent)))
+            {
+                // There can only be one IAgent.
+                builder.Services.AddTransient<IAgent, TAgent>();
+            }
+
+            // Add the TAgent (required for multi agent registrations)
+            if (!builder.Services.Any(x => x.ServiceType == typeof(TAgent)))
+            {
+                // There can only be one TAgent.
+                builder.Services.AddTransient<TAgent>();
+            }
 
             return builder;
         }
