@@ -69,12 +69,14 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// HistoryDisclosed event
         /// </summary>
         public const string HistoryDisclosed = "historyDisclosed";
+
         /// <summary>
-        /// HistoryDisclosed event
+        /// ChannelShared event
         /// </summary>
         public const string ChannelShared = "channelShared";
+
         /// <summary>
-        /// HistoryDisclosed event
+        /// ChannelUnshared event
         /// </summary>
         public const string ChannelUnshared = "channelUnshared";
     }
