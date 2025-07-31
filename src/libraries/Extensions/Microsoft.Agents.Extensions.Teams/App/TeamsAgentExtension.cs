@@ -89,6 +89,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 case TeamsConversationUpdateEvents.ChannelDeleted:
                 case TeamsConversationUpdateEvents.ChannelRenamed:
                 case TeamsConversationUpdateEvents.ChannelRestored:
+                case TeamsConversationUpdateEvents.ChannelShared:
+                case TeamsConversationUpdateEvents.ChannelUnshared:
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
