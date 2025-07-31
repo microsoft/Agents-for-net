@@ -89,9 +89,10 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
+            //TBD: `data` is InvokeResponse.  Probably should be an artifact
             //TBD:  Not convinced "end of turn" is same as TaskState.Completed.
-            var final = A2AConverter.StatusUpdateFromActivity(_contextId, _taskId, TaskState.Completed, isFinal: true);
-            var task = await _taskStore.UpdateTaskAsync(final, cancellationToken).ConfigureAwait(false);
+            var statusUpdate = A2AConverter.StatusUpdateFromActivity(_contextId, _taskId, TaskState.Completed, isFinal: true);
+            var task = await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 
             await WriteEvent(httpResponse, task.Kind, task, cancellationToken).ConfigureAwait(false);
         }

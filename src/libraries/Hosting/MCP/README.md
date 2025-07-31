@@ -1,2 +1,0 @@
-# Microsoft.Agents.Hosting.MCP
-

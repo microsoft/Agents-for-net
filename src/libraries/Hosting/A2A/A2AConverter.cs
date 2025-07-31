@@ -167,6 +167,7 @@ namespace Microsoft.Agents.Hosting.A2A
             var contextId = request.Message.ContextId ?? Guid.NewGuid().ToString("N");
             var taskId = request.Message.TaskId ?? Guid.NewGuid().ToString("N");
             var activity = CreateActivity(contextId, channelId, userId, request.Message.Parts, true, isStreaming);
+            activity.RequestId = jsonRpcPayload.Id.ToString();
             activity.ChannelData = jsonRpcPayload;
 
             var message = request.Message with

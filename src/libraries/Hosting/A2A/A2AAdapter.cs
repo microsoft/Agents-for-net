@@ -2,20 +2,22 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
-using System.Threading.Tasks;
-using System.Threading;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Validation;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
 using Microsoft.Agents.Hosting.A2A.Protocol;
-using ModelContextProtocol.Protocol;
-using System.Net;
-using System.Text;
-using System.Collections.Generic;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using ModelContextProtocol.Protocol;
+using System.Collections.Generic;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A
 {
@@ -24,12 +26,14 @@ namespace Microsoft.Agents.Hosting.A2A
         private readonly TaskStore _taskStore;
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly ChannelResponseQueue _responseQueue;
+        private readonly ILogger<A2AAdapter> _logger;
 
-        public A2AAdapter(IActivityTaskQueue activityTaskQueue, IStorage storage)
+        public A2AAdapter(IActivityTaskQueue activityTaskQueue, IStorage storage, ILogger<A2AAdapter> logger = null) : base(logger)
         {
+            _logger = logger ?? NullLogger<A2AAdapter>.Instance;
             _activityTaskQueue = activityTaskQueue;
             _taskStore = new TaskStore(storage);
-            _responseQueue = new ChannelResponseQueue();
+            _responseQueue = new ChannelResponseQueue(_logger);
         }
 
         public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
@@ -63,7 +67,13 @@ namespace Microsoft.Agents.Hosting.A2A
                 {
                     var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: true);
 
-                    // Record incoming Message
+                    // Turn Begin
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
+                    }
+
+                    // Record incoming Message for the Task
                     if (activity.IsType(ActivityTypes.Message) && message != null)
                     {
                         await _taskStore.CreateOrUpdateTaskAsync(contextId, taskId, TaskState.Unknown, cancellationToken).ConfigureAwait(false);
@@ -72,11 +82,17 @@ namespace Microsoft.Agents.Hosting.A2A
 
                     await ProcessMessageStreamAsync(
                         activity,
-                        HttpHelper.GetIdentity(httpRequest),
+                        HttpHelper.GetClaimsIdentity(httpRequest),
                         httpResponse,
                         agent,
                         new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId),
                         cancellationToken).ConfigureAwait(false);
+
+                    // Turn done
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Turn End: RequestId={RequestId}", activity.RequestId);
+                    }
                 }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
                 {
@@ -131,18 +147,20 @@ namespace Microsoft.Agents.Hosting.A2A
 
             InvokeResponse invokeResponse = null;
 
+            _responseQueue.StartHandlerForRequest(activity.RequestId);
             await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
             _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
             {
-                _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
                 invokeResponse = response;
+                _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                return Task.CompletedTask;
             });
 
             // block until turn is complete
-            await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+            await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
             {
                 await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
@@ -171,7 +189,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            await _responseQueue.SendActivitiesAsync(turnContext.Activity.Conversation.Id, activities, cancellationToken);
+            await _responseQueue.SendActivitiesAsync(turnContext.Activity.RequestId, activities, cancellationToken);
             return [];
         }
     }

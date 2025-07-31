@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Agents.Hosting.MCP;
 using A2AAgent;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -35,9 +34,6 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Add the A2A adapter to handle A2A requests
 builder.Services.AddA2AAdapter();
 
-// Add the MCP adapter to handle MCP requests
-builder.Services.AddMCPAdapter();
-
 WebApplication app = builder.Build();
 
 
@@ -51,9 +47,6 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
 
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2A(requireAuth: !app.Environment.IsDevelopment());
-
-// Map MCP endpoints.  By default MCP will respond on '/mcp'.
-app.MapMCP(requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {
