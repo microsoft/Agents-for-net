@@ -76,9 +76,9 @@ public class AttachmentsAgent : AgentApplication
     }
 
     // Given the input from the message, create the response.
-    private static async Task<IActivity> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private static async Task<IActivity?> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        IActivity reply;
+        IActivity? reply;
 
         if (turnState.Temp.InputFiles.Any())
         {
