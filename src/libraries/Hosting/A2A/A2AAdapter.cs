@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ModelContextProtocol.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
@@ -137,6 +138,13 @@ namespace Microsoft.Agents.Hosting.A2A
             await httpResponse.Body.FlushAsync(cancellationToken);
         }
 
+        public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        {
+            var context = new TurnContext(this, activity, claimsIdentity);
+            await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+
         private async Task ProcessMessageStreamAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, A2AStreamedResponseWriter writer, CancellationToken cancellationToken = default)
         {
             if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
@@ -152,7 +160,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
             // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
             // turn is done.
-            _activityTaskQueue.QueueBackgroundActivity(identity, activity, onComplete: (response) =>
+            _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: (response) =>
             {
                 invokeResponse = response;
                 _responseQueue.CompleteHandlerForRequest(activity.RequestId);
