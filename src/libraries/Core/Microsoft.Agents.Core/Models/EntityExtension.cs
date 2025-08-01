@@ -169,6 +169,16 @@ namespace Microsoft.Agents.Core.Models
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
         }
 
+        public static AIEntity GetAIEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.AICitation, StringComparison.OrdinalIgnoreCase)) as AIEntity;
+        }
+
         public static ActivityTreatment GetActivityTreatmentEntity(this IActivity activity)
         {
             if (activity.Entities == null || activity.Entities.Count == 0)
