@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using ModelContextProtocol.Protocol;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Microsoft.Agents.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.A2A.JsonRpc;
 
 namespace Microsoft.Agents.Hosting.A2A
 {

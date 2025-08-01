@@ -3,9 +3,9 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using Microsoft.AspNetCore.Http;
-using ModelContextProtocol.Protocol;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A
 {
-    public class A2AConverter
+    internal class A2AConverter
     {
         private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
         private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> _schemas = [];
@@ -46,11 +46,11 @@ namespace Microsoft.Agents.Hosting.A2A
             {
                 ArgumentNullException.ThrowIfNull(request);
 
-                using var memoryStream = new MemoryStream();
-                await request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-                memoryStream.Seek(0, SeekOrigin.Begin);
+                //using var memoryStream = new MemoryStream();
+                //await request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
+                //memoryStream.Seek(0, SeekOrigin.Begin);
 
-                return ProtocolJsonSerializer.ToObject<T>(memoryStream);
+                return await JsonSerializer.DeserializeAsync<T>(request.Body, s_SerializerOptions);
             }
             catch (JsonException)
             {
