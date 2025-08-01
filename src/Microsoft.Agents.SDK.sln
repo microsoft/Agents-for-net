@@ -137,6 +137,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamsAgent", "samples\Teams
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiAgent", "samples\MultiAgent\MultiAgent.csproj", "{A895CA1A-DA20-E508-FB57-2AFA0F9457FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Hosting.MCP", "libraries\Hosting\MCP\Microsoft.Agents.Hosting.MCP.csproj", "{115C888C-AD89-743C-B6A7-9A9BF48050D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -759,6 +761,18 @@ Global
 		{A895CA1A-DA20-E508-FB57-2AFA0F9457FE}.Release|x64.Build.0 = Release|Any CPU
 		{A895CA1A-DA20-E508-FB57-2AFA0F9457FE}.Release|x86.ActiveCfg = Release|Any CPU
 		{A895CA1A-DA20-E508-FB57-2AFA0F9457FE}.Release|x86.Build.0 = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|x64.Build.0 = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Debug|x86.Build.0 = Debug|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|x64.ActiveCfg = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|x64.Build.0 = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|x86.ActiveCfg = Release|Any CPU
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -828,6 +842,7 @@ Global
 		{112E7BB8-2368-4061-90DC-3A8D6C7A43E6} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{D6410977-B795-C315-CC94-C2482E84BB4A} = {674A812C-7287-4883-97F9-697D83750648}
 		{A895CA1A-DA20-E508-FB57-2AFA0F9457FE} = {674A812C-7287-4883-97F9-697D83750648}
+		{115C888C-AD89-743C-B6A7-9A9BF48050D7} = {C0F4149C-BB92-423D-A8E2-855448E3A0C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
