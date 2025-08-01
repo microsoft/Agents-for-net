@@ -6,8 +6,6 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using Microsoft.AspNetCore.Http;
 using ModelContextProtocol.Protocol;
-using Newtonsoft.Json.Schema.Generation;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,6 +16,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Schema;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -120,33 +119,19 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public static IReadOnlyDictionary<string, object> ToMetadata(Type dataType, string contentType)
         {
-            JSchemaGenerator generator = new();
-            generator.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            generator.DefaultRequired = Newtonsoft.Json.Required.Default;
-            generator.SchemaIdGenerationHandling = SchemaIdGenerationHandling.None;
-
-            var schema = JsonSerializer.Deserialize<Dictionary<string, JsonNode>>(generator.Generate(dataType).ToString());
-            schema.Remove("definitions");
-            if (schema.TryGetValue("properties", out var properties))
+            JsonSchemaExporterOptions exporterOptions = new()
             {
-                // skip Core Model additional properties
-                var jsonObject = properties.AsObject();
-                jsonObject.Remove("properties");
-                jsonObject.Remove("$type");
-                jsonObject.Remove("$typeAssembly");
-            }
+                TreatNullObliviousAsNonNullable = true,
+            };
+
+            JsonNode schema = s_SerializerOptions.GetJsonSchemaAsNode(dataType, exporterOptions);
 
             return new Dictionary<string, object>
             {
                 { "mimeType", contentType},
                 { "type", "object" },
                 {
-                    "schema",
-                    new Dictionary<string, object> 
-                    {
-                        { "type", "object" },
-                        { "properties", schema["properties"] } 
-                    }
+                    "schema", schema
                 }
             };
         }

@@ -4,7 +4,7 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplHostingA2A</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
-		<TargetFrameworks>net9.0</TargetFrameworks>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
@@ -26,7 +26,6 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="ModelContextProtocol" />
 		<PackageReference Include="ModelContextProtocol.AspNetCore" />
-		<PackageReference Include="Newtonsoft.Json.Schema" />
 	</ItemGroup>
 
 	<ItemGroup>
