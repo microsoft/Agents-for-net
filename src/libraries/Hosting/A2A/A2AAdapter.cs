@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Hosting.A2A
                     // Turn Begin
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
-                        _logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
+                        _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
                     }
 
                     // Record incoming Message for the Task
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Hosting.A2A
                         HttpHelper.GetClaimsIdentity(httpRequest),
                         httpResponse,
                         agent,
-                        new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId),
+                        new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId, _logger),
                         cancellationToken).ConfigureAwait(false);
 
                     // Turn done

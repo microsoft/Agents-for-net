@@ -5,8 +5,9 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace A2AAgent;
 
@@ -16,6 +17,7 @@ public class MyAgent : AgentApplication
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnMessage("-stream", OnStreamAsync);
+        OnMessage("-multi", OnMultiTurnAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -47,7 +49,41 @@ public class MyAgent : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
+        if (multi != null)
+        {
+            await OnMultiTurnAsync(turnContext, turnState, cancellationToken);
+            return;
+        }
+
         var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}");
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
+
+    private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
+        multi.Messages.Add(turnContext.Activity.Text);
+
+        if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var eoc = new Activity()
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Code = EndOfConversationCodes.CompletedSuccessfully,
+                Value = multi
+            };
+            await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
+            await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
+        }
+    }
+}
+
+class MultiResult
+{
+    public List<string> Messages { get; set; } = [];
 }

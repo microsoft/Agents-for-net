@@ -10,7 +10,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -56,6 +55,11 @@ namespace Microsoft.Agents.Hosting.A2A
             {
                 return default;
             }
+        }
+
+        public static string ToJson(object obj)
+        {
+            return JsonSerializer.Serialize(obj, s_SerializerOptions);
         }
 
         public static async Task WriteResponseAsync(HttpResponse response, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, CancellationToken cancellationToken = default)
@@ -164,7 +168,7 @@ namespace Microsoft.Agents.Hosting.A2A
             return (activity, contextId, taskId, message);
         }
 
-        public static TaskStatusUpdateEvent StatusUpdateFromActivity(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
+        public static TaskStatusUpdateEvent StatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
         {
             var artifact = ArtifactFromActivity(activity, artifactId);
 
@@ -258,11 +262,6 @@ namespace Microsoft.Agents.Hosting.A2A
                 Id = requestId,
                 Result = payload
             };
-        }
-
-        public static string ToJson(object obj)
-        {
-            return JsonSerializer.Serialize(obj, s_SerializerOptions);
         }
 
         private static Activity CreateActivity(
@@ -408,6 +407,26 @@ namespace Microsoft.Agents.Hosting.A2A
             }
 
             return null;
+        }
+
+        public static Artifact? ArtifactFromObject(object data, string name = null, string description = null, string mediaType = null, string artifactId = null)
+        {
+            if (data == null)
+            {  
+                return null; 
+            }
+
+            return new Artifact()
+            {
+                ArtifactId = artifactId ?? Guid.NewGuid().ToString("N"),
+                Name = name,
+                Description = description,
+                Parts = [new DataPart()
+                {
+                    Data = data.ToJsonElements(),
+                    Metadata = ToMetadata(data.GetType(), mediaType ?? data.GetType().Name)
+                }]
+            };
         }
     }
 }

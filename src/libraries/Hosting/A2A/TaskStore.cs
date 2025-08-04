@@ -54,10 +54,18 @@ namespace Microsoft.Agents.Hosting.A2A
             AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
 
             var task = await GetTaskAsync(artifactUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-            task = task with
+            if (artifactUpdate.Append.HasValue && (bool) artifactUpdate.Append)
             {
-                //TODO: Handle artifact updates properly, e.g., adding to an existing list of artifacts
-            };
+                System.Diagnostics.Trace.WriteLine("================ Artifact Append not supported yet ================");
+            }
+            else
+            {
+                task = task with
+                {
+                    Artifacts = task.Artifacts.HasValue ? ((ImmutableArray<Artifact>)task.Artifacts).Add(artifactUpdate.Artifact) : [artifactUpdate.Artifact]
+                };
+            }
+
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             return task;
         }
