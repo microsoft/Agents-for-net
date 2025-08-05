@@ -9,25 +9,25 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     public class AgentCapabilities
     {
         /// <summary>
-        /// Indicates support for SSE streaming methods (message/stream, tasks/resubscribe).
+        /// Indicates if the agent supports Server-Sent Events (SSE) for streaming responses.
         /// </summary>
         [JsonPropertyName("streaming")]
         public bool? Streaming { get; init; } = false;
 
         /// <summary>
-        /// Indicates support for push notification methods (tasks/pushNotificationConfig/*).
+        /// Indicates if the agent supports sending push notifications for asynchronous task updates.
         /// </summary>
         [JsonPropertyName("pushNotifications")]
         public bool? PushNotifications { get; init; } = false;
 
         /// <summary>
-        /// Placeholder for future feature: exposing detailed task status change history.
+        /// Indicates if the agent provides a history of state transitions for a task.
         /// </summary>
         [JsonPropertyName("stateTransitionHistory")]
         public bool? StateTransitionHistory { get; init; } = false;
 
         /// <summary>
-        /// A list of extensions supported by this agent.
+        /// A list of protocol extensions supported by the agent.
         /// </summary>
         [JsonPropertyName("extensions")]
         public ImmutableArray<AgentExtension>? Extensions { get; init; }

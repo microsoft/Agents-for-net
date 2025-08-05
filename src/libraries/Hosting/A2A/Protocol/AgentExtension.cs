@@ -6,32 +6,30 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
-    /// Specifies an extension to the A2A protocol supported by the agent.
+    /// A declaration of a protocol extension supported by an Agent.
     /// </summary>
     public record AgentExtension
     {
         /// <summary>
-        /// The URI for the supported extension.
+        /// The unique URI identifying the extension.
         /// </summary>
         [JsonPropertyName("url")]
         public required string Url { get; init; }
 
         /// <summary>
-        /// Whether the agent requires clients to follow some protocol logic specific to the extension. 
-        /// Clients should expect failures when attempting to interact with a server that requires an 
-        /// extension the client does not support.
+        /// If true, the client must understand and comply with the extension's requirements to interact with the agent.
         /// </summary>
         [JsonPropertyName("required")]
         public bool? Required { get; init; } = false;
 
         /// <summary>
-        /// A description of how the extension is used by the agent.
+        /// A human-readable description of how this agent uses the extension.
         /// </summary>
         [JsonPropertyName("description")]
         public string? Description { get; init; }
 
         /// <summary>
-        /// Configuration parameters specific to the extension
+        /// Optional, extension-specific configuration parameters.
         /// </summary>
         [JsonPropertyName("params")]
         public object? Params { get; init; }

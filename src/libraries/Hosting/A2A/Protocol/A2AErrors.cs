@@ -79,8 +79,13 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
         public static int ContentTypeNotSupportedError = -32005;
 
         /// <summary>
-        /// Invalid agent response type Agent generated an invalid response for the requested method    }
+        /// Invalid agent response type Agent generated an invalid response for the requested method.
         /// </summary>
         public static int InvalidAgentResponseError = -32006;
+
+        /// <summary>
+        /// The agent does not have an Authenticated Extended Card configured.
+        /// </summary>
+        public static int AuthenticatedExtendedCardNotConfiguredError = -32007;
     }
 }

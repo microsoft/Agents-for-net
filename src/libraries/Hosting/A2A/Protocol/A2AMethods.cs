@@ -14,6 +14,6 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
         public const string TasksPushNotificationGet = "tasks/pushNotificationConfig/get";
         public const string TasksPushNotificationList = "tasks/pushNotificationConfig/list";
         public const string TasksPushNotificationDelete = "tasks/pushNotificationConfig/delete";
-        public const string AgentAuthenticationCard = "agent/authenticatedExtendedCard";
+        public const string AgentAuthenticationCard = "agent/getAuthenticatedExtendedCard";
     }
 }

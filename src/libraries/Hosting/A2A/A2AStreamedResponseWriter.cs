@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("SSE event {Event}", sse);
+                _logger.LogDebug("SSE event:\r\n{Event}", sse);
             }
 
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(sse), cancellationToken).ConfigureAwait(false);

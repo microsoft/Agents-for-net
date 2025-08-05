@@ -1,0 +1,42 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System.Text.Json.Serialization;
+
+namespace Microsoft.Agents.Hosting.A2A.Protocol
+{
+    /// <summary>
+    /// Declares a combination of a target URL and a transport protocol for interacting with the agent.\n
+    /// This allows agents to expose the same functionality over multiple transport mechanisms.
+    /// </summary>
+    public class AgentInterface
+    {
+        /// <summary>
+        /// The transport protocol supported at this URL.
+        /// <para>
+        /// Examples:
+        /// <code>
+        /// "JSONRPC",
+        /// "GRPC",
+        /// "HTTP+JSON"
+        /// </code>
+        /// </para>
+        /// </summary>
+        [JsonPropertyName("transport")]
+        public required string Transport { get; init; }
+
+        /// <summary>
+        /// The URL where this interface is available. Must be a valid absolute HTTPS URL in production.
+        /// <para>
+        /// Examples:
+        /// <code>
+        /// "https://api.example.com/a2a/v1",
+        /// "https://grpc.example.com/a2a",
+        /// "https://rest.example.com/v1"        
+        /// </code>
+        /// </para>
+        /// </summary>
+        [JsonPropertyName("url")]
+        public required string Url { get; init; }
+    }
+}

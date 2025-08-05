@@ -63,5 +63,11 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
         /// </summary>
         [JsonPropertyName("referenceTaskIds")]
         public ImmutableArray<string>? ReferenceTaskIds { get; init; }
+
+        /// <summary>
+        /// The URIs of extensions that are relevant to this message.
+        /// </summary>
+        [JsonPropertyName("extensions")]
+        public ImmutableArray<string>? Extensions { get; init; }
     }
 }

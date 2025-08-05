@@ -8,21 +8,19 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
     /// <summary>
-    /// A2A Servers MUST make an Agent Card available. The Agent Card is a JSON document that describes the 
-    /// server's identity, capabilities, skills, service endpoint URL, and how clients should authenticate 
-    /// and interact with it. Clients use this information for discovering suitable agents and for configuring 
-    /// their interactions.
+    /// The AgentCard is a self-describing manifest for an agent. It provides essential metadata including the agent's identity, 
+    /// capabilities, skills, supported communication methods, and security requirements.
     /// </summary>
     public class AgentCard
     {
         /// <summary>
-        /// Human-readable name of the agent.
+        /// A human-readable name for the agent.
         /// </summary>
         [JsonPropertyName("name")]
         public required string Name { get; init; }
 
         /// <summary>
-        /// Human-readable description. CommonMark MAY be used.
+        /// A human-readable description of the agent, assisting users and other agents in understanding its purpose.
         /// </summary>
         [JsonPropertyName("description")]
         public required string Description { get; init; }
@@ -34,61 +32,97 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
         public required string Url { get; init; }
 
         /// <summary>
-        /// Information about the agent's provider.
+        /// An optional URL to an icon for the agent.
         /// </summary>
-        public AgentProvider? Provider { get; init; }
+        [JsonPropertyName("iconUrl")]
+        public string? IconUrl { get; init; }
 
         /// <summary>
-        /// Agent or A2A implementation version string.
-        /// </summary>
-        [JsonPropertyName("version")]
-        public required string Version { get; init; }
-
-        /// <summary>
-        /// URL to human-readable documentation for the agent.
+        /// An optional URL to the agent's documentation.
         /// </summary>
         [JsonPropertyName("documentationUrl")]
         public string? DocumentationUrl { get; init; }
 
         /// <summary>
-        /// Specifies optional A2A protocol features supported (e.g., streaming, push notifications).
+        /// Information about the agent's service provider.
+        /// </summary>
+        public AgentProvider? Provider { get; init; }
+
+        /// <summary>
+        /// The agent's own version number. The format is defined by the provider.
+        /// </summary>
+        [JsonPropertyName("version")]
+        public required string Version { get; init; }
+
+        /// <summary>
+        /// The version of the A2A protocol this agent supports.
+        /// </summary>
+        [JsonPropertyName("protocolVersion")]
+        public required string ProtocolVersion { get; init; }
+
+        /// <summary>
+        /// A declaration of optional capabilities supported by the agent.
         /// </summary>
         [JsonPropertyName("capabilities")]
         public required AgentCapabilities Capabilities { get; init; } = new AgentCapabilities();
 
         /// <summary>
-        /// Security requirements for contacting the agent.
+        /// A list of security requirement objects that apply to all agent interactions. Each object lists security schemes that can be used. Follows the OpenAPI 3.0 Security Requirement Object.
         /// </summary>
         [JsonPropertyName("security")]
         public IReadOnlyDictionary<string, ImmutableArray<string>>? Security { get; init; }
 
         /// <summary>
-        /// Security scheme details used for authenticating with this agent. Undefined implies no 
-        /// A2A-advertised auth (not recommended for production).
+        /// A declaration of the security schemes available to authorize requests. The key is the scheme name. Follows the OpenAPI 3.0 Security Scheme Object.
         /// </summary>
         [JsonPropertyName("securitySchemes")]
         public IReadOnlyDictionary<string, SecurityScheme>? SecuritySchemes { get; init;}
 
         /// <summary>
-        /// Input Media Types accepted by the agent.
+        /// JSON Web Signatures computed for this AgentCard.
+        /// </summary>
+        [JsonPropertyName("signatures")]
+        public ImmutableArray<AgentCardSignature>? Signatures { get; init; }
+
+        /// <summary>
+        /// Default set of supported input MIME types for all skills, which can be overridden on a per-skill basis.
         /// </summary>
         [JsonPropertyName("defaultInputModes")]
         public required ImmutableArray<string> DefaultInputModes { get; init; }
 
         /// <summary>
-        /// Output Media Types produced by the agent.
+        /// Default set of supported output MIME types for all skills, which can be overridden on a per-skill basis.
         /// </summary>
         [JsonPropertyName("defaultOutputModes")]
         public required ImmutableArray<string> DefaultOutputModes { get; init; }
 
         /// <summary>
-        /// Array of skills. Must have at least one if the agent performs actions.
+        /// The set of skills, or distinct capabilities, that the agent can perform.
         /// </summary>
         [JsonPropertyName("skills")]
         public required ImmutableArray<AgentSkill> Skills { get; init; }
 
+
         /// <summary>
-        /// Indicates support for retrieving a more detailed Agent Card via an authenticated endpoint.
+        /// A list of additional supported interfaces (transport and URL combinations). This allows agents to expose multiple transports, 
+        /// potentially at different URLs.
+        /// 
+        /// <para>Best practices:- SHOULD include all supported transports for completeness\n- SHOULD include an entry matching the main 'url' and 'preferredTransport'\n- MAY reuse URLs if multiple transports are available at the same endpoint\n- MUST accurately declare the transport available at each URL\n\nClients can select any interface from this list based on their transport capabilities\nand preferences. This enables transport negotiation and fallback scenarios.</para>
+        /// </summary>
+        [JsonPropertyName("additionalInterfaces")]
+        public required ImmutableArray<AgentInterface> AdditionalInterfaces { get; init; }
+
+        /// <summary>
+        /// The transport protocol for the preferred endpoint (the main 'url' field). If not specified, defaults to 'JSONRPC'.
+        /// 
+        /// <para>IMPORTANT: The transport specified here MUST be available at the main 'url'. 
+        /// This creates a binding between the main URL and its supported transport protocol. Clients should prefer this transport and URL combination when both are supported.</para>
+        /// </summary>
+        [JsonPropertyName("preferredTransport")]
+        public string PreferredTransport { get; init; } = "JSONRPC";
+
+        /// <summary>
+        /// If true, the agent can provide an extended agent card with additional details to authenticated users. Defaults to false.
         /// </summary>
         [JsonPropertyName("supportsAuthenticatedExtendedCard")]
         public string? SupportsAuthenticatedExtendedCard { get; init; }

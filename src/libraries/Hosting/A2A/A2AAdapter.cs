@@ -113,7 +113,8 @@ namespace Microsoft.Agents.Hosting.A2A
             {
                 Name = "EmptyAgent",
                 Description = "Simple Echo Agent",
-                Version = "0.2.0",
+                Version = "0.0.1",
+                ProtocolVersion = "0.3.0",
                 Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
                 SecuritySchemes = new Dictionary<string, SecurityScheme>
                 {
@@ -122,13 +123,22 @@ namespace Microsoft.Agents.Hosting.A2A
                         new HTTPAuthSecurityScheme() { Scheme = "bearer" }
                     }
                 },
-                DefaultInputModes = [],
-                DefaultOutputModes = [],
+                DefaultInputModes = ["application/json"],
+                DefaultOutputModes = ["application/json"],
                 Skills = [],
                 Capabilities = new AgentCapabilities()
                 {
                     Streaming = true,
-                }
+                },
+                AdditionalInterfaces = 
+                [
+                    new AgentInterface()
+                    {
+                        Transport = TransportProtocol.JSONRPC,
+                        Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/"
+                    }
+                ],
+                PreferredTransport = TransportProtocol.JSONRPC,
             };
 
             httpResponse.ContentType = "application/json";
