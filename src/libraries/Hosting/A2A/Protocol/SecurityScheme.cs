@@ -13,6 +13,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     [JsonDerivedType(typeof(HTTPAuthSecurityScheme), typeDiscriminator: "http")]
     [JsonDerivedType(typeof(OAuth2SecurityScheme), typeDiscriminator: "oauth2")]
     [JsonDerivedType(typeof(OpenIdConnectSecurityScheme), typeDiscriminator: "openIdConnect")]
+    [JsonDerivedType(typeof(MutualTLSSecurityScheme), typeDiscriminator: "mutualTLS")]
     public record SecurityScheme
     {
         /// <summary>
