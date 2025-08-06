@@ -5,6 +5,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using Microsoft.Agents.Storage;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -54,16 +55,31 @@ namespace Microsoft.Agents.Hosting.A2A
             AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
 
             var task = await GetTaskAsync(artifactUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-            if (artifactUpdate.Append.HasValue && (bool) artifactUpdate.Append)
+
+            if (artifactUpdate.Append.HasValue && (bool)artifactUpdate.Append)
             {
                 System.Diagnostics.Trace.WriteLine("================ Artifact Append not supported yet ================");
             }
             else
             {
-                task = task with
+                if (task.Artifacts.HasValue)
                 {
-                    Artifacts = task.Artifacts.HasValue ? ((ImmutableArray<Artifact>)task.Artifacts).Add(artifactUpdate.Artifact) : [artifactUpdate.Artifact]
-                };
+                    var artifact = task.Artifacts.Value.Where(t => t.ArtifactId == artifactUpdate.Artifact.ArtifactId).First();
+
+                    task = task with
+                    {
+                        Artifacts = artifact != null
+                            ? ((ImmutableArray<Artifact>)task.Artifacts).Replace(artifact, artifactUpdate.Artifact)
+                            : ((ImmutableArray<Artifact>)task.Artifacts).Add(artifactUpdate.Artifact)
+                    };
+                }
+                else
+                {
+                    task = task with
+                    {
+                        Artifacts = [artifactUpdate.Artifact]
+                    };
+                }
             }
 
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);

@@ -149,8 +149,12 @@ namespace Microsoft.Agents.Hosting.A2A
                 throw new ArgumentException("Failed to parse request body");
             }
 
+            // Using contextId as conversationId
             var contextId = request.Message.ContextId ?? Guid.NewGuid().ToString("N");
+
+            // SDK doesn't have a notion of "task".  For now, allow for a conversation to have multiple tasks.
             var taskId = request.Message.TaskId ?? Guid.NewGuid().ToString("N");
+            
             var activity = CreateActivity(contextId, channelId, userId, request.Message.Parts, true, isStreaming);
             activity.RequestId = jsonRpcPayload.Id.ToString();
             activity.ChannelData = jsonRpcPayload;

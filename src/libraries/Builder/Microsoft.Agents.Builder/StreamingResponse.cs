@@ -467,6 +467,7 @@ namespace Microsoft.Agents.Builder
                 // Support streaming for DeliveryMode.Stream
                 IsStreamingChannel = true;
                 Interval = 100;
+                StreamId = Guid.NewGuid().ToString();
             }
             else
             {

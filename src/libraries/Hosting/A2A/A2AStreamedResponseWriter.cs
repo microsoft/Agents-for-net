@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Hosting.A2A
         private readonly string _requestId;
         private readonly string _contextId;
         private readonly string _taskId;
-        private bool _inStreamingResponse = false;
+        //private bool _inStreamingResponse = false;
         private ILogger _logger;
 
         public A2AStreamedResponseWriter(ITaskStore taskStore, string requestId, string contextId, string taskId, ILogger logger)
@@ -48,39 +48,33 @@ namespace Microsoft.Agents.Hosting.A2A
                 var isLastChunk = entity.StreamType == StreamTypes.Final;
                 var isInformative = entity.StreamType == StreamTypes.Informative;
 
-                if (!_inStreamingResponse || isInformative)
+                if (isInformative)
                 {
-                    _inStreamingResponse = true;
+                    //_inStreamingResponse = true;
 
-                    // TODO: Include informative text as a Message in the Status.
-                    var statusUpdate = A2AConverter.StatusUpdate(_contextId, _taskId, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : null);
-                    await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
-
+                    // Informative is a Status update with a Message
+                    var statusUpdate = A2AConverter.StatusUpdate(_contextId, _taskId, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
                     await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 
-                    if (isInformative)
-                    {
-                        return;
-                    }
+                    await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
+
+                    return;
                 }
 
-                if (!isLastChunk)
-                {
-                    //TBD:  We don't know "last chunk" until the final streaming Activity is sent, which probably should be a Message (see `else` block)
-                    var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
-                    await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
+                // Each streaming activity is an artifact
+                var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
+                await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
 
-                    await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
-                }
-                else
+                await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
+
+                if (isLastChunk)
                 {
                     // Send the final streaming Activity as a A2A Message
                     var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
+                    await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+                    //_inStreamingResponse = false;
 
                     await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
-                    _inStreamingResponse = false;
-
-                    await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
                 }
             }
             else if (activity.IsType(ActivityTypes.Message))
@@ -88,6 +82,7 @@ namespace Microsoft.Agents.Hosting.A2A
                 // Send a Message (from Activity)
                 var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
                 var task = await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+
                 await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
 
                 // Update Task state if expecting input
@@ -120,15 +115,16 @@ namespace Microsoft.Agents.Hosting.A2A
                         LastChunk = true
                     };
                     await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
+
                     await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
                 }
             }
             else if (activity.IsType(ActivityTypes.Typing))
             {
                 // non-streamingresponse Typing
+                // Status update will be sent during ResponseEnd
                 var statusUpdate = A2AConverter.StatusUpdate(_contextId, _taskId, TaskState.Working);
                 await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
-                await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
             }
         }
 
