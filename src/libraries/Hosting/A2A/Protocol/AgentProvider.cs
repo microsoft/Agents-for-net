@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     /// <summary>
     /// Information about the organization or entity providing the agent.
     /// </summary>
-    public class AgentProvider
+    public record AgentProvider
     {
         /// <summary>
         /// Name of the organization/entity.

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     /// Declares a combination of a target URL and a transport protocol for interacting with the agent.\n
     /// This allows agents to expose the same functionality over multiple transport mechanisms.
     /// </summary>
-    public class AgentInterface
+    public record AgentInterface
     {
         /// <summary>
         /// The transport protocol supported at this URL.

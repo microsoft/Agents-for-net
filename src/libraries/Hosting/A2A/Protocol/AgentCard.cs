@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     /// The AgentCard is a self-describing manifest for an agent. It provides essential metadata including the agent's identity, 
     /// capabilities, skills, supported communication methods, and security requirements.
     /// </summary>
-    public class AgentCard
+    public record AgentCard
     {
         /// <summary>
         /// A human-readable name for the agent.

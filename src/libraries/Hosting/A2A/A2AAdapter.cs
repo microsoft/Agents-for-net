@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Hosting.A2A
                     // Record incoming Message for the Task
                     if (activity.IsType(ActivityTypes.Message) && message != null)
                     {
-                        await _taskStore.CreateOrUpdateTaskAsync(contextId, taskId, TaskState.Unknown, cancellationToken).ConfigureAwait(false);
+                        await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, TaskState.Unknown, cancellationToken).ConfigureAwait(false);
                         await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
                     }
 

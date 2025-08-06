@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Hosting.A2A
 {
     internal class TaskStore(IStorage storage) : ITaskStore
     {
-        public async Task<TaskResponse> CreateOrUpdateTaskAsync(string contextId, string taskId, TaskState state, CancellationToken cancellationToken = default)
+        public async Task<TaskResponse> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 

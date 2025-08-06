@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol
     /// <summary>
     /// Represents a distinct capability or function that an agent can perform.
     /// </summary>
-    public class AgentSkill
+    public record AgentSkill
     {
         /// <summary>
         /// A unique identifier for the agent's skill.

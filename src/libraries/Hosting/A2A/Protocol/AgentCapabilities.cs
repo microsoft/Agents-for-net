@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Protocol
 {
-    public class AgentCapabilities
+    public record AgentCapabilities
     {
         /// <summary>
         /// Indicates if the agent supports Server-Sent Events (SSE) for streaming responses.

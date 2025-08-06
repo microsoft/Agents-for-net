@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public async Task ResponseBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
-            var task = await _taskStore.CreateOrUpdateTaskAsync(_contextId, _taskId, TaskState.Submitted, cancellationToken).ConfigureAwait(false);
+            var task = await _taskStore.CreateOrContinueTaskAsync(_contextId, _taskId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             httpResponse.ContentType = "text/event-stream";
             await WriteEvent(httpResponse, task.Kind, task, cancellationToken).ConfigureAwait(false);

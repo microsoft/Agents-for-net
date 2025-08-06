@@ -41,14 +41,10 @@ namespace Microsoft.Agents.Hosting.A2A
 
         public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
             try
             {
-                ArgumentNullException.ThrowIfNull(request);
-
-                //using var memoryStream = new MemoryStream();
-                //await request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-                //memoryStream.Seek(0, SeekOrigin.Begin);
-
                 return await JsonSerializer.DeserializeAsync<T>(request.Body, s_SerializerOptions);
             }
             catch (JsonException)
