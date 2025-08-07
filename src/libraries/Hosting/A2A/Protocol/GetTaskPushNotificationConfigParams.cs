@@ -4,29 +4,28 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// Defines parameters for deleting a specific push notification configuration for a task.
+/// </summary>
+public record GetTaskPushNotificationConfigParams
 {
     /// <summary>
-    /// Defines parameters for deleting a specific push notification configuration for a task.
+    /// The unique identifier of the task.
     /// </summary>
-    public record GetTaskPushNotificationConfigParams
-    {
-        /// <summary>
-        /// The unique identifier of the task.
-        /// </summary>
-        [JsonPropertyName("id")]
-        public required string TaskId { get; init; }
+    [JsonPropertyName("id")]
+    public required string TaskId { get; init; }
 
-        /// <summary>
-        /// The ID of the push notification configuration to delete.
-        /// </summary>
-        [JsonPropertyName("pushNotificationConfigId")]
-        public required string PushNotificationConfigId { get; init; }
+    /// <summary>
+    /// The ID of the push notification configuration to delete.
+    /// </summary>
+    [JsonPropertyName("pushNotificationConfigId")]
+    public required string PushNotificationConfigId { get; init; }
 
-        /// <summary>
-        /// Optional metadata associated with the request.
-        /// </summary>
-        [JsonPropertyName("metadata")]
-        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
-    }
+    /// <summary>
+    /// Optional metadata associated with the request.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public IReadOnlyDictionary<string, object>? Metadata { get; set; }
 }

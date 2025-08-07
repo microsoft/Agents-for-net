@@ -3,35 +3,34 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// A declaration of a protocol extension supported by an Agent.
+/// </summary>
+public record AgentExtension
 {
     /// <summary>
-    /// A declaration of a protocol extension supported by an Agent.
+    /// The unique URI identifying the extension.
     /// </summary>
-    public record AgentExtension
-    {
-        /// <summary>
-        /// The unique URI identifying the extension.
-        /// </summary>
-        [JsonPropertyName("url")]
-        public required string Url { get; init; }
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
 
-        /// <summary>
-        /// If true, the client must understand and comply with the extension's requirements to interact with the agent.
-        /// </summary>
-        [JsonPropertyName("required")]
-        public bool? Required { get; init; } = false;
+    /// <summary>
+    /// If true, the client must understand and comply with the extension's requirements to interact with the agent.
+    /// </summary>
+    [JsonPropertyName("required")]
+    public bool? Required { get; init; } = false;
 
-        /// <summary>
-        /// A human-readable description of how this agent uses the extension.
-        /// </summary>
-        [JsonPropertyName("description")]
-        public string? Description { get; init; }
+    /// <summary>
+    /// A human-readable description of how this agent uses the extension.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
 
-        /// <summary>
-        /// Optional, extension-specific configuration parameters.
-        /// </summary>
-        [JsonPropertyName("params")]
-        public object? Params { get; init; }
-    }
+    /// <summary>
+    /// Optional, extension-specific configuration parameters.
+    /// </summary>
+    [JsonPropertyName("params")]
+    public object? Params { get; init; }
 }

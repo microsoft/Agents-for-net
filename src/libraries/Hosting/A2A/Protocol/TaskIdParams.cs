@@ -4,20 +4,19 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
-{
-    public record TaskIdParams
-    {
-        /// <summary>
-        /// The ID of the task whose current state is to be retrieved.
-        /// </summary>
-        [JsonPropertyName("id")]
-        public required string Id { get; init; }
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
 
-        /// <summary>
-        /// Request-specific metadata.
-        /// </summary>
-        [JsonPropertyName("metadata")]
-        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
-    }
+public record TaskIdParams
+{
+    /// <summary>
+    /// The ID of the task whose current state is to be retrieved.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public required string Id { get; init; }
+
+    /// <summary>
+    /// Request-specific metadata.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public IReadOnlyDictionary<string, object>? Metadata { get; set; }
 }

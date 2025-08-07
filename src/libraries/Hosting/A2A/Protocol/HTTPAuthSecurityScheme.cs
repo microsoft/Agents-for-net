@@ -3,23 +3,22 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// HTTP Authentication security scheme.
+/// </summary>
+public record HTTPAuthSecurityScheme : SecurityScheme
 {
     /// <summary>
-    /// HTTP Authentication security scheme.
+    /// A hint to the client to identify how the bearer token is formatted (e.g., \"JWT\").  This is primarily for documentation purposes.
     /// </summary>
-    public record HTTPAuthSecurityScheme : SecurityScheme
-    {
-        /// <summary>
-        /// A hint to the client to identify how the bearer token is formatted (e.g., \"JWT\").  This is primarily for documentation purposes.
-        /// </summary>
-        [JsonPropertyName("bearerFormat")]
-        public string? BearerFormat { get; init; }
+    [JsonPropertyName("bearerFormat")]
+    public string? BearerFormat { get; init; }
 
-        /// <summary>
-        /// The name of the HTTP Authentication scheme to be used in the Authorization header,\nas defined in RFC7235 (e.g., \"Bearer\"). This value should be registered in the IANA Authentication Scheme registry.
-        /// </summary>
-        [JsonPropertyName("scheme")]
-        public required string Scheme { get; init; }
-    }
+    /// <summary>
+    /// The name of the HTTP Authentication scheme to be used in the Authorization header,\nas defined in RFC7235 (e.g., \"Bearer\"). This value should be registered in the IANA Authentication Scheme registry.
+    /// </summary>
+    [JsonPropertyName("scheme")]
+    public required string Scheme { get; init; }
 }

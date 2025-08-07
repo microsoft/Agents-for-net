@@ -3,23 +3,22 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// Information about the organization or entity providing the agent.
+/// </summary>
+public record AgentProvider
 {
     /// <summary>
-    /// Information about the organization or entity providing the agent.
+    /// Name of the organization/entity.
     /// </summary>
-    public record AgentProvider
-    {
-        /// <summary>
-        /// Name of the organization/entity.
-        /// </summary>
-        [JsonPropertyName("organization")]
-        public required string Organization { get; init; }
+    [JsonPropertyName("organization")]
+    public required string Organization { get; init; }
 
-        /// <summary>
-        /// URL for the provider's website/contact.
-        /// </summary>
-        [JsonPropertyName("url")]
-        public required string Url { get; init; }
-    }
+    /// <summary>
+    /// URL for the provider's website/contact.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
 }

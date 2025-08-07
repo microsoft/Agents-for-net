@@ -4,17 +4,16 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+public record MessageSendParams
 {
-    public record MessageSendParams
-    {
-        [JsonPropertyName("message")]
-        public required Message Message { get; init; }
+    [JsonPropertyName("message")]
+    public required Message Message { get; init; }
 
-        [JsonPropertyName("configuration")]
-        public MessageSendConfiguration? Configuration { get; init; }
+    [JsonPropertyName("configuration")]
+    public MessageSendConfiguration? Configuration { get; init; }
 
-        [JsonPropertyName("metadata")]
-        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
-    }
+    [JsonPropertyName("metadata")]
+    public IReadOnlyDictionary<string, object>? Metadata { get; set; }
 }

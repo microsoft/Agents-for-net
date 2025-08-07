@@ -4,23 +4,22 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// Defines authentication details for a push notification endpoint.
+/// </summary>
+public record PushNotificationAuthenticationInfo
 {
     /// <summary>
-    /// Defines authentication details for a push notification endpoint.
+    /// A list of supported authentication schemes (e.g., 'Basic', 'Bearer')
     /// </summary>
-    public record PushNotificationAuthenticationInfo
-    {
-        /// <summary>
-        /// A list of supported authentication schemes (e.g., 'Basic', 'Bearer')
-        /// </summary>
-        [JsonPropertyName("schemes")]
-        public required ImmutableArray<string> Schemes { get; init; }
+    [JsonPropertyName("schemes")]
+    public required ImmutableArray<string> Schemes { get; init; }
 
-        /// <summary>
-        /// Optional credentials required by the push notification endpoint.
-        /// </summary>
-        [JsonPropertyName("credentials")]
-        public string? Credentials { get; init; }
-    }
+    /// <summary>
+    /// Optional credentials required by the push notification endpoint.
+    /// </summary>
+    [JsonPropertyName("credentials")]
+    public string? Credentials { get; init; }
 }

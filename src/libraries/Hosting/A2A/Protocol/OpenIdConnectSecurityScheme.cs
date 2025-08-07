@@ -3,17 +3,16 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// Defines a security scheme using OpenID Connect.
+/// </summary>
+public record OpenIdConnectSecurityScheme : SecurityScheme
 {
     /// <summary>
-    /// Defines a security scheme using OpenID Connect.
+    /// The OpenID Connect Discovery URL for the OIDC provider's metadata.
     /// </summary>
-    public record OpenIdConnectSecurityScheme : SecurityScheme
-    {
-        /// <summary>
-        /// The OpenID Connect Discovery URL for the OIDC provider's metadata.
-        /// </summary>
-        [JsonPropertyName("openIdConnectUrl")]
-        public required string OpenIdConnectUrl { get; init; }
-    }
+    [JsonPropertyName("openIdConnectUrl")]
+    public required string OpenIdConnectUrl { get; init; }
 }

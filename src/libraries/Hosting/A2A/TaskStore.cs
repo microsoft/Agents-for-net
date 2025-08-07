@@ -15,11 +15,11 @@ namespace Microsoft.Agents.Hosting.A2A
 {
     internal class TaskStore(IStorage storage) : ITaskStore
     {
-        public async Task<TaskResponse> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 
-            TaskResponse task;
+            AgentTask task;
 
             try
             {
@@ -27,17 +27,18 @@ namespace Microsoft.Agents.Hosting.A2A
                 task = task with
                 {
                     Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow },
+                    History = AppendMessage(task.History, message)
                 };
             }
             catch (KeyNotFoundException)
             {
-                task = new TaskResponse() { ContextId = contextId, Id = taskId, Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow } };
+                task = new AgentTask() { ContextId = contextId, Id = taskId, Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow }, History = AppendMessage(default, message) };
             }
 
             return await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<TaskResponse> UpdateTaskAsync(TaskResponse task, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateTaskAsync(AgentTask task, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(task), "Task cannot be null.");
 
@@ -50,7 +51,7 @@ namespace Microsoft.Agents.Hosting.A2A
             return task;
         }
 
-        public async Task<TaskResponse> UpdateTaskAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateTaskAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
 
@@ -58,35 +59,21 @@ namespace Microsoft.Agents.Hosting.A2A
 
             if (artifactUpdate.Append.HasValue && (bool)artifactUpdate.Append)
             {
-                System.Diagnostics.Trace.WriteLine("================ Artifact Append not supported yet ================");
+                throw new NotImplementedException("Artifact Append not supported yet");
             }
             else
             {
-                if (task.Artifacts.HasValue)
+                task = task with
                 {
-                    var artifact = task.Artifacts.Value.Where(t => t.ArtifactId == artifactUpdate.Artifact.ArtifactId).First();
-
-                    task = task with
-                    {
-                        Artifacts = artifact != null
-                            ? ((ImmutableArray<Artifact>)task.Artifacts).Replace(artifact, artifactUpdate.Artifact)
-                            : ((ImmutableArray<Artifact>)task.Artifacts).Add(artifactUpdate.Artifact)
-                    };
-                }
-                else
-                {
-                    task = task with
-                    {
-                        Artifacts = [artifactUpdate.Artifact]
-                    };
-                }
+                    Artifacts = AddArtifact(task, artifactUpdate.Artifact)
+                };
             }
 
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             return task;
         }
 
-        public async Task<TaskResponse> UpdateTaskAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateTaskAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(statusUpdate), "TaskStatusUpdateEvent cannot be null.");
 
@@ -99,26 +86,26 @@ namespace Microsoft.Agents.Hosting.A2A
             return task;
         }
 
-        public async Task<TaskResponse> UpdateTaskAsync(Message message, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateTaskAsync(Message message, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(message), "Message cannot be null.");
 
             var task = await GetTaskAsync(message.TaskId, cancellationToken).ConfigureAwait(false);
             task = task with
             {
-                History = task.History == null ? [message] : ImmutableArray<Message>.Empty.AddRange(task.History).Add(message),
+                History = AppendMessage(task.History, message)
             };
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             return task;
         }
 
-        public async Task<TaskResponse> GetTaskAsync(string taskId, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> GetTaskAsync(string taskId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 
             var key = GetKey(taskId);
             var items = await storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-            if (items.TryGetValue(key, out var existingItem) && existingItem is TaskResponse existingTask)
+            if (items.TryGetValue(key, out var existingItem) && existingItem is AgentTask existingTask)
             {
                 return existingTask;
             }
@@ -129,6 +116,45 @@ namespace Microsoft.Agents.Hosting.A2A
         private static string GetKey(string taskId)
         {
             return $"task/{taskId}";
+        }
+
+        private static ImmutableArray<Message>? AppendMessage(ImmutableArray<Message>? h, Message m)
+        {
+            if (m == null)
+            {
+                return h;
+            }
+
+            if (h.HasValue)
+            {
+                h = h.Value.Add(m);
+            }
+            else
+            {
+                h = [m];
+            }
+
+            return h;
+        }
+
+        private static ImmutableArray<Artifact>? AddArtifact(AgentTask t, Artifact a)
+        {
+            var artifacts = t.Artifacts;
+
+            if (artifacts.HasValue)
+            {
+                var artifact = artifacts.Value.Where(t => t.ArtifactId == a.ArtifactId).First();
+
+                artifacts = artifact != null
+                    ? artifacts.Value.Replace(artifact, a)
+                    : artifacts.Value.Add(a);
+            }
+            else
+            {
+                artifacts = [a];
+            }
+
+            return artifacts;
         }
     }
 }

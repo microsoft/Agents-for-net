@@ -4,29 +4,28 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.A2A.Protocol
+namespace Microsoft.Agents.Hosting.A2A.Protocol;
+
+/// <summary>
+/// Defines parameters for fetching a specific push notification configuration for a task.
+/// </summary>
+public record DeleteTaskPushNotificationConfigParams
 {
     /// <summary>
-    /// Defines parameters for fetching a specific push notification configuration for a task.
+    /// The unique identifier of the task.
     /// </summary>
-    public record DeleteTaskPushNotificationConfigParams
-    {
-        /// <summary>
-        /// The unique identifier of the task.
-        /// </summary>
-        [JsonPropertyName("id")]
-        public required string TaskId { get; init; }
+    [JsonPropertyName("id")]
+    public required string TaskId { get; init; }
 
-        /// <summary>
-        /// The ID of the push notification configuration to retrieve.
-        /// </summary>
-        [JsonPropertyName("pushNotificationConfigId")]
-        public string? PushNotificationConfigId { get; init; }
+    /// <summary>
+    /// The ID of the push notification configuration to retrieve.
+    /// </summary>
+    [JsonPropertyName("pushNotificationConfigId")]
+    public string? PushNotificationConfigId { get; init; }
 
-        /// <summary>
-        /// Optional metadata associated with the request.
-        /// </summary>
-        [JsonPropertyName("metadata")]
-        public IReadOnlyDictionary<string, object>? Metadata { get; set; }
-    }
+    /// <summary>
+    /// Optional metadata associated with the request.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public IReadOnlyDictionary<string, object>? Metadata { get; set; }
 }

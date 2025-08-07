@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Builder;
 
-namespace Microsoft.Agents.Hosting.A2A
+namespace Microsoft.Agents.Hosting.A2A;
+
+public interface IA2AHttpAdapter : IAgentHttpAdapter
 {
-    public interface IA2AHttpAdapter : IAgentHttpAdapter
-    {
-        Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default);
-    }
+    Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default);
 }
