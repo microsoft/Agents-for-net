@@ -28,7 +28,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
-        private readonly IChannelAdapter _adapter;
         private readonly int _shutdownTimeoutSeconds;
         private readonly IServiceProvider _serviceProvider;
 
@@ -41,21 +40,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </remarks>
         /// <param name="provider"></param>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="adapter"><see cref="IChannelAdapter"/> used to process Activities. </param>
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
         /// <param name="options"></param>
-        public HostedActivityService(IServiceProvider provider, IConfiguration config, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
         {
             ArgumentNullException.ThrowIfNull(config);
-            ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _activityQueue = activityTaskQueue;
-            _adapter = adapter;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
         }
@@ -141,7 +137,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
                     if (activityWithClaims.IsProactive)
                     {
-                        await _adapter.ProcessProactiveAsync(
+                        await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
@@ -150,7 +146,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
                     else
                     {
-                        var response = await _adapter.ProcessActivityAsync(
+                        var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
                             ((IAgent)agent).OnTurnAsync, 

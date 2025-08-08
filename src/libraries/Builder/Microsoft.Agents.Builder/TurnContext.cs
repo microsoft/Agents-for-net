@@ -37,14 +37,16 @@ namespace Microsoft.Agents.Builder
         /// <param name="adapter">The adapter creating the context.</param>
         /// <param name="activity">The incoming activity for the turn;
         /// or <c>null</c> for a turn for a proactive message.</param>
+        /// <param name="identity"></param>
         /// <param name="state"></param>
         /// <exception cref="System.ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by Adapter implementations only.</remarks>
-        public TurnContext(IChannelAdapter adapter, IActivity activity)
+        public TurnContext(IChannelAdapter adapter, IActivity activity, ClaimsIdentity identity = null)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
+            Identity = identity;
             StackState = [];
             Services = [];
 

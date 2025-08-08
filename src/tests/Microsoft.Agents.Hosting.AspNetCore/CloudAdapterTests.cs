@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
 
             // Making sure each request is handled separately.  10 conversations, 3 requests each
-            var requests = new Dictionary<string,DefaultHttpContext>();
+            var requests = new Dictionary<string, DefaultHttpContext>();
             for (int i = 1; i <= 10; i++)
             {
                 var convoId = $"{Guid.NewGuid()}:{i}";
@@ -462,7 +462,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // Test
             await record.Service.StartAsync(CancellationToken.None);
-            
+
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
             await record.Service.StopAsync(CancellationToken.None);
@@ -980,7 +980,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
             var adapter = new CloudAdapter(factory.Object, queue, queueLogger.Object, middlewares: middleware);
-            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), adapter, queue, serviceLogger.Object);
+            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
 
             var record = new Record(null, adapter, factory, service, queue, queueLogger, serviceLogger);
 
@@ -1021,7 +1021,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var message = $"Response {turnContext.Activity.Conversation.Id}:{turnContext.Activity.Id}";
 
                 await Task.Delay(delay);
-                
+
                 await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
             }
 
