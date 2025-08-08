@@ -60,7 +60,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(CloudAdapter),
                 typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
-                typeof(ActivityHandler), // Type passed to AddBot.
+                typeof(ActivityHandler), // IAgent.
+                typeof(ActivityHandler), // TAgent.
             };
 
             Assert.Equal(expected, services);

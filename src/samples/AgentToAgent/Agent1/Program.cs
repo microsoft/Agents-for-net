@@ -3,7 +3,6 @@
 
 
 using Agent1;
-using Microsoft.Agents.AspNetAuthentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Hosting.AspNetCore;
