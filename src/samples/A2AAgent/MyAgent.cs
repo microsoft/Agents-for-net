@@ -5,13 +5,16 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Hosting.A2A;
+using Microsoft.Agents.Hosting.A2A.Protocol;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace A2AAgent;
 
-public class MyAgent : AgentApplication
+public class MyAgent : AgentApplication, IAgentCardHandler
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
@@ -80,6 +83,15 @@ public class MyAgent : AgentApplication
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
+    }
+
+    public Task<AgentCard> GetAgentCard(AgentCard initialCard)
+    {
+        initialCard.Name = "A2AAgent";
+        initialCard.Description = "Demonstrates A2A functionality in Agent SDK";
+        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+        return Task.FromResult(initialCard);
     }
 }
 

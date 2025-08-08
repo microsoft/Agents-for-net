@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// This is the structure of the JSON object found in the data field of each Server-Sent Event 
 /// sent by the server for a message/stream request or tasks/resubscribe request.
 /// </summary>
-public record SendStreamingMessageResponse
+public sealed class SendStreamingMessageResponse
 {
     [JsonPropertyName("jsonrpc")]
     public string JsonRpc { get; } = "2.0";
@@ -18,7 +18,7 @@ public record SendStreamingMessageResponse
     /// Matches the id from the originating tasks/sendSubscribe or tasks/resubscribe TaskSendParams.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; init; }
+    public required string Id { get; set; }
 
     /// <summary>
     /// The event payload.
@@ -31,5 +31,5 @@ public record SendStreamingMessageResponse
     /// OR <see cref="TaskArtifactUpdateEvent"/>
     /// </code>
     [JsonPropertyName("result")]
-    public required object Result { get; init; }
+    public required object Result { get; set; }
 }

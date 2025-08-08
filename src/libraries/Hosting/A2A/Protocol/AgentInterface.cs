@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// Declares a combination of a target URL and a transport protocol for interacting with the agent.
 /// This allows agents to expose the same functionality over multiple transport mechanisms.
 /// </summary>
-public record AgentInterface
+public sealed class AgentInterface
 {
     /// <summary>
     /// The transport protocol supported at this URL.
@@ -18,7 +18,7 @@ public record AgentInterface
     /// </para>
     /// </summary>
     [JsonPropertyName("transport")]
-    public required TransportProtocol Transport { get; init; }
+    public required TransportProtocol Transport { get; set; }
 
     /// <summary>
     /// The URL where this interface is available. Must be a valid absolute HTTPS URL in production.
@@ -32,5 +32,5 @@ public record AgentInterface
     /// </para>
     /// </summary>
     [JsonPropertyName("url")]
-    public required string Url { get; init; }
+    public required string Url { get; set; }
 }

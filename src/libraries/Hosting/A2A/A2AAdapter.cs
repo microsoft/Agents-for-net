@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Generic;
 using System.Net;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
@@ -103,12 +104,11 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
     {
-        //TODO: Most likely pass to AgentApplication to determine card contents
         var agentCard = new AgentCard()
         {
-            Name = "EmptyAgent",
-            Description = "Simple Echo Agent",
-            Version = "0.0.1",
+            Name = nameof(A2AAdapter),
+            Description = "Agents SDK A2A",
+            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
             ProtocolVersion = "0.3.0",
             Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
             SecuritySchemes = new Dictionary<string, SecurityScheme>
@@ -135,6 +135,11 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             ],
             PreferredTransport = TransportProtocol.JsonRpc,
         };
+
+        if (agent is IAgentCardHandler agentCardHandler)
+        {
+            agentCard = await agentCardHandler.GetAgentCard(agentCard);
+        }
 
         httpResponse.ContentType = "application/json";
         var json = A2AConverter.ToJson(agentCard);

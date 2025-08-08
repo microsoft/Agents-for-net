@@ -6,13 +6,13 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.Protocol;
 
-public record MessageSendParams
+public sealed class MessageSendParams
 {
     [JsonPropertyName("message")]
-    public required Message Message { get; init; }
+    public required Message Message { get; set; }
 
     [JsonPropertyName("configuration")]
-    public MessageSendConfiguration? Configuration { get; init; }
+    public MessageSendConfiguration? Configuration { get; set; }
 
     [JsonPropertyName("metadata")]
     public IReadOnlyDictionary<string, object>? Metadata { get; set; }

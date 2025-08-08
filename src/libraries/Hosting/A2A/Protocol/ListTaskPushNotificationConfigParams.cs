@@ -9,13 +9,13 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// Defines parameters for listing all push notification configurations associated with a task.
 /// </summary>
-public record ListTaskPushNotificationConfigParams
+public sealed class ListTaskPushNotificationConfigParams
 {
     /// <summary>
     /// The unique identifier of the task.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string TaskId { get; init; }
+    public required string TaskId { get; set; }
 
     /// <summary>
     /// Optional metadata associated with the request.

@@ -8,17 +8,17 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// Information about the organization or entity providing the agent.
 /// </summary>
-public record AgentProvider
+public sealed class AgentProvider
 {
     /// <summary>
     /// Name of the organization/entity.
     /// </summary>
     [JsonPropertyName("organization")]
-    public required string Organization { get; init; }
+    public required string Organization { get; set; }
 
     /// <summary>
     /// URL for the provider's website/contact.
     /// </summary>
     [JsonPropertyName("url")]
-    public required string Url { get; init; }
+    public required string Url { get; set; }
 }

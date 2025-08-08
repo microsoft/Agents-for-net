@@ -9,19 +9,19 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// Defines parameters for fetching a specific push notification configuration for a task.
 /// </summary>
-public record DeleteTaskPushNotificationConfigParams
+public sealed class DeleteTaskPushNotificationConfigParams
 {
     /// <summary>
     /// The unique identifier of the task.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string TaskId { get; init; }
+    public required string TaskId { get; set; }
 
     /// <summary>
     /// The ID of the push notification configuration to retrieve.
     /// </summary>
     [JsonPropertyName("pushNotificationConfigId")]
-    public string? PushNotificationConfigId { get; init; }
+    public string? PushNotificationConfigId { get; set; }
 
     /// <summary>
     /// Optional metadata associated with the request.

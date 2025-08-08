@@ -8,11 +8,11 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// Defines a security scheme using OpenID Connect.
 /// </summary>
-public record OpenIdConnectSecurityScheme : SecurityScheme
+public sealed class OpenIdConnectSecurityScheme : SecurityScheme
 {
     /// <summary>
     /// The OpenID Connect Discovery URL for the OIDC provider's metadata.
     /// </summary>
     [JsonPropertyName("openIdConnectUrl")]
-    public required string OpenIdConnectUrl { get; init; }
+    public required string OpenIdConnectUrl { get; set; }
 }

@@ -9,17 +9,17 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// Defines authentication details for a push notification endpoint.
 /// </summary>
-public record PushNotificationAuthenticationInfo
+public sealed class PushNotificationAuthenticationInfo
 {
     /// <summary>
     /// A list of supported authentication schemes (e.g., 'Basic', 'Bearer')
     /// </summary>
     [JsonPropertyName("schemes")]
-    public required ImmutableArray<string> Schemes { get; init; }
+    public required ImmutableArray<string> Schemes { get; set; }
 
     /// <summary>
     /// Optional credentials required by the push notification endpoint.
     /// </summary>
     [JsonPropertyName("credentials")]
-    public string? Credentials { get; init; }
+    public string? Credentials { get; set; }
 }

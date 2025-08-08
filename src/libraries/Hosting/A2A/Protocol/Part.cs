@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 [JsonDerivedType(typeof(TextPart), typeDiscriminator: "text")]
 [JsonDerivedType(typeof(FilePart), typeDiscriminator: "file")]
 [JsonDerivedType(typeof(DataPart), typeDiscriminator: "data")]
-public abstract record Part
+public abstract class Part
 {
     /// <summary>
     /// Optional metadata specific to this text part.

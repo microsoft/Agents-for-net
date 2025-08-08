@@ -24,11 +24,8 @@ namespace Microsoft.Agents.Hosting.A2A
             try
             {
                 task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false);
-                task = task with
-                {
-                    Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow },
-                    History = AppendMessage(task.History, message)
-                };
+                task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
+                task.History = AppendMessage(task.History, message);
             }
             catch (KeyNotFoundException)
             {
@@ -63,10 +60,7 @@ namespace Microsoft.Agents.Hosting.A2A
             }
             else
             {
-                task = task with
-                {
-                    Artifacts = AddArtifact(task, artifactUpdate.Artifact)
-                };
+                task.Artifacts = AddArtifact(task, artifactUpdate.Artifact);
             }
 
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
@@ -78,10 +72,8 @@ namespace Microsoft.Agents.Hosting.A2A
             AssertionHelpers.ThrowIfNull(nameof(statusUpdate), "TaskStatusUpdateEvent cannot be null.");
 
             var task = await GetTaskAsync(statusUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-            task = task with
-            {
-                Status = statusUpdate.Status,
-            };
+            task.Status = statusUpdate.Status;
+
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             return task;
         }
@@ -91,10 +83,8 @@ namespace Microsoft.Agents.Hosting.A2A
             AssertionHelpers.ThrowIfNull(nameof(message), "Message cannot be null.");
 
             var task = await GetTaskAsync(message.TaskId, cancellationToken).ConfigureAwait(false);
-            task = task with
-            {
-                History = AppendMessage(task.History, message)
-            };
+            task.History = AppendMessage(task.History, message);
+
             await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             return task;
         }

@@ -8,11 +8,11 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// For conveying structured JSON data. Useful for forms, parameters, or any machine-readable information.
 /// </summary>
-public record DataPart : Part
+public sealed class DataPart : Part
 {
     /// <summary>
     /// The structured JSON data payload (an object or an array).
     /// </summary>
     [JsonPropertyName("data")]
-    public required object Data { get; init; }
+    public required object Data { get; set; }
 }

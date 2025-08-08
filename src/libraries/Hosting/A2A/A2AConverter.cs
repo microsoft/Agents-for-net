@@ -155,16 +155,13 @@ internal class A2AConverter
         // SDK doesn't have a notion of "task".  For now, allow for a conversation to have multiple tasks.
         var taskId = request.Message.TaskId ?? Guid.NewGuid().ToString("N");
         
-        var activity = CreateActivity(contextId, channelId, userId, request.Message.Parts, true, isStreaming);
+        var activity = CreateActivity(taskId, channelId, userId, request.Message.Parts, true, isStreaming);
         activity.RequestId = jsonRpcPayload.Id.ToString();
 
-        var message = request.Message with
-        {
-            ContextId = contextId,
-            TaskId = taskId,
-        };
+        request.Message.ContextId = contextId;
+        request.Message.TaskId = taskId;
 
-        return (activity, contextId, taskId, message);
+        return (activity, contextId, taskId, request.Message);
     }
 
     public static TaskStatusUpdateEvent StatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
@@ -264,7 +261,7 @@ internal class A2AConverter
     }
 
     private static Activity CreateActivity(
-        string? contextId,
+        string conversationId,
         string channelId, 
         string userId, 
         ImmutableArray<Part> parts,
@@ -291,7 +288,7 @@ internal class A2AConverter
             DeliveryMode = isStreaming ? DeliveryModes.Stream : DeliveryModes.ExpectReplies,
             Conversation = new ConversationAccount
             {
-                Id = contextId,
+                Id = conversationId,
             },
             Recipient = isIngress ? bot : user,
             From = isIngress ? user : bot
@@ -331,48 +328,47 @@ internal class A2AConverter
 
     public static Artifact? ArtifactFromActivity(IActivity activity, string artifactId = null, bool includeEntities = true)
     {
-        var artifact = Artifact.Empty;
+        if (activity == null)
+        {
+            return null;
+        }
+
+        var artifact = new Artifact()
+        {
+            ArtifactId = artifactId ?? Guid.NewGuid().ToString("N")
+        };
 
         if (activity?.Text != null)
         {
-            artifact = artifact with
+            artifact.Parts = artifact.Parts.Add(new TextPart()
             {
-                Parts = artifact.Parts.Add(new TextPart()
-                {
-                    Text = activity.Text
-                })
-            };
+                Text = activity.Text
+            });
         }
 
         if (activity?.Value != null)
         {
-            artifact = artifact with
+            artifact.Parts = artifact.Parts.Add(new DataPart()
             {
-                Parts = artifact.Parts.Add(new DataPart()
-                {
-                    Data = activity.Value.ToJsonElements()
-                })
-            };
+                Data = activity.Value.ToJsonElements()
+            });
         }
 
         foreach (var attachment in activity?.Attachments ?? Enumerable.Empty<Attachment>())
         {
-            if (attachment.ContentUrl == null && attachment.Content is not string stringContent)
+            if (attachment.ContentUrl == null && attachment.Content is not string)
             {
                 continue;
             }
 
-            artifact = artifact with
+            artifact.Parts = artifact.Parts.Add(new FilePart()
             {
-                Parts = artifact.Parts.Add(new FilePart()
-                {
-                    Uri = attachment.ContentUrl,
-                    Bytes = attachment.Content as string,
-                    MimeType = attachment.ContentType,
-                    Name = attachment.Name,
+                Uri = attachment.ContentUrl,
+                Bytes = attachment.Content as string,
+                MimeType = attachment.ContentType,
+                Name = attachment.Name,
 
-                })
-            };
+            });
         }
 
         if (includeEntities)
@@ -385,27 +381,15 @@ internal class A2AConverter
                     _schemas.TryAdd(entity.GetType(), cachedMetadata);
                 }
 
-                artifact = artifact with
+                artifact.Parts = artifact.Parts.Add(new DataPart
                 {
-                    Parts = artifact.Parts.Add(new DataPart
-                    {
-                        Metadata = cachedMetadata,
-                        Data = entity.ToJsonElements()
-                    })
-                };
+                    Metadata = cachedMetadata,
+                    Data = entity.ToJsonElements()
+                });
             }
         }
 
-        if (artifact != Artifact.Empty)
-        {
-            artifact = artifact with
-            {
-                ArtifactId = artifactId ?? Guid.NewGuid().ToString("N")
-            };
-            return artifact;
-        }
-
-        return null;
+        return artifact;
     }
 
     public static Artifact? ArtifactFromObject(object data, string name = null, string description = null, string mediaType = null, string artifactId = null)

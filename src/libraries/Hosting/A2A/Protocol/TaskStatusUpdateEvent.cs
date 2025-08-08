@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// Carries information about a change in the task's status during streaming. 
 /// This is one of the possible result types in a <see cref="SendStreamingMessageResponse"/>.
 /// </summary>
-public record TaskStatusUpdateEvent
+public sealed class TaskStatusUpdateEvent
 {
     public string Kind { get; } = "status-update";
 
@@ -18,26 +18,26 @@ public record TaskStatusUpdateEvent
     /// Task ID being updated
     /// </summary>
     [JsonPropertyName("taskId")]
-    public required string TaskId { get; init; }
+    public required string TaskId { get; set; }
 
     /// <summary>
     /// Context ID the task is associated with
     /// </summary>
     [JsonPropertyName("contextId")]
-    public required string ContextId { get; init; }
+    public required string ContextId { get; set; }
 
     /// <summary>
     /// The new TaskStatus object.
     /// </summary>
     [JsonPropertyName("status")]
-    public required TaskStatus Status { get; init; }
+    public required TaskStatus Status { get; set; }
 
     /// <summary>
     /// If true, indicates this is the terminal status update for the current stream cycle. 
     /// The server typically closes the SSE connection after this.
     /// </summary>
     [JsonPropertyName("final")]
-    public bool? Final { get; init; }
+    public bool? Final { get; set; }
 
     /// <summary>
     /// Event-specific metadata.

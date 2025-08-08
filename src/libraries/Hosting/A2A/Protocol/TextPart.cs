@@ -8,11 +8,11 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// <summary>
 /// For conveying plain textual content.
 /// </summary>
-public record TextPart : Part
+public sealed class TextPart : Part
 {
     /// <summary>
     /// The textual content of the part.
     /// </summary>
     [JsonPropertyName("text")]
-    public required string Text { get; init; }
+    public required string Text { get; set; }
 }
