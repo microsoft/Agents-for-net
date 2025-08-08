@@ -47,9 +47,9 @@ internal class A2AConverter
         {
             return await JsonSerializer.DeserializeAsync<T>(request.Body, s_SerializerOptions);
         }
-        catch (JsonException)
+        catch(Exception ex)
         {
-            return default;
+            throw new A2AException(ex.Message, ex, A2AErrors.InvalidRequest);
         }
     }
 
@@ -98,22 +98,18 @@ internal class A2AConverter
         };
     }
 
-    public static JsonRpcResponse CreateErrorResponse(JsonRpcRequest jsonRpcPayload, int code, string message)
+    public static JsonRpcError CreateErrorResponse(JsonRpcRequest jsonRpcPayload, int code, string message)
     {
         var id = jsonRpcPayload != null ? jsonRpcPayload.Id : new RequestId();
 
-        return new JsonRpcResponse()
+        return new JsonRpcError()
         {
             Id = id,
-            Result = JsonSerializer.SerializeToNode(new JsonRpcError
+            Error = new JsonRpcErrorDetail()
             {
-                Id = id,
-                Error = new JsonRpcErrorDetail
-                {
-                    Code = code,
-                    Message = message
-                }
-            }, s_SerializerOptions)
+                Code = code,
+                Message = message
+            }
         };
     }
 
@@ -140,28 +136,38 @@ internal class A2AConverter
     {
         if (jsonRpcPayload.Params == null)
         {
-            throw new ArgumentException("Params is null");
+            throw new A2AException("Params is null", A2AErrors.InvalidParams);
         }
 
-        var request = JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_SerializerOptions).Deserialize<MessageSendParams>(s_SerializerOptions);
-        if (request?.Message?.Parts == null)
+        MessageSendParams sendParams;
+         
+        try
         {
-            throw new ArgumentException("Failed to parse request body");
+            sendParams = JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_SerializerOptions).Deserialize<MessageSendParams>(s_SerializerOptions);
+        }
+        catch (Exception ex)
+        {
+            throw new A2AException(ex.Message, A2AErrors.ParseError);
+        }
+
+        if (sendParams?.Message?.Parts == null)
+        {
+            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
         }
 
         // Using contextId as conversationId
-        var contextId = request.Message.ContextId ?? Guid.NewGuid().ToString("N");
+        var contextId = sendParams.Message.ContextId ?? Guid.NewGuid().ToString("N");
 
         // SDK doesn't have a notion of "task".  For now, allow for a conversation to have multiple tasks.
-        var taskId = request.Message.TaskId ?? Guid.NewGuid().ToString("N");
+        var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
         
-        var activity = CreateActivity(taskId, channelId, userId, request.Message.Parts, true, isStreaming);
+        var activity = CreateActivity(taskId, channelId, userId, sendParams.Message.Parts, true, isStreaming);
         activity.RequestId = jsonRpcPayload.Id.ToString();
 
-        request.Message.ContextId = contextId;
-        request.Message.TaskId = taskId;
+        sendParams.Message.ContextId = contextId;
+        sendParams.Message.TaskId = taskId;
 
-        return (activity, contextId, taskId, request.Message);
+        return (activity, contextId, taskId, sendParams.Message);
     }
 
     public static TaskStatusUpdateEvent StatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)

@@ -24,6 +24,9 @@ namespace Microsoft.Agents.Hosting.A2A
             try
             {
                 task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false);
+
+                // TODO: error if Task is in terminal state
+
                 task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
                 task.History = AppendMessage(task.History, message);
             }

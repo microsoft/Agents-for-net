@@ -56,7 +56,7 @@ public static class A2AServiceExtensions
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["application/json"]));
 
         // AgentCard
-        a2aGroup.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        endpoints.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
         {
             System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
             await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);

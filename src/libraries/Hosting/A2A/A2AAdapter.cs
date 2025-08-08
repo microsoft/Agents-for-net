@@ -12,11 +12,14 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,66 +42,86 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
     {
-        var jsonRpcRequest = await A2AConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
-
-        if (jsonRpcRequest == null)
+        try
         {
-            JsonRpcResponse response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.ParseError, "Missing JsonRpcRequest");
+            var jsonRpcRequest = await A2AConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+
+            if (httpRequest.Method == HttpMethods.Get)
+            {
+                // TBD: Do these ever arrive via GET?  The A2A CLI uses POST for all requests.
+
+                if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
+                {
+                    await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                if (jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe))
+                {
+                    // Turn Begin
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
+                    }
+
+                    // Convert to Activity and update Task
+                    var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: true);
+                    activity.ChannelData = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    // TODO: error if Task is in terminal state
+
+                    await ProcessMessageStreamAsync(
+                        activity,
+                        HttpHelper.GetClaimsIdentity(httpRequest),
+                        httpResponse,
+                        agent,
+                        new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId, _logger),
+                        cancellationToken).ConfigureAwait(false);
+
+                    // Turn done
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Turn End: RequestId={RequestId}", activity.RequestId);
+                    }
+                }
+                else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
+                {
+                    await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
+                }
+                else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksCancel))
+                {
+                    // TODO
+                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                }
+                else if (jsonRpcRequest.Method.Equals(A2AMethods.MessageSend))
+                {
+                    // TODO:
+                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (A2AException a2aEx)
+        {
+            JsonRpcError response = A2AConverter.CreateErrorResponse(null, a2aEx.ErrorCode, a2aEx.Message);
             await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
-            return;
         }
-
-        if (httpRequest.Method == HttpMethods.Get)
+        catch (Exception ex)
         {
-            // TBD: Do these ever arrive via GET?  The A2A CLI uses POST for all requests.
-
-            if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
-            {
-                await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                JsonRpcResponse response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
-            }
-        }
-        else
-        {
-            if (jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe))
-            {
-                // Turn Begin
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
-                }
-
-                // Convert to Activity and update Task
-                var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: true);
-                activity.ChannelData = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                await ProcessMessageStreamAsync(
-                    activity,
-                    HttpHelper.GetClaimsIdentity(httpRequest),
-                    httpResponse,
-                    agent,
-                    new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId, _logger),
-                    cancellationToken).ConfigureAwait(false);
-
-                // Turn done
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug("Turn End: RequestId={RequestId}", activity.RequestId);
-                }
-            }
-            else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
-            {
-                await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                JsonRpcResponse response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
-            }
+            JsonRpcError response = A2AConverter.CreateErrorResponse(null, A2AErrors.InternalError, ex.Message);
+            await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -193,7 +216,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     private async Task ProcessTaskGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
     {
-        JsonRpcResponse response;
+        object response;
 
         try
         {

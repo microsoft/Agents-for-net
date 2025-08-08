@@ -58,7 +58,7 @@ internal class A2AStreamedResponseWriter : IChannelResponseWriter
                 return;
             }
 
-            // Each streaming activity is an artifact
+            // This is using entity.StreamId for the artifactId.  This will result in a single Artifact in the Task
             var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
             await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
 
