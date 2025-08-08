@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="magicCode">(Optional) Optional user entered code to validate.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Token Response.</returns>
-        Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, string channelId, string magicCode, CancellationToken cancellationToken);
+        Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, ChannelId channelId, string magicCode, CancellationToken cancellationToken);
 
         /// <summary>
         /// Get the raw signin link to be sent to the user for signin for a connection name.
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="channelId">The channel Id that will be associated with the token.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken);
+        Task SignOutUserAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Retrieves the token status for each configured connection for the given user.
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="includeFilter">The includeFilter.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A Task of Array of TokenStatus.</returns>
-        Task<TokenStatus[]> GetTokenStatusAsync(string userId, string channelId, string includeFilter, CancellationToken cancellationToken);
+        Task<TokenStatus[]> GetTokenStatusAsync(string userId, ChannelId channelId, string includeFilter, CancellationToken cancellationToken);
 
         /// <summary>
         /// Retrieves Azure Active Directory tokens for particular resources on a configured connection.
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="channelId">The channel Id that will be associated with the token.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A Task of Dictionary of resourceUrl to the corresponding TokenResponse.</returns>
-        Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, string channelId, CancellationToken cancellationToken);
+        Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, ChannelId channelId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Performs a token exchange operation such as for single sign-on.
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="exchangeRequest">The exchange request details, either a token to exchange or a uri to exchange.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception>ErrorResponseException</exception>
-        Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken);
+        Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken);
 
         /// <summary>
         /// Get the token or sign in resource for a user.

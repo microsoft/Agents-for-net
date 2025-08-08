@@ -188,5 +188,15 @@ namespace Microsoft.Agents.Core.Models
 
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.ActivityTreatment, StringComparison.OrdinalIgnoreCase)) as ActivityTreatment;
         }
+        
+        public static ProductInfo GetProductInfoEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.ProductInfo, StringComparison.OrdinalIgnoreCase)) as ProductInfo;
+        }
     }
 }
