@@ -69,14 +69,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static bool ShouldDeduplicate(ITurnContext turnContext)
         {
             // Teams
-            if (string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase)
+            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
                 && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             // SharePoint
-            if (string.Equals(Channels.M365, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase)
+            if (turnContext.Activity.ChannelId == Channels.M365
                 && string.Equals(SignInConstants.SharePointTokenExchange, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;

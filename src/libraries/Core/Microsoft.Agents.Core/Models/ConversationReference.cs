@@ -72,14 +72,16 @@ namespace Microsoft.Agents.Core.Models
             {
                 Type = ActivityTypes.Event,
                 Name = ActivityEventNames.ContinueConversation.ToString(),
-                Id = Guid.NewGuid().ToString(),
+                Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,
                 Locale = Locale,
+                DeliveryMode = DeliveryMode,
                 ServiceUrl = ServiceUrl,
                 Conversation = Conversation,
                 Recipient = Agent,
                 From = User,
-                RelatesTo = this
+                RelatesTo = this,
+                RequestId = RequestId,
             };
         }
 
@@ -104,5 +106,9 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> (Optional) A BCP-47 locale name for the referenced conversation. </summary>
         public string Locale { get; set; }
+
+        public string RequestId { get; set; }
+
+        public string DeliveryMode { get; set; }
     }
 }

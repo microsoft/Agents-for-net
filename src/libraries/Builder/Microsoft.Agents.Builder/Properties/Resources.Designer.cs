@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}.  Check your connection name and scope(s) for correctness..
         /// </summary>
         internal static string OBOExchangeFailed {
             get {
@@ -174,15 +174,6 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string StreamingResponseEnded {
             get {
                 return ResourceManager.GetString("StreamingResponseEnded", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to StreamingResponse in Teams requires QueueInformativeUpdate to be called first..
-        /// </summary>
-        internal static string TeamsRequiresInformativeFirst {
-            get {
-                return ResourceManager.GetString("TeamsRequiresInformativeFirst", resourceCulture);
             }
         }
         

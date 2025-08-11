@@ -141,10 +141,6 @@
     <value>StreamingResponse instance has already ended.</value>
     <comment>Raised when when using the instance after it has been ended, or calling EndStream twice.</comment>
   </data>
-  <data name="TeamsRequiresInformativeFirst" xml:space="preserve">
-    <value>StreamingResponse in Teams requires QueueInformativeUpdate to be called first.</value>
-    <comment>Raised when trying to use QueueTextChunk, but QueueInformativeUpdate has not been called.</comment>
-  </data>
   <data name="AttributeHandlerInvalid" xml:space="preserve">
     <value>The method does not match the RouteHandler delegate definition.</value>
     <comment>Raised when accessing RouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
@@ -190,7 +186,7 @@
     <comment>Raised when User Authorization is using a provider that does not support IOBOExchange</comment>
   </data>
   <data name="OBOExchangeFailed" xml:space="preserve">
-    <value>OBO exchange failed for connection '{0}' with scopes {1}.</value>
+    <value>OBO exchange failed for connection '{0}' with scopes {1}.  Check your connection name and scope(s) for correctness.</value>
     <comment>Raised when an OBO exchange was attempted.</comment>
   </data>
   <data name="UserAuthorizationDefaultHandlerNotFound" xml:space="preserve">

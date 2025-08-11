@@ -15,6 +15,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -1087,10 +1088,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var response = new HttpResponseMessage(HttpStatusCode.OK);
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
 
                 // GetTeamDetails
                 if (request.RequestUri.PathAndQuery.EndsWith("team-id"))
@@ -1101,7 +1098,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         name = "team-name",
                         aadGroupId = "team-aadgroupid",
                     };
-                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
                 // SendMessageToThreadInTeams
@@ -1113,7 +1110,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         serviceUrl = "https://serviceUrl/",
                         activityId = ExpectedActivityId,
                     };
-                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
                 // GetChannels
@@ -1128,7 +1125,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             new ChannelInfo { Id = "channel-id-3", Name = "channel-name-3"  },
                         ],
                     };
-                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
                 // Get participant
@@ -1140,7 +1137,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         meeting = new { role = "Organizer" },
                         conversation = new { Id = "meetigConversationId-1" },
                     };
-                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
                 // Get meeting details
@@ -1152,7 +1149,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         organizer = new { id = "organizer-id" },
                         conversation = new { id = "meetingConversationId-1" },
                     };
-                    response.Content = new StringContent(JsonSerializer.Serialize(content));
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
                 // SendMeetingNotification
@@ -1163,8 +1160,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var payload = JsonDocument.Parse(requestBody);
                     JsonElement root = payload.RootElement;
                     var value = root.GetProperty("value");
-                    var recipients = value.GetProperty("recipients").Deserialize<List<string>>(options);
-                    var channelData = root.GetProperty("channelData").Deserialize<MeetingNotificationChannelData>(options);
+                    var recipients = ProtocolJsonSerializer.ToObject<List<string>>(value.GetProperty("recipients"));
+                    var channelData = ProtocolJsonSerializer.ToObject< MeetingNotificationChannelData>(root.GetProperty("channelData"));
                     var obo = channelData.OnBehalfOfList.First();
 
                     // hack displayname as expected status code, for testing
@@ -1190,7 +1187,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                             break;
                         case "400":
                             var error = new ErrorResponse(new Error("BadSyntax"));
-                            response.Content = new StringContent(JsonSerializer.Serialize(error));
+                            response.Content = new StringContent(ProtocolJsonSerializer.ToJson(error));
                             response.StatusCode = HttpStatusCode.BadRequest;
                             break;
                         default:
@@ -1205,7 +1202,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var requestBody = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
                     var payload = JsonDocument.Parse(requestBody);
                     JsonElement root = payload.RootElement;
-                    var activity = root.GetProperty("activity").Deserialize<Activity>(options);
+                    var activity = ProtocolJsonSerializer.ToObject<Activity>(root.GetProperty("activity"));
 
                     // hack From.Name as expected status code, for testing
                     switch (activity.From.Name)
@@ -1242,7 +1239,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var requestBody = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
                     var payload = JsonDocument.Parse(requestBody);
                     JsonElement root = payload.RootElement;
-                    var requestActivity = root.GetProperty("activity").Deserialize<Activity>(options);
+                    var requestActivity = ProtocolJsonSerializer.ToObject<Activity>(root.GetProperty("activity"));
 
                     // hack From.Name as expected status code, for testing
                     switch (requestActivity.From.Name)
@@ -1279,7 +1276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var requestBody = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
                     var payload = JsonDocument.Parse(requestBody);
                     JsonElement root = payload.RootElement;
-                    var requestActivity = root.GetProperty("activity").Deserialize<Activity>(options);
+                    var requestActivity = ProtocolJsonSerializer.ToObject<Activity>(root.GetProperty("activity"));
 
                     // hack From.Name as expected status code, for testing
                     switch (requestActivity.From.Name)
@@ -1320,7 +1317,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var requestBody = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
                     var payload = JsonDocument.Parse(requestBody);
                     JsonElement root = payload.RootElement;
-                    var requestActivity = root.GetProperty("activity").Deserialize<Activity>(options);
+                    var requestActivity = ProtocolJsonSerializer.ToObject<Activity>(root.GetProperty("activity"));
 
                     // hack From.Name as expected status code, for testing
                     switch (requestActivity.From.Name)
@@ -1367,7 +1364,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                                 Response = new { StatusMap = new { StatusMap = 1 } },
                                 TotalEntriesCount = 1,
                             };
-                            response.Content = new StringContent(JsonSerializer.Serialize(content));
+                            response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                             response.StatusCode = HttpStatusCode.OK;
                             break;
                         case "400":
@@ -1403,7 +1400,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                                 ContinuationToken = "token-1",
                                 FailedEntries = new List<BatchFailedEntry> { new BatchFailedEntry { EntryId = "entry-1", Error = "400 user not found" } },
                             };
-                            response.Content = new StringContent(JsonSerializer.Serialize(content));
+                            response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                             response.StatusCode = HttpStatusCode.OK;
                             break;
                         case "400":

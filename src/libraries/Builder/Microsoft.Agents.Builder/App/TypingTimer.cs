@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (_timer != null)
                 {
-                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" }, CancellationToken.None).ConfigureAwait(false);
+                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo }, CancellationToken.None).ConfigureAwait(false);
                     if (IsRunning())
                     {
                         _timer?.Change(_interval, Timeout.Infinite);

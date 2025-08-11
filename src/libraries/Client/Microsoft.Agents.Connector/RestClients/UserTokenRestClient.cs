@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Connector.RestClients
             _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         }
 
-        internal HttpRequestMessage CreateExchangeRequest(string userId, string connectionName, string channelId, TokenExchangeRequest body)
+        internal HttpRequestMessage CreateExchangeRequest(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest body)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId);
+                .AppendQuery("channelId", channelId?.Channel);
 
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<TokenResponse> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> ExchangeAsync(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     if (tokenResponse?.Token != null)
                     {
-                        AddTokenResponseToCache(CacheKey(userId, connectionName, channelId), tokenResponse);
+                        AddTokenResponseToCache(CacheKey(userId, connectionName, channelId.Channel), tokenResponse);
                     }
                     return tokenResponse;
 
@@ -115,12 +115,12 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
         
-        private static string CacheKey(string userId, string connectionName, string channelId)
+        private static string CacheKey(string userId, string connectionName, ChannelId channelId)
         {
-            return $"{userId}-{connectionName}-{channelId}";
+            return $"{userId}-{connectionName}-{channelId?.Channel}";
         }
 
-        internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
+        internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, ChannelId channelId, string code)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
@@ -128,7 +128,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetToken")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId)
+                .AppendQuery("channelId", channelId?.Channel)
                 .AppendQuery("code", code);
 
             request.Headers.Add("Accept", "application/json");
@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<TokenResponse> GetTokenAsync(string userId, string connectionName, string channelId = null, string code = null, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> GetTokenAsync(string userId, string connectionName, ChannelId channelId = null, string code = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        internal HttpRequestMessage CreateGetAadTokensRequest(string userId, string connectionName, string channelId, AadResourceUrls body)
+        internal HttpRequestMessage CreateGetAadTokensRequest(string userId, string connectionName, ChannelId channelId, AadResourceUrls body)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
@@ -190,7 +190,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetAadTokens")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId);
+                .AppendQuery("channelId", channelId?.Channel);
 
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, string channelId = null, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, ChannelId channelId = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        internal HttpRequestMessage CreateSignOutRequest(string userId, string connectionName, string channelId)
+        internal HttpRequestMessage CreateSignOutRequest(string userId, string connectionName, ChannelId channelId)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Delete;
@@ -237,14 +237,14 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/SignOut")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId);
+                .AppendQuery("channelId", channelId?.Channel);
 
             request.Headers.Add("Accept", "application/json");
             return request;
         }
 
         /// <inheritdoc/>
-        public async Task<object> SignOutAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken = default)
+        public async Task<object> SignOutAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
@@ -275,14 +275,14 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        internal HttpRequestMessage CreateGetTokenStatusRequest(string userId, string channelId, string include)
+        internal HttpRequestMessage CreateGetTokenStatusRequest(string userId, ChannelId channelId, string include)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenStatus")
                 .AppendQuery("userId", userId)
-                .AppendQuery("channelId", channelId)
+                .AppendQuery("channelId", channelId?.Channel)
                 .AppendQuery("include", include);
 
             request.Headers.Add("Accept", "application/json");
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, string channelId = null, string include = null, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, ChannelId channelId = null, string include = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        internal HttpRequestMessage CreateExchangeTokenRequest(string userId, string connectionName, string channelId, TokenExchangeRequest body)
+        internal HttpRequestMessage CreateExchangeTokenRequest(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest body)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId);
+                .AppendQuery("channelId", channelId?.Channel);
 
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -335,7 +335,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return request;
         }
 
-        internal HttpRequestMessage CreateGetTokenOrSignInResourceRequest(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl)
+        internal HttpRequestMessage CreateGetTokenOrSignInResourceRequest(string userId, string connectionName, ChannelId channelId, string code, string state, string finalRedirect, string fwdUrl)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
@@ -343,7 +343,7 @@ namespace Microsoft.Agents.Connector.RestClients
             request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenOrSignInResource")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId)
+                .AppendQuery("channelId", channelId?.Channel)
                 .AppendQuery("code", code)
                 .AppendQuery("state", state)
                 .AppendQuery("finalRedirect", finalRedirect)
@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, ChannelId channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));

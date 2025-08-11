@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -71,6 +74,37 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
                 }
             }
+        }
+
+        /// <summary>
+        /// Get the <see cref="ClaimsIdentity"/> from the <see cref="HttpRequest"/>.
+        /// </summary>
+        /// <param name="request">The HttpRequest.</param>
+        /// <returns>The ClaimsIdentity from the request.</returns>
+        public static ClaimsIdentity GetClaimsIdentity(HttpRequest request)
+        {
+            // If Auth is not configured, we still need the claims from the JWT token.
+            // Currently, the stack does rely on certain Claims. If the Bearer token
+            // was sent, we can get them from there. The JWT token is NOT validated though.
+
+            var claimsIdentity = request.HttpContext.User?.Identity as ClaimsIdentity;
+
+            if (claimsIdentity != null && !claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
+            {
+                var auth = request.Headers.Authorization;
+                if (auth.Count != 0)
+                {
+                    var authHeaderValue = auth.First();
+                    var authValues = authHeaderValue.Split(' ');
+                    if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var jwt = new JwtSecurityToken(authValues[1]);
+                        claimsIdentity = new ClaimsIdentity(jwt.Claims);
+                    }
+                }
+            }
+
+            return claimsIdentity;
         }
     }
 }

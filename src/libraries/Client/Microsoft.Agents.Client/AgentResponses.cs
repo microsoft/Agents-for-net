@@ -92,14 +92,14 @@ namespace Microsoft.Agents.Client
         }
 
 #if !NETSTANDARD
-        public string ChannelId { get; init; } = "*";
+        public ChannelId ChannelId { get; init; } = "*";
 #else
-        public string ChannelId { get; set; } = "*";
+        public ChannelId ChannelId { get; set; } = "*";
 #endif
 
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
-            agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank);
+            agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers);
         }
     }
 }

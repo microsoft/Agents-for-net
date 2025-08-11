@@ -125,13 +125,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
                 catch (Exception ex)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, string.Join(",", scopes)]);
                 }
 
                 if (token == null)
                 {
                     // AcquireTokenOnBehalfOf returned null
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, string.Join(",", scopes)]);
                 }
             }
             catch (Exception)

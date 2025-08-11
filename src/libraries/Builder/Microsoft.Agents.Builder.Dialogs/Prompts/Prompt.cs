@@ -306,7 +306,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result contains the updated activity.</remarks>
-        protected virtual IActivity AppendChoices(IActivity prompt, string channelId, IList<Choice> choices, ListStyle style, ChoiceFactoryOptions options = null, string conversationType = default, IList<string> toList = default, CancellationToken cancellationToken = default)
+        protected virtual IActivity AppendChoices(IActivity prompt, ChannelId channelId, IList<Choice> choices, ListStyle style, ChoiceFactoryOptions options = null, string conversationType = default, IList<string> toList = default, CancellationToken cancellationToken = default)
         {
             // Get base prompt text (if any)
             var text = prompt != null && !string.IsNullOrEmpty(prompt.Text) ? prompt.Text : string.Empty;

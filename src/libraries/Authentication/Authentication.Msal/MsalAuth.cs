@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
@@ -37,6 +38,7 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
+        private ClientAssertionProviderBase _clientAssertion;
 
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
@@ -66,6 +68,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
+            var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
+            return result.AccessToken;
+        }
+
+        internal async Task<AuthenticationResult> InternalGetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
+        {
             if (!Uri.IsWellFormedUriString(resourceUrl, UriKind.RelativeOrAbsolute))
             {
                 throw new ArgumentException("Invalid instance URL");
@@ -94,7 +102,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
-                        return accessToken;
+                        return authResultFromCache.MsalAuthResult;
                     }
                 }
                 else
@@ -150,9 +158,13 @@ namespace Microsoft.Agents.Authentication.Msal
                 _cacheList.TryAdd(instanceUri, authResultPayload);
             }
 
-            return authResultPayload.MsalAuthResult.AccessToken;
+            return authResultPayload.MsalAuthResult;
         }
 
+        public TokenCredential GetTokenCredential()
+        {
+            return new MsalTokenCredential(this);
+        }
 
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
@@ -229,12 +241,17 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
                 {
-                    async Task<String> FetchExternalTokenAsync()
-                    {
-                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
-                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
-                    }
-                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId, null, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+                }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
                 else
                 {

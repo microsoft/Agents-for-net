@@ -15,6 +15,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,7 @@ namespace Microsoft.Agents.Client
         private readonly HttpAgentClientSettings _settings;
         private readonly IAccessTokenProvider _tokenProvider;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger _logger;
+        private readonly ILogger<HttpAgentClient> _logger;
         private readonly IAgentHost _agentHost;
         private bool _disposed;
 
@@ -56,24 +57,6 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public string Name => _settings.Name;
 
-        /*
-        public async Task StartConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            var agentConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
-            var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, false);
-
-            await SendRequest(conversationUpdate, AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken).ConfigureAwait(false);
-        }
-
-        public IAsyncEnumerable<object> StartConversationStreamedAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            var agentConversationId = _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).GetAwaiter().GetResult();
-            var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, true);
-
-            return InnerSendActivityStreamedAsync(conversationUpdate, AgentClaims.AllowAnonymous(turnContext.Identity), cancellationToken);
-        }
-        */
-
         /// <inheritdoc/>
         public async Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
@@ -86,7 +69,11 @@ namespace Microsoft.Agents.Client
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentConversationId, nameof(agentConversationId));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            _logger.LogInformation("SendActivityAsync: '{AgentClientId}' at '{AgentEndpoint}'", _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString());
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogInformation("SendActivityAsync: RequestId={RequestId}, AgentId={AgentClientId}, Endpoint={AgentEndpoint}, Activity={Activity}", 
+                    activity.RequestId, _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString(), ProtocolJsonSerializer.ToJson(activity));
+            }
 
             // Clone the activity so we can modify it before sending without impacting the original object.
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
@@ -191,6 +178,12 @@ namespace Microsoft.Agents.Client
 
         public async IAsyncEnumerable<object> InnerSendActivityStreamedAsync(IActivity activity, bool useAnonymous = false, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogInformation("SendActivityStreamedAsync: RequestId={RequestId}, AgentId={AgentClientId}, Endpoint={AgentEndpoint}, Activity={Activity}",
+                    activity.RequestId, _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString(), ProtocolJsonSerializer.ToJson(activity));
+            }
+
             // Create the HTTP request from the cloned Activity and send it to the Agent.
             using var response = await SendRequest(activity, useAnonymous, cancellationToken).ConfigureAwait(false);
 
@@ -214,14 +207,26 @@ namespace Microsoft.Agents.Client
                 {
                     string jsonRaw = line[6..];
                     var inActivity = ProtocolJsonSerializer.ToObject<IActivity>(jsonRaw);
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Stream Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, jsonRaw);
+                    }
+
                     yield return inActivity;
                 }
                 else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "invokeResponse")
                 {
                     string jsonRaw = line[6..];
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Stream Response: RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, jsonRaw);
+                    }
+
                     yield return ProtocolJsonSerializer.ToObject<InvokeResponse>(jsonRaw);
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(line))
                 {
                     _logger.LogWarning("AgentClient {AgentName}: Unexpected stream data {StreamType}, {LineValue}", Name, streamType, line.Trim());
                 }
@@ -254,6 +259,8 @@ namespace Microsoft.Agents.Client
             };
 
             using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentClient));
+
+            httpClient.AddHeaderPropagation();
 
             // Add the auth header to the HTTP request.
             if (!useAnonymous)
@@ -318,6 +325,7 @@ namespace Microsoft.Agents.Client
                 };
             }
 
+            activityClone.RequestId = Guid.NewGuid().ToString();
             activityClone.ServiceUrl = _settings.ConnectionSettings.ServiceUrl;
             activityClone.Recipient ??= new ChannelAccount();
             activityClone.Recipient.Role = RoleTypes.Skill;
