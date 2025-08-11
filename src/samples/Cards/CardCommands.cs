@@ -11,9 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Builder.App;
 
-namespace HandlingCards
+namespace Cards
 {
-    internal static class Cards
+    internal static class CardCommands
     {
         static IList<CardCommand> _cardCommands = _cardCommands =
                 [
