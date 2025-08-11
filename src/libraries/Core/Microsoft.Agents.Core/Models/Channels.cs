@@ -1,8 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.RegularExpressions;
+
 namespace Microsoft.Agents.Core.Models
 {
+    /// <summary>
+    /// Channel definitions.
+    /// The various "support" methods come from:  https://learn.microsoft.com/en-us/azure/bot-service/bot-service-channels-reference?view=azure-bot-service-4.0
+    /// </summary>
     public static class Channels
     {
         /// <summary>
@@ -219,6 +225,95 @@ namespace Microsoft.Agents.Core.Models
 
                 default:
                     return false;
+            }
+        }
+
+        public static bool SupportsVideoCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Msteams:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        public static bool SupportsReceiptCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Groupme:
+                case Msteams:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        public static bool SupportsThumbnailCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                    return false;
+
+                // Text only
+                case Groupme:
+                case Line:
+                case Slack:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        public static bool SupportsAudioCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Msteams:
+                case Twilio:
+                    return false;
+
+                // Text only
+                case Email:
+                case Groupme:
+                case Line:
+                case Slack:
+                case Telegram:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        public static bool SupportsAnimationCard(string channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                case Msteams:
+                    return false;
+
+                // Text only
+                case Email:
+                case Groupme:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
             }
         }
 
