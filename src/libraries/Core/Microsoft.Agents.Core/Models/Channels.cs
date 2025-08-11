@@ -229,7 +229,9 @@ namespace Microsoft.Agents.Core.Models
 
         public static bool SupportsVideoCard(string channelId)
         {
-            switch (channelId)
+        public static bool SupportsVideoCard(ChannelId channelId)
+        {
+            switch (channelId.Channel)
             {
                 case Alexa:
                 case Msteams:
