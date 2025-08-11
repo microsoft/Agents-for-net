@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,13 +38,14 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
+        private ClientAssertionProviderBase _clientAssertion;
 
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
         /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="msalConfigurationSection"></param>
-        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection) 
+        public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
             : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
         {
         }
@@ -65,6 +68,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
+            var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
+            return result.AccessToken;
+        }
+
+        internal async Task<AuthenticationResult> InternalGetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
+        {
             if (!Uri.IsWellFormedUriString(resourceUrl, UriKind.RelativeOrAbsolute))
             {
                 throw new ArgumentException("Invalid instance URL");
@@ -75,12 +84,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
             // Get or create existing token. 
             _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
-            if (_cacheList.ContainsKey(instanceUri))
+            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
             {
                 if (!forceRefresh)
                 {
-                    var accessToken = _cacheList[instanceUri].MsalAuthResult.AccessToken;
-                    var tokenExpiresOn = _cacheList[instanceUri].MsalAuthResult.ExpiresOn;
+                    var accessToken = authResultFromCache.MsalAuthResult.AccessToken;
+                    var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
@@ -93,7 +102,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
-                        return accessToken;
+                        return authResultFromCache.MsalAuthResult;
                     }
                 }
                 else
@@ -109,10 +118,11 @@ namespace Microsoft.Agents.Authentication.Msal
             object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
-            ExecuteAuthenticationResults authResultPayload = null; 
+            ExecuteAuthenticationResults authResultPayload = null;
             if (msalAuthClient is IConfidentialClientApplication msalConfidentialClient)
             {
-                if (localScopes.Length == 0) {
+                if (localScopes.Length == 0)
+                {
                     throw new ArgumentException("At least one Scope is required for Client Authentication.");
                 }
 
@@ -148,17 +158,21 @@ namespace Microsoft.Agents.Authentication.Msal
                 _cacheList.TryAdd(instanceUri, authResultPayload);
             }
 
-            return authResultPayload.MsalAuthResult.AccessToken;
+            return authResultPayload.MsalAuthResult;
         }
 
+        public TokenCredential GetTokenCredential()
+        {
+            return new MsalTokenCredential(this);
+        }
 
-        public async Task<string> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
+        public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
                 var result = await confidentialClient.AcquireTokenOnBehalfOf(scopes, new UserAssertion(token)).ExecuteAsync().ConfigureAwait(false);
-                return result.AccessToken;
+                return new TokenResponse() { Token = result.AccessToken, Expiration = result.ExpiresOn.DateTime };
             }
 
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");
@@ -227,12 +241,17 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
                 {
-                    async Task<String> FetchExternalTokenAsync()
-                    {
-                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
-                        return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
-                    }
-                    cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId, null, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+                }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    // Reuse this instance so that the assertion is cached and only refreshed once it expires.
+                    _clientAssertion = new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
+
+                    cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
                 else
                 {
@@ -251,7 +270,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <param name="instanceUrl"></param>
         /// <param name="scopes">scopes list to create the token for</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
             IList<string> _localScopesResolver = new List<string>();
@@ -263,7 +282,7 @@ namespace Microsoft.Agents.Authentication.Msal
             else
             {
                 var templist = new List<string>();
-                
+
                 if (_connectionSettings.Scopes != null)
                 {
                     foreach (var scope in _connectionSettings.Scopes)

@@ -212,5 +212,95 @@ namespace Microsoft.Agents.Connector.Properties {
                 return ResourceManager.GetString("SendUploadAttachment", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection configuration for &apos;{0}&apos; on the Azure Bot and try again.  The response is &apos;{1}&apos;.
+        /// </summary>
+        internal static string TokenServiceExchangeErrorResponse {
+            get {
+                return ResourceManager.GetString("TokenServiceExchangeErrorResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection configuration for &apos;{0}&apos; on the Azure Bot and try again..
+        /// </summary>
+        internal static string TokenServiceExchangeFailed {
+            get {
+                return ResourceManager.GetString("TokenServiceExchangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for Exchange: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceExchangeUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceExchangeUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetAadToken: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetAadTokenUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetAadTokenUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetSignInResource: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetSignInResourceUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetSignInResourceUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetSignInUrl: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetSignInUrlUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetSignInUrlUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenOrSignInResource: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetTokenOrSignInResourceUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetTokenOrSignInResourceUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenStatus: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetTokenStatusUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetTokenStatusUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetToken: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetTokenUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetTokenUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for SignOut: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceSignOutUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceSignOutUnexpected", resourceCulture);
+            }
+        }
     }
 }

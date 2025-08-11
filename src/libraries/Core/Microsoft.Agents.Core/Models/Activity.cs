@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -35,6 +36,14 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of Activity. </summary>
         public Activity()
         {
+            MembersAdded = [];
+            MembersRemoved = [];
+            ReactionsAdded = [];
+            ReactionsRemoved = [];
+            Attachments = [];
+            Entities = [];
+            ListenFor = [];
+            TextHighlights = [];
         }
 
         /// <summary> Initializes a new instance of Activity. </summary>
@@ -92,16 +101,16 @@ namespace Microsoft.Agents.Core.Models
             LocalTimezone = localTimezone;
             CallerId = callerId;
             ServiceUrl = serviceUrl;
-            ChannelId = channelId;
+            ChannelId = new ChannelId(channelId);
             From = @from;
             Conversation = conversation;
             Recipient = recipient;
             TextFormat = textFormat;
             AttachmentLayout = attachmentLayout;
-            MembersAdded = membersAdded;
-            MembersRemoved = membersRemoved;
-            ReactionsAdded = reactionsAdded;
-            ReactionsRemoved = reactionsRemoved;
+            MembersAdded = membersAdded ?? [];
+            MembersRemoved = membersRemoved ?? [];
+            ReactionsAdded = reactionsAdded ?? [];
+            ReactionsRemoved = reactionsRemoved ?? [];
             TopicName = topicName;
             Locale = locale;
             Text = text;
@@ -109,8 +118,8 @@ namespace Microsoft.Agents.Core.Models
             InputHint = inputHint;
             Summary = summary;
             SuggestedActions = suggestedActions;
-            Attachments = attachments;
-            Entities = entities;
+            Attachments = attachments ?? [];
+            Entities = entities ?? [];
             ChannelData = channelData;
             Action = action;
             ReplyToId = replyToId;
@@ -123,8 +132,8 @@ namespace Microsoft.Agents.Core.Models
             Expiration = expiration;
             Importance = importance;
             DeliveryMode = deliveryMode;
-            ListenFor = listenFor;
-            TextHighlights = textHighlights;
+            ListenFor = listenFor ?? [];
+            TextHighlights = textHighlights ?? [];
             SemanticAction = semanticAction;
         }
 
@@ -155,7 +164,7 @@ namespace Microsoft.Agents.Core.Models
         public string ServiceUrl { get; set; }
 
         /// <inheritdoc/>
-        public string ChannelId { get; set; }
+        public ChannelId ChannelId { get; set; }
 
         /// <inheritdoc/>
         public ChannelAccount From { get; set; }
@@ -256,6 +265,9 @@ namespace Microsoft.Agents.Core.Models
         /// <inheritdoc/>
         public SemanticAction SemanticAction { get; set; }
 
+        [JsonIgnore]
+        public string RequestId { get; set; }
+
         /// <inheritdoc/>
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
 
@@ -343,13 +355,15 @@ namespace Microsoft.Agents.Core.Models
         {
             var reference = new ConversationReference
             {
-                ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId,
+                ChannelId = ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
+                DeliveryMode = DeliveryMode,
+                RequestId = RequestId,
             };
 
             return reference;
@@ -372,6 +386,7 @@ namespace Microsoft.Agents.Core.Models
             ServiceUrl = reference.ServiceUrl;
             Conversation = reference.Conversation;
             Locale = reference.Locale ?? Locale;
+            RequestId = reference.RequestId;
 
             if (isIncoming)
             {
@@ -379,8 +394,9 @@ namespace Microsoft.Agents.Core.Models
                 Recipient = reference.Agent;
                 if (reference.ActivityId != null)
                 {
-                    Id = reference.ActivityId;
+                    Id ??= reference.ActivityId;
                 }
+                DeliveryMode = reference.DeliveryMode;
             }
             else
             {
@@ -391,6 +407,10 @@ namespace Microsoft.Agents.Core.Models
                 {
                     ReplyToId = reference.ActivityId;
                 }
+
+                // `A3116`: Agents SHOULD NOT send activities with `deliveryMode` of `expectReplies` to channels. 
+                // So we won't send DeliveryMode at all.  Not really needed for outgoing anyway.
+                DeliveryMode = null;
             }
 
             return this;
@@ -405,7 +425,7 @@ namespace Microsoft.Agents.Core.Models
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount(id: Recipient?.Id, name: Recipient?.Name),
                 Recipient = new ChannelAccount(id: From?.Id, name: From?.Name),
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = new ConversationAccount(isGroup: Conversation.IsGroup, id: Conversation.Id, name: Conversation.Name),
@@ -448,7 +468,7 @@ namespace Microsoft.Agents.Core.Models
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount { Id = Recipient?.Id, Name = Recipient?.Name },
                 Recipient = new ChannelAccount { Id = From?.Id, Name = From?.Name },
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = Conversation,

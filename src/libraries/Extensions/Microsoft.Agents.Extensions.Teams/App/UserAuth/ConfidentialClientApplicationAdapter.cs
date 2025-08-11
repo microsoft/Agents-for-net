@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
                     ChannelId = context.Activity.ChannelId,
                     ConnectionName = name,
                     Token = result.AccessToken,
-                    Expiration = result.ExpiresOn.ToString("o")
+                    Expiration = result.ExpiresOn
                 };
 
                 return tokenResponse;

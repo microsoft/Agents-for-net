@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DialogSkillBot
@@ -22,11 +23,12 @@ namespace DialogSkillBot
         public SkillAdapterWithErrorHandler(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IAgentHttpAdapter> logger,
+            ILogger<CloudAdapter> logger,
             IStorage storage,
             ConversationState conversationState,
-            IAgentHost agentHost)
-            : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
+            IAgentHost agentHost,
+            IConfiguration configuration)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, config: configuration)
         {
             _conversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

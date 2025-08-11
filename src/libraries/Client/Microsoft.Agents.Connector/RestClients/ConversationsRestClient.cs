@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
@@ -53,7 +52,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -93,7 +92,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -133,14 +132,22 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 202:
                     {
 #if !NETSTANDARD
+                        if (httpResponse.Content.ReadAsStream(cancellationToken).Length == 0)
+                        {
+                            return new ResourceResponse() { Id = string.Empty };
+                        }
                         return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
+                        if (httpResponse.Content.ReadAsStringAsync().Result.Length == 0)
+                        {
+                            return new ResourceResponse() { Id = string.Empty };
+                        }
                         return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
 #endif
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -182,7 +189,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -230,7 +237,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -290,7 +297,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -322,7 +329,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -358,7 +365,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -395,7 +402,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -427,7 +434,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -464,7 +471,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -501,7 +508,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -543,30 +550,9 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
+                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
-        }
-
-        /// <summary>
-        /// Common handler for Non Successful responses.
-        /// </summary>
-        /// <param name="httpResponse"></param>
-        /// <param name="errorMessage"></param>
-        /// <param name="cancellationToken"></param>
-        /// <param name="errors"></param>
-        private static Exception HandleExceptionResponse(HttpResponseMessage httpResponse, AgentErrorDefinition errorMessage, CancellationToken cancellationToken, params string[] errors)
-        {
-            AssertionHelpers.ThrowIfNull(httpResponse, nameof(httpResponse));
-
-            var ex = ErrorResponseException.CreateErrorResponseException(httpResponse, errorMessage, cancellationToken: cancellationToken, errors: errors);
-
-            if (httpResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                    ErrorHelper.InvalidAccessTokenForAgentCallback, ex);
-            }
-            throw ex;
         }
     }
 }

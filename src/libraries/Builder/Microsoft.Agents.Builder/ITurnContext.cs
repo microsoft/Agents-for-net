@@ -265,7 +265,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="handler">The handler to add to the context object.</param>
         /// <returns>The updated context object.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="handler"/> is <c>null</c>.</exception>
         /// <remarks>When the context's <see cref="DeleteActivityAsync(string, CancellationToken)"/> is called,
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.

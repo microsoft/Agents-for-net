@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
-using Newtonsoft.Json;
+using Microsoft.Agents.Core.Serialization;
 
 namespace DialogSkillBot.Dialogs
 {
@@ -97,7 +97,7 @@ namespace DialogSkillBot.Dialogs
             var location = new Location();
             if (activity.Value != null)
             {
-                location = JsonConvert.DeserializeObject<Location>(JsonConvert.SerializeObject(activity.Value));
+                location = ProtocolJsonSerializer.ToObject<Location>(activity.Value);
             }
 
             // We haven't implemented the GetWeatherDialog so we just display a TODO message.
@@ -113,7 +113,7 @@ namespace DialogSkillBot.Dialogs
             var bookingDetails = new BookingDetails();
             if (activity.Value != null)
             {
-                bookingDetails = JsonConvert.DeserializeObject<BookingDetails>(JsonConvert.SerializeObject(activity.Value));
+                bookingDetails = ProtocolJsonSerializer.ToObject<BookingDetails>(activity.Value);
             }
 
             // Start the booking dialog.
@@ -121,6 +121,6 @@ namespace DialogSkillBot.Dialogs
             return await stepContext.BeginDialogAsync(bookingDialog.Id, bookingDetails, cancellationToken);
         }
 
-        private string GetObjectAsJsonString(object value) => value == null ? string.Empty : JsonConvert.SerializeObject(value);
+        private string GetObjectAsJsonString(object value) => value == null ? string.Empty : ProtocolJsonSerializer.ToJson(value);
     }
 }

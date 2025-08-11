@@ -29,7 +29,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <summary>
         /// Header key for conversation ID. 
         /// </summary>
-        private static readonly string _conversationIdHeaderKey = "x-ms-conversationid"; 
+        private static readonly string _conversationIdHeaderKey = "x-ms-conversationid";
         /// <summary>
         /// Conversation ID being used for the current conversation.
         /// </summary>
@@ -61,11 +61,11 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <summary>
         /// Island Header key
         /// </summary>
-        private static readonly string _islandExperimentalUrlHeaderKey = "x-ms-d2e-experimental"; 
+        private static readonly string _islandExperimentalUrlHeaderKey = "x-ms-d2e-experimental";
         /// <summary>
         /// Island Experimental URL for Copilot Studio
         /// </summary>
-        private string _IslandExperimentalUrl = string.Empty; 
+        private string _IslandExperimentalUrl = string.Empty;
         /// <summary>
         /// Connection Settings for Copilot Studio
         /// </summary>
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// </summary>
         /// <param name="cloud">PowerPlatform Cloud to use</param>
         /// <returns></returns>
-        public static string? ScopeFromCloud(PowerPlatformCloud cloud) => PowerPlatformEnvironment.GetTokenAudience(null,cloud);
+        public static string? ScopeFromCloud(PowerPlatformCloud cloud) => PowerPlatformEnvironment.GetTokenAudience(null, cloud);
 
         /// <summary>
         /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted bots. 
@@ -139,8 +139,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     RequestUri = uriStart,
                     Headers =
                     {
-                        Accept = { s_EventStream },
-                        UserAgent = { UserAgentHelper.UserAgentHeader }
+                        Accept = { s_EventStream }
                     },
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(body)))
                     {
@@ -150,6 +149,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         }
                     }
                 };
+                req.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(req, cancellationToken);
             }
         }
@@ -163,7 +163,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <returns></returns>
         public IAsyncEnumerable<IActivity> AskQuestionAsync(string question, string? conversationId = default, CancellationToken ct = default)
         {
-            var activity = new Activity { 
+            var activity = new Activity
+            {
                 Type = "message",
                 Text = question,
                 Conversation = new ConversationAccount { Id = conversationId }
@@ -190,15 +191,14 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     localConversationId = _conversationId;
 
                 Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
-                ExecuteTurnRequest qbody = new() { Activity =(Activity)activity };
+                ExecuteTurnRequest qbody = new() { Activity = (Activity)activity };
                 HttpRequestMessage qreq = new()
                 {
                     Method = HttpMethod.Post,
                     RequestUri = uriExecute,
                     Headers =
                 {
-                    Accept = { s_EventStream },
-                    UserAgent = { UserAgentHelper.UserAgentHeader }
+                    Accept = { s_EventStream }
                 },
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
                     {
@@ -208,6 +208,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }
                     }
                 };
+                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(qreq, ct);
             }
         }
@@ -218,8 +219,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <param name="req">Request Object to send to Copilot Studio</param>
         /// <param name="ct">CancellationToken used to handle interruption request</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="HttpRequestException"></exception>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.HttpRequestException"></exception>
         private async IAsyncEnumerable<IActivity> PostRequestAsync(HttpRequestMessage req, [EnumeratorCancellation] CancellationToken ct = default)
         {
             AssertionHelpers.ThrowIfNull(req, nameof(req));
@@ -293,7 +294,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 if (Settings.UseExperimentalEndpoint && string.IsNullOrEmpty(Settings.DirectConnectUrl))
                 {
                     _IslandExperimentalUrl = values.FirstOrDefault() ?? string.Empty;
-                    Settings.DirectConnectUrl = _IslandExperimentalUrl; 
+                    Settings.DirectConnectUrl = _IslandExperimentalUrl;
                     _logger.LogTrace("Island Experimental URL: {IslandExperimentalUrl}", _IslandExperimentalUrl);
                 }
             }
@@ -351,7 +352,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     switch (activity.Type)
                     {
                         case "message":
-                            if (string.IsNullOrEmpty(_conversationId)) 
+                            if (string.IsNullOrEmpty(_conversationId))
                             {
                                 // Did not get it from the header. 
                                 _conversationId = activity.Conversation.Id;

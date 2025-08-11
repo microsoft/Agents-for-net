@@ -8,7 +8,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using OpenAI.Chat;
 using StreamingMessageAgent;
 using System;
@@ -17,43 +17,59 @@ using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-builder.Logging.AddConsole();
 
 builder.Services.AddTransient<ChatClient>(sp =>
 {
     return new AzureOpenAIClient(
-            new Uri(builder.Configuration["AIServices:AzureOpenAI:Endpoint"]),
-            new ApiKeyCredential(builder.Configuration["AIServices:AzureOpenAI:ApiKey"]))
+            new Uri(builder.Configuration["AIServices:AzureOpenAI:Endpoint"]!),
+            new ApiKeyCredential(builder.Configuration["AIServices:AzureOpenAI:ApiKey"]!))
     .GetChatClient(builder.Configuration["AIServices:AzureOpenAI:DeploymentName"]);
 });
 
-// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
+// Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<StreamingAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operate correctly
+// that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-var app = builder.Build();
-
 // Configure the HTTP request pipeline.
-app.UseRouting();
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+
+WebApplication app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
+// This receives incoming messages from Azure Bot Service or other SDK Agents
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
-})
-    .AllowAnonymous();
+});
 
-// Hardcoded for brevity and ease of testing. 
-// In production, this should be set in configuration.
-app.Urls.Add($"http://localhost:3978");
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
+if (!app.Environment.IsDevelopment())
+{
+    incomingRoute.RequireAuthorization();
+}
+else
+{
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
+    app.Urls.Add($"http://localhost:3978");
+}
 
 app.Run();

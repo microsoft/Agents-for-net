@@ -44,7 +44,6 @@ namespace Microsoft.Agents.Builder.Errors
 
         // StreamingMessages
         internal static AgentErrorDefinition StreamingResponseEnded = new AgentErrorDefinition(baseBuilderErrorCode - 6, Properties.Resources.StreamingResponseEnded, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition TeamsRequiresInformativeFirst = new AgentErrorDefinition(baseBuilderErrorCode - 7, Properties.Resources.TeamsRequiresInformativeFirst, "https://aka.ms/AgentsSDK-Error01");
 
         // UserAuth (base, not Application)
         internal static AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(baseBuilderErrorCode - 8, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
@@ -59,11 +58,12 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition OBONotExchangeableToken = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.OBONotExchangeableToken, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBONotSupported = new AgentErrorDefinition(baseBuilderErrorCode - 17, Properties.Resources.OBONotSupported, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBOExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
-
-        internal static AgentErrorDefinition AnonymousNotAllowed = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.AnonymousNotAllowed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UnexpectedAuthorizationState = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserTokenClientNotAvailable = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.UserTokenClientNotAvailable, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition ExchangeTokenUnexpectedNull = new AgentErrorDefinition(baseBuilderErrorCode - 21, Properties.Resources.ExchangeTokenUnexpectedNull, "https://aka.ms/AgentsSDK-Error01");
 
         // Extensions
-        internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

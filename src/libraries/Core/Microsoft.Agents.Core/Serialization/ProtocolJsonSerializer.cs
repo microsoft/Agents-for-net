@@ -19,6 +19,15 @@ namespace Microsoft.Agents.Core.Serialization
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
+        /// <summary>
+        /// Provides a way to turn off the {channelId}:{product} notation.  If false,
+        /// ChannelId.ToString() is just the {channelId} value.  However, serialization of the 
+        /// ProductInfo Entity is still accounted for.  ChannelId.SubChannel is still populated
+        /// with the ProductInfo.Id value in any case.
+        /// It is not recommended to set false without guidance.
+        /// </summary>
+        public static bool ChannelIdIncludesProduct { get; set; } = true;
+
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
@@ -26,7 +35,7 @@ namespace Microsoft.Agents.Core.Serialization
             SerializationInitAttribute.InitSerialization();
         }
 
-        public static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
@@ -53,6 +62,20 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
+        public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
+        {
+            lock (_optionsLock)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                SerializationOptions = applyFunc(newOptions);
+            }
+        }
+
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
         {
             options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
@@ -71,7 +94,9 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new AudioCardConverter());
             options.Converters.Add(new CardActionConverter());
             options.Converters.Add(new ChannelAccountConverter());
+            options.Converters.Add(new ConversationAccountConverter());
             options.Converters.Add(new EntityConverter());
+            options.Converters.Add(new AIEntityConverter());
             options.Converters.Add(new TokenExchangeInvokeResponseConverter());
             options.Converters.Add(new TokenExchangeInvokeRequestConverter());
             options.Converters.Add(new TokenResponseConverter());

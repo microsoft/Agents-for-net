@@ -24,13 +24,13 @@ namespace Microsoft.Agents.Builder.App
     /// 
     /// RouteType:
     /// <code>
-    ///    Activity,       // { Type | RegEx | Selector}, Rank
-    ///    Message,        // { Text | RegEx | Selector}, Rank
-    ///    Event,          // { EventName | RegEx | Selector}, Rank
-    ///    Conversation,   // { EventName | Selector}, Rank
-    ///    HandOff,        // Selector, Rank
-    ///    ReactionAdded,  // Rank
-    ///    ReactionRemoved // Rank
+    ///    Activity,       // { Type | RegEx | Selector}, Rank, AutoHandlers
+    ///    Message,        // { Text | RegEx | Selector}, Rank, AutoHandlers
+    ///    Event,          // { EventName | RegEx | Selector}, Rank, AutoHandlers
+    ///    Conversation,   // { EventName | Selector}, Rank, AutoHandlers
+    ///    HandOff,        // Selector, Rank, AutoHandlers
+    ///    ReactionAdded,  // Rank, AutoHandlers
+    ///    ReactionRemoved // Rank, AutoHandlers
     /// </code>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
@@ -38,36 +38,71 @@ namespace Microsoft.Agents.Builder.App
     {
         public RouteType RouteType { get; set; }
 
+        /// <summary>
+        /// Activity Type, <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
+        /// </summary>
         public string Type { get; set; }
+
+        /// <summary>
+        /// Activity Text
+        /// </summary>
         public string Text { get; set; }
 
+        /// <summary>
+        /// Activity Text Regex
+        /// </summary>
         public string Regex { get; set; }
 
+        /// <summary>
+        /// Name of a custom RouteSelector delegate.
+        /// </summary>
         public string Selector { get; set; }
 
+        /// <summary>
+        /// Activity Name for Invokes, Events, and ConversationUpdate.
+        /// </summary>
         public string EventName { get; set; }
 
-
+        /// <summary>
+        /// Route ordering rank.
+        /// </summary>
+        /// <remarks>
+        /// 0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.
+        /// </remarks>
         public ushort Rank { get; set; } = RouteRank.Unspecified;
+
+        /// <summary>
+        /// Delimited list of OAuth handlers to use for the RouteHandler.
+        /// </summary>
+        /// <remarks>
+        /// Valid delimiters are: comma, space, or semi-colon.
+        /// </remarks>
+        public string SignInHandlers { get; set; }
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
+#if !NETSTANDARD
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+#else
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+#endif
+
             if (RouteType == RouteType.Activity)
             {
                 if (!string.IsNullOrWhiteSpace(Type))
                 {
 #if !NETSTANDARD
-                    app.OnActivity(Type, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnActivity(Type, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnActivity(Type, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler),app), rank: Rank);
+                    app.OnActivity(Type, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler),app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
 #if !NETSTANDARD
-                    app.OnActivity(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnActivity(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnActivity(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnActivity(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
@@ -76,7 +111,7 @@ namespace Microsoft.Agents.Builder.App
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
                     CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnActivity(delegateSelector, delegateHandler, rank: Rank);
+                    app.OnActivity(delegateSelector, delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
                 else
                 {
@@ -88,17 +123,17 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(Text))
                 {
 #if !NETSTANDARD
-                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnMessage(Text, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnMessage(Text, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
 #if !NETSTANDARD
-                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnMessage(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnMessage(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
@@ -107,7 +142,7 @@ namespace Microsoft.Agents.Builder.App
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
                     CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnMessage(delegateSelector, delegateHandler, rank: Rank);
+                    app.OnMessage(delegateSelector, delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
                 else
                 {
@@ -119,17 +154,17 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
 #if !NETSTANDARD
-                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnEvent(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnEvent(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
 #if !NETSTANDARD
-                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnEvent(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnEvent(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
@@ -138,7 +173,7 @@ namespace Microsoft.Agents.Builder.App
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
                     CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnEvent(delegateSelector, delegateHandler, rank: Rank);
+                    app.OnEvent(delegateSelector, delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
                 else
                 {
@@ -150,9 +185,9 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
 #if !NETSTANDARD
-                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnConversationUpdate(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank);
+                    app.OnConversationUpdate(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
@@ -161,7 +196,7 @@ namespace Microsoft.Agents.Builder.App
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
                     CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnConversationUpdate(delegateSelector, delegateHandler, rank: Rank);
+                    app.OnConversationUpdate(delegateSelector, delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
                 else
                 {
@@ -171,17 +206,17 @@ namespace Microsoft.Agents.Builder.App
             else if (RouteType == RouteType.ReactionAdded)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsAdded(delegateHandler, rank: Rank);
+                app.OnMessageReactionsAdded(delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
             }
             else if (RouteType == RouteType.ReactionRemoved)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsRemoved(delegateHandler, rank: Rank);
+                app.OnMessageReactionsRemoved(delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
             }
             else if (RouteType == RouteType.HandOff)
             {
                 CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnHandoff(delegateHandler, rank: Rank);
+                app.OnHandoff(delegateHandler, rank: Rank, autoSignInHandlers: autoSignInHandlers);
             }
         }
 

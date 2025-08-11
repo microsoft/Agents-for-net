@@ -25,7 +25,11 @@ namespace Microsoft.Agents.Model.Tests
             var outJson = ProtocolJsonSerializer.ToJson(outConversation);
 
             // Specifically, should include: "bot": {} and not "agent": {}
+#if SKIP_EMPTY_LISTS
             var outExpected = "{\"isGroup\":false,\"bot\":{\"id\":\"agent\"},\"members\":[{\"id\":\"member\"}],\"topicName\":\"topicName\",\"tenantId\":\"tenantId\",\"activity\":{\"type\":\"message\"}}";
+#else
+            var outExpected = "{\"isGroup\":false,\"bot\":{\"id\":\"agent\"},\"members\":[{\"id\":\"member\"}],\"topicName\":\"topicName\",\"tenantId\":\"tenantId\",\"activity\":{\"type\":\"message\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[],\"listenFor\":[],\"textHighlights\":[]}}";
+#endif
 
             Assert.Equal(outExpected, outJson);
 

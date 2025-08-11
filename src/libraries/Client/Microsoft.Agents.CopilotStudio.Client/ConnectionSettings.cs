@@ -35,13 +35,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// Default constructor for the ConnectionSettings class.
         /// </summary>
         public ConnectionSettings()
-        {}
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConnectionSettings"/> class.
         /// </summary>
         /// <param name="config">Configuration Section containing DirectToEngine Connection settings</param>
-        /// <exception cref="ArgumentException">Thrown when required configuration values are missing</exception>
+        /// <exception cref="System.ArgumentException">Thrown when required configuration values are missing</exception>
         public ConnectionSettings(IConfigurationSection config)
         {
             if (config != null && config.Exists())
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Prod);
                 CopilotAgentType = config.GetValue(nameof(CopilotAgentType), AgentType.Published);
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
-                UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint),false);
+                UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint), false);
                 EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);
                 if (string.IsNullOrEmpty(DirectConnectUrl))
                 {

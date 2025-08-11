@@ -8,7 +8,6 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,17 +15,16 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Handles user authentication using the Token Service.
+    /// Handles OAuth using the Azure Bot Token Service.
     /// </summary>
     public class AzureBotUserAuthorization : IUserAuthorization
     {
         private readonly OAuthSettings _settings;
-        //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
-        private readonly BotUserAuthorization _botAuthentication;
+        private readonly AgentUserAuthorization _agentAuthentication;
         private readonly IConnections _connections;
 
         public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
-            : this(name, storage, connections, configurationSection.Get<OAuthSettings>())
+            : this(name, storage, connections, GetOAuthSettings(configurationSection))
         {
 
         }
@@ -39,7 +37,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
         public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings) 
-            : this(settings, new BotUserAuthorization(name, settings, storage))
+            : this(settings, new AgentUserAuthorization(name, settings, storage))
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
@@ -49,30 +47,21 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// Initializes the class
         /// </summary>
         /// <param name="settings">The settings to initialize the class</param>
-        /// <param name="botAuthentication">The bot authentication instance</param>
-        /// <param name="messageExtensionAuth">The message extension authentication instance</param>
-        internal AzureBotUserAuthorization(OAuthSettings settings, BotUserAuthorization botAuthentication)
+        /// <param name="agentAuthentication">The IUserAuthorizationFlow for the Agent.</param>
+        internal AzureBotUserAuthorization(OAuthSettings settings, AgentUserAuthorization agentAuthentication)
         {
             _settings = settings;
-            //_messageExtensionAuth = messageExtensionAuth;
-            _botAuthentication = botAuthentication;
+            _agentAuthentication = agentAuthentication;
         }
 
         public string Name { get; private set; }
 
         /// <inheritdoc/>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            /*
-            if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
+            if (_agentAuthentication != null && (forceSignIn || await _agentAuthentication.IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false)))
             {
-                return await _messageExtensionAuth.AuthenticateAsync(turnContext).ConfigureAwait(false);
-            }
-            */
-
-            if (_botAuthentication != null && (forceSignIn || _botAuthentication.IsValidActivity(turnContext)))
-            {
-                var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                var token = await _agentAuthentication.OnFlowTurn(turnContext, cancellationToken).ConfigureAwait(false);
                 return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
 
@@ -82,7 +71,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            await _botAuthentication.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+            await _agentAuthentication.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -92,34 +81,33 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }
 
-        /// <summary>
-        /// Get user token
-        /// </summary>
-        protected virtual async Task<TokenResponse> GetUserToken(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
+        /// <inheritdoc/>
+        public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, "", cancellationToken).ConfigureAwait(false);
+            var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
+            return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> HandleOBO(ITurnContext turnContext, string token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        private async Task<TokenResponse> HandleOBO(ITurnContext turnContext, TokenResponse token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token?.Token))
             {
                 return null;
             }
 
-            // If OBO is not set return token as-is.
-            if (string.IsNullOrEmpty(_settings.OBOConnectionName) && string.IsNullOrEmpty(exchangeConnection))
+            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            var scopes = exchangeScopes ?? _settings.OBOScopes;
+
+            // If OBO is not supplied (by config or passed) return token as-is.
+            if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
             {
                 return token;
             }
 
-            string exchangedToken = null;
-            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
-
             try
             {
                 // Can we even exchange this?
-                if (!IsExchangeableToken(token))
+                if (!token.IsExchangeable)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
                 }
@@ -133,29 +121,26 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 // Do exchange.
                 try
                 {
-                    exchangedToken = await oboExchangeProvider.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(scopes, token.Token).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, string.Join(",", scopes)]);
                 }
-            }
-            finally
-            {
-                if (exchangedToken == null)
+
+                if (token == null)
                 {
-                    await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                    // AcquireTokenOnBehalfOf returned null
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, string.Join(",", scopes)]);
                 }
             }
+            catch (Exception)
+            {
+                await SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                throw;
+            }
 
-            return exchangedToken;
-        }
-
-        private static bool IsExchangeableToken(string token)
-        {
-            JwtSecurityToken jwtToken = new(token);
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
-            return (bool)(aud?.StartsWith("api://"));
+            return token ?? null;
         }
 
         private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)
@@ -171,6 +156,23 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             oboExchangeProvider = null;
             return false;
+        }
+
+        private static OAuthSettings GetOAuthSettings(IConfigurationSection config)
+        {
+            var settings = config.Get<OAuthSettings>();
+
+            if (settings.OBOScopes == null)
+            {
+                // try reading as a string to compensate for users just setting a non-array string
+                var configScope = config.GetSection(nameof(OAuthSettings.OBOScopes)).Get<string>();
+                if (!string.IsNullOrEmpty(configScope))
+                {
+                    settings.OBOScopes = [configScope];
+                }
+            }
+
+            return settings;
         }
     }
 }

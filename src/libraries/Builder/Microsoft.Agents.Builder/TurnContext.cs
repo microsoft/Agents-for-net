@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="activity">The incoming activity for the turn;
         /// or <c>null</c> for a turn for a proactive message.</param>
         /// <param name="state"></param>
-        /// <exception cref="ArgumentNullException"><paramref name="activity"/> or
+        /// <exception cref="System.ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by Adapter implementations only.</remarks>
         public TurnContext(IChannelAdapter adapter, IActivity activity)
@@ -75,8 +75,6 @@ namespace Microsoft.Agents.Builder
 
             if (turnContext is TurnContext tc)
             {
-                BufferedReplyActivities = tc.BufferedReplyActivities;
-
                 // keep private middleware pipeline hooks.
                 _onSendActivities = tc._onSendActivities;
                 _onUpdateActivity = tc._onUpdateActivity;
@@ -120,12 +118,6 @@ namespace Microsoft.Agents.Builder
             private set;
         }
 
-        /// <summary>
-        /// Gets a list of activities to send when `context.Activity.DeliveryMode == 'expectReplies'.
-        /// </summary>
-        /// <value>A list of activities.</value>
-        internal List<IActivity> BufferedReplyActivities { get; } = new List<IActivity>();
-
         /// <inheritdoc/>
         public ITurnContext OnSendActivities(SendActivitiesHandler handler)
         {
@@ -162,10 +154,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
 
-            var activityToSend = new Activity() 
-            { 
+            var activityToSend = new Activity()
+            {
                 Type = ActivityTypes.Message,
-                Text = textReplyToSend 
+                Text = textReplyToSend
             };
 
             if (!string.IsNullOrEmpty(speak))
@@ -211,7 +203,8 @@ namespace Microsoft.Agents.Builder
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
 
-            var conversationReference = this.Activity.GetConversationReference();
+            // ConversationReference for the incoming Activity
+            var conversationReference = Activity.GetConversationReference();
 
             var bufferedActivities = new List<IActivity>(activities.Length);
 
@@ -245,59 +238,15 @@ namespace Microsoft.Agents.Builder
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()
             {
-                if (Activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                if (!Responded)
                 {
-                    var responses = new ResourceResponse[bufferedActivities.Count];
-                    var sentNonTraceActivity = false;
-
-                    for (var index = 0; index < responses.Length; index++)
-                    {
-                        var activity = bufferedActivities[index];
-                        BufferedReplyActivities.Add(activity);
-
-                        // Ensure the TurnState has the InvokeResponseKey, since this activity
-                        // is not being sent through the adapter, where it would be added to TurnState.
-                        if (activity.Type == ActivityTypes.InvokeResponse)
-                        {
-                            StackState[ChannelAdapter.InvokeResponseKey] = activity;
-                        }
-
-                        responses[index] = new ResourceResponse();
-
-                        sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
-                    }
-
-                    if (sentNonTraceActivity)
-                    {
-                        Responded = true;
-                    }
-
-                    return responses;
+                    Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
                 }
-                else
-                {
-                    // Send from the list which may have been manipulated via the event handlers.
-                    // Note that 'responses' was captured from the root of the call, and will be
-                    // returned to the original caller.
-                    var responses = await Adapter.SendActivitiesAsync(this, bufferedActivities.ToArray(), cancellationToken).ConfigureAwait(false);
-                    var sentNonTraceActivity = false;
 
-                    for (var index = 0; index < responses.Length; index++)
-                    {
-                        var activity = bufferedActivities[index];
-
-                        activity.Id = responses[index].Id;
-
-                        sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
-                    }
-
-                    if (sentNonTraceActivity)
-                    {
-                        Responded = true;
-                    }
-
-                    return responses;
-                }
+                // Send from the list which may have been manipulated via the event handlers.
+                // Note that 'responses' was captured from the root of the call, and will be
+                // returned to the original caller.
+                return await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
             }
         }
 

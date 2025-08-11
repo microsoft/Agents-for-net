@@ -26,6 +26,9 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> A list of Activities included in the response. </summary>
         public IList<IActivity> Activities { get; set; }
 
+        /// <summary>
+        /// If Activity.Type is "Invoke", this property contains the body of the InvokeResponse.
+        /// </summary>
         public object Body { get; set; }
     }
 }

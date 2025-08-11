@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
                         tokenResponse = new TokenResponse
                         {
                             Token = exchangedToken.AccessToken,
-                            Expiration = exchangedToken.ExpiresOn.ToString("o")
+                            Expiration = exchangedToken.ExpiresOn
                         };
 
                         await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);

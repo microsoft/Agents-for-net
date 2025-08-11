@@ -141,10 +141,6 @@
     <value>StreamingResponse instance has already ended.</value>
     <comment>Raised when when using the instance after it has been ended, or calling EndStream twice.</comment>
   </data>
-  <data name="TeamsRequiresInformativeFirst" xml:space="preserve">
-    <value>StreamingResponse in Teams requires QueueInformativeUpdate to be called first.</value>
-    <comment>Raised when trying to use QueueTextChunk, but QueueInformativeUpdate has not been called.</comment>
-  </data>
   <data name="AttributeHandlerInvalid" xml:space="preserve">
     <value>The method does not match the RouteHandler delegate definition.</value>
     <comment>Raised when accessing RouteAttribute is being initialized but the indicated method does not have a valid signature.</comment>
@@ -190,18 +186,24 @@
     <comment>Raised when User Authorization is using a provider that does not support IOBOExchange</comment>
   </data>
   <data name="OBOExchangeFailed" xml:space="preserve">
-    <value>OBO exchange failed for connection '{0}' with scopes {1}.</value>
+    <value>OBO exchange failed for connection '{0}' with scopes {1}.  Check your connection name and scope(s) for correctness.</value>
     <comment>Raised when an OBO exchange was attempted.</comment>
   </data>
   <data name="UserAuthorizationDefaultHandlerNotFound" xml:space="preserve">
     <value>Handler name '{0}' not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid.</value>
     <comment>Raised when AgentApplication:UserAuthorization:DefaultHandlerName isn't found or fails to create.</comment>
   </data>
-  <data name="AnonymousNotAllowed" xml:space="preserve">
-    <value>Raised when JWT authentication has not been enabled for the sending channel.</value>
-    <comment>Anonymous access is not allowed for this channel.</comment>
-  </data>
   <data name="ExtensionAlreadyRegistered" xml:space="preserve">
     <value>An instance of this extention has allready been registred for this application. {0}</value>
+  </data>
+  <data name="UserTokenClientNotAvailable" xml:space="preserve">
+    <value>An instance of IUserTokenClient is not available.  This is most likely due to the registered IChannelServiceClientFactory not creating one.</value>
+  </data>
+  <data name="ExchangeTokenUnexpectedNull" xml:space="preserve">
+    <value>ExchangeToken returned an empty token.</value>
+  </data>
+  <data name="UnexpectedAuthorizationState" xml:space="preserve">
+    <value>Unexpected state for handler '{0}' </value>
+    <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
   </data>
 </root>

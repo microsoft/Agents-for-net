@@ -14,7 +14,7 @@ namespace StreamingMessageAgent;
 
 public class StreamingAgent : AgentApplication
 {
-    private ChatClient _chatClient;
+    private readonly ChatClient _chatClient;
 
     /// <summary>
     /// Example of a streaming response agent using the Azure OpenAI ChatClient.
@@ -61,7 +61,7 @@ public class StreamingAgent : AgentApplication
     {
         try
         {
-            // Raise an informative update to the calling client,  if the client support StreamingResponses this will apper as a contextual notification. 
+            // Raise an informative update to the calling client,  if the client support StreamingResponses this will appear as a contextual notification. 
             await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Hold on for an awesome poem about Apollo...", cancellationToken);
 
             // Setup system messages and the user request,
@@ -90,7 +90,7 @@ public class StreamingAgent : AgentApplication
                 if (update.ContentUpdate.Count > 0)
                 {
                     if (!string.IsNullOrEmpty(update.ContentUpdate[0]?.Text))
-                        turnContext.StreamingResponse.QueueTextChunk(update.ContentUpdate[0]?.Text);
+                        turnContext.StreamingResponse.QueueTextChunk(update.ContentUpdate[0]?.Text!);
                 }
             }
         }

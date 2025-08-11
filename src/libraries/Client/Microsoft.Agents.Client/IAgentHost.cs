@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
         /// <param name="activity"></param>
         /// <param name="cancellationToken"></param>
-        /// <exception cref="ArgumentException">If the specified agentName is null or not found.</exception>
+        /// <exception cref="System.ArgumentException">If the specified agentName is null or not found.</exception>
         Task SendToAgent(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>

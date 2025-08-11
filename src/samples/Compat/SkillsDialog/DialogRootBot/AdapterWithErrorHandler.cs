@@ -9,6 +9,7 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DialogRootBot
@@ -22,10 +23,11 @@ namespace DialogRootBot
         public AdapterWithErrorHandler(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IAgentHttpAdapter> logger,
+            ILogger<CloudAdapter> logger,
             ConversationState conversationState,
-            IAgentHost agentHost)
-            : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
+            IAgentHost agentHost,
+            IConfiguration configuration)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, config: configuration)
         {
             _conversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
             _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));

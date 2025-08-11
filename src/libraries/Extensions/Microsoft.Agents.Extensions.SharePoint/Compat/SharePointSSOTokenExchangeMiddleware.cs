@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
         /// <returns>Task.</returns>
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            if (string.Equals(Channels.M365, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase) 
+            if (turnContext.Activity.ChannelId == Channels.M365
                 && string.Equals(SignInConstants.SharePointTokenExchange, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(
                         turnContext.Activity.From.Id,
                         _oAuthConnectionName,
-                        turnContext.Activity.ChannelId,
+                        turnContext.Activity.ChannelId.Channel,
                         new TokenExchangeRequest { Token = ((JsonElement)aceRequest.Data).GetString() },
                         cancellationToken).ConfigureAwait(false);
                 }

@@ -6,10 +6,11 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -48,8 +49,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAgentCore<TAdapter>(builder);
 
-            // Add the Agent 
-            builder.Services.AddTransient<IAgent, TAgent>();
+            // Add the IAgent 
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IAgent)))
+            {
+                // There can only be one IAgent.
+                builder.Services.AddTransient<IAgent, TAgent>();
+            }
+
+            // Add the TAgent (required for multi agent registrations)
+            if (!builder.Services.Any(x => x.ServiceType == typeof(TAgent)))
+            {
+                // There can only be one TAgent.
+                builder.Services.AddTransient<TAgent>();
+            }
 
             return builder;
         }
@@ -115,17 +127,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
             this IHostApplicationBuilder builder,
-            IList<IInputFileDownloader> fileDownloaders = null,
             AutoSignInSelector autoSignIn = null)
         {
             if (autoSignIn != null)
             {
                 builder.Services.AddSingleton<AutoSignInSelector>(sp => autoSignIn);
-            }
-
-            if (fileDownloaders != null)
-            {
-                builder.Services.AddSingleton(sp => fileDownloaders);
             }
 
             builder.Services.AddSingleton<AgentApplicationOptions>();
@@ -155,6 +161,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<CloudAdapter, T>();
             services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+        }
+
+        /// <summary>
+        /// Adds a middleware that collects headers to be propagated.
+        /// </summary>
+        /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
+        public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
+        {
+            ArgumentNullException.ThrowIfNull(app);
+
+            return app.UseMiddleware<HeaderPropagationMiddleware>();
         }
 
         /// <summary>

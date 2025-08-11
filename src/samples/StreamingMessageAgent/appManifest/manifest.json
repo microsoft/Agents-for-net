@@ -1,38 +1,50 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
   "version": "1.0.0",
-  "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.Microsoft.Agents.StreamingMessagesBot",
+  "id": "${{AAD_APP_CLIENT_ID}}",
   "developer": {
     "name": "Microsoft, Inc.",
-    "websiteUrl": "https://www.microsoft.com",
-    "privacyUrl": "https://www.microsoft.com/privacy",
-    "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
   },
   "icons": {
     "color": "color.png",
     "outline": "outline.png"
   },
   "name": {
-    "short": "Streaming Messages",
-    "full": "Streaming Messages"
+    "short": "AgentSDK Streaming responses",
+    "full": "AgentSDK Streaming OpenAI responses"
   },
   "description": {
-    "short": "Streaming Messages",
-    "full": "This sample shows streaming messages from OpenAI."
+    "short": "Sample demonstrating AgentSDK + OpenAI to deminstrate streaming responses",
+    "full": "Sample demonstrating AgentSDK + OpenAI to deminstrate streaming responses"
   },
   "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "${{AAD_APP_CLIENT_ID}}",
+        "type": "bot"
+      }
+    ]
+  },
   "bots": [
     {
-      "botId": "<<AAD_APP_CLIENT_ID>>",
+      "botId": "${{AAD_APP_CLIENT_ID}}",
       "scopes": [
         "personal"
       ],
+      "supportsFiles": false,
       "isNotificationOnly": false
     }
   ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
   "validDomains": [
-    "<<AGENT_DOMAIN>>"
+    "<<BOT_DOMAIN>>"
   ]
 }

@@ -13,6 +13,7 @@ using Xunit.Sdk;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -171,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
 
                 // Add a magic code to the adapter
-                adapter.AddUserToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
             })
             .Send(MagicCode)
             .AssertReply("Logged in.")
@@ -188,7 +189,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task OAuthPromptTimesOut_TokenResponseEvent()
         {
             var activity = new Activity() { Type = ActivityTypes.Event, Name = SignInConstants.TokenResponseEventName };
-            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, null);
+            activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"));
             await PromptTimeoutEndsDialogTest(activity);
         }
 
@@ -240,7 +241,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             AgentCallbackHandler botCallbackHandler = async (turnContext, cancellationToken) =>
             {
                 // Add a magic code to the adapter preemptively so that we can test if the message that triggers BeginDialogAsync uses magic code detection
-                adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId, turnContext.Activity.From.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, turnContext.Activity.ChannelId.Channel, turnContext.Activity.From.Id, Token, MagicCode);
 
                 await convoState.LoadAsync(turnContext, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
@@ -319,7 +320,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
 
                 // Add an exchangable token to the adapter
-                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
+                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, ExchangeToken, Token);
             })
             .Send(new Activity()
             {
@@ -941,7 +942,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 }
             };
 
-            await new TestFlow(adapter, botCallbackHandler)
+            var flow = new TestFlow(adapter, botCallbackHandler)
             .Send("hello")
             .AssertReply(activity =>
             {
@@ -949,21 +950,36 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
 
                 // Add a magic code to the adapter
-                adapter.AddUserToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, Token, MagicCode);
+                adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
 
                 // Add an exchangable token to the adapter
-                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId, activity.Recipient.Id, ExchangeToken, Token);
+                adapter.AddExchangeableToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, ExchangeToken, Token);
             })
             .Delay(500)
-            .Send(oauthPromptActivity)
-            .AssertReply("ended")
-            .StartTestAsync();
+            .Send(oauthPromptActivity);
+
+            if (oauthPromptActivity.Name == SignInConstants.TokenExchangeOperationName)
+            {
+                flow = flow.AssertReply(a =>
+                {
+                    Assert.Equal("invokeResponse", a.Type);
+                    var response = ((Activity)a).Value as InvokeResponse;
+                    Assert.NotNull(response);
+                    Assert.Equal(400, response.Status);
+                    var body = response.Body as TokenExchangeInvokeResponse;
+                    Assert.Equal(ConnectionName, body.ConnectionName);
+                    Assert.NotNull(body.FailureDetail);
+                });
+            }
+            
+            await flow.AssertReply("ended")
+                .StartTestAsync();
         }
 
         private IActivity CreateEventResponse(TestAdapter adapter, IActivity activity, string connectionName, string token)
         {
             // add the token to the TestAdapter
-            adapter.AddUserToken(connectionName, activity.ChannelId, activity.Recipient.Id, token);
+            adapter.AddUserToken(connectionName, activity.ChannelId.Channel, activity.Recipient.Id, token);
 
             // send an event TokenResponse activity to the botCallback handler
             var eventActivity = activity.CreateReply();

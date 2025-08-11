@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="key">The name of the object.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="key"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> is null.</exception>
         /// <returns>The object; or null if no service is registered by the key, or
         /// the retrieved object does not match the object type.</returns>
         public T Get<T>(string key)
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Builder
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="key">The name of the object.</param>
         /// <param name="value">The value to add.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="key"/> or <paramref name="value"/>is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="key"/> or <paramref name="value"/>is null.</exception>
         public void Set<T>(string key, T value)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(Set));
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="value">The value to add.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="value"/>is null.</exception>
+        /// <exception cref="System.ArgumentNullException"><paramref name="value"/>is null.</exception>
         public void Set<T>(T value)
             where T : class
         {

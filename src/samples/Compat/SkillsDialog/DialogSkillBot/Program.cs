@@ -1,28 +1,28 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using DialogSkillBot.Bots;
+using DialogSkillBot.Dialogs;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using DialogSkillBot.Bots;
-using DialogSkillBot.Dialogs;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Builder.State;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Threading;
-using Microsoft.Agents.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-builder.Logging.AddConsole();
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<ActivityRouterDialog>();
 
-// Add the bot (which is transient)
+// Add the AgentApplication, which contains the logic for responding to
+// user messages. In this sample, the Agent is a ActivityHandler based
+// agent using Dialogs.
 builder.AddAgent<SkillBot<ActivityRouterDialog>>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -34,19 +34,23 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Register Conversation state (used by the Dialog system itself).
 builder.Services.AddSingleton<ConversationState>();
 
-WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseRouting();
+
+WebApplication app = builder.Build();
+
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
 app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
-})
-    .AllowAnonymous();
+});
 
-// Hardcoded for brevity and ease of testing. 
-// In production, this should be set in configuration.
-app.Urls.Add($"http://localhost:3978");
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
+if (app.Environment.IsDevelopment())
+{
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
+    app.Urls.Add($"http://localhost:39783");
+}
 
 app.Run();

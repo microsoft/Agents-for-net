@@ -22,6 +22,10 @@ namespace Microsoft.Agents.Builder.UserAuth
 
         InvalidSignIn,
 
+        Exception,
+
+        UserCancelled,
+
         /// <summary>
         /// Other error.
         /// </summary>
@@ -36,7 +40,8 @@ namespace Microsoft.Agents.Builder.UserAuth
     /// </remarks>
     /// <param name="message">The exception message</param>
     /// <param name="reason">The cause of the exception</param>
-    public class AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other) : Exception(message)
+    /// <param name="inner"></param>
+    public class AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other, Exception inner = null) : Exception(message, inner)
     {
         /// <summary>
         /// The cause of the exception.

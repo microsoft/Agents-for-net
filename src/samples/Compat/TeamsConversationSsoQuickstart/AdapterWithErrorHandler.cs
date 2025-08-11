@@ -7,9 +7,9 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.Builder.Compat;
 
 namespace TeamsConversationSsoQuickstart
 {
@@ -19,10 +19,10 @@ namespace TeamsConversationSsoQuickstart
             IChannelServiceClientFactory channelServiceClientFactory, 
             IActivityTaskQueue activityTaskQueue,
             IConfiguration configuration,
-            ILogger<IAgentHttpAdapter> logger,
+            ILogger<CloudAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
-            : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
+            : base(channelServiceClientFactory, activityTaskQueue, logger: logger, config: configuration)
         {
             base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
 

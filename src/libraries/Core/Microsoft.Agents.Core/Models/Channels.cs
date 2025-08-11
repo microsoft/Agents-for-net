@@ -126,12 +126,18 @@ namespace Microsoft.Agents.Core.Models
         public const string M365 = "m365extensions";
 
         /// <summary>
+        /// M365 Copilot Teams Subchannel
+        /// </summary>
+        public const string M365CopilotSubChannel = "COPILOT";
+        public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
+
+        /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.
         /// </summary>
         /// <param name="channelId">The Channel to check the if Suggested Actions are supported in.</param>
         /// <param name="buttonCnt">(Optional) The number of Suggested Actions to check for the Channel.</param>
         /// <returns>True if the Channel supports the buttonCnt total Suggested Actions, False if the Channel does not support that number of Suggested Actions.</returns>
-        public static bool SupportsSuggestedActions(string channelId, int buttonCnt = 100)
+        public static bool SupportsSuggestedActions(ChannelId channelId, int buttonCnt = 100)
         {
             return SupportsSuggestedActions(channelId, buttonCnt, null);
         }
@@ -143,9 +149,9 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="buttonCnt">(Optional) The number of Suggested Actions to check for the Channel.</param>
         /// <param name="conversationType">(Optional) The type of the conversation.</param>
         /// <returns>True if the Channel supports the buttonCnt total Suggested Actions, False if the Channel does not support that number of Suggested Actions.</returns>
-        public static bool SupportsSuggestedActions(string channelId, int buttonCnt = 100, string conversationType = default)
+        public static bool SupportsSuggestedActions(ChannelId channelId, int buttonCnt = 100, string conversationType = default)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 // https://developers.facebook.com/docs/messenger-platform/send-messages/quick-replies
                 case Facebook:
@@ -168,6 +174,7 @@ namespace Microsoft.Agents.Core.Models
                     return buttonCnt <= 100;
 
                 // https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-messages?tabs=dotnet1%2Cdotnet2%2Cdotnet3%2Cdotnet4%2Cdotnet5%2Cdotnet#send-suggested-actions
+                case M365Copilot:
                 case Msteams:
                     if (conversationType == "personal")
                     {
@@ -187,9 +194,9 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="channelId">The Channel to check if the Card Actions are supported in.</param>
         /// <param name="buttonCnt">(Optional) The number of Card Actions to check for the Channel.</param>
         /// <returns>True if the Channel supports the buttonCnt total Card Actions, False if the Channel does not support that number of Card Actions.</returns>
-        public static bool SupportsCardActions(string channelId, int buttonCnt = 100)
+        public static bool SupportsCardActions(ChannelId channelId, int buttonCnt = 100)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Facebook:
                 case Skype:
@@ -220,9 +227,9 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="channelId">The Channel to check for Message Feed.</param>
         /// <returns>True if the Channel has a Message Feed, False if it does not.</returns>
-        public static bool HasMessageFeed(string channelId)
+        public static bool HasMessageFeed(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Cortana:
                     return false;
@@ -237,15 +244,15 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="channelId">The Channel to determine Maximum Action Title Length.</param>
         /// <returns>The total number of characters allowed for an Action Title on a specific Channel.</returns>
-        public static int MaxActionTitleLength(string channelId) => 20;
+        public static int MaxActionTitleLength(ChannelId channelId) => 20;
 
         /// <summary>
         /// Returns channel support for CreateConversation.
         /// </summary>
         /// <param name="channelId"></param>
-        public static bool SupportsCreateConversation(string channelId)
+        public static bool SupportsCreateConversation(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Webchat:
                 case Directline:
@@ -272,9 +279,9 @@ namespace Microsoft.Agents.Core.Models
         /// Returns channel support for UpdateActivity.
         /// </summary>
         /// <param name="channelId"></param>
-        public static bool SupportsUpdateActivity(string channelId)
+        public static bool SupportsUpdateActivity(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Msteams:
                     return true;
@@ -288,9 +295,9 @@ namespace Microsoft.Agents.Core.Models
         /// Returns channel support for DeleteActivity.
         /// </summary>
         /// <param name="channelId"></param>
-        public static bool SupportsDeleteActivity(string channelId)
+        public static bool SupportsDeleteActivity(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Alexa:
                 case Directline:

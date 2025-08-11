@@ -8,19 +8,21 @@
     "name": "crd17_getsCurrentWeather",
     "role": "bot"
   },
-  "conversation": {
-    "id": "fe5203d5-03ce-44f1-8fb7-d26bf06ee40f",
-    "properties": {}
-  },
+  "conversation": { "id": "fe5203d5-03ce-44f1-8fb7-d26bf06ee40f" },
   "recipient": {
     "id": "94219457-c13e-44ca-b91c-24078a4997c6",
     "aadObjectId": "94219457-c13e-44ca-b91c-24078a4997c6",
     "role": "user"
   },
   "textFormat": "markdown",
+  "membersAdded": [],
+  "membersRemoved": [],
+  "reactionsAdded": [],
+  "reactionsRemoved": [],
   "text": "To clarify, did you mean:",
   "inputHint": "acceptingInput",
   "suggestedActions": {
+    "to": [],
     "actions": [
       {
         "type": "imBack",
@@ -48,9 +50,13 @@
       }
     ]
   },
+  "attachments": [],
+  "entities": [],
   "channelData": {
     "streamType": "final",
     "streamId": "80c0db85-7b1e-4a45-a10d-210e7bb0aefd"
   },
-  "replyToId": "40d50db7-7fef-41c2-b804-8346ef266f3d"
+  "replyToId": "40d50db7-7fef-41c2-b804-8346ef266f3d",
+  "listenFor": [],
+  "textHighlights": []
 }

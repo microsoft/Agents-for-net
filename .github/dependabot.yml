@@ -3,18 +3,26 @@
 
 version: 2
 updates:
-- package-ecosystem: nuget
-  directories: 
-    - "*"
-  schedule:
-    interval: daily
-  target-branch: "main"    
-  labels:
-    - 'dependencies'
-  reviewers:
-    - 'microsoft/botframework-sdk'    
-
-  
+  - package-ecosystem: nuget
+    directories:
+      - "*"
+    schedule:
+      interval: daily
+    target-branch: "main"
+    labels:
+      - 'dependencies'
+    reviewers:
+      - 'microsoft/botframework-sdk'
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 #- package-ecosystem: dotnet-sdk
 #  directory: "/"
 #  schedule:

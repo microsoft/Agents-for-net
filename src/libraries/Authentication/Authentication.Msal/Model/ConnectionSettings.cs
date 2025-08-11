@@ -4,7 +4,9 @@
 using Microsoft.Agents.Authentication.Msal.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Client;
 using System;
+using System.IO;
 
 namespace Microsoft.Agents.Authentication.Msal.Model
 {
@@ -29,55 +31,46 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 ClientSecret = msalConfigurationSection.GetValue<string>("ClientSecret", string.Empty);
                 AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
                 FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
+                FederatedTokenFile = msalConfigurationSection.GetValue<string>("FederatedTokenFile", string.Empty);
+                AssertionRequestOptions = msalConfigurationSection.GetSection("AssertionRequestOptions").Get<AssertionRequestOptions>();
             }
 
             ValidateConfiguration();
         }
 
-        /// <summary>
-        /// Auth Type to use for the connection
-        /// </summary>
+        /// <inheritdoc/>
         public AuthTypes AuthType { get; set; } = AuthTypes.ClientSecret;
 
-        /// <summary>
-        /// Certificate thumbprint to use for the connection when using a certificate that is resident on the machine
-        /// </summary>
+        /// <inheritdoc/>
         public string CertificateThumbPrint { get; set; }
 
-        /// <summary>
-        /// Client Secret to use for the connection when using a client secret
-        /// </summary>
+        /// <inheritdoc/>
         public string ClientSecret { get; set; }
 
-        /// <summary>
-        /// Subject name to search a cert for. 
-        /// </summary>
+        /// <inheritdoc/>
         public string CertificateSubjectName { get; set; }
 
-        /// <summary>
-        /// Cert store name to use. 
-        /// </summary>
+        /// <inheritdoc/>
         public string CertificateStoreName { get; set; }
 
-        /// <summary>
-        /// Only use valid certs.  Defaults to true.
-        /// </summary>
+        /// <inheritdoc/>
         public bool ValidCertificateOnly { get; set; } = true;
 
-        /// <summary>
-        /// Use x5c for certs.  Defaults to false.
-        /// </summary>
+        /// <inheritdoc/>
         public bool SendX5C { get; set; } = false;
 
-        /// <summary>
-        /// ClientId of the ManagedIdentity used with FederatedCredentials
-        /// </summary>
+        /// <inheritdoc/>
         public string FederatedClientId { get; set; }
+
+        /// <inheritdoc/>
+        public string FederatedTokenFile { get; set; }
+
+        public AssertionRequestOptions AssertionRequestOptions { get; set; }
 
         /// <summary>
         /// Validates required properties are present in the configuration for the requested authentication type. 
         /// </summary>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public void ValidateConfiguration()
         {
             switch (AuthType)
@@ -145,6 +138,20 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
                     {
                         throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
+                case AuthTypes.WorkloadIdentity:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    if (string.IsNullOrEmpty(FederatedTokenFile))
+                    {
+                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile is required");
                     }
                     break;
                 default:

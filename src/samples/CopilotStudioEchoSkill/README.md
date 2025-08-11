@@ -29,37 +29,36 @@ This sample is intended to introduce you to:
   - A tunnel will be required to route messages sent to the Agent to you locally running agent.
 - Copilot Studio requires a manifest for the agent ("Skills Manifest").  This is discussed below.
 
-1. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
-   - Record the Application ID, the Tenant ID, and the Client Secret for use below
+1. Create an Azure Bot with one of these authentication types
+   - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
+   - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
+   - [User Assigned Managed Identity](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-msi.md)
 
-1. Configuring the token connection in the Agent settings
-   > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL Authentication provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
-
+1. Configuring the authentication connection in the Agent settings
+   > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [DotNet MSAL Authentication](https://github.com/microsoft/Agents/blob/main/docs/HowTo/MSALAuthConfigurationOptions.md).
    1. Open the `appsettings.json` file in the root of the sample project.
 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
       "Connections": {
-          "ServiceConnection": {
-          "Assembly": "Microsoft.Agents.Authentication.Msal",
-          "Type":  "MsalAuth",
+        "ServiceConnection": {
           "Settings": {
-              "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-              "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "{{ClientId}}", // this is the Client ID used for the Azure Bot
-              "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-              "Scopes": [
-                "https://api.botframework.com/.default"
-              ],
-              
+            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
+            "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
+            "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
+            "Scopes": [
+              "https://api.botframework.com/.default"
+            ]
           }
-      }
+        }
+      },
       ```
 
-      1. Replace all `{{ClientId}}` with the AppId of the Azure Bot.
-      1. Replace all `{{TenantId}}` with the Tenant Id where your application is registered.
-      1. Set the **ClientSecret** to the Secret that was created for your identity.
+      1. Replace all **{{ClientId}}** with the AppId of the Azure Bot.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
+      1. Set the **{{ClientSecret}}** to the Secret that was created on the App Registration.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
@@ -69,21 +68,30 @@ This sample is intended to introduce you to:
    - If you are running the Agent locally, this will be `{tunnel-url}/api/messages`
    - Once EchoSkill is started, the manifest is available via a GET to `{host-or-tunnel-url}/manifest/echoskill-manifest-1.0.json`
 
-1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
+1. Running the Agent
+   1. Running the Agent locally
+      - Requires a tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
+      - **For ClientSecret or Certificate authentication types only.**  Federated Credentials and Managed Identity will not work via a tunnel to a local agent and must be deployed to an App Service or container.
+      
+      1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
 
-   ```bash
-   devtunnel host -p 3978 --allow-anonymous
-   ```
+         ```bash
+         devtunnel host -p 3978 --allow-anonymous
+         ```
 
-1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
+      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
-1. Start the Agent in Visual Studio
+      1. Start the Agent in Visual Studio
+
+   1. Deploy Agent code to Azure
+      1. VS Publish works well for this.  But any tools used to deploy a web application will also work.
+      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `https://{{appServiceDomain}}/api/messages`
 
 ### Using EchoSkill in Copilot Studio
 - In order to use an Agent from Copilot Studio Skills
   - The Azure Bot and Identity must have been created on Azure
-  - If the Agent is running locally, the "Messaging Endpoint" on the Azure Bot must be set to `{tunnel-url}/api/messages`
-  - On the App Registration on Azure, the "Home page URL" should be set to the App Service URL (or the Tunnel URL)
+  - If the Agent is running locally, the **Messaging Endpoint** on the Azure Bot must be set to `{tunnel-url}/api/messages`
+  - On the App Registration on Azure, the "Home page URL" should be set to the same as **Messaging Endpoint**
 - Create a new, or open an existing, Copilot Studio Agent
 - Go to Agent **Settings**
 - Select **Skills** on the left sidebar
@@ -92,6 +100,19 @@ This sample is intended to introduce you to:
 - Click **Save** when validation is complete.
 - From any Topic, add a new **Call an Action** node, and select "Echo messages from user"
 - Test the agent in Copilot Studio.
+
+## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft Agents Framework on GitHub](https://github.com/microsoft/agents) repo.

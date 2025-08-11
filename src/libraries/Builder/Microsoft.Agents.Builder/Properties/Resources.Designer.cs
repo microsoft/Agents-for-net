@@ -61,15 +61,6 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Raised when JWT authentication has not been enabled for the sending channel..
-        /// </summary>
-        internal static string AnonymousNotAllowed {
-            get {
-                return ResourceManager.GetString("AnonymousNotAllowed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
         /// </summary>
         internal static string AttributeHandlerInvalid {
@@ -102,6 +93,15 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string AttributeSelectorNotFound {
             get {
                 return ResourceManager.GetString("AttributeSelectorNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ExchangeToken returned an empty token..
+        /// </summary>
+        internal static string ExchangeTokenUnexpectedNull {
+            get {
+                return ResourceManager.GetString("ExchangeTokenUnexpectedNull", resourceCulture);
             }
         }
         
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}.  Check your connection name and scope(s) for correctness..
         /// </summary>
         internal static string OBOExchangeFailed {
             get {
@@ -178,11 +178,11 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to StreamingResponse in Teams requires QueueInformativeUpdate to be called first..
+        ///   Looks up a localized string similar to Unexpected state for handler &apos;{0}&apos; .
         /// </summary>
-        internal static string TeamsRequiresInformativeFirst {
+        internal static string UnexpectedAuthorizationState {
             get {
-                return ResourceManager.GetString("TeamsRequiresInformativeFirst", resourceCulture);
+                return ResourceManager.GetString("UnexpectedAuthorizationState", resourceCulture);
             }
         }
         
@@ -255,6 +255,15 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string UserAuthorizationTypeNotFound {
             get {
                 return ResourceManager.GetString("UserAuthorizationTypeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of IUserTokenClient is not available.  This is most likely due to the registered IChannelServiceClientFactory not creating one..
+        /// </summary>
+        internal static string UserTokenClientNotAvailable {
+            get {
+                return ResourceManager.GetString("UserTokenClientNotAvailable", resourceCulture);
             }
         }
     }

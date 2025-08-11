@@ -60,9 +60,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="state">The turn state</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in response</returns>
-        async Task<string> IUserAuthorization.SignInUserAsync(ITurnContext turnContext, bool forceSignIn, string exchangeConnection, IList<string> exchangeScopes, CancellationToken cancellationToken)
+        async Task<TokenResponse> IUserAuthorization.SignInUserAsync(ITurnContext turnContext, bool forceSignIn, string exchangeConnection, IList<string> exchangeScopes, CancellationToken cancellationToken)
         {
-            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            if (turnContext.Activity.ChannelId != Channels.Msteams)
             {
                 return await base.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
@@ -70,12 +70,15 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
             var token = await _msalAdapter.TryGetUserToken(turnContext, Name, _settings).ConfigureAwait(false);
             if (token != null)
             {
-                return token.Token;
+                return new TokenResponse()
+                {
+                    Token = token.Token
+                };
             }
 
             if (_botAuth != null && (forceSignIn || _botAuth.IsValidActivity(turnContext)))
             {
-                return await _botAuth.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+               return new TokenResponse() { Token = await _botAuth.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false) };
             }
 
             /*
@@ -95,7 +98,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="cancellationToken">The cancellation token</param>
         async Task IUserAuthorization.SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            if (turnContext.Activity.ChannelId != Channels.Msteams)
             {
                 await base.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return;
@@ -108,7 +111,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 
         async Task IUserAuthorization.ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase))
+            if (turnContext.Activity.ChannelId != Channels.Msteams)
             {
                 await base.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return;
