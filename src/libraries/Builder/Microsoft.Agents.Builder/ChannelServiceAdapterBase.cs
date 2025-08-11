@@ -61,11 +61,11 @@ namespace Microsoft.Agents.Builder
                 activity.Id = null;
                 var response = default(ResourceResponse);
 
-                if (activity.Type == ActivityTypes.InvokeResponse)
+                if (activity.Type == ActivityType.InvokeResponse)
                 {
                     turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
-                else if (activity.Type == ActivityTypes.Trace && activity.ChannelId != Channels.Emulator)
+                else if (activity.Type == ActivityType.Trace && activity.ChannelId != Channels.Emulator)
                 {
                     // no-op
                 }
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Builder
         private static InvokeResponse ProcessTurnResults(TurnContext turnContext)
         {
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
-            if (turnContext.Activity.Type == ActivityTypes.Invoke)
+            if (turnContext.Activity.Type == ActivityType.Invoke)
             {
                 var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)

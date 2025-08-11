@@ -42,9 +42,9 @@ namespace Microsoft.Agents.Client.Tests
                             if (routeAttribute.RouteType == RouteType.Activity)
                                 type = routeAttribute.Type;
                             else if (routeAttribute.RouteType == RouteType.Event)
-                                type = ActivityTypes.Event;
+                                type = ActivityType.Event;
                             else if (routeAttribute.RouteType == RouteType.Conversation)
-                                type = ActivityTypes.ConversationUpdate;
+                                type = ActivityType.ConversationUpdate;
 
                             activities.Add(camelName, new ActivityInfo() { Name = methodName, Type = type });
                         }

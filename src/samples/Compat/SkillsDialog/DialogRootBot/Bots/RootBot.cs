@@ -27,7 +27,7 @@ namespace DialogRootBot.Bots
 
         public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.Type != ActivityTypes.ConversationUpdate)
+            if (turnContext.Activity.Type != ActivityType.ConversationUpdate)
             {
                 // Run the Dialog with the Activity.
 #pragma warning disable CS0618 // Type or member is obsolete

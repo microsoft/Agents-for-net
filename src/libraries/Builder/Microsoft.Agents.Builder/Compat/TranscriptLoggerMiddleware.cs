@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.Compat
                 }
 
                 // We should not log ContinueConversation events used by Agents to initialize the middleware.
-                if (!(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
+                if (!(turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
                 {
                     LogActivity(transcript, CloneActivity(turnContext.Activity));
                 }
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Builder.Compat
 
                 // add Message Update activity
                 var updateActivity = CloneActivity(activity);
-                updateActivity.Type = ActivityTypes.MessageUpdate;
+                updateActivity.Type = ActivityType.MessageUpdate;
                 LogActivity(transcript, updateActivity);
                 return response;
             });
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Compat
                 // log as MessageDelete activity
                 var deleteActivity = new Activity
                 {
-                    Type = ActivityTypes.MessageDelete,
+                    Type = ActivityType.MessageDelete,
                     Id = reference.ActivityId,
                 }
                     .ApplyConversationReference(reference, isIncoming: false);

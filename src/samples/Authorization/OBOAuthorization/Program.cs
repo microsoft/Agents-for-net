@@ -80,7 +80,7 @@ builder.AddAgent(sp =>
             // Regardless of the Activity  Type, start the conversation.
             await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
             {
-                if (activity.IsType(ActivityTypes.Message))
+                if (activity.Type == ActivityType.Message)
                 {
                     await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
 
@@ -89,12 +89,12 @@ builder.AddAgent(sp =>
                 }
             }
         }
-        else if (turnContext.Activity.IsType(ActivityTypes.Message))
+        else if (turnContext.Activity.Type == ActivityType.Message)
         {
             // Send the Copilot Studio Agent whatever the sent and send the responses back.
             await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
             {
-                if (activity.IsType(ActivityTypes.Message))
+                if (activity.Type == ActivityType.Message)
                 {
                     await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
                 }

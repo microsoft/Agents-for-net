@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Id = Guid.NewGuid().ToString("N"),
                 From = bot,
                 Recipient = user,
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Id = Guid.NewGuid().ToString("N"),
                 From = bot,
                 Recipient = user,

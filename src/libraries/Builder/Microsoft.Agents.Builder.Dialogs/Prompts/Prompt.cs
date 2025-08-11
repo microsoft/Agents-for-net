@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Don't do anything for non-message activities
-            if (dc.Context.Activity.Type != ActivityTypes.Message)
+            if (dc.Context.Activity.Type != ActivityType.Message)
             {
                 return EndOfTurn;
             }
@@ -234,7 +234,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <returns> Whether the event is handled by the current dialog and further processing should stop.</returns>
         protected override async Task<bool> OnPreBubbleEventAsync(DialogContext dc, DialogEvent e, CancellationToken cancellationToken)
         {
-            if (e.Name == DialogEvents.ActivityReceived && dc.Context.Activity.Type == ActivityTypes.Message)
+            if (e.Name == DialogEvents.ActivityReceived && dc.Context.Activity.Type == ActivityType.Message)
             {
                 // Perform base recognition
                 var activeDialogState = dc.ActiveDialog.State;

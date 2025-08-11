@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
     /// Defines values for ActivityTypes.
     /// </summary>
+    [Obsolete("Use ActivityType class")]
     public static class ActivityTypes
     {
         /// <summary>

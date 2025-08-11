@@ -72,7 +72,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
             DialogContext innerDc,
             CancellationToken cancellationToken = default)
         {
-            if (innerDc.Context.Activity.Type == ActivityTypes.Message)
+            if (innerDc.Context.Activity.Type == ActivityType.Message)
             {
                 var text = innerDc.Context.Activity.Text?.ToLowerInvariant();
 

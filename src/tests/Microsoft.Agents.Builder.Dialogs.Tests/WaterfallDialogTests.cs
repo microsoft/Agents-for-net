@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task ContinueDialogAsync_ShouldReturnEndOfTurnOnNonMessageActivity()
         {
             _context.SetupGet(e => e.Activity.Type)
-                .Returns(ActivityTypes.Event)
+                .Returns(ActivityType.Event)
                 .Verifiable(Times.Once);
 
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);

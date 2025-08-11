@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = ActivityTypes.Message });
+                .Returns(new Activity() { Type = ActivityType.Message });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = ActivityTypes.Message, Text = "test_selector" });
+                .Returns(new Activity() { Type = ActivityType.Message, Text = "test_selector" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 

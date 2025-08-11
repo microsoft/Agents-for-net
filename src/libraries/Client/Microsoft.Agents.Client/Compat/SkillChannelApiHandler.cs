@@ -239,6 +239,7 @@ namespace Microsoft.Agents.Client.Compat
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = replyToActivityId;
                 turnContext.Activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppId(claimsIdentity)}";
+#pragma warning disable CS0618 // Type or member is obsolete
                 switch (activity.Type)
                 {
                     case ActivityTypes.EndOfConversation:
@@ -267,6 +268,7 @@ namespace Microsoft.Agents.Client.Compat
                         resourceResponse = await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                         break;
                 }
+#pragma warning restore CS0618 // Type or member is obsolete
             });
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.

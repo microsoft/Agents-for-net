@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             Activity a = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Id = id,
                 Text = "test",
                 From = new ChannelAccount()

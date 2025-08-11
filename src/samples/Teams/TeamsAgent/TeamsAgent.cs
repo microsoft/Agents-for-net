@@ -33,7 +33,7 @@ public class TeamsAgent : AgentApplication
         AdaptiveCards.OnSearch("dataset", OnSearchDS);
         OnMessageReactionsAdded(OnMessageReaction);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync);
+        OnActivity(ActivityType.Message, OnMessageAsync);
     }
 
     private Task<MessagingExtensionResult> OnQueryLink(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)

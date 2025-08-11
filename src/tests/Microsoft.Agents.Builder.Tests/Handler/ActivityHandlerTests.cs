@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMessageUpdateActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.MessageUpdate };
+            var activity = new Activity { Type = ActivityType.MessageUpdate };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMessageDeleteActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.MessageDelete };
+            var activity = new Activity { Type = ActivityType.MessageDelete };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestEndOfConversationActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "some value" };
+            var activity = new Activity { Type = ActivityType.EndOfConversation, Value = "some value" };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestTypingActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.Typing };
+            var activity = new Activity { Type = ActivityType.Typing };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInstallationUpdateActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.InstallationUpdate };
+            var activity = new Activity { Type = ActivityType.InstallationUpdate };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "b" },
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "a" },
@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "a" },
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "c" },
@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "a" },
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "a" },
@@ -273,7 +273,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "b" },
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "c" },
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 ReactionsAdded =
                 [
                     new MessageReaction("sad"),
@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = SignInConstants.TokenResponseEventName,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "some.random.event",
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -396,7 +396,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "some.random.invoke",
             };
 
@@ -419,7 +419,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.VerifyStateOperationName,
             };
             var turnContext = new TurnContext(new TestInvokeAdapter(), activity);
@@ -440,7 +440,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "should.not.match",
             };
             var adapter = new TestInvokeAdapter();
@@ -462,7 +462,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -482,7 +482,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.InstallationUpdate,
+                Type = ActivityType.InstallationUpdate,
                 Action = "add"
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.InstallationUpdate,
+                Type = ActivityType.InstallationUpdate,
                 Action = "add-upgrade"
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -524,7 +524,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.InstallationUpdate,
+                Type = ActivityType.InstallationUpdate,
                 Action = "remove"
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -545,7 +545,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.InstallationUpdate,
+                Type = ActivityType.InstallationUpdate,
                 Action = "remove-upgrade"
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -568,7 +568,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = value
             };
@@ -591,7 +591,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Command,
+                Type = ActivityType.Command,
                 Name = "application/test",
                 Value = new CommandValue<object> { CommandId = "Test", Data = new { test = true } }
             };
@@ -612,7 +612,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.CommandResult,
+                Type = ActivityType.CommandResult,
                 Name = "application/test",
                 Value = new CommandResultValue<object> { CommandId = "Test", Data = new { test = true } }
             };
@@ -652,7 +652,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         {
             // Arrange
             var turnContextMock = new Mock<ITurnContext>();
-            turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
+            turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityType.Message });
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
 
             turnContextMock.Setup(tc => tc.StackState).Returns([]);
@@ -790,7 +790,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action"
             };
 
@@ -804,7 +804,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ""
             };
@@ -819,7 +819,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = new AdaptiveCardInvokeValue { Action = null }
             };
@@ -834,7 +834,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "" } }
             };
@@ -847,7 +847,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
             //Assert
             var sent = adapter.Activity as Activity;
-            Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
+            Assert.Equal(ActivityType.InvokeResponse, sent.Type);
 
             Assert.IsType<InvokeResponse>(sent.Value);
             var value = sent.Value as InvokeResponse;
@@ -870,7 +870,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Value = ""
             };
@@ -881,7 +881,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
         private static Activity GetSearchActivity(object value) => new()
         {
-            Type = ActivityTypes.Invoke,
+            Type = ActivityType.Invoke,
             Name = "application/search",
             Value = value
         };
@@ -898,7 +898,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
             // Assert
             var sent = adapter.Activity as Activity;
-            Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
+            Assert.Equal(ActivityType.InvokeResponse, sent.Type);
 
             Assert.IsType<InvokeResponse>(sent.Value);
             var value = sent.Value as InvokeResponse;
@@ -921,7 +921,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
             public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
             {
-                Activity = activities.FirstOrDefault(activity => activity.Type == ActivityTypes.InvokeResponse);
+                Activity = activities.FirstOrDefault(activity => activity.Type == ActivityType.InvokeResponse);
                 return Task.FromResult(Array.Empty<ResourceResponse>());
             }
         }

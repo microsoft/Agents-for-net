@@ -14,7 +14,7 @@ namespace Microsoft.Agents.State.Tests
             var b = new TestAdapter();
             var a = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "EmptyContext",
                 Conversation = new ConversationAccount
                 {

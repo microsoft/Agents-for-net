@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Builder
                 {
                     return new Activity
                     {
-                        Type = ActivityTypes.Typing,
+                        Type = ActivityType.Typing,
                         Text = text,
                         Entities = [new StreamInfo()
                             {
@@ -306,7 +306,7 @@ namespace Microsoft.Agents.Builder
         {
             var activity = FinalMessage ?? new Activity();
 
-            activity.Type = ActivityTypes.Message;
+            activity.Type = ActivityType.Message;
             if (FinalMessage == null)
             {
                 activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
@@ -404,7 +404,7 @@ namespace Microsoft.Agents.Builder
                 // Send typing activity
                 var activity = new Activity
                 {
-                    Type = ActivityTypes.Typing,
+                    Type = ActivityType.Typing,
                     Text = Message,
                     Entities = []
                 };

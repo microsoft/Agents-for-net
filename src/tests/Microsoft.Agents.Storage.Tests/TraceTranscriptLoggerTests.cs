@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Storage.Tests
         private readonly Activity _activity = new Activity
         {
             Id = "test-id",
-            Type = ActivityTypes.Message,
+            Type = ActivityType.Message,
             From = new ChannelAccount { Id = "user-id", Name = "user-name", Role = "user-role" },
             Text = "test-text"
         };

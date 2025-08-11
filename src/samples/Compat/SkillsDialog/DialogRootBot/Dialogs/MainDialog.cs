@@ -76,7 +76,7 @@ namespace DialogRootBot.Dialogs
             // This is an example on how to cancel a SkillDialog that is currently in progress from the parent bot.
             var activeSkill = await _activeSkillProperty.GetAsync(innerDc.Context, () => null, cancellationToken);
             var activity = innerDc.Context.Activity;
-            if (activeSkill != null && activity.Type == ActivityTypes.Message && activity.Text.Equals("abort", StringComparison.OrdinalIgnoreCase))
+            if (activeSkill != null && activity.Type == ActivityType.Message && activity.Text.Equals("abort", StringComparison.OrdinalIgnoreCase))
             {
                 // Cancel all dialogs when the user says abort.
                 // The SkillDialog automatically sends an EndOfConversation message to the skill to let the

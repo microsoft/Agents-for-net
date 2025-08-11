@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     _logger.LogError(ex, "Error occurred executing WorkItem.");
 
                     InvokeResponse invokeResponse = null;
-                    if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
+                    if (activityWithClaims.Activity.Type == ActivityType.Invoke)
                     {
                         invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
                     }

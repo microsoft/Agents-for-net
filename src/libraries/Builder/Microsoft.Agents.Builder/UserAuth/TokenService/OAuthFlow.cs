@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
                     if (result != null)
                     {
-                        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.InvokeResponse }, cancellationToken).ConfigureAwait(false);
+                        await turnContext.SendActivityAsync(new Activity { Type = ActivityType.InvokeResponse }, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -389,7 +389,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                     }
                 }
             }
-            else if (turnContext.Activity.Type == ActivityTypes.Message)
+            else if (turnContext.Activity.Type == ActivityType.Message)
             {
                 if (!string.IsNullOrEmpty(turnContext.Activity.Text))
                 {
@@ -415,25 +415,25 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public static bool IsTokenResponseEvent(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Event && activity.Name == SignInConstants.TokenResponseEventName;
+            return activity.Type == ActivityType.Event && activity.Name == SignInConstants.TokenResponseEventName;
         }
 
         public static bool IsVerificationInvoke(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.VerifyStateOperationName;
+            return activity.Type == ActivityType.Invoke && activity.Name == SignInConstants.VerifyStateOperationName;
         }
 
         public static bool IsTokenExchangeRequestInvoke(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.TokenExchangeOperationName;
+            return activity.Type == ActivityType.Invoke && activity.Name == SignInConstants.TokenExchangeOperationName;
         }
 
         public static bool IsSignInFailureInvoke(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.SignInFailure;
+            return activity.Type == ActivityType.Invoke && activity.Name == SignInConstants.SignInFailure;
         }
 
         private static bool ChannelSupportsOAuthCard(ChannelId channelId)
@@ -456,7 +456,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         internal static bool HasTimedOut(ITurnContext context, DateTime expires)
         {
-            var isMessage = context.Activity.Type == ActivityTypes.Message;
+            var isMessage = context.Activity.Type == ActivityType.Message;
 
             // If the incoming Activity is a message, or an Activity Type normally handled by OAuthPrompt,
             // check to see if this OAuthPrompt Expiration has elapsed, and end the dialog if so.
@@ -472,7 +472,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await turnContext.SendActivityAsync(
                 new Activity
                 {
-                    Type = ActivityTypes.InvokeResponse,
+                    Type = ActivityType.InvokeResponse,
                     Value = new InvokeResponse
                     {
                         Status = (int)statusCode,

@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                if (turnContext.Activity.Type != ActivityType.Invoke
                     || !string.Equals(turnContext.Activity.Name, FETCH_INVOKE_NAME)
                     || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
                 {
@@ -190,7 +190,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                if (turnContext.Activity.Type != ActivityType.Invoke
                     || !string.Equals(turnContext.Activity.Name, SUBMIT_INVOKE_NAME)
                     || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
                 {
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         {
             RouteSelector routeSelector = (ITurnContext turnContext, CancellationToken cancellationToken) =>
             {
-                bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                bool isInvoke = turnContext.Activity.Type == ActivityType.Invoke
                     && string.Equals(turnContext.Activity.Name, invokeName);
                 if (!isInvoke)
                 {

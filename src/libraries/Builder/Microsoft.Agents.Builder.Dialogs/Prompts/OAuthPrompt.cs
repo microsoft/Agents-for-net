@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             // Check for timeout
             var state = dc.ActiveDialog.State;
             var expires = (DateTime) state[PersistedExpires];
-            var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
+            var isMessage = dc.Context.Activity.Type == ActivityType.Message;
 
             try
             {
@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         private static bool IsTokenResponseEvent(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Event && activity.Name == SignInConstants.TokenResponseEventName;
+            return activity.Type == ActivityType.Event && activity.Name == SignInConstants.TokenResponseEventName;
         }
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)

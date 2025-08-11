@@ -55,7 +55,7 @@ public class AuthAgent : AgentApplication
         }, rank: RouteRank.Last);
 
         // Registers a general event handler that will pick up any message activity that is not covered by the previous events handlers. 
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityType.Message, OnMessageAsync, rank: RouteRank.Last);
 
         // The UserAuthorization Class provides methods and properties to manage and access user authorization tokens
         // You can use this class to interact with the UserAuthorization process, including signing in and signing out users, accessing tokens, and handling authorization events.

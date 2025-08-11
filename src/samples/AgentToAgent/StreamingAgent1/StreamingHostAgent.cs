@@ -68,7 +68,7 @@ public class StreamingHostAgent : AgentApplication
         await foreach (IActivity agentActivity in _agentHost.SendToAgentStreamedAsync(turnContext, Agent2Name, echoConversationId, turnContext.Activity, cancellationToken))
         {
             // Agent2 sends EndOfConversation when "end" was received.
-            if (agentActivity.IsType(ActivityTypes.EndOfConversation))
+            if (agentActivity.Type == ActivityType.EndOfConversation)
             {
                 // Remove the Agent conversation reference since the conversation is over.
                 await _agentHost.DeleteConversationAsync(turnContext, echoConversationId, cancellationToken);

@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Builder.Compat
         {
             turnContext.OnSendActivities(async (ctx, activities, nextSend) =>
             {
-                var containsMessage = activities.Any(e => e.Type == ActivityTypes.Message);
+                var containsMessage = activities.Any(e => e.Type == ActivityType.Message);
                 if (containsMessage)
                 {
                     await ProcessTypingAsync(ctx).ConfigureAwait(false);
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.Compat
             // create a TypingActivity, associate it with the conversation and send immediately
             var typingActivity = new Activity
             {
-                Type = ActivityTypes.Typing,
+                Type = ActivityType.Typing,
                 RelatesTo = turnContext.Activity.RelatesTo,
             };
 
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="turnContext">The context object for this turn.</param>
         private async Task ProcessTypingAsync(ITurnContext turnContext)
         {
-            if (!IsAgent(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
+            if (!IsAgent(turnContext) && turnContext.Activity.Type == ActivityType.Message)
             {
                 // Override the typing background task.
                 await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);

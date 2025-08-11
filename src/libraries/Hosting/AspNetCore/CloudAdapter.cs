@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (activity.IsType(ActivityTypes.Invoke) || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    if (activity.Type == ActivityType.Invoke || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         InvokeResponse invokeResponse = null;
 

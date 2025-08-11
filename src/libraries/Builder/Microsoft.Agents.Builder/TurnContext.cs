@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Builder
 
             var activityToSend = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = textReplyToSend
             };
 
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Builder
             {
                 if (!Responded)
                 {
-                    Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
+                    Responded = bufferedActivities.Where((a) => a.Type != ActivityType.Trace).Any();
                 }
 
                 // Send from the list which may have been manipulated via the event handlers.

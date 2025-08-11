@@ -15,10 +15,10 @@ public class EchoSkill : AgentApplication
     public EchoSkill(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.EndOfConversation, EndOfConversationAsync);
+        OnActivity(ActivityType.EndOfConversation, EndOfConversationAsync);
 
         // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-        OnActivity(ActivityTypes.Message, OnMessageAsync);
+        OnActivity(ActivityType.Message, OnMessageAsync);
 
         // Handle uncaught exceptions be resetting ConversationState and letting MCS know the conversation is over.
         OnTurnError(async (turnContext, turnState, exception, cancellationToken) =>

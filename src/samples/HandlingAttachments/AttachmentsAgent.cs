@@ -20,7 +20,7 @@ public class AttachmentsAgent : AgentApplication
     public AttachmentsAgent(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityType.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -76,9 +76,9 @@ public class AttachmentsAgent : AgentApplication
     }
 
     // Given the input from the message, create the response.
-    private static async Task<IActivity> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private static async Task<IActivity?> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        IActivity reply;
+        IActivity? reply;
 
         if (turnState.Temp.InputFiles.Any())
         {

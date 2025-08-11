@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Client.Tests
                     SendAssert = (activity, count) =>
                     {
                         // Each Agent should get an EOC sent to it.
-                        Assert.Equal(ActivityTypes.EndOfConversation, activity.Type);
+                        Assert.Equal(ActivityType.EndOfConversation, activity.Type);
                         eocCount++;
                     },
                 }));
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Client.Tests
                 });
             });
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 // Create two conversations
                 await _agentHost.GetOrCreateConversationAsync(turnContext, "bot1");
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Client.Tests
             // Act
             TurnContext turnContext = CreateTurnContext(new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "test",
                 Conversation = new ConversationAccount() { Id = "1" },
                 From = new ChannelAccount() { Id = "from" }
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Client.Tests
                 // This will create the two conversations
                 turnContext = CreateTurnContext(new Activity()
                 {
-                    Type = ActivityTypes.Message,
+                    Type = ActivityType.Message,
                     ChannelId = "test",
                     Conversation = new ConversationAccount() { Id = "1" },
                     From = new ChannelAccount() { Id = "from" }
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Client.Tests
                 // Send eoc, which should end both
                 turnContext = CreateTurnContext(new Activity()
                 {
-                    Type = ActivityTypes.EndOfConversation,
+                    Type = ActivityType.EndOfConversation,
                     ChannelId = "test",
                     Conversation = new ConversationAccount() { Id = "1" },
                     From = new ChannelAccount() { Id = "from" }
@@ -190,7 +190,7 @@ namespace Microsoft.Agents.Client.Tests
 
             var agent2Activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "test",
                 Conversation = new ConversationAccount() { Id = "fakConversationId" },
                 From = new ChannelAccount() { Id = "from" }
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Client.Tests
             // Setup
             TurnContext turnContext = CreateTurnContext(new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "webchat",
                 ServiceUrl = "https://serviceUrl.com",
                 Conversation = new ConversationAccount() { Id = "1" },
@@ -225,9 +225,9 @@ namespace Microsoft.Agents.Client.Tests
             // Setup AgentApplication
             var app = new AgentApplication(new AgentApplicationOptions(_storage) { Adapter = new TestAdapter() });
 
-            app.OnActivity(ActivityTypes.Event, (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Event, (turnContext, turnState, cancellationToken) =>
             {
-                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == AdapterChannelResponseHandler.ChannelReplyEventName)
+                if (turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == AdapterChannelResponseHandler.ChannelReplyEventName)
                 {
                     Assert.NotNull(turnContext.Activity.Value);
                     var channelReplyValue = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(turnContext.Activity.Value);
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Client.Tests
 
             var agent2Activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "test",
                 Conversation = new ConversationAccount() { Id = agent2ConversationId },
                 From = new ChannelAccount() { Id = "from" }

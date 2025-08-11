@@ -384,7 +384,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Attachments = [],
                 Entities = [],
             };
@@ -394,11 +394,11 @@ namespace Microsoft.Agents.Core.Models
         {
             var reply = new Activity
             {
-                Type = ActivityTypes.Trace,
+                Type = ActivityType.Trace,
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount(id: activity.Recipient?.Id, name: activity.Recipient?.Name),
                 Recipient = new ChannelAccount(id: activity.From?.Id, name: activity.From?.Name),
-                ReplyToId = !activity.IsType(ActivityTypes.ConversationUpdate) || activity.ChannelId != "directline" && activity.ChannelId != "webchat" ? activity.Id : null,
+                ReplyToId = activity.Type != ActivityType.ConversationUpdate || activity.ChannelId != "directline" && activity.ChannelId != "webchat" ? activity.Id : null,
                 ServiceUrl = activity.ServiceUrl,
                 ChannelId = activity.ChannelId,
                 Conversation = activity.Conversation,

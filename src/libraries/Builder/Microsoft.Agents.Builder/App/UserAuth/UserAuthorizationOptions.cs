@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     public class UserAuthorizationOptions
     {
         public readonly static AutoSignInSelector AutoSignInOnForAny = (context, cancellationToken) => Task.FromResult(true);
-        public readonly static AutoSignInSelector AutoSignInOnForMessages = (context, cancellationToken) => Task.FromResult(context.Activity.IsType(ActivityTypes.Message));
+        public readonly static AutoSignInSelector AutoSignInOnForMessages = (context, cancellationToken) => Task.FromResult(context.Activity.Type == ActivityType.Message);
         public readonly static AutoSignInSelector AutoSignInOff = (context, cancellationToken) => Task.FromResult(false);
 
         /// <summary>

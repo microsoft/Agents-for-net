@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
-            if (turnContext.Activity.Type != ActivityTypes.Message || IsRunning())
+            if (turnContext.Activity.Type != ActivityType.Message || IsRunning())
             {
                 return false;
             }
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (_timer != null)
                 {
-                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo }, CancellationToken.None).ConfigureAwait(false);
+                    await turnContext.SendActivityAsync(new Activity { Type = ActivityType.Typing, RelatesTo = turnContext.Activity.RelatesTo }, CancellationToken.None).ConfigureAwait(false);
                     if (IsRunning())
                     {
                         _timer?.Change(_interval, Timeout.Infinite);
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 foreach (IActivity activity in activities)
                 {
-                    if (activity.Type == ActivityTypes.Message || (activity.Type == ActivityTypes.Typing && activity.GetStreamingEntity() != null))
+                    if (activity.Type == ActivityType.Message || (activity.Type == ActivityType.Typing && activity.GetStreamingEntity() != null))
                     {
                         // This will block ITurnContext.SendActivity until the typing timer is done.
                         _send.WaitOne();

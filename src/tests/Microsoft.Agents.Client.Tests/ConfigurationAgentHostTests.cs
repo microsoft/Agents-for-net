@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Client.Tests
             // act
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Id = "1234",
                 ChannelId = "webchat",
                 Conversation = new ConversationAccount()
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Client.Tests
             // act
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Id = "1234",
                 ChannelId = "webchat",
                 Conversation = new ConversationAccount()

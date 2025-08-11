@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Client
             // and the AgentApplication will need to route to a handler.  See AgentResponsesExtension.OnAgentReply.
             var eventActivity = new Activity()
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = ChannelReplyEventName,
                 Value = new ChannelReply() { ChannelConversationReference = conversationReference, Activity = activity },
             };

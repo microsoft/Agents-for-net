@@ -46,56 +46,52 @@ namespace Microsoft.Agents.Storage.Transcript
                     channel[activity.Conversation.Id] = transcript;
                 }
 
-                switch (activity.Type)
+                if (activity.Type == ActivityType.MessageDelete)
                 {
-                    case ActivityTypes.MessageDelete:
-                        // if message delete comes in, delete the message from the transcript
-                        for (int i = 0; i < transcript.Count; i++)
+                    // if message delete comes in, delete the message from the transcript
+                    for (int i = 0; i < transcript.Count; i++)
+                    {
+                        var originalActivity = transcript[i];
+                        if (originalActivity.Id == activity.Id)
                         {
-                            var originalActivity = transcript[i];
-                            if (originalActivity.Id == activity.Id)
+                            // tombstone the original message
+                            transcript[i] = new Activity()
                             {
-                                // tombstone the original message
-                                transcript[i] = new Activity()
-                                {
-                                    Type = ActivityTypes.MessageDelete,
-                                    Id = originalActivity.Id,
-                                    From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
-                                    Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),
-                                    Locale = originalActivity.Locale,
-                                    LocalTimestamp = originalActivity.Timestamp,
-                                    Timestamp = originalActivity.Timestamp,
-                                    ChannelId = originalActivity.ChannelId,
-                                    Conversation = originalActivity.Conversation,
-                                    ServiceUrl = originalActivity.ServiceUrl,
-                                    ReplyToId = originalActivity.ReplyToId,
-                                };
-                                break;
-                            }
+                                Type = ActivityType.MessageDelete,
+                                Id = originalActivity.Id,
+                                From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
+                                Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),
+                                Locale = originalActivity.Locale,
+                                LocalTimestamp = originalActivity.Timestamp,
+                                Timestamp = originalActivity.Timestamp,
+                                ChannelId = originalActivity.ChannelId,
+                                Conversation = originalActivity.Conversation,
+                                ServiceUrl = originalActivity.ServiceUrl,
+                                ReplyToId = originalActivity.ReplyToId,
+                            };
+                            break;
                         }
-
-                        break;
-
-                    case ActivityTypes.MessageUpdate:
-                        for (int i = 0; i < transcript.Count; i++)
+                    }
+                }
+                else if (activity.Type == ActivityType.MessageUpdate)
+                {
+                    for (int i = 0; i < transcript.Count; i++)
+                    {
+                        var originalActivity = transcript[i];
+                        if (originalActivity.Id == activity.Id)
                         {
-                            var originalActivity = transcript[i];
-                            if (originalActivity.Id == activity.Id)
-                            {
-                                var updatedActivity = activity.Clone();
-                                updatedActivity.Type = originalActivity.Type; // fixup original type (should be Message)
-                                updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
-                                updatedActivity.Timestamp = originalActivity.Timestamp;
-                                transcript[i] = updatedActivity;
-                                break;
-                            }
+                            var updatedActivity = activity.Clone();
+                            updatedActivity.Type = originalActivity.Type; // fixup original type (should be Message)
+                            updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
+                            updatedActivity.Timestamp = originalActivity.Timestamp;
+                            transcript[i] = updatedActivity;
+                            break;
                         }
-
-                        break;
-
-                    default:
-                        transcript.Add(activity);
-                        break;
+                    }
+                }
+                else 
+                {
+                    transcript.Add(activity);
                 }
             }
 

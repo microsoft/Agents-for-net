@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public virtual async Task<bool> IsValidActivity(ITurnContext context, CancellationToken cancellationToken = default)
         {
             // Catch user input in Teams where the flow has timed out.  Otherwise we get stuck in "flow active" forever.
-            if (context.Activity.ChannelId.IsParentChannel(Channels.Msteams) && context.Activity.IsType(ActivityTypes.Message))
+            if (context.Activity.ChannelId.IsParentChannel(Channels.Msteams) && context.Activity.Type == ActivityType.Message)
             {
                 var state = await GetFlowStateAsync(context, cancellationToken).ConfigureAwait(false);
                 if (state.FlowStarted && OAuthFlow.HasTimedOut(context, state.FlowExpires))
@@ -60,15 +60,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
             }
 
-            var isMatch = context.Activity.IsType(ActivityTypes.Message);
+            var isMatch = context.Activity.Type == ActivityType.Message;
 
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
+            isMatch |= context.Activity.Type == ActivityType.Invoke &&
                 context.Activity.Name == SignInConstants.VerifyStateOperationName;
 
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
+            isMatch |= context.Activity.Type == ActivityType.Invoke &&
                 context.Activity.Name == SignInConstants.TokenExchangeOperationName;
 
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
+            isMatch |= context.Activity.Type == ActivityType.Invoke &&
                 context.Activity.Name == SignInConstants.SignInFailure;
 
             return isMatch;

@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Client
             agentApplication.OnActivity(
                 (turnContext, CancellationToken) =>
                 {
-                    var isReply = turnContext.Activity.IsType(ActivityTypes.Event)
+                    var isReply = turnContext.Activity.Type == ActivityType.Event
                         && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase);
                     return Task.FromResult(isReply);
                 },
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Client
             }
 
             agentApplication.OnActivity(
-                (turnContext, CancellationToken) => Task.FromResult(turnContext.Activity.IsType(ActivityTypes.EndOfConversation)),
+                (turnContext, CancellationToken) => Task.FromResult(turnContext.Activity.Type == ActivityType.EndOfConversation),
                 eocHandler,
                 rank);
 

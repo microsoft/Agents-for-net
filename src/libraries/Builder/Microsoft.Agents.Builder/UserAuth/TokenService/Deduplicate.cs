@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 await turnContext.SendActivityAsync(
                     new Activity
                     {
-                        Type = ActivityTypes.InvokeResponse,
+                        Type = ActivityType.InvokeResponse,
                         Value = new InvokeResponse
                         {
                             Status = isConsentRequired ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.BadRequest,
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 await turnContext.SendActivityAsync(
                     new Activity
                     {
-                        Type = ActivityTypes.InvokeResponse,
+                        Type = ActivityType.InvokeResponse,
                         Value = new InvokeResponse
                         {
                             Status = (int)HttpStatusCode.OK,

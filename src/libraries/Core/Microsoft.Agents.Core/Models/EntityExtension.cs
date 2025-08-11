@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Core.Models
 
         public static void NormalizeMentions(this IActivity activity, bool removeMention)
         {
-            if (activity.Type == ActivityTypes.Message)
+            if (activity.Type == ActivityType.Message)
             {
                 if (removeMention)
                 {
@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Core.Models
 
         public static bool IsStreamingMessage(this IActivity activity)
         {
-            return activity.Type == ActivityTypes.Typing && activity.GetStreamingEntity() != null;
+            return activity.Type == ActivityType.Typing && activity.GetStreamingEntity() != null;
         }
 
         public static StreamInfo GetStreamingEntity(this IActivity activity)

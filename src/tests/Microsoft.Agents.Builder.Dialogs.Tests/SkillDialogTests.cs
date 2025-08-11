@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Send EndOfConversation to the dialog
             var eoc = new Activity()
             {
-                Type = ActivityTypes.EndOfConversation
+                Type = ActivityType.EndOfConversation
             };
             _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Cancel the dialog so it sends an EoC to the skill
             await client.DialogContext.CancelAllDialogsAsync(CancellationToken.None);
 
-            Assert.Equal(ActivityTypes.EndOfConversation, activitySent.Type);
+            Assert.Equal(ActivityType.EndOfConversation, activitySent.Type);
         }
 
         [Fact]
@@ -518,7 +518,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task ContinueDialogAsync_ShouldSendInvokeActivity()
         {
             var resultInvoke = new InvokeResponse { Status = 200, Body = "testing" };
-            var activity = new Activity { Type = ActivityTypes.InvokeResponse, Value = resultInvoke, ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
+            var activity = new Activity { Type = ActivityType.InvokeResponse, Value = resultInvoke, ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
@@ -543,7 +543,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task ContinueDialogAsync_ShouldReturnEndOfDialog()
         {
-            var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "EOC testing" };
+            var activity = new Activity { Type = ActivityType.EndOfConversation, Value = "EOC testing" };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1"} })

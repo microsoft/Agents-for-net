@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
-                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
+                var tc = new TurnContext(adapter, new Activity() { Type = ActivityType.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
                 await convoState.LoadAsync(tc, false, default);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
 
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var adapter = new TestAdapter()
                     .Use(new AutoSaveStateMiddleware(convoState));
 
-                var tc = new TurnContext(adapter, new Activity() { Type = ActivityTypes.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
+                var tc = new TurnContext(adapter, new Activity() { Type = ActivityType.Message, Conversation = new ConversationAccount() { Id = "123" }, ChannelId = "test" });
 
                 // Create new DialogSet.
                 await convoState.LoadAsync(tc, false, default);
@@ -138,12 +138,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please select an option."
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Retrying - Please select an option."
                         }
                     };
@@ -188,7 +188,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_TokenResponseEvent()
         {
-            var activity = new Activity() { Type = ActivityTypes.Event, Name = SignInConstants.TokenResponseEventName };
+            var activity = new Activity() { Type = ActivityType.Event, Name = SignInConstants.TokenResponseEventName };
             activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"));
             await PromptTimeoutEndsDialogTest(activity);
         }
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_VerifyStateOperation()
         {
-            var activity = new Activity() { Type = ActivityTypes.Invoke, Name = SignInConstants.VerifyStateOperationName };
+            var activity = new Activity() { Type = ActivityType.Invoke, Name = SignInConstants.VerifyStateOperationName };
             activity.Value = new { state = "888999" };
 
             await PromptTimeoutEndsDialogTest(activity);
@@ -205,7 +205,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_TokenExchangeOperation()
         {
-            var activity = new Activity() { Type = ActivityTypes.Invoke, Name = SignInConstants.TokenExchangeOperationName };
+            var activity = new Activity() { Type = ActivityType.Invoke, Name = SignInConstants.TokenExchangeOperationName };
 
             activity.Value = new TokenExchangeInvokeRequest()
             {
@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             })
             .Send(new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
@@ -393,7 +393,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             })
             .Send(new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
@@ -461,7 +461,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             })
             .Send(new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
 
                 // send no body
@@ -526,7 +526,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             })
             .Send(new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
@@ -983,7 +983,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             // send an event TokenResponse activity to the botCallback handler
             var eventActivity = activity.CreateReply();
-            eventActivity.Type = ActivityTypes.Event;
+            eventActivity.Type = ActivityType.Event;
             var from = eventActivity.From;
             eventActivity.From = eventActivity.Recipient;
             eventActivity.Recipient = from;

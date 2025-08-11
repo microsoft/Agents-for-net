@@ -247,7 +247,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter, new Activity());
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.InvokeResponse, value: "invoke response")
+                new Activity(type: ActivityType.InvokeResponse, value: "invoke response")
             };
 
             //Act
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "reply activity", replyToId: "replyToId")
+                new Activity(type: ActivityType.Message, value: "reply activity", replyToId: "replyToId")
             };
 
             //Act
@@ -292,7 +292,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "message activity")
+                new Activity(type: ActivityType.Message, value: "message activity")
             };
 
             //Act

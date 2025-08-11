@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             public Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
             {
-                if (activity.Type != ActivityTypes.InvokeResponse)
+                if (activity.Type != ActivityType.InvokeResponse)
                 {
                     _testAdapter.SentActivities.Add((Activity)activity);
                     return Task.FromResult(new ResourceResponse());

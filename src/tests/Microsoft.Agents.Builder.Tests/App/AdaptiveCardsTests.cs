@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext1 = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             });
             var turnContext2 = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     verb = "test-verb",
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     verb = "test-verb",
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test-text",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -423,7 +423,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },

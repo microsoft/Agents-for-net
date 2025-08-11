@@ -617,7 +617,7 @@ namespace Microsoft.Agents.State.Tests
                         // check object read from value has the correct value for CustomString
                         Assert.Equal("test", customState.CustomString);
                     })
-                .Send(new Activity() { Type = ActivityTypes.ConversationUpdate })
+                .Send(new Activity() { Type = ActivityType.ConversationUpdate })
                 .StartTestAsync();
         }
 

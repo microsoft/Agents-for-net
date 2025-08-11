@@ -66,6 +66,7 @@ namespace Microsoft.Agents.Builder.Compat
 
             await OnTurnBeginAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
+#pragma warning disable CS0618 // Type or member is obsolete
             switch (turnContext.Activity.Type)
             {
                 case ActivityTypes.Message:
@@ -127,6 +128,7 @@ namespace Microsoft.Agents.Builder.Compat
                     await OnUnrecognizedActivityTypeAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     break;
             }
+#pragma warning restore CS0618 // Type or member is obsolete
 
             await OnTurnEndAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }

@@ -234,7 +234,7 @@ namespace Microsoft.Agents.Builder.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            context.Activity?.Type == ActivityType.ConversationUpdate
                             && context.Activity?.MembersAdded != null
                             && context.Activity.MembersAdded.Count > 0
                         );
@@ -244,7 +244,7 @@ namespace Microsoft.Agents.Builder.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            context.Activity?.Type == ActivityType.ConversationUpdate
                             && context.Activity?.MembersRemoved != null
                             && context.Activity.MembersRemoved.Count > 0
                         );
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Builder.App
                     {
                         routeSelector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            context.Activity?.Type == ActivityType.ConversationUpdate
                         );
                         break;
                     }
@@ -278,7 +278,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> wrapper(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                return string.Equals(turnContext.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                return turnContext.Activity?.Type == ActivityType.ConversationUpdate
                     && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    context.Activity.IsType(ActivityTypes.Message)
+                    context.Activity.Type == ActivityType.Message
                     && context.Activity?.Text != null
                     && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
                 );
@@ -357,7 +357,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    context.Activity.IsType(ActivityTypes.Message)
+                    context.Activity.Type == ActivityType.Message
                     && context.Activity?.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
@@ -384,7 +384,7 @@ namespace Microsoft.Agents.Builder.App
             // Enforce Activity.Type Message
             async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
             {
-                return context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return context.Activity.Type == ActivityType.Message && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
             AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
@@ -445,7 +445,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    context.Activity.IsType(ActivityTypes.Event)
+                    context.Activity.Type == ActivityType.Event
                     && context.Activity?.Name != null
                     && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
                 );
@@ -468,7 +468,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
                 => Task.FromResult
                 (
-                    context.Activity.IsType(ActivityTypes.Event)
+                    context.Activity.Type == ActivityType.Event
                     && context.Activity?.Name != null
                     && namePattern.IsMatch(context.Activity.Name)
                 );
@@ -492,7 +492,7 @@ namespace Microsoft.Agents.Builder.App
             // Enforce Activity.Type Event
             async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
             {
-                return context.Activity.IsType(ActivityTypes.Event) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return context.Activity.Type == ActivityType.Event && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
             AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
@@ -511,7 +511,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.MessageReaction
                 && context.Activity?.ReactionsAdded != null
                 && context.Activity.ReactionsAdded.Count > 0
             );
@@ -531,7 +531,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.MessageReaction
                 && context.Activity?.ReactionsRemoved != null
                 && context.Activity.ReactionsRemoved.Count > 0
             );
@@ -551,7 +551,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Invoke
                 && string.Equals(context.Activity?.Name, "handoff/action")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
@@ -629,7 +629,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            if (turnContext.Activity.Type != ActivityType.Message)
             {
                 return;
             }
@@ -683,7 +683,7 @@ namespace Microsoft.Agents.Builder.App
                 };
 
                 // Handle @mentions
-                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                if (turnContext.Activity.Type == ActivityType.Message)
                 {
                     if (Options.NormalizeMentions)
                     {

@@ -12,6 +12,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> An Activity is the basic communication type for the Activity Protocol used with Agents. </summary>
     public interface IActivity
     {
+        [Obsolete("Use Activity.Type == ActivityType.??")]
         bool IsType(string type);
 
         /// <summary>
@@ -272,7 +273,7 @@ namespace Microsoft.Agents.Core.Models
         /// unlikely to collide with future well-defined values. If senders use URIs as type values, they SHOULD NOT 
         /// implement URI ladder comparisons to establish equivalence.
         /// </summary>
-        string Type { get; set; }
+        ActivityType Type { get; set; }
 
         /// <summary>
         /// The value field contains a programmatic payload specific to the Activity being sent. Its meaning and format 

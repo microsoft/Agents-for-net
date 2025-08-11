@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.Testing.XUnit
         protected virtual Task LogIncomingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default)
         {
             var actor = "User: ";
-            if (activity.Type == ActivityTypes.Message)
+            if (activity.Type == ActivityType.Message)
             {
                 Output.WriteLine($"\r\n{actor} {activity.Text}");
             }
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Testing.XUnit
         {
             var stopwatch = context.Services.Get<System.Diagnostics.Stopwatch>(_stopWatchStateKey);
             var actor = "Bot:  ";
-            if (activity.Type == ActivityTypes.Message)
+            if (activity.Type == ActivityType.Message)
             {
                 Output.WriteLine($"\r\n{actor} Text = {activity.Text}\r\n       Speak = {activity.Speak}\r\n       InputHint = {activity.InputHint}");
             }

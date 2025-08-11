@@ -89,13 +89,5 @@ namespace Microsoft.Agents.Model.Tests
 
             public string Whiskers { get; set; }
         }
-
-        internal class TestActivity : Activity
-        {
-            public bool IsTargetActivityType(string activityType)
-            {
-                return IsActivity(activityType);
-            }
-        }
     }
 }

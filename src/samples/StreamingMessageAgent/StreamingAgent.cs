@@ -29,7 +29,7 @@ public class StreamingAgent : AgentApplication
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
         // Register an event to handle messages from the client.
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityType.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
     /// <summary>

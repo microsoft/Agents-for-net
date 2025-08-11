@@ -158,59 +158,56 @@ namespace Microsoft.Agents.Storage.Transcript
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            switch (activity.Type)
+            if (activity.Type == ActivityType.MessageUpdate)
             {
-                case ActivityTypes.MessageUpdate:
+                var updatedActivity = activity.Clone();
+                updatedActivity.Type = ActivityType.Message; // fixup original type (should be Message)
+
+                var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
+                if (activityAndBlob != default && activityAndBlob.Item1 != null)
+                {
+                    updatedActivity.LocalTimestamp = activityAndBlob.Item1.LocalTimestamp;
+                    updatedActivity.Timestamp = activityAndBlob.Item1.Timestamp;
+                    await LogActivityToBlobClientAsync(updatedActivity, activityAndBlob.Item2, true).ConfigureAwait(false);
+                }
+                else
+                {
+                    // The activity was not found, so just add a record of this update.
+                    await InnerLogActivityAsync(updatedActivity, false).ConfigureAwait(false);
+                }
+
+                return;
+            }
+            else if (activity.Type == ActivityType.MessageDelete)
+            {
+                var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
+                if (activityAndBlob != default && activityAndBlob.Item1 != null)
+                {
+                    // tombstone the original message
+                    var tombstonedActivity = new Activity()
                     {
-                        var updatedActivity = activity.Clone();
-                        updatedActivity.Type = ActivityTypes.Message; // fixup original type (should be Message)
+                        Type = ActivityType.MessageDelete,
+                        Id = activityAndBlob.Item1.Id,
+                        From = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.From.Role),
+                        Recipient = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.Recipient.Role),
+                        Locale = activityAndBlob.Item1.Locale,
+                        LocalTimestamp = activityAndBlob.Item1.Timestamp,
+                        Timestamp = activityAndBlob.Item1.Timestamp,
+                        ChannelId = activityAndBlob.Item1.ChannelId,
+                        Conversation = activityAndBlob.Item1.Conversation,
+                        ServiceUrl = activityAndBlob.Item1.ServiceUrl,
+                        ReplyToId = activityAndBlob.Item1.ReplyToId,
+                    };
 
-                        var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
-                        if (activityAndBlob != default && activityAndBlob.Item1 != null)
-                        {
-                            updatedActivity.LocalTimestamp = activityAndBlob.Item1.LocalTimestamp;
-                            updatedActivity.Timestamp = activityAndBlob.Item1.Timestamp;
-                            await LogActivityToBlobClientAsync(updatedActivity, activityAndBlob.Item2, true).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            // The activity was not found, so just add a record of this update.
-                            await InnerLogActivityAsync(updatedActivity, false).ConfigureAwait(false);
-                        }
+                    await LogActivityToBlobClientAsync(tombstonedActivity, activityAndBlob.Item2, true).ConfigureAwait(false);
+                }
 
-                        return;
-                    }
-
-                case ActivityTypes.MessageDelete:
-                    {
-                        var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
-                        if (activityAndBlob != default && activityAndBlob.Item1 != null)
-                        {
-                            // tombstone the original message
-                            var tombstonedActivity = new Activity()
-                            {
-                                Type = ActivityTypes.MessageDelete,
-                                Id = activityAndBlob.Item1.Id,
-                                From = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.From.Role),
-                                Recipient = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.Recipient.Role),
-                                Locale = activityAndBlob.Item1.Locale,
-                                LocalTimestamp = activityAndBlob.Item1.Timestamp,
-                                Timestamp = activityAndBlob.Item1.Timestamp,
-                                ChannelId = activityAndBlob.Item1.ChannelId,
-                                Conversation = activityAndBlob.Item1.Conversation,
-                                ServiceUrl = activityAndBlob.Item1.ServiceUrl,
-                                ReplyToId = activityAndBlob.Item1.ReplyToId,
-                            };
-
-                            await LogActivityToBlobClientAsync(tombstonedActivity, activityAndBlob.Item2, true).ConfigureAwait(false);
-                        }
-
-                        return;
-                    }
-
-                default:
-                    await InnerLogActivityAsync(activity, false).ConfigureAwait(false);
-                    return;
+                return;
+            }
+            else 
+            {
+                await InnerLogActivityAsync(activity, false).ConfigureAwait(false);
+                return;
             }
         }
 

@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Storage.Tests
         private readonly Mock<BlobContainerClient> _container = new Mock<BlobContainerClient>();
         private readonly Activity _activity = new Activity
         {
-            Type = ActivityTypes.Message,
+            Type = ActivityType.Message,
             Text = "Text",
             Id = "Id",
             ChannelId = "ChannelId",
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _activity.Type = ActivityTypes.MessageUpdate;
+            _activity.Type = ActivityType.MessageUpdate;
 
             await _storage.LogActivityAsync(_activity);
 
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _activity.Type = ActivityTypes.MessageUpdate;
+            _activity.Type = ActivityType.MessageUpdate;
 
             Stream stream = new MemoryStream(Encoding.ASCII.GetBytes(string.Empty));
             var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _activity.Type = ActivityTypes.MessageDelete;
+            _activity.Type = ActivityType.MessageDelete;
 
             await _storage.LogActivityAsync(_activity);
 
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Storage.Tests
                     return continuationPage.Object;
                 });
 
-            _activity.Type = ActivityTypes.MessageUpdate;
+            _activity.Type = ActivityType.MessageUpdate;
 
             await _storage.LogActivityAsync(_activity);
 
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Storage.Tests
                     throw new RequestFailedException((int)HttpStatusCode.PreconditionFailed, "error");
                 });
 
-            _activity.Type = ActivityTypes.MessageUpdate;
+            _activity.Type = ActivityType.MessageUpdate;
 
             await Assert.ThrowsAsync<Exception>(() => _storage.LogActivityAsync(_activity));
 

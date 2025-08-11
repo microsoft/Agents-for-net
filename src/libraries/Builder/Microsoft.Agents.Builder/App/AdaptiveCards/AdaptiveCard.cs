@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardInvokeValue? invokeValue;
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                if (turnContext.Activity.Type != ActivityType.Invoke
                     || !string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
                     || (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) == null
                     || invokeValue.Action == null
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
+                if (turnContext.Activity.Type != ActivityType.Message
                     || !string.IsNullOrEmpty(turnContext.Activity.Text)
                     || turnContext.Activity.Value == null)
                 {
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardSearchInvokeValue? searchInvokeValue;
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                if (turnContext.Activity.Type != ActivityType.Invoke
                     || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
                     || (searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value)) == null)
                 {
@@ -400,7 +400,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             {
                 AdaptiveCardInvokeValue? invokeValue;
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.Invoke
                     && string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
                     && (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) != null
                     && invokeValue.Action != null
@@ -416,7 +416,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             {
                 JsonObject obj = ProtocolJsonSerializer.ToObject<JsonObject>(turnContext.Activity.Value);
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.Message
                     && string.IsNullOrEmpty(turnContext.Activity.Text)
                     && turnContext.Activity.Value != null
                     && obj[filter] != null
@@ -432,7 +432,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             {
                 AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value);
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.Invoke
                     && string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
                     && (searchInvokeValue != null
                     && isMatch(searchInvokeValue.Dataset!)));

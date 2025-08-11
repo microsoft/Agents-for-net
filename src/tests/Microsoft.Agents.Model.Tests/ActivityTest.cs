@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
@@ -204,29 +203,29 @@ namespace Microsoft.Agents.Model.Tests
             var trace = activity.CreateTrace("test", value, valueType, label);
 
             Assert.NotNull(trace);
-            Assert.True(trace.Type == ActivityTypes.Trace);
+            Assert.True(trace.Type == ActivityType.Trace);
             Assert.True(trace.ValueType == (valueType ?? value?.GetType().Name));
             Assert.True(trace.Label == label);
             Assert.True(trace.Name == "test");
         }
 
         [Theory]
-        [InlineData(nameof(ActivityTypes.EndOfConversation))]
-        [InlineData(nameof(ActivityTypes.Event))]
-        [InlineData(nameof(ActivityTypes.Handoff))]
-        [InlineData(nameof(ActivityTypes.Invoke))]
-        [InlineData(nameof(ActivityTypes.Message))]
-        [InlineData(nameof(ActivityTypes.Typing))]
+        [InlineData(nameof(ActivityType.EndOfConversation))]
+        [InlineData(nameof(ActivityType.Event))]
+        [InlineData(nameof(ActivityType.Handoff))]
+        [InlineData(nameof(ActivityType.Invoke))]
+        [InlineData(nameof(ActivityType.Message))]
+        [InlineData(nameof(ActivityType.Typing))]
         public void CanCreateActivities(string activityType)
         {
             var createActivityMethod = typeof(Activity).GetMethod($"Create{activityType}Activity");
             var activity = (Activity)createActivityMethod.Invoke(null, new object[0]);
-            var expectedActivityType = (string)typeof(ActivityTypes).GetField(activityType).GetValue(null);
+            var expectedActivityType = (string)typeof(ActivityType).GetField(activityType).GetValue(null);
 
             Assert.NotNull(activity);
             Assert.True(activity.Type == expectedActivityType);
 
-            if (expectedActivityType == ActivityTypes.Message)
+            if (expectedActivityType == ActivityType.Message)
             {
                 Assert.IsType<List<Attachment>>(activity.Attachments);
                 Assert.True(activity.Attachments.Count == 0);
@@ -242,7 +241,7 @@ namespace Microsoft.Agents.Model.Tests
             var activity = Activity.CreateTraceActivity(name, value, valueType, label);
 
             Assert.NotNull(activity);
-            Assert.True(activity.Type == ActivityTypes.Trace);
+            Assert.True(activity.Type == ActivityType.Trace);
             Assert.True(activity.Name == name);
             Assert.True(activity.ValueType == value?.GetType().Name);
             Assert.True(activity.Value == value);
@@ -260,7 +259,7 @@ namespace Microsoft.Agents.Model.Tests
             var reply = activity.CreateReply(text, createReplyLocale);
 
             Assert.NotNull(reply);
-            Assert.True(reply.Type == ActivityTypes.Message);
+            Assert.True(reply.Type == ActivityType.Message);
             Assert.True(reply.ReplyToId == "123");
             Assert.True(reply.ServiceUrl == "ServiceUrl123");
             Assert.True(reply.ChannelId == "ChannelId123");
@@ -271,26 +270,26 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Theory]
-        [InlineData(nameof(ActivityTypes.Command))]
-        [InlineData(nameof(ActivityTypes.CommandResult))]
-        [InlineData(nameof(ActivityTypes.ContactRelationUpdate))]
-        [InlineData(nameof(ActivityTypes.ConversationUpdate))]
-        [InlineData(nameof(ActivityTypes.EndOfConversation))]
-        [InlineData(nameof(ActivityTypes.Event))]
-        [InlineData(nameof(ActivityTypes.Handoff))]
-        [InlineData(nameof(ActivityTypes.InstallationUpdate))]
-        [InlineData(nameof(ActivityTypes.Invoke))]
-        [InlineData(nameof(ActivityTypes.Message))]
-        [InlineData(nameof(ActivityTypes.MessageDelete))]
-        [InlineData(nameof(ActivityTypes.MessageReaction))]
-        [InlineData(nameof(ActivityTypes.MessageUpdate))]
-        [InlineData(nameof(ActivityTypes.Suggestion))]
-        [InlineData(nameof(ActivityTypes.Typing))]
+        [InlineData(nameof(ActivityType.Command))]
+        [InlineData(nameof(ActivityType.CommandResult))]
+        [InlineData(nameof(ActivityType.ContactRelationUpdate))]
+        [InlineData(nameof(ActivityType.ConversationUpdate))]
+        [InlineData(nameof(ActivityType.EndOfConversation))]
+        [InlineData(nameof(ActivityType.Event))]
+        [InlineData(nameof(ActivityType.Handoff))]
+        [InlineData(nameof(ActivityType.InstallationUpdate))]
+        [InlineData(nameof(ActivityType.Invoke))]
+        [InlineData(nameof(ActivityType.Message))]
+        [InlineData(nameof(ActivityType.MessageDelete))]
+        [InlineData(nameof(ActivityType.MessageReaction))]
+        [InlineData(nameof(ActivityType.MessageUpdate))]
+        [InlineData(nameof(ActivityType.Suggestion))]
+        [InlineData(nameof(ActivityType.Typing))]
         public void CanCastToActivityType(string activityType)
         {
             var activity = new Activity()
             {
-                Type = GetActivityType(activityType)
+                Type = (ActivityType) ActivityType.FromString(activityType),
             };
 
             // This will return null if casting was unsuccessful, otherwise it should return an Activity
@@ -298,27 +297,27 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(activity);
             Assert.NotNull(castActivity);
-            Assert.True(activity.Type.ToLowerInvariant() == activityType.ToLowerInvariant());
+            Assert.True(activity.Type == activityType.ToLowerInvariant());
         }
 
         /*
         [Theory]
-        [InlineData(nameof(ActivityTypes.Command))]
-        [InlineData(nameof(ActivityTypes.CommandResult))]
-        [InlineData(nameof(ActivityTypes.ContactRelationUpdate))]
-        [InlineData(nameof(ActivityTypes.ConversationUpdate))]
-        [InlineData(nameof(ActivityTypes.EndOfConversation))]
-        [InlineData(nameof(ActivityTypes.Event))]
-        [InlineData(nameof(ActivityTypes.Handoff))]
-        [InlineData(nameof(ActivityTypes.InstallationUpdate))]
-        [InlineData(nameof(ActivityTypes.Invoke))]
-        [InlineData(nameof(ActivityTypes.Message))]
-        [InlineData(nameof(ActivityTypes.MessageDelete))]
-        [InlineData(nameof(ActivityTypes.MessageReaction))]
-        [InlineData(nameof(ActivityTypes.MessageUpdate))]
-        [InlineData(nameof(ActivityTypes.Suggestion))]
-        [InlineData(nameof(ActivityTypes.Trace))]
-        [InlineData(nameof(ActivityTypes.Typing))]
+        [InlineData(nameof(ActivityType.Command))]
+        [InlineData(nameof(ActivityType.CommandResult))]
+        [InlineData(nameof(ActivityType.ContactRelationUpdate))]
+        [InlineData(nameof(ActivityType.ConversationUpdate))]
+        [InlineData(nameof(ActivityType.EndOfConversation))]
+        [InlineData(nameof(ActivityType.Event))]
+        [InlineData(nameof(ActivityType.Handoff))]
+        [InlineData(nameof(ActivityType.InstallationUpdate))]
+        [InlineData(nameof(ActivityType.Invoke))]
+        [InlineData(nameof(ActivityType.Message))]
+        [InlineData(nameof(ActivityType.MessageDelete))]
+        [InlineData(nameof(ActivityType.MessageReaction))]
+        [InlineData(nameof(ActivityType.MessageUpdate))]
+        [InlineData(nameof(ActivityType.Suggestion))]
+        [InlineData(nameof(ActivityType.Trace))]
+        [InlineData(nameof(ActivityType.Typing))]
         public void CastToActivityType_ReturnNullsWhenCastUnsuccessful(string activityType)
         {
             var activity = new Activity();
@@ -364,26 +363,13 @@ namespace Microsoft.Agents.Model.Tests
         {
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
             };
 
             var mentions = activity.GetMentions();
 
             Assert.IsType<Mention[]>(mentions);
             Assert.True(mentions.Length == 0);
-        }
-
-        [Theory]
-        [InlineData("message/testType", ActivityTypes.Message, true)]
-        [InlineData("message-testType", ActivityTypes.Message, false)]
-        public void IsActivity(string typeOfActivity, string targetType, bool expected)
-        {
-            var activity = new TestActivity()
-            {
-                Type = typeOfActivity
-            };
-
-            Assert.Equal(expected, activity.IsTargetActivityType(targetType));
         }
 
         [Theory]
@@ -496,11 +482,6 @@ namespace Microsoft.Agents.Model.Tests
             };
 
             return activity;
-        }
-
-        private string GetActivityType(string type)
-        {
-            return (string)typeof(ActivityTypes).GetField(type).GetValue(null);
         }
 
         private Activity CastToActivityType(string activityType, IActivity activity)

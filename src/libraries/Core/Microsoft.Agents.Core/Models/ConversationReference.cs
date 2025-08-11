@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity()
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = ActivityEventNames.ContinueConversation.ToString(),
                 Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,

@@ -343,7 +343,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var app = new TestApplication(options);
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             });
@@ -396,7 +396,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var app = new TestApplication(options);
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             });
@@ -649,7 +649,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var app = new TestApplication(options);
 
             // Default AutoSignIn "global" handler.
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
@@ -739,7 +739,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var app = new TestApplication(options);
 
             // Default AutoSignIn "global" handler.
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
@@ -811,7 +811,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var app = new TestApplication(options);
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
@@ -872,7 +872,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var app = new TestApplication(options);
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
@@ -933,7 +933,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var app = new TestApplication(options);
 
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName, exchangeScopes: runtimeOboScopes);
                 Assert.NotNull(token);
@@ -1007,7 +1007,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var app = new TestApplication(options);
 
             // auto
-            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            app.OnActivity(ActivityType.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
@@ -1043,7 +1043,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             return new TurnContext(new SimpleAdapter(), new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },

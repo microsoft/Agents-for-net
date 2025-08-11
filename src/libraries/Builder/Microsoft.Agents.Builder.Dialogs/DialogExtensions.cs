@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             if (IsFromParentToSkill(turnContext))
             {
                 // Handle remote cancellation request from parent.
-                if (turnContext.Activity.Type == ActivityTypes.EndOfConversation)
+                if (turnContext.Activity.Type == ActivityType.EndOfConversation)
                 {
                     if (dialogContext.Stack.Count == 0)
                     {
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 }
 
                 // Handle a reprompt event sent from the parent.
-                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
+                if (turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
                 {
                     if (dialogContext.Stack.Count == 0)
                     {
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 {
                     // Send End of conversation at the end.
                     var code = result.Status == DialogTurnStatus.Complete ? EndOfConversationCodes.CompletedSuccessfully : EndOfConversationCodes.UserCancelled;
-                    var activity = new Activity(ActivityTypes.EndOfConversation) { Value = result.Result, Locale = turnContext.Activity.Locale, Code = code };
+                    var activity = new Activity(ActivityType.EndOfConversation) { Value = result.Result, Locale = turnContext.Activity.Locale, Code = code };
                     await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                 }
             }

@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.Compat
             await turnContext.SendActivityAsync(
                 new Activity
                 {
-                    Type = ActivityTypes.InvokeResponse,
+                    Type = ActivityType.InvokeResponse,
                     Value = new InvokeResponse
                     {
                         Status = (int)httpStatusCode,

@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 var numberPromptMock = new NumberPromptMock("NumberPromptMock");
 
-                var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Please send a number." } };
+                var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Please send a number." } };
 
                 await numberPromptMock.OnPromptNullContext(options);
             });
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." } };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -151,8 +151,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
-                        RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "You must enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
+                        RetryPrompt = new Activity { Type = ActivityType.Message, Text = "You must enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
@@ -206,8 +206,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
-                        RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "You must enter a positive number less than 100." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
+                        RetryPrompt = new Activity { Type = ActivityType.Message, Text = "You must enter a positive number less than 100." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
@@ -332,7 +332,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -455,7 +455,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -496,7 +496,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -537,7 +537,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -577,7 +577,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -589,7 +589,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             })
             .Send("hello")
             .AssertReply("Enter a number.")
-            .Send(new Activity { Type = ActivityTypes.Message, Text = "3,14", Locale = Culture.Dutch })
+            .Send(new Activity { Type = ActivityType.Message, Text = "3,14", Locale = Culture.Dutch })
             .StartTestAsync();
         }
 
@@ -617,7 +617,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options);
                 }
@@ -658,7 +658,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
@@ -699,7 +699,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter a number." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter a number." },
                     };
                     await dc.PromptAsync("NumberPrompt", options, cancellationToken);
                 }
