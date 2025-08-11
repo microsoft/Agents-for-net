@@ -227,7 +227,12 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
-        public static bool SupportsVideoCard(string channelId)
+        /// <summary>
+        /// Determines if the specified channel supports video cards.
+        /// </summary>
+        /// <param name="channelId">The channel identifier to check for video card support.</param>
+        /// <returns>True if the channel supports video cards; otherwise, false.</returns>
+        public static bool SupportsVideoCard(ChannelId channelId)
         {
         public static bool SupportsVideoCard(ChannelId channelId)
         {
@@ -243,7 +248,12 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
-        public static bool SupportsReceiptCard(string channelId)
+        /// <summary>
+        /// Determines whether the specified channel supports receipt cards.
+        /// Returns true if the channel supports receipt cards; otherwise, false.
+        /// Returns false for Alexa, GroupMe, Microsoft Teams, and Twilio channels; true for others.
+        /// </summary>
+        public static bool SupportsReceiptCard(ChannelId channelId)
         {
             switch (channelId)
             {
@@ -258,7 +268,11 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
-        public static bool SupportsThumbnailCard(string channelId)
+        /// <summary>
+        /// Determines whether the specified channel supports thumbnail cards.
+        /// Returns true if the channel supports thumbnail cards; otherwise, false.
+        /// </summary>
+        public static bool SupportsThumbnailCard(ChannelId channelId)
         {
             switch (channelId)
             {
@@ -277,7 +291,11 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
-        public static bool SupportsAudioCard(string channelId)
+        /// <summary>
+        /// Determines whether the specified channel supports audio cards.
+        /// Returns <c>true</c> if the channel supports audio cards; otherwise, <c>false</c>.
+        /// </summary>
+        public static bool SupportsAudioCard(ChannelId channelId)
         {
             switch (channelId)
             {
@@ -299,7 +317,11 @@ namespace Microsoft.Agents.Core.Models
             }
         }
 
-        public static bool SupportsAnimationCard(string channelId)
+        /// <summary>
+        /// Determines if the specified channel supports Animation Cards.
+        /// Returns true if Animation Cards are supported; otherwise, false.
+        /// </summary>
+        public static bool SupportsAnimationCard(ChannelId channelId)
         {
             switch (channelId)
             {
