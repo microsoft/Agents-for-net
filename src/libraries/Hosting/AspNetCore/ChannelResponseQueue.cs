@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (string.IsNullOrEmpty(requestId) || !_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                logger.LogError("ChannelResponseQueue received unknown requestId '{RequestId}' for Activities: {Activity}", requestId, ProtocolJsonSerializer.ToJson(activities));
+                logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' for Activities: {Activity}", requestId, ProtocolJsonSerializer.ToJson(activities));
             }
             else
             {

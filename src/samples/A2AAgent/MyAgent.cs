@@ -21,6 +21,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnMessage("-stream", OnStreamAsync);
         OnMessage("-multi", OnMultiTurnAsync);
+        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync, rank: RouteRank.Last);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -63,6 +64,17 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
 
+    private Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
+        if (multi != null)
+        {
+            turnState.Conversation.DeleteValue(nameof(MultiResult));
+        }
+
+        return Task.CompletedTask;
+    }
+
     private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
@@ -77,6 +89,8 @@ public class MyAgent : AgentApplication, IAgentCardHandler
                 Value = multi
             };
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
+
+            turnState.Conversation.DeleteValue(nameof(MultiResult));
         }
         else
         {

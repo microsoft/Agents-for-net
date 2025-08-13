@@ -12,7 +12,7 @@ public enum TaskState
     Working,
     InputRequired,
     Completed,
-    Cancelled,
+    Canceled,
     Failed,
     Rejected,
     AuthRequired,

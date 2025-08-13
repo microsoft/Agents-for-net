@@ -91,7 +91,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
             await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
 
             // Update Task state if expecting input
-            if (task.Status.State != TaskState.InputRequired && activity.InputHint == InputHints.ExpectingInput)
+            if (task.Status.State != TaskState.InputRequired && (activity.InputHint == InputHints.ExpectingInput || activity.InputHint == InputHints.AcceptingInput))
             {
                 // Status update will be sent during ResponseEnd
                 var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.InputRequired);
@@ -126,7 +126,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
         else if (activity.IsType(ActivityTypes.Typing))
         {
-            // non-streamingresponse Typing
+            // non-StreamingResponse Typing
             // Status update will be sent during ResponseEnd
             var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working);
             await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
@@ -135,32 +135,24 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
     public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
     {
+        AgentTask task = null;
+
         if (data != null)
         {
-            // TODO: data is probably InvokeResponse.  Could do a more complete job of writing the value and
-            // full schema (including the InvokeResponse.Body).
+            // data is probably InvokeResponse.
             var artifactUpdate = new TaskArtifactUpdateEvent()
             {
                 TaskId = _taskId,
                 ContextId = _contextId,
-                Artifact = A2AConverter.ArtifactFromObject(data),
+                Artifact = A2AConverter.ArtifactFromObject(data, name: data.GetType().Name),
                 Append = true,
                 LastChunk = true
             };
-            await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
+            task = await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
             await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
         }
 
-        var task = await _taskStore.GetTaskAsync(_taskId, cancellationToken).ConfigureAwait(false);
-        if (task.Status.State != TaskState.InputRequired && task.Status.State != TaskState.Completed)
-        {
-            // auto complete if a message requiring input wasn't sent.
-            // TODO: AP supports a long running (not complete) task, which would end with a proactive notification.  This
-            // needs to be enhanced to support a push notification.
-            // Impl notes: Implement IChannelAdapter.ProcessProactiveAsync to update TaskStore and send push notification (if enabled)
-            var completeStatusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Completed);
-            task = await _taskStore.UpdateTaskAsync(completeStatusUpdate, cancellationToken).ConfigureAwait(false);
-        }
+        task ??= await _taskStore.GetTaskAsync(_taskId, cancellationToken).ConfigureAwait(false);
 
         // Send Task status
         if (_sse)

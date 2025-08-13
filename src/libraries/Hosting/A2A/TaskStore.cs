@@ -19,23 +19,24 @@ namespace Microsoft.Agents.Hosting.A2A
         {
             AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 
-            AgentTask task;
+            AgentTask task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false);
 
-            try
+            if (task != null)
             {
-                task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false);
-
-                // TODO: error if Task is in terminal state
-
-                task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
-                task.History = AppendMessage(task.History, message);
+                if (!task.IsTerminal())
+                {
+                    task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
+                    task.History = AppendMessage(task.History, message);
+                    await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
+                }
             }
-            catch (KeyNotFoundException)
+            else
             {
                 task = new AgentTask() { ContextId = contextId, Id = taskId, Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow }, History = AppendMessage(default, message) };
+                await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
             }
 
-            return await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
+            return task;
         }
 
         public async Task<AgentTask> UpdateTaskAsync(AgentTask task, CancellationToken cancellationToken = default)
@@ -75,9 +76,13 @@ namespace Microsoft.Agents.Hosting.A2A
             AssertionHelpers.ThrowIfNull(nameof(statusUpdate), "TaskStatusUpdateEvent cannot be null.");
 
             var task = await GetTaskAsync(statusUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-            task.Status = statusUpdate.Status;
+            if (!task.IsTerminal() && task.Status.State != statusUpdate.Status.State)
+            {
+                task.Status = statusUpdate.Status;
 
-            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+                await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+            }
+
             return task;
         }
 
@@ -103,7 +108,7 @@ namespace Microsoft.Agents.Hosting.A2A
                 return existingTask;
             }
 
-            throw new KeyNotFoundException($"Task with ID '{taskId}' not found.");
+            return null;
         }
 
         private static string GetKey(string taskId)
