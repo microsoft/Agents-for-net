@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.Models
@@ -90,6 +91,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// </summary>
         /// <value>The tenant ID.</value>
         public string TenantId { get; set; }
+
+        /// <summary>
+        ///  List of membership sources associated with the channel account.
+        /// </summary>
+        public List<MembershipSource>? MembershipSource { get; set; }
 
         /// <summary>
         /// Gets or sets the AAD Object Id.

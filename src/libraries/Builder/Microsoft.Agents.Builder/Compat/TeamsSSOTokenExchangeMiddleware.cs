@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <inheritdoc/>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
-            if (string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase) 
+            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
                 && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync

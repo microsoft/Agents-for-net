@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var mockUserTokenClient = new Mock<IUserTokenClient>();
 
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TokenResponse)null);
             mockUserTokenClient.Setup(
                 x => x.GetSignInResourceAsync(It.Is<string>(s => s == connectionName), It.IsAny<Activity>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TokenResponse)null);
             mockUserTokenClient.Setup(
                 x => x.GetSignInResourceAsync(It.Is<string>(s => s == connectionName), It.IsAny<Activity>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
@@ -507,7 +507,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
@@ -593,7 +593,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.ExchangeTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<TokenExchangeRequest>(ter => ter.Token == tokenExchangeRequestToken), It.IsAny<CancellationToken>()))
+                x => x.ExchangeTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.Is<TokenExchangeRequest>(ter => ter.Token == tokenExchangeRequestToken), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
@@ -691,7 +691,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
+                x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<CancellationToken>()));
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
@@ -733,7 +733,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             // Assert
             mockUserTokenClient.Verify(
-                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
+                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
         }
     }
 }

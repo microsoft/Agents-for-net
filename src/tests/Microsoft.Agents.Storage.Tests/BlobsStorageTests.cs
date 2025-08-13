@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Storage.Tests
             _ = new BlobsStorage(
                 ConnectionString,
                 "containerName",
-                new JsonSerializerOptions());
+                jsonSerializerOptions: new JsonSerializerOptions());
 
             // No dataConnectionString. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsStorage(null, "containerName"));
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Storage.Tests
                 .Returns(_client.Object);
             container.Setup(e => e.CreateIfNotExistsAsync(It.IsAny<PublicAccessType>(), It.IsAny<IDictionary<string, string>>(), It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<CancellationToken>()));
 
-            _storage = new BlobsStorage(container.Object, jsonSerializer);
+            _storage = new BlobsStorage(container.Object, jsonSerializerOptions: jsonSerializer);
         }
     }
 

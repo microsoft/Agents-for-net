@@ -194,6 +194,92 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task Test_OnConversationUpdate_ChannelUnshared()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData
+                {
+                    EventType = "channelUnshared",
+                    Channel = new ChannelInfo(),
+                    Team = new TeamInfo(),
+                },
+                Name = "1",
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+            var names = new List<string>();
+            app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelUnshared,
+                (context, _, _) =>
+                {
+                    names.Add(context.Activity.Name);
+                    return Task.CompletedTask;
+                });
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(names);
+            Assert.Equal("1", names[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnConversationUpdate_ChannelShared()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData
+                {
+                    EventType = "channelShared",
+                    Channel = new ChannelInfo(),
+                    Team = new TeamInfo(),
+                },
+                Name = "1",
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+            var names = new List<string>();
+            app.OnConversationUpdate(TeamsConversationUpdateEvents.ChannelShared,
+                (context, _, _) =>
+                {
+                    names.Add(context.Activity.Name);
+                    return Task.CompletedTask;
+                });
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(names);
+            Assert.Equal("1", names[0]);
+        }
+
+        [Fact]
         public async Task Test_OnConversationUpdate_TeamRenamed()
         {
             // Arrange

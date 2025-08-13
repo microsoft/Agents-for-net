@@ -10,6 +10,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         ClientSecret,
         UserManagedIdentity,
         SystemManagedIdentity,
-        FederatedCredentials
+        FederatedCredentials,
+        WorkloadIdentity
     }
 }

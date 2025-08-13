@@ -44,7 +44,7 @@ builder.AddAgent(sp =>
 
         return new CopilotClient(
             settings,
-            sp.GetService<IHttpClientFactory>(),
+            sp.GetService<IHttpClientFactory>()!,
             tokenProviderFunction: async (s) =>
             {
                 // In this sample, the Azure Bot OAuth Connection is configured to return an 
@@ -105,7 +105,7 @@ builder.AddAgent(sp =>
     // Called when the OAuth flow fails
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
     {
-        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Cause}/{response.Error.Message}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Cause}/{response.Error!.Message}", cancellationToken: cancellationToken);
     });
 
     return app;
@@ -114,17 +114,30 @@ builder.AddAgent(sp =>
 
 // Configure the HTTP request pipeline.
 
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+
 WebApplication app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    incomingRoute.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.

@@ -43,5 +43,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// </summary>
         /// <value>The Azure Active Directory Teams group ID.</value>
         public string AadGroupId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the TenantId.
+        /// </summary>
+        /// <value>The TenantId.</value>
+        public string? TenantId { get; set; }
     }
 }

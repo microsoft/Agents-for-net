@@ -66,7 +66,7 @@ public class AttachmentsAgent : AgentApplication
             ],
         };
 
-        if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.OrdinalIgnoreCase))
+        if (turnContext.Activity.ChannelId == Channels.Msteams)
         {
             card.Buttons.Add(new CardAction(ActionTypes.ImBack, title: "3. Uploaded Attachment", value: "3"));
         }
@@ -97,7 +97,7 @@ public class AttachmentsAgent : AgentApplication
     }
 
     // Returns a reply with the requested Attachment
-    private static async Task<IActivity> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
+    private static async Task<IActivity?> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
     {
         // Look at the user input, and figure out what kind of attachment to send.
 
@@ -106,7 +106,7 @@ public class AttachmentsAgent : AgentApplication
             return null;
         }
 
-        IActivity reply = null;
+        IActivity? reply = null;
 
         if (activity.Text.StartsWith('1'))
         {

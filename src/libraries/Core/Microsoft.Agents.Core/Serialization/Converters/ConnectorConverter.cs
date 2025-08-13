@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         {
                             if (!ProtocolJsonSerializer.UnpackObjectStrings)
                             {
-                                writer.WriteRawValue(s);
+                                writer.WriteStringValue(s);
                             }
                             else
                             {
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     if (!ProtocolJsonSerializer.UnpackObjectStrings)
                     {
-                        var json = element.GetRawText();
+                        var json = element.GetString();
                         setter(json);
                     }
                     else
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             setter(deserialized);
         }
 
-        private void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
+        protected virtual void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
         {
             if (TryReadExtensionData(ref reader, value, property.Name, options))
             {
