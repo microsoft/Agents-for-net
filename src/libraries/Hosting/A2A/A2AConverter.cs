@@ -5,7 +5,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,12 +14,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
 internal class A2AConverter
 {
+    public const string DefaultUserId = "unknown";
+
     private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
     private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> _schemas = [];
 
@@ -93,7 +93,7 @@ internal class A2AConverter
         };
     }
 
-    public static (IActivity, string? contextId, string? taskId, Message? message) ActivityFromRequest(JsonRpcRequest jsonRpcPayload, string userId = "user", string channelId = "a2a", bool isStreaming = true)
+    public static (IActivity, string? contextId, string? taskId, Message? message) ActivityFromRequest(JsonRpcRequest jsonRpcPayload, bool isStreaming = true)
     {
         if (jsonRpcPayload.Params == null)
         {
@@ -112,7 +112,7 @@ internal class A2AConverter
         // SDK doesn't have a notion of "task".  For now, allow for a conversation to have multiple tasks.
         var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
         
-        var activity = CreateActivity(taskId, channelId, userId, sendParams.Message.Parts, true, isStreaming);
+        var activity = CreateActivity(taskId, Channels.A2A, DefaultUserId, sendParams.Message.Parts, true, isStreaming);
         activity.RequestId = jsonRpcPayload.Id.ToString();
 
         sendParams.Message.ContextId = contextId;
@@ -150,7 +150,7 @@ internal class A2AConverter
         {
             TaskId = taskId,
             ContextId = contextId,
-            Status = new Protocol.TaskStatus()
+            Status = new TaskStatus()
             {
                 State = taskState,
                 Timestamp = DateTimeOffset.UtcNow,
@@ -211,7 +211,7 @@ internal class A2AConverter
         {
             Id = taskId,
             ContextId = contextId,
-            Status = new Protocol.TaskStatus()
+            Status = new TaskStatus()
             {
                 State = taskState,
                 Timestamp = DateTimeOffset.UtcNow,

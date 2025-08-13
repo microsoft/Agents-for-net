@@ -48,88 +48,31 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
     }
 
+    /// <summary>
+    /// ITurnContext.SendActivity ultimately ends up here by way of A2AAdapter -> ChannelResponseQueue -> IChannelResponseHandler.OnResponse.
+    /// </summary>
+    /// <param name="httpResponse"></param>
+    /// <param name="activity"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task OnResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
         var entity = activity.GetStreamingEntity();
         if (entity != null)
         {
-            var isLastChunk = entity.StreamType == StreamTypes.Final;
-            var isInformative = entity.StreamType == StreamTypes.Informative;
-
-            if (isInformative)
-            {
-                // Informative is a Status update with a Message
-                var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
-                await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
-
-                await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
-
-                return;
-            }
-
-            // This is using entity.StreamId for the artifactId.  This will result in a single Artifact in the Task
-            var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
-            await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
-
-            await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
-
-            if (isLastChunk)
-            {
-                // Send the final streaming Activity as a A2A Message
-                var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
-                await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
-
-                await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
-            }
+            await OnStreamingResponse(httpResponse, activity, entity, cancellationToken).ConfigureAwait(false);
         }
         else if (activity.IsType(ActivityTypes.Message))
         {
-            // Send a Message (from Activity)
-            var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
-            var task = await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
-
-            await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
-
-            // Update Task state if expecting input
-            if (task.Status.State != TaskState.InputRequired && (activity.InputHint == InputHints.ExpectingInput || activity.InputHint == InputHints.AcceptingInput))
-            {
-                // Status update will be sent during ResponseEnd
-                var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.InputRequired);
-                await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
-            }
+            await OnMessage(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
         else if (activity.IsType(ActivityTypes.EndOfConversation))
         {
-            // Status update will be sent during ResponseEnd
-            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Completed);
-            await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
-
-            // Add optional EOC Value as an Artifact
-            if (activity.Value != null)
-            {
-                var artifactUpdate = new TaskArtifactUpdateEvent()
-                {
-                    TaskId = _taskId,
-                    ContextId = _contextId,
-                    Artifact = A2AConverter.ArtifactFromObject(
-                        activity.Value,
-                        name: "Result",
-                        description: "Task completion result",
-                        mediaType: "application/json"),
-                    Append = false,
-                    LastChunk = true
-                };
-                await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
-
-                await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
-            }
+            await OnEndOfConversation(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
         else if (activity.IsType(ActivityTypes.Typing))
         {
-            // non-StreamingResponse Typing
-            // Status update will be sent during ResponseEnd
-            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working);
-            await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+            await OnTyping(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -164,6 +107,98 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             var response = A2AConverter.CreateResponse(_requestId, task);
             await WriteResponseAsync(httpResponse, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task OnMessage(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    {
+        // Send a Message (from Activity)
+        var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
+        var task = await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+
+        await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
+
+        // Update Task state if expecting input
+        if (task.Status.State != TaskState.InputRequired && (activity.InputHint == InputHints.ExpectingInput || activity.InputHint == InputHints.AcceptingInput))
+        {
+            // Status update will be sent during ResponseEnd
+            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.InputRequired);
+            await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task OnStreamingResponse(HttpResponse httpResponse, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
+    {
+        var isLastChunk = entity.StreamType == StreamTypes.Final;
+        var isInformative = entity.StreamType == StreamTypes.Informative;
+
+        if (isInformative)
+        {
+            // Informative is a Status update with a Message
+            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
+            await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+
+            await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
+
+            return;
+        }
+
+        // TODO:  The artifact update is likely pointless if not SSE?
+        // This is using entity.StreamId for the artifactId.  This will result in a single Artifact in the Task
+        var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
+        await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
+
+        await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
+
+        if (isLastChunk)
+        {
+            // Send the final streaming Activity as a A2A Message
+            var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
+            await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+
+            await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task OnTyping(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    {
+        // non-StreamingResponse Typing
+        // Status update will be sent during ResponseEnd
+        var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working);
+        await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task OnEndOfConversation(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    {
+        // Status update will be sent during ResponseEnd
+        TaskState taskState = activity.Code switch
+        {
+            EndOfConversationCodes.Error => TaskState.Failed,
+            EndOfConversationCodes.UserCancelled => TaskState.Canceled,
+            _ => TaskState.Completed,
+        };
+
+        var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, taskState);
+        await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+
+        // Add optional EOC Value as an Artifact
+        if (activity.Value != null)
+        {
+            var artifactUpdate = new TaskArtifactUpdateEvent()
+            {
+                TaskId = _taskId,
+                ContextId = _contextId,
+                Artifact = A2AConverter.ArtifactFromObject(
+                    activity.Value,
+                    name: "Result",
+                    description: "Task completion result",
+                    mediaType: "application/json"),
+                Append = false,
+                LastChunk = true
+            };
+            await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
+
+            await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
         }
     }
 

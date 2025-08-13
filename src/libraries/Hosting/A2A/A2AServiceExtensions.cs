@@ -16,6 +16,11 @@ namespace Microsoft.Agents.Hosting.A2A;
 
 public static class A2AServiceExtensions
 {
+    /// <summary>
+    /// Registers the A2AAdapter
+    /// </summary>
+    /// <remarks>This is required for A2A request handling.</remarks>
+    /// <param name="services"></param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
         services.AddAsyncAdapterSupport();
@@ -24,6 +29,13 @@ public static class A2AServiceExtensions
         services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
     }
 
+    /// <summary>
+    /// Maps A2A endpoints.
+    /// </summary>
+    /// <param name="endpoints"></param>
+    /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
+    /// <param name="pattern">Indicate the route patter, defaults to "/a2a"</param>
+    /// <returns></returns>
     public static IEndpointConventionBuilder MapA2A(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
     {
         var a2aGroup = endpoints.MapGroup(pattern);
@@ -36,7 +48,7 @@ public static class A2AServiceExtensions
             a2aGroup.AllowAnonymous();
         }
 
-        // Messages
+        // JSONRPC
         a2aGroup.MapPost(
             "",
             async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
@@ -46,14 +58,6 @@ public static class A2AServiceExtensions
             .WithMetadata(new AcceptsMetadata(["application/json"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
-
-        // Get
-        a2aGroup.MapGet("/", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-        {
-            await adapter.ProcessAsync(request, response, agent, cancellationToken);
-        })
-            .WithMetadata(new AcceptsMetadata(["application/json"]))
-            .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["application/json"]));
 
         // AgentCard
         a2aGroup.MapGet("/.well-known/agent-card.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>

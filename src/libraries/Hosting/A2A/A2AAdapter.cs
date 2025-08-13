@@ -53,17 +53,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
             if (httpRequest.Method == HttpMethods.Get)
             {
-                // TBD: Do these ever arrive via GET?  The A2A CLI uses POST for all requests.
-
-                if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
-                {
-                    await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                    await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
-                }
+                httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
             }
             else
             {
@@ -98,6 +88,10 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             {
                 _logger.LogDebug("Turn End: {RequestId}", jsonRpcRequest.Id);
             }
+        }
+        catch(OperationCanceledException)
+        {
+            _logger.LogDebug("ProcessAsync: OperationCanceledException");
         }
         catch (A2AException a2aEx)
         {
@@ -191,40 +185,41 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
         }
+        else if (task.IsTerminal())
+        {
+            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotCancelableError, $"Task '{queryParams.Id}' is in a terminal state.");
+        }
         else
         {
-            if (!task.IsTerminal())
+            // Send EndOfConversation to agent
+            var eoc = new Activity()
             {
-                // Send EndOfConversation to agent
-                var eoc = new Activity()
+                Type = ActivityTypes.EndOfConversation,
+                ChannelId = Channels.A2A,
+                Conversation = new ConversationAccount()
                 {
-                    Type = ActivityTypes.EndOfConversation,
-                    ChannelId = Channels.A2A,
-                    Conversation = new ConversationAccount()
-                    {
-                        Id = queryParams.Id
-                    },
-                    Recipient = new ChannelAccount
-                    {
-                        Id = "assistant",
-                        Role = RoleTypes.Agent,
-                    },
-                    From = new ChannelAccount
-                    {
-                        Id = "user",
-                        Role = RoleTypes.User,
-                    },
-                    Code = EndOfConversationCodes.UserCancelled
-                };
+                    Id = queryParams.Id
+                },
+                Recipient = new ChannelAccount
+                {
+                    Id = "assistant",
+                    Role = RoleTypes.Agent,
+                },
+                From = new ChannelAccount
+                {
+                    Id = A2AConverter.DefaultUserId,
+                    Role = RoleTypes.User,
+                },
+                Code = EndOfConversationCodes.UserCancelled
+            };
 
-                // Note that we're not setting up to handle responses.  May need to rethink this.
-                await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            // Note that we're not setting up to handle responses.  May need to rethink this.
+            await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
-                // Update task
-                task.Status.State = TaskState.Canceled;
-                task.Status.Timestamp = DateTimeOffset.UtcNow;
-                await _taskStore.UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
-            }
+            // Update task
+            task.Status.State = TaskState.Canceled;
+            task.Status.Timestamp = DateTimeOffset.UtcNow;
+            await _taskStore.UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
 
             response = A2AConverter.CreateResponse(jsonRpcRequest.Id, task);
         }
