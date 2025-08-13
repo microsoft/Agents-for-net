@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Hosting.A2A.JsonRpc;
 /// Represents a JSON-RPC request identifier, which can be either a string or an integer.
 /// </summary>
 [JsonConverter(typeof(Converter))]
-internal readonly struct RequestId : IEquatable<RequestId>
+public readonly struct RequestId : IEquatable<RequestId>
 {
     /// <summary>The id, either a string or a boxed long or null.</summary>
     private readonly object? _id;

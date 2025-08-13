@@ -11,13 +11,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 using System.Text.Json.Serialization;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A;
@@ -27,7 +24,7 @@ internal class A2AConverter
     private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
     private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> _schemas = [];
 
-    private static readonly JsonSerializerOptions s_SerializerOptions = new()
+    public static readonly JsonSerializerOptions SerializerOptions = new()
     {
         AllowOutOfOrderMetadataProperties = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -39,45 +36,9 @@ internal class A2AConverter
         }
     };
 
-    public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        try
-        {
-            return await JsonSerializer.DeserializeAsync<T>(request.Body, s_SerializerOptions);
-        }
-        catch(Exception ex)
-        {
-            throw new A2AException(ex.Message, ex, A2AErrors.InvalidRequest);
-        }
-    }
-
     public static string ToJson(object obj)
     {
-        return JsonSerializer.Serialize(obj, s_SerializerOptions);
-    }
-
-    public static async Task WriteResponseAsync(HttpResponse response, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(response);
-        ArgumentNullException.ThrowIfNull(payload);
-
-        response.StatusCode = (int)code;
-        
-        var json = JsonSerializer.Serialize(payload, s_SerializerOptions);
-        if (!streamed)
-        {
-            response.ContentType = "application/json";
-        }
-        else
-        {
-            response.ContentType = "text/event-stream";
-            json = $"data: {json}\r\n\r\n";
-        }
-
-        await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken).ConfigureAwait(false);
-        await response.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
+        return JsonSerializer.Serialize(obj, SerializerOptions);
     }
 
     public static T ReadParams<T>(JsonRpcRequest jsonRpcPayload)
@@ -86,15 +47,15 @@ internal class A2AConverter
         {
             throw new ArgumentException("Params is null");
         }
-        return JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_SerializerOptions).Deserialize<T>(s_SerializerOptions);
+        return JsonSerializer.SerializeToElement(jsonRpcPayload.Params, SerializerOptions).Deserialize<T>(SerializerOptions);
     }
 
-    public static JsonRpcResponse CreateResponse(JsonRpcRequest jsonRpcPayload, object result)
+    public static JsonRpcResponse CreateResponse(RequestId requestId, object result)
     {
         return new JsonRpcResponse()
         {
-            Id = jsonRpcPayload.Id,
-            Result = JsonSerializer.SerializeToNode(result, s_SerializerOptions)
+            Id = requestId,
+            Result = JsonSerializer.SerializeToNode(result, SerializerOptions)
         };
     }
 
@@ -120,7 +81,7 @@ internal class A2AConverter
             TreatNullObliviousAsNonNullable = true,
         };
 
-        JsonNode schema = s_SerializerOptions.GetJsonSchemaAsNode(dataType, exporterOptions);
+        JsonNode schema = SerializerOptions.GetJsonSchemaAsNode(dataType, exporterOptions);
 
         return new Dictionary<string, object>
         {
@@ -139,17 +100,7 @@ internal class A2AConverter
             throw new A2AException("Params is null", A2AErrors.InvalidParams);
         }
 
-        MessageSendParams sendParams;
-         
-        try
-        {
-            sendParams = JsonSerializer.SerializeToElement(jsonRpcPayload.Params, s_SerializerOptions).Deserialize<MessageSendParams>(s_SerializerOptions);
-        }
-        catch (Exception ex)
-        {
-            throw new A2AException(ex.Message, A2AErrors.ParseError);
-        }
-
+        MessageSendParams sendParams = MessageSendParamsFromRequest(jsonRpcPayload);
         if (sendParams?.Message?.Parts == null)
         {
             throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
@@ -170,7 +121,28 @@ internal class A2AConverter
         return (activity, contextId, taskId, sendParams.Message);
     }
 
-    public static TaskStatusUpdateEvent StatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
+    public static MessageSendParams MessageSendParamsFromRequest(JsonRpcRequest jsonRpcPayload)
+    {
+        MessageSendParams sendParams;
+
+        try
+        {
+            sendParams = JsonSerializer.SerializeToElement(jsonRpcPayload.Params, SerializerOptions).Deserialize<MessageSendParams>(SerializerOptions);
+        }
+        catch (Exception ex)
+        {
+            throw new A2AException(ex.Message, A2AErrors.ParseError);
+        }
+
+        if (sendParams?.Message?.Parts == null)
+        {
+            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
+        }
+
+        return sendParams;
+    }
+
+    public static TaskStatusUpdateEvent CreateStatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
     {
         var artifact = ArtifactFromActivity(activity, artifactId);
 
@@ -257,7 +229,7 @@ internal class A2AConverter
         };
     }
 
-    public static SendStreamingMessageResponse StreamingMessageResponse(string requestId, object payload)
+    public static SendStreamingMessageResponse StreamingMessageResponse(RequestId requestId, object payload)
     {
         return new SendStreamingMessageResponse()
         {

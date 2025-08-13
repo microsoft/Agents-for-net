@@ -150,8 +150,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         InvokeResponse invokeResponse = null;
 
-                        IChannelResponseWriter writer = activity.DeliveryMode == DeliveryModes.Stream
-                            ? new ActivityStreamedResponseWriter()
+                        IChannelResponseHandler writer = activity.DeliveryMode == DeliveryModes.Stream
+                            ? new ActivityResponseHandler()
                             : new ExpectRepliesResponseWriter(activity);
 
                         // Turn Begin
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
-                            await writer.WriteActivity(httpResponse, response, cancellationToken).ConfigureAwait(false);
+                            await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
                         // Turn done

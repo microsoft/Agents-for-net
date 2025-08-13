@@ -56,22 +56,20 @@ public static class A2AServiceExtensions
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["application/json"]));
 
         // AgentCard
-        endpoints.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        a2aGroup.MapGet("/.well-known/agent-card.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
         {
             System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
             await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
         })
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
 
-        /*
-        a2aGroup.MapGet("", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        // Temporary because the TCK is hitting host root with the older document name
+        endpoints.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
         {
-            System.Diagnostics.Trace.WriteLine("/");
+            System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
             await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
         })
-            .WithMetadata(new AcceptsMetadata(["application/json"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
-        */
 
         return a2aGroup;
     }

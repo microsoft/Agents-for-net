@@ -48,6 +48,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
+        public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)
+        {
+            if (_conversations.TryGetValue(requestId, out var channelInfo))
+            {
+
+                while (channelInfo.channel.Reader.TryRead(out var activity))
+                {
+                    action(activity);
+                }
+
+                channelInfo.readDone.Set();
+            }
+        }
+
         /// <summary>
         /// Starts the queue for a request.  This MUST be called before background processing starts.
         /// </summary>
@@ -58,7 +72,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Completes channel response handling.  This will wait for all reads to complete.  Once complete,
+        /// Completes channel response handling.  This will wait for all reads to complete.  Once called,
         /// any subsequent SendActivitiesAsync are ignored.
         /// </summary>
         /// <param name="requestId"></param>
@@ -70,6 +84,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 _conversations.Remove(requestId, out _);
             }
 
+            // wait for reads to be done
             channelInfo.readDone.WaitOne();
         }
 

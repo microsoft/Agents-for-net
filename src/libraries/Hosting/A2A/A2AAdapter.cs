@@ -14,12 +14,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,7 +42,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     {
         try
         {
-            var jsonRpcRequest = await A2AConverter.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+            var jsonRpcRequest = await A2AResponseHandler.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+
+            // Turn Begin
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
+            }
 
             if (httpRequest.Method == HttpMethods.Get)
             {
@@ -57,38 +61,23 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 else
                 {
                     JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                    await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                if (jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe))
+                if (   jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) 
+                    || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe) 
+                    || jsonRpcRequest.Method.Equals(A2AMethods.MessageSend))
                 {
-                    // Turn Begin
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
-                    }
+                    var identity = HttpHelper.GetClaimsIdentity(httpRequest);
 
-                    // Convert to Activity and update Task
-                    var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: true);
-                    activity.ChannelData = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                    // TODO: error if Task is in terminal state
-
-                    await ProcessMessageStreamAsync(
-                        activity,
-                        HttpHelper.GetClaimsIdentity(httpRequest),
+                    await ProcessMessageAsync(
+                        jsonRpcRequest,
                         httpResponse,
+                        identity,
                         agent,
-                        new A2AStreamedResponseWriter(_taskStore, jsonRpcRequest.Id.ToString(), contextId, taskId, _logger),
                         cancellationToken).ConfigureAwait(false);
-
-                    // Turn done
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Turn End: RequestId={RequestId}", activity.RequestId);
-                    }
                 }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
                 {
@@ -98,31 +87,99 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 {
                     // TODO
                     JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                    await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
-                else if (jsonRpcRequest.Method.Equals(A2AMethods.MessageSend))
+                else if (string.IsNullOrWhiteSpace(jsonRpcRequest.Method))
                 {
-                    // TODO:
-                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.InvalidRequest, $"{jsonRpcRequest.Method} not supported");
+                    await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
-                    await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+                    await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
+            }
+
+            // Turn done
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Turn End: {RequestId}", jsonRpcRequest.Id);
             }
         }
         catch (A2AException a2aEx)
         {
+            _logger.LogError("Request: {ErrorCode}/{Message}", a2aEx.ErrorCode, a2aEx.Message);
             JsonRpcError response = A2AConverter.CreateErrorResponse(null, a2aEx.ErrorCode, a2aEx.Message);
-            await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+            await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "ProcessAsync: {Message}", ex.Message);
             JsonRpcError response = A2AConverter.CreateErrorResponse(null, A2AErrors.InternalError, ex.Message);
-            await A2AConverter.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
+            await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task ProcessMessageAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken = default)
+    {
+        // Convert to Activity 
+        bool isStreaming = !jsonRpcRequest.Method.Equals(A2AMethods.MessageSend);
+        var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: isStreaming);
+        if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
+        {
+            httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+            return;
+        }
+
+        // Create/update Task
+        activity.ChannelData = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        // TODO: Error if Task is completed
+
+        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, contextId, taskId, isStreaming, _logger);
+
+        InvokeResponse invokeResponse = null;
+        
+        _responseQueue.StartHandlerForRequest(activity.RequestId);
+        await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+
+        // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
+        // turn is done.
+        _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: (response) =>
+        {
+            invokeResponse = response;
+            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+            return Task.CompletedTask;
+        });
+
+        // Block until turn is complete.
+        // MessageSendParams.Blocking is ignored at the moment.  Always blocks.
+        await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
+        {
+            await writer.OnResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
+
+        await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task ProcessTaskGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
+    {
+        object response;
+
+        try
+        {
+            var queryParams = A2AConverter.ReadParams<TaskQueryParams>(jsonRpcRequest);
+            var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
+
+            response = A2AConverter.CreateResponse(jsonRpcRequest.Id, task);
+        }
+        catch (KeyNotFoundException)
+        {
+            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, "Task not found.");
+        }
+
+        await A2AResponseHandler.WriteResponseAsync(httpResponse, response, streamed, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
@@ -148,7 +205,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             {
                 Streaming = true,
             },
-            AdditionalInterfaces = 
+            AdditionalInterfaces =
             [
                 new AgentInterface()
                 {
@@ -159,6 +216,8 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             PreferredTransport = TransportProtocol.JsonRpc,
         };
 
+        // AgentApplication should implement IAgentCardHandler to set agent specific values.  But if
+        // it doesn't, the default card will be used.
         if (agent is IAgentCardHandler agentCardHandler)
         {
             agentCard = await agentCardHandler.GetAgentCard(agentCard);
@@ -176,6 +235,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await httpResponse.Body.FlushAsync(cancellationToken);
     }
 
+    #region ChannelAdapter
     public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
     {
         var context = new TurnContext(this, activity, claimsIdentity);
@@ -183,59 +243,10 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return null;
     }
 
-    private async Task ProcessMessageStreamAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, A2AStreamedResponseWriter writer, CancellationToken cancellationToken = default)
-    {
-        if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
-        {
-            httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
-            return;
-        }
-
-        InvokeResponse invokeResponse = null;
-
-        _responseQueue.StartHandlerForRequest(activity.RequestId);
-        await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
-
-        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
-        // turn is done.
-        _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: (response) =>
-        {
-            invokeResponse = response;
-            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-            return Task.CompletedTask;
-        });
-
-        // block until turn is complete
-        await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
-        {
-            await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }, cancellationToken).ConfigureAwait(false);
-
-        await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task ProcessTaskGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
-    {
-        object response;
-
-        try
-        {
-            var queryParams = A2AConverter.ReadParams<TaskQueryParams>(jsonRpcRequest);
-            var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
-
-            response = A2AConverter.CreateResponse(jsonRpcRequest, task);
-        }
-        catch (KeyNotFoundException)
-        {
-            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, "Task not found.");
-        }
-
-        await A2AConverter.WriteResponseAsync(httpResponse, response, streamed, HttpStatusCode.OK, cancellationToken).ConfigureAwait(false);
-    }
-
     public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
     {
         await _responseQueue.SendActivitiesAsync(turnContext.Activity.RequestId, activities, cancellationToken);
         return [];
     }
+    #endregion
 }
