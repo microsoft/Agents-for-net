@@ -9,6 +9,9 @@ using Microsoft.Agents.Builder;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
+/// <summary>
+/// An A2A Adapter using Http.
+/// </summary>
 public interface IA2AHttpAdapter : IAgentHttpAdapter
 {
     Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default);

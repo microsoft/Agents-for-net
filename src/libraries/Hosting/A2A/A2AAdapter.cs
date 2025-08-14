@@ -23,6 +23,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
+/// <summary>
+/// Adapter for handling A2A requests.
+/// </summary>
+/// <remarks>
+/// Register Adapter and map endpoints in startup using:
+/// <code>
+///    builder.Services.AddA2AAdapter();
+/// 
+///    app.MapA2A();
+/// </code>
+/// <see cref="A2AServiceExtensions.AddA2AAdapter(Microsoft.Extensions.DependencyInjection.IServiceCollection)"/>
+/// <see cref="A2AServiceExtensions.MapA2A(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, bool, string)"/>
+/// </remarks>
 public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {
     private readonly TaskStore _taskStore;
@@ -38,6 +51,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         _responseQueue = new ChannelResponseQueue(_logger);
     }
 
+    /// <inheritdoc/>
     public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
     {
         try
@@ -51,11 +65,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
             }
 
-            if (httpRequest.Method == HttpMethods.Get)
-            {
-                httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-            }
-            else
+            if (httpRequest.Method == HttpMethods.Post)
             {
                 if (   jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) 
                     || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe) 
@@ -82,6 +92,10 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                     await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
             }
+            else
+            {
+                httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+            }
 
             // Turn done
             if (_logger.IsEnabled(LogLevel.Debug))
@@ -107,11 +121,66 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
+    /// <inheritdoc/>
+    public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
+    {
+        var agentCard = new AgentCard()
+        {
+            Name = nameof(A2AAdapter),
+            Description = "Agents SDK A2A",
+            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+            ProtocolVersion = "0.3.0",
+            Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                {
+                    "jwt",
+                    new HTTPAuthSecurityScheme() { Scheme = "bearer" }
+                }
+            },
+            DefaultInputModes = ["application/json"],
+            DefaultOutputModes = ["application/json"],
+            Skills = [],
+            Capabilities = new AgentCapabilities()
+            {
+                Streaming = true,
+            },
+            AdditionalInterfaces =
+            [
+                new AgentInterface()
+                {
+                    Transport = TransportProtocol.JsonRpc,
+                    Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/"
+                }
+            ],
+            PreferredTransport = TransportProtocol.JsonRpc,
+        };
+
+        // AgentApplication should implement IAgentCardHandler to set agent specific values.  But if
+        // it doesn't, the default card will be used.
+        if (agent is IAgentCardHandler agentCardHandler)
+        {
+            agentCard = await agentCardHandler.GetAgentCard(agentCard);
+        }
+
+        httpResponse.ContentType = "application/json";
+        var json = A2AConverter.ToJson(agentCard);
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("AgentCard: {RequestId}", json);
+        }
+
+        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
+        await httpResponse.Body.FlushAsync(cancellationToken);
+    }
+
     private async Task ProcessMessageAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken = default)
     {
         // Convert to Activity 
         bool isStreaming = !jsonRpcRequest.Method.Equals(A2AMethods.MessageSend);
-        var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, isStreaming: isStreaming);
+        var sendParams = A2AConverter.MessageSendParamsFromRequest(jsonRpcRequest);
+        var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, sendParams: sendParams, isStreaming: isStreaming);
         if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
         {
             httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -129,7 +198,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             return;
         }
 
-        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, contextId, taskId, isStreaming, _logger);
+        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, task, sendParams, isStreaming, _logger);
 
         InvokeResponse invokeResponse = null;
         
@@ -146,7 +215,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         });
 
         // Block until turn is complete.
-        // MessageSendParams.Blocking is ignored at the moment.  Always blocks.
+        // MessageSendParams.Blocking is ignored.
         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
         {
             await writer.OnResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
@@ -168,6 +237,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
         else 
         {
+            task = task.WithHistoryTrimmedTo(queryParams.HistoryLength);
             response = A2AConverter.CreateResponse(jsonRpcRequest.Id, task);
         }
 
@@ -227,59 +297,6 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
-    {
-        var agentCard = new AgentCard()
-        {
-            Name = nameof(A2AAdapter),
-            Description = "Agents SDK A2A",
-            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-            ProtocolVersion = "0.3.0",
-            Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                {
-                    "jwt",
-                    new HTTPAuthSecurityScheme() { Scheme = "bearer" }
-                }
-            },
-            DefaultInputModes = ["application/json"],
-            DefaultOutputModes = ["application/json"],
-            Skills = [],
-            Capabilities = new AgentCapabilities()
-            {
-                Streaming = true,
-            },
-            AdditionalInterfaces =
-            [
-                new AgentInterface()
-                {
-                    Transport = TransportProtocol.JsonRpc,
-                    Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/"
-                }
-            ],
-            PreferredTransport = TransportProtocol.JsonRpc,
-        };
-
-        // AgentApplication should implement IAgentCardHandler to set agent specific values.  But if
-        // it doesn't, the default card will be used.
-        if (agent is IAgentCardHandler agentCardHandler)
-        {
-            agentCard = await agentCardHandler.GetAgentCard(agentCard);
-        }
-
-        httpResponse.ContentType = "application/json";
-        var json = A2AConverter.ToJson(agentCard);
-
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            _logger.LogDebug("AgentCard: {RequestId}", json);
-        }
-
-        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
-        await httpResponse.Body.FlushAsync(cancellationToken);
-    }
-
     #region ChannelAdapter
     public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
     {
@@ -288,6 +305,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return null;
     }
 
+    /// <inheritdoc/>
     public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
     {
         await _responseQueue.SendActivitiesAsync(turnContext.Activity.RequestId, activities, cancellationToken);

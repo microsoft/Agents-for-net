@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
@@ -22,17 +23,22 @@ internal class A2AResponseHandler : IChannelResponseHandler
     private const string SseTemplate = "event: {0}\r\ndata: {1}\r\n\r\n";
     private readonly ITaskStore _taskStore;
     private readonly RequestId _requestId;
-    private readonly string _contextId;
-    private readonly string _taskId;
     private readonly ILogger _logger;
     private readonly bool _sse;
+    private readonly MessageSendParams _sendParams;
+    private readonly AgentTask _incomingTask;
 
-    public A2AResponseHandler(ITaskStore taskStore, RequestId requestId, string contextId, string taskId, bool sse, ILogger logger)
+    public A2AResponseHandler(ITaskStore taskStore, RequestId requestId, AgentTask incomingTask, MessageSendParams sendParams, bool sse, ILogger logger)
     {
+        AssertionHelpers.ThrowIfNull(requestId, nameof(requestId));
+        AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
+        AssertionHelpers.ThrowIfNull(incomingTask, nameof(incomingTask));
+        AssertionHelpers.ThrowIfNull(sendParams, nameof(sendParams));
+
         _taskStore = taskStore;
         _requestId = requestId;
-        _contextId = contextId;
-        _taskId = taskId;
+        _incomingTask = incomingTask;
+        _sendParams = sendParams;
         _logger = logger ?? NullLogger.Instance;
         _sse = sse;
     }
@@ -43,8 +49,8 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             httpResponse.ContentType = "text/event-stream";
 
-            var task = await _taskStore.GetTaskAsync(_taskId, cancellationToken).ConfigureAwait(false);
-            await WriteEvent(httpResponse, task.Kind, task, cancellationToken).ConfigureAwait(false);
+            //var task = await _taskStore.GetTaskAsync(_incomingTask.Id, cancellationToken).ConfigureAwait(false);
+            await WriteEvent(httpResponse, _incomingTask.Kind, _incomingTask, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -85,8 +91,8 @@ internal class A2AResponseHandler : IChannelResponseHandler
             // data is probably InvokeResponse.
             var artifactUpdate = new TaskArtifactUpdateEvent()
             {
-                TaskId = _taskId,
-                ContextId = _contextId,
+                TaskId = _incomingTask.Id,
+                ContextId = _incomingTask.ContextId,
                 Artifact = A2AConverter.ArtifactFromObject(data, name: data.GetType().Name),
                 Append = true,
                 LastChunk = true
@@ -95,16 +101,18 @@ internal class A2AResponseHandler : IChannelResponseHandler
             await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
         }
 
-        task ??= await _taskStore.GetTaskAsync(_taskId, cancellationToken).ConfigureAwait(false);
+        task ??= await _taskStore.GetTaskAsync(_incomingTask.Id, cancellationToken).ConfigureAwait(false);
 
         // Send Task status
         if (_sse)
         {
-            var finalStatusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, task.Status.State, isFinal: true);
+            // TODO: We could send the AgentTask if completed?
+            var finalStatusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, task.Status.State, isFinal: true);
             await WriteEvent(httpResponse, finalStatusUpdate.Kind, finalStatusUpdate, cancellationToken).ConfigureAwait(false);
         }
         else
         {
+            task = task.WithHistoryTrimmedTo(_sendParams?.Configuration?.HistoryLength);
             var response = A2AConverter.CreateResponse(_requestId, task);
             await WriteResponseAsync(httpResponse, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
@@ -113,7 +121,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
     private async Task OnMessage(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
         // Send a Message (from Activity)
-        var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
+        var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
         var task = await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
 
         await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
@@ -122,7 +130,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         if (task.Status.State != TaskState.InputRequired && (activity.InputHint == InputHints.ExpectingInput || activity.InputHint == InputHints.AcceptingInput))
         {
             // Status update will be sent during ResponseEnd
-            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.InputRequired);
+            var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, TaskState.InputRequired);
             await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -135,7 +143,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         if (isInformative)
         {
             // Informative is a Status update with a Message
-            var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
+            var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
             await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 
             await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
@@ -145,7 +153,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         // TODO:  The artifact update is likely pointless if not SSE?
         // This is using entity.StreamId for the artifactId.  This will result in a single Artifact in the Task
-        var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_contextId, _taskId, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
+        var artifactUpdate = A2AConverter.ArtifactUpdateFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
         await _taskStore.UpdateTaskAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
 
         await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
@@ -153,7 +161,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         if (isLastChunk)
         {
             // Send the final streaming Activity as a A2A Message
-            var message = A2AConverter.MessageFromActivity(_contextId, _taskId, activity);
+            var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
             await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
 
             await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
@@ -164,7 +172,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
     {
         // non-StreamingResponse Typing
         // Status update will be sent during ResponseEnd
-        var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, TaskState.Working);
+        var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, TaskState.Working);
         await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
     }
 
@@ -178,7 +186,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
             _ => TaskState.Completed,
         };
 
-        var statusUpdate = A2AConverter.CreateStatusUpdate(_contextId, _taskId, taskState);
+        var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, taskState);
         await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 
         // Add optional EOC Value as an Artifact
@@ -186,8 +194,8 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             var artifactUpdate = new TaskArtifactUpdateEvent()
             {
-                TaskId = _taskId,
-                ContextId = _contextId,
+                TaskId = _incomingTask.Id,
+                ContextId = _incomingTask.ContextId,
                 Artifact = A2AConverter.ArtifactFromObject(
                     activity.Value,
                     name: "Result",

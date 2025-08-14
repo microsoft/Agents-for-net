@@ -93,27 +93,26 @@ internal class A2AConverter
         };
     }
 
-    public static (IActivity, string? contextId, string? taskId, Message? message) ActivityFromRequest(JsonRpcRequest jsonRpcPayload, bool isStreaming = true)
+    public static (IActivity, string? contextId, string? taskId, Message? message) ActivityFromRequest(JsonRpcRequest jsonRpcRequest, MessageSendParams sendParams = null, bool isStreaming = true)
     {
-        if (jsonRpcPayload.Params == null)
+        if (jsonRpcRequest.Params == null)
         {
             throw new A2AException("Params is null", A2AErrors.InvalidParams);
         }
 
-        MessageSendParams sendParams = MessageSendParamsFromRequest(jsonRpcPayload);
+        sendParams ??= MessageSendParamsFromRequest(jsonRpcRequest);
         if (sendParams?.Message?.Parts == null)
         {
             throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
         }
 
-        // Using contextId as conversationId
         var contextId = sendParams.Message.ContextId ?? Guid.NewGuid().ToString("N");
 
-        // SDK doesn't have a notion of "task".  For now, allow for a conversation to have multiple tasks.
+        // taskId is our conversationId
         var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
         
         var activity = CreateActivity(taskId, Channels.A2A, DefaultUserId, sendParams.Message.Parts, true, isStreaming);
-        activity.RequestId = jsonRpcPayload.Id.ToString();
+        activity.RequestId = jsonRpcRequest.Id.ToString();
 
         sendParams.Message.ContextId = contextId;
         sendParams.Message.TaskId = taskId;
@@ -121,13 +120,13 @@ internal class A2AConverter
         return (activity, contextId, taskId, sendParams.Message);
     }
 
-    public static MessageSendParams MessageSendParamsFromRequest(JsonRpcRequest jsonRpcPayload)
+    public static MessageSendParams MessageSendParamsFromRequest(JsonRpcRequest jsonRpcRequest)
     {
         MessageSendParams sendParams;
 
         try
         {
-            sendParams = JsonSerializer.SerializeToElement(jsonRpcPayload.Params, SerializerOptions).Deserialize<MessageSendParams>(SerializerOptions);
+            sendParams = JsonSerializer.SerializeToElement(jsonRpcRequest.Params, SerializerOptions).Deserialize<MessageSendParams>(SerializerOptions);
         }
         catch (Exception ex)
         {

@@ -51,12 +51,4 @@ public sealed class AgentTask
     /// </summary>
     [JsonPropertyName("metadata")]
     public IReadOnlyDictionary<string, object>? Metadata { get; set; }
-
-    public bool IsTerminal()
-    {
-        return Status.State == TaskState.Completed
-            || Status.State == TaskState.Canceled
-            || Status.State == TaskState.Rejected
-            || Status.State == TaskState.Failed;
-    }
 }
