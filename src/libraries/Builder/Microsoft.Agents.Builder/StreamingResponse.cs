@@ -438,7 +438,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId.Channel;
+            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
@@ -453,7 +453,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (Channels.Webchat == turnContext.Activity.ChannelId.Channel || Channels.Directline == turnContext.Activity.ChannelId.Channel)
+            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
