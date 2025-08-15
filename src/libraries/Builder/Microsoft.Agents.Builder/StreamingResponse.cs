@@ -438,7 +438,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
+            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
@@ -453,7 +453,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
+            else if (Channels.Webchat == turnContext.Activity.ChannelId || Channels.Directline == turnContext.Activity.ChannelId)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
@@ -563,7 +563,7 @@ namespace Microsoft.Agents.Builder
 
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        if (!TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                         {
                             System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
                         }
