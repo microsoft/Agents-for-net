@@ -39,5 +39,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <returns>An ActivityWithClaims to be processed.</returns>
         /// <remarks>It is assumed these claims have already been authenticated.</remarks>
         Task<ActivityWithClaims> WaitForActivityAsync(CancellationToken cancellationToken);
+
+        void Stop(bool waitForEmpty = true);
     }
 }

@@ -65,6 +65,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             _logger.LogInformation("Queued Hosted Service is stopping.");
 
+            _activityQueue.Stop();
+
             // Obtain a write lock and do not release it, preventing new tasks from starting
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
@@ -152,7 +154,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             ((IAgent)agent).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
 
-                        activityWithClaims.OnComplete?.Invoke(response);
+                        await activityWithClaims.OnComplete?.Invoke(response);
                     }
                 }
                 catch (Exception ex)

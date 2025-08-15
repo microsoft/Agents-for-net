@@ -19,8 +19,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     internal class ActivityTaskQueue : IActivityTaskQueue
     {
         private readonly SemaphoreSlim _signal = new(0);
+        private readonly EventWaitHandle _queueEmpty = new(true, EventResetMode.ManualReset);
         private readonly ConcurrentQueue<ActivityWithClaims> _activities = new ConcurrentQueue<ActivityWithClaims>();
-
+        private bool _stopped = false;
 
         /// <inheritdoc/>
         public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null)
@@ -28,11 +29,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activity);
+
+            if (_stopped)
+            {
+                return;
+            }
             
             // Copy to prevent unexpected side effects from later mutations of the original headers.
             var copyHeaders = headers != null ? new HeaderDictionary(headers.ToDictionary()) : [];
 
             _activities.Enqueue(new ActivityWithClaims { ChannelAdapter = adapter, AgentType = agentType, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete, Headers = copyHeaders });
+            _queueEmpty.Reset();
             _signal.Release();
         }
 
@@ -42,8 +49,26 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             await _signal.WaitAsync(cancellationToken);
 
             _activities.TryDequeue(out ActivityWithClaims dequeued);
+            if (_activities.IsEmpty)
+            {
+                _queueEmpty.Set();
+            }
 
             return dequeued;
+        }
+
+        public void Stop(bool waitForEmpty = true)
+        {
+            _stopped = true;
+            if (waitForEmpty)
+            {
+                _queueEmpty.WaitOne();
+            }
+        }
+
+        public void WaitForEmpty()
+        {
+            _queueEmpty.WaitOne();
         }
     }
 }
