@@ -267,13 +267,18 @@ namespace Microsoft.Agents.Storage.Transcript
 
         private static string SanitizeString(string str, char[] invalidChars)
         {
+            // Preemptively check for : in string and replace with _
+            if (!string.IsNullOrEmpty(str) && str.Contains(':'))
+            {
+                str = str.Replace(':', '_');
+            }
+
             var sb = new StringBuilder(str);
 
             foreach (var invalidChar in invalidChars)
             {
                 sb.Replace(invalidChar.ToString(), string.Empty);
             }
-
             return sb.ToString();
         }
 
