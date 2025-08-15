@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
 
             // SharePoint
-            if (turnContext.Activity.ChannelId == Channels.M365
+            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.M365)
                 && string.Equals(SignInConstants.SharePointTokenExchange, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
