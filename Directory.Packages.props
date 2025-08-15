@@ -101,5 +101,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.27.3" />
+    <!-- Agent 365 -->
+    <PackageVersion Include="Microsoft.Agent365.Sdk" Version="1.0.2-alfehr-preview" />
   </ItemGroup>
 </Project>

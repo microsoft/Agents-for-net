@@ -41,6 +41,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authorization" />
 		<PackageReference Include="Microsoft.IdentityModel.Validators" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="Microsoft.Agent365.Sdk" />
 	</ItemGroup>
 
 	<ItemGroup>
