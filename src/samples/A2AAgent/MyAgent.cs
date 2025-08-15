@@ -18,22 +18,10 @@ public class MyAgent : AgentApplication, IAgentCardHandler
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnMessage("-stream", OnStreamAsync);
         OnMessage("-multi", OnMultiTurnAsync);
-        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync, rank: RouteRank.Last);
+        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
-        {
-            if (member.Id != turnContext.Activity.Recipient.Id)
-            {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
-            }
-        }
     }
 
     private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

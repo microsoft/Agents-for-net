@@ -111,7 +111,7 @@ internal static class A2AConverter
         // taskId is our conversationId
         var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
         
-        var activity = CreateActivity(taskId, Channels.A2A, DefaultUserId, sendParams.Message.Parts, true, isStreaming);
+        var activity = CreateActivity(taskId, sendParams.Message.Parts, true, isStreaming);
         activity.RequestId = jsonRpcRequest.Id.ToString();
 
         sendParams.Message.ContextId = contextId;
@@ -245,8 +245,6 @@ internal static class A2AConverter
 
     private static Activity CreateActivity(
         string conversationId,
-        string channelId, 
-        string userId, 
         ImmutableArray<Part> parts,
         bool isIngress,
         bool isStreaming = true)
@@ -259,7 +257,7 @@ internal static class A2AConverter
 
         var user = new ChannelAccount
         {
-            Id = userId,
+            Id = DefaultUserId,
             Role = RoleTypes.User,
         };
 
@@ -267,7 +265,7 @@ internal static class A2AConverter
         {
             Type = ActivityTypes.Message,
             Id = Guid.NewGuid().ToString("N"),
-            ChannelId = channelId,
+            ChannelId = Channels.A2A,
             DeliveryMode = isStreaming ? DeliveryModes.Stream : DeliveryModes.ExpectReplies,
             Conversation = new ConversationAccount
             {
@@ -302,7 +300,12 @@ internal static class A2AConverter
             }
             else if (part is DataPart dataPart)
             {
-                activity.Value = dataPart.Data;
+                activity.Attachments.Add(new Attachment()
+                {
+                    ContentType = "application/json",
+                    Name = "A2A DataPart",
+                    Content = ToJson(dataPart),
+                });
             }
         }
 
