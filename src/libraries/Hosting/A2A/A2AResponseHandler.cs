@@ -186,6 +186,14 @@ internal class A2AResponseHandler : IChannelResponseHandler
             _ => TaskState.Completed,
         };
 
+        if (activity.HasMessageContent())
+        {
+            var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
+            await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+
+            await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
+        }
+
         var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, taskState);
         await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 

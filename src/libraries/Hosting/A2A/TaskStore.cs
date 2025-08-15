@@ -15,28 +15,34 @@ namespace Microsoft.Agents.Hosting.A2A
 {
     internal class TaskStore(IStorage storage) : ITaskStore
     {
-        public async Task<AgentTask> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default)
+        public async Task<CreateOrContinueResult> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 
-            AgentTask task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false);
-
-            if (task != null)
+            CreateOrContinueResult result = new()
             {
-                if (!task.IsTerminal())
+                Task = await GetTaskAsync(taskId, cancellationToken).ConfigureAwait(false)
+            };
+
+            if (result.Task != null)
+            {
+                result.IsNewTask = false;
+
+                if (!result.Task.IsTerminal())
                 {
-                    task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
-                    task.History = AppendMessage(task.History, message);
-                    await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
+                    result.Task.Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow };
+                    result.Task.History = AppendMessage(result.Task.History, message);
+                    await UpdateTaskAsync(result.Task, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                task = new AgentTask() { ContextId = contextId, Id = taskId, Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow }, History = AppendMessage(default, message) };
-                await UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
+                result.IsNewTask = true;
+                result.Task = new AgentTask() { ContextId = contextId, Id = taskId, Status = new Protocol.TaskStatus() { State = state, Timestamp = DateTimeOffset.UtcNow }, History = AppendMessage(default, message) };
+                await UpdateTaskAsync(result.Task, cancellationToken).ConfigureAwait(false);
             }
 
-            return task;
+            return result;
         }
 
         public async Task<AgentTask> UpdateTaskAsync(AgentTask task, CancellationToken cancellationToken = default)

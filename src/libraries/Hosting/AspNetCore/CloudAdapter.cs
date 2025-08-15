@@ -168,11 +168,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
                         {
                             invokeResponse = response;
+
+                            // Stops response handling and waits for HandleResponsesAsync to finish
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+
                             return Task.CompletedTask;
                         });
 
-                        // Handle responses (blocking)
+                        // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))

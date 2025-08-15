@@ -30,7 +30,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="agentType"></param>
         /// <param name="onComplete"></param>
         /// <param name="headers">Headers used for the current <see cref="Activity"/> request.</param>
-        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null);
+        /// <returns>true if the item was queued.  false would indicate the queue has been disabled (probably shutting down).</returns>
+        bool QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null);
 
         /// <summary>
         /// Wait for a signal of an enqueued Activity with Claims to be processed.

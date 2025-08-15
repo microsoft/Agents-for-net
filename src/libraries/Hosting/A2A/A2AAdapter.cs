@@ -188,17 +188,17 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         // Create/update Task
-        var task = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
-        activity.ChannelData = task;
+        var incoming = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
+        activity.ChannelData = incoming.Task;
 
-        if (task.IsTerminal())
+        if (incoming.Task.IsTerminal())
         {
             JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.UnsupportedOperationError, $"Task '{taskId}' is in a terminal state");
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, task, sendParams, isStreaming, _logger);
+        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, _logger);
 
         InvokeResponse invokeResponse = null;
         
@@ -210,11 +210,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: (response) =>
         {
             invokeResponse = response;
+
+            // Stops response handling and waits for HandleResponsesAsync to finish
             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
             return Task.CompletedTask;
         });
 
-        // Block until turn is complete.
+        // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
         // MessageSendParams.Blocking is ignored.
         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
         {

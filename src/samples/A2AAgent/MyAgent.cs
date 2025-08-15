@@ -51,6 +51,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
     }
 
+    // Received an A2A Message
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
@@ -60,16 +61,24 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             return;
         }
 
-        var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}");
+        // For A2A, simple one-shot message with no expectation of multi-turn should just
+        // be sent as EOC in order to complete the A2A Task.
+        var activity = new Activity()
+        {
+            Type = ActivityTypes.EndOfConversation,
+            Text = $"You said: {turnContext.Activity.Text}"
+        };
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
 
+    // Received for A2A "tasks/cancel"
     private Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        // Clear conversation state, and perform any other cleanup.
         var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
         if (multi != null)
         {
-            turnState.Conversation.DeleteValue(nameof(MultiResult));
+            turnState.Conversation.ClearState();
         }
 
         return Task.CompletedTask;

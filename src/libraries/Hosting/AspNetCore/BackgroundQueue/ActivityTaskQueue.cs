@@ -20,11 +20,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     {
         private readonly SemaphoreSlim _signal = new(0);
         private readonly EventWaitHandle _queueEmpty = new(true, EventResetMode.ManualReset);
-        private readonly ConcurrentQueue<ActivityWithClaims> _activities = new ConcurrentQueue<ActivityWithClaims>();
+        private readonly ConcurrentQueue<ActivityWithClaims> _activities = new();
         private bool _stopped = false;
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null)
+        public bool QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(adapter);
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
             if (_stopped)
             {
-                return;
+                return false;
             }
             
             // Copy to prevent unexpected side effects from later mutations of the original headers.
@@ -41,6 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             _activities.Enqueue(new ActivityWithClaims { ChannelAdapter = adapter, AgentType = agentType, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, OnComplete = onComplete, Headers = copyHeaders });
             _queueEmpty.Reset();
             _signal.Release();
+            return true;
         }
 
         /// <inheritdoc/>
@@ -64,11 +65,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 _queueEmpty.WaitOne();
             }
-        }
-
-        public void WaitForEmpty()
-        {
-            _queueEmpty.WaitOne();
         }
     }
 }

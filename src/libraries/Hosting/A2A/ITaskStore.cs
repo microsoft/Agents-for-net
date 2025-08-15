@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.A2A;
 
 internal interface ITaskStore
 {
-    Task<AgentTask> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default);
+    Task<CreateOrContinueResult> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 
@@ -26,4 +26,11 @@ internal interface ITaskStore
     Task<AgentTask> UpdateTaskAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default);
 
     Task<AgentTask> UpdateTaskAsync(Message message, CancellationToken cancellationToken = default);
+}
+
+internal class CreateOrContinueResult
+{
+    public bool IsNewTask { get; set; }
+
+    public AgentTask Task { get; set; }
 }

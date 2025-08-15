@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
-internal class A2AConverter
+internal static class A2AConverter
 {
     public const string DefaultUserId = "unknown";
 
@@ -235,6 +235,12 @@ internal class A2AConverter
             Id = requestId,
             Result = payload
         };
+    }
+
+    public static bool HasMessageContent(this IActivity activity)
+    {
+        return !string.IsNullOrEmpty(activity.Text)
+            || (bool) activity?.Attachments?.Any();
     }
 
     private static Activity CreateActivity(

@@ -33,4 +33,9 @@ internal static class A2AModelExtensions
             History = [.. task.History.Value.Skip(task.History.Value.Length - toLength.Value)],
         };
     }
+
+    public static string ConversationId(this AgentTask task)
+    {
+        return task.Id;
+    }
 }
