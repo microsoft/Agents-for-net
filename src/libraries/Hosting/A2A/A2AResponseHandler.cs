@@ -70,15 +70,15 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
         else if (activity.IsType(ActivityTypes.Message))
         {
-            await OnMessage(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+            await OnMessageResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
         else if (activity.IsType(ActivityTypes.EndOfConversation))
         {
-            await OnEndOfConversation(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+            await OnEndOfConversationResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
         else if (activity.IsType(ActivityTypes.Typing))
         {
-            await OnTyping(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+            await OnTypingResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -118,7 +118,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
     }
 
-    private async Task OnMessage(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    private async Task OnMessageResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
         // Send a Message (from Activity)
         var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
@@ -168,7 +168,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
     }
 
-    private async Task OnTyping(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    private async Task OnTypingResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
         // non-StreamingResponse Typing
         // Status update will be sent during ResponseEnd
@@ -176,9 +176,9 @@ internal class A2AResponseHandler : IChannelResponseHandler
         await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task OnEndOfConversation(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    private async Task OnEndOfConversationResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
-        // Status update will be sent during ResponseEnd
+        // Upate status to terminal.  Status event sent in ResponseEnd
         TaskState taskState = activity.Code switch
         {
             EndOfConversationCodes.Error => TaskState.Failed,
@@ -186,18 +186,11 @@ internal class A2AResponseHandler : IChannelResponseHandler
             _ => TaskState.Completed,
         };
 
-        if (activity.HasMessageContent())
-        {
-            var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
-            await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
-
-            await WriteEvent(httpResponse, message.Kind, message, cancellationToken).ConfigureAwait(false);
-        }
-
-        var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, taskState);
+        var statusMessage = activity.HasMessageContent() ? activity : null;
+        var statusUpdate = A2AConverter.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, taskState, activity: statusMessage);
         await _taskStore.UpdateTaskAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
 
-        // Add optional EOC Value as an Artifact
+        // Set optional EOC Value as an Artifact
         if (activity.Value != null)
         {
             var artifactUpdate = new TaskArtifactUpdateEvent()

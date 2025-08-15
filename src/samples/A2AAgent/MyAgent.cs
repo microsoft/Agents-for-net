@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace A2AAgent;
 
@@ -50,11 +51,12 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         }
 
         // For A2A, simple one-shot message with no expectation of multi-turn should just
-        // be sent as EOC in order to complete the A2A Task.
+        // be sent as EOC in order to complete the A2A Task. Othewise, there is no way to
+        // convey to A2A that the Task is complete.
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", inputHint: InputHints.IgnoringInput, cancellationToken: cancellationToken);
         var activity = new Activity()
         {
             Type = ActivityTypes.EndOfConversation,
-            Text = $"You said: {turnContext.Activity.Text}"
         };
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
@@ -62,12 +64,8 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     // Received for A2A "tasks/cancel"
     private Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // Clear conversation state, and perform any other cleanup.
-        var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
-        if (multi != null)
-        {
-            turnState.Conversation.ClearState();
-        }
+        // No need for conversation state anymore
+        turnState.Conversation.ClearState();
 
         return Task.CompletedTask;
     }
@@ -82,12 +80,14 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Code = EndOfConversationCodes.CompletedSuccessfully,
-                Value = multi
+                Text = "Turn done", // optional
+                Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
+                Value = multi  // optional result
             };
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
-            turnState.Conversation.DeleteValue(nameof(MultiResult));
+            // No need for conversation state anymore
+            turnState.Conversation.ClearState();
         }
         else
         {
