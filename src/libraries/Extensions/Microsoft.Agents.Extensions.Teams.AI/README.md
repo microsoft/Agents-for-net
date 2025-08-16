@@ -41,7 +41,3 @@ This is the main library defined here. We leverage existing Agent SDK libraries 
 
 - **teamsapp.yml**: Automates the creation of a Teams app registration, Azure AD app registration for a bot, and the deployment of infrastructure using ARM templates.
 - **appsettings.json**: Contains configuration settings for token validation, connections, and logging.
-
-## Getting Started
-We recommend getting started with the Teams Chef sample, available at
-- [Teams Chef Bot Sample](./samples/04.ai.a.teamsChefBot) - An AI-powered agent designed to assist developers in building Microsoft Teams apps.

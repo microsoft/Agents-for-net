@@ -8,7 +8,6 @@ This document will cover the tools you need and how to setup this project locall
 1. Visual Studio 2022 +
     1. .net 8 +
     1. Asp.net workload
-1. [BotFramework Emulator](https://github.com/microsoft/BotFramework-Emulator/releases)
 
 if you also want to deploy and use the Azure Bot Service Channel System, you will further need:
 
@@ -28,5 +27,3 @@ This is a general list only, Each Sample has a more detailed ReadMe.md that deta
 This should restore and build the Framework.
 
 You can then use the Test Explore to run tests as needed.
-
-Samples are found in the [src/samples](src/samples) folder.  Please see the readme.md in each sample folder for specific instructions on running it.
