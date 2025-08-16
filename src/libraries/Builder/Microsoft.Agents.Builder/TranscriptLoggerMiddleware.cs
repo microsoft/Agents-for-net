@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.Compat
+namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Middleware for logging incoming and outgoing activities to an <see cref="ITranscriptStore"/>.
