@@ -15,4 +15,20 @@ internal static class A2AMethods
     public const string TasksPushNotificationList = "tasks/pushNotificationConfig/list";
     public const string TasksPushNotificationDelete = "tasks/pushNotificationConfig/delete";
     public const string AgentAuthenticationCard = "agent/getAuthenticatedExtendedCard";
+
+    /// <summary>
+    /// Determines if a method name is valid for A2A JSON-RPC.
+    /// </summary>
+    /// <param name="method">The method name to validate.</param>
+    /// <returns>True if the method is valid, false otherwise.</returns>
+    public static bool IsValidMethod(string method) => method is
+        MessageSend or
+        MessageStream or
+        TasksGet or
+        TasksCancel or
+        TasksResubscribe or
+        TasksPushNotificationSet or
+        TasksPushNotificationGet or
+        TasksPushNotificationList or
+        TasksPushNotificationDelete;
 }

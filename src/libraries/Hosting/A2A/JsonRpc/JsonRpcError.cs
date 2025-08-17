@@ -1,30 +1,48 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
+using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.JsonRpc;
 
 /// <summary>
-/// Represents an error response message in the JSON-RPC protocol.
+/// Represents a JSON-RPC 2.0 Error object.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Error responses are sent when a request cannot be fulfilled or encounters an error during processing.
-/// Like successful responses, error messages include the same ID as the original request, allowing the
-/// sender to match errors with their corresponding requests.
-/// </para>
-/// <para>
-/// Each error response contains a structured error detail object with a numeric code, descriptive message,
-/// and optional additional data to provide more context about the error.
-/// </para>
-/// </remarks>
-internal sealed class JsonRpcError : JsonRpcMessageWithId
+public class JsonRpcError
 {
     /// <summary>
-    /// Gets detailed error information for the failed request, containing an error code, 
-    /// message, and optional additional data
+    /// Gets or sets the number that indicates the error type that occurred.
     /// </summary>
-    [JsonPropertyName("error")]
-    public required JsonRpcErrorDetail Error { get; init; }
+    [JsonPropertyName("code")]
+    [JsonRequired]
+    public int Code { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets the string providing a short description of the error.
+    /// </summary>
+    [JsonPropertyName("message")]
+    [JsonRequired]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the primitive or structured value that contains additional information about the error.
+    /// This may be omitted.
+    /// </summary>
+    [JsonPropertyName("data")]
+    public JsonElement? Data { get; set; }
+
+    /// <summary>
+    /// Deserializes a JsonRpcError from a JsonElement.
+    /// </summary>
+    /// <param name="jsonElement">The JSON element to deserialize.</param>
+    /// <returns>A JsonRpcError instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when deserialization fails.</exception>
+    public static JsonRpcError FromJson(JsonElement jsonElement) =>
+        jsonElement.Deserialize(A2AJsonUtilities.JsonContext.Default.JsonRpcError) ??
+        throw new InvalidOperationException("Failed to deserialize JsonRpcError.");
+
+    /// <summary>
+    /// Serializes a JsonRpcError to JSON.
+    /// </summary>
+    /// <returns>JSON string representation.</returns>
+    public string ToJson() => JsonSerializer.Serialize(this, A2AJsonUtilities.JsonContext.Default.JsonRpcError);
 }

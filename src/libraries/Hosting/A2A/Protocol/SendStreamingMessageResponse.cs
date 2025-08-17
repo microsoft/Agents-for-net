@@ -19,7 +19,7 @@ public sealed class SendStreamingMessageResponse
     /// Matches the id from the originating tasks/sendSubscribe or tasks/resubscribe TaskSendParams.
     /// </summary>
     [JsonPropertyName("id")]
-    public required RequestId Id { get; set; }
+    public required JsonRpcId Id { get; set; }
 
     /// <summary>
     /// The event payload.

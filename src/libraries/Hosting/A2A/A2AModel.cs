@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.A2A;
@@ -53,7 +52,7 @@ internal static class A2AModel
             TreatNullObliviousAsNonNullable = true,
         };
 
-        JsonNode schema = SerializerOptions.GetJsonSchemaAsNode(data.GetType(), exporterOptions);
+        JsonNode schema = A2AJsonUtilities.DefaultReflectionOptions.GetJsonSchemaAsNode(data.GetType(), exporterOptions);
 
         return new Dictionary<string, object>
         {
@@ -83,23 +82,11 @@ internal static class A2AModel
                         ContextId = contextId,
                         MessageId = Guid.NewGuid().ToString("N"),
                         Parts = artifact.Parts,
-                        Role = Message.RoleType.Agent
+                        Role = MessageRole.Agent
                     }
             },
         };
     }
-
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        AllowOutOfOrderMetadataProperties = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        Converters =
-        {
-            new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower)
-        }
-    };
 
     #region From Request
     public static async Task<T?> ReadRequestAsync<T>(HttpRequest request)
@@ -108,7 +95,11 @@ internal static class A2AModel
 
         try
         {
-            return await JsonSerializer.DeserializeAsync<T>(request.Body, SerializerOptions);
+            return await JsonSerializer.DeserializeAsync<T>(request.Body);
+        }
+        catch(A2AException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -122,11 +113,15 @@ internal static class A2AModel
 
         try
         {
-            sendParams = JsonSerializer.SerializeToElement(jsonRpcRequest.Params, SerializerOptions).Deserialize<MessageSendParams>(SerializerOptions);
+            sendParams = jsonRpcRequest.Params?.Deserialize<MessageSendParams>();
+        }
+        catch(A2AException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            throw new A2AException(ex.Message, A2AErrors.ParseError);
+            throw new A2AException(ex.Message, A2AErrors.InvalidParams);
         }
 
         if (sendParams?.Message?.Parts == null)
@@ -137,47 +132,18 @@ internal static class A2AModel
         return sendParams;
     }
 
-    public static T ReadParams<T>(JsonRpcRequest jsonRpcPayload)
+    public static T ReadParams<T>(JsonRpcRequest jsonRpcRequest)
     {
-        if (jsonRpcPayload.Params == null)
+        if (jsonRpcRequest.Params == null)
         {
             throw new ArgumentException("Params is null");
         }
-        return JsonSerializer.SerializeToElement(jsonRpcPayload.Params, SerializerOptions).Deserialize<T>(SerializerOptions);
+        return jsonRpcRequest.Params.Value.Deserialize<T>();
     }
     #endregion
 
     #region To Response
-    public static string ToJson(object obj)
-    {
-        return JsonSerializer.Serialize(obj, SerializerOptions);
-    }
-
-    public static JsonRpcResponse CreateResponse(RequestId requestId, object result)
-    {
-        return new JsonRpcResponse()
-        {
-            Id = requestId,
-            Result = JsonSerializer.SerializeToNode(result, SerializerOptions)
-        };
-    }
-
-    public static JsonRpcError CreateErrorResponse(JsonRpcRequest jsonRpcPayload, int code, string message)
-    {
-        var id = jsonRpcPayload != null ? jsonRpcPayload.Id : new RequestId();
-
-        return new JsonRpcError()
-        {
-            Id = id,
-            Error = new JsonRpcErrorDetail()
-            {
-                Code = code,
-                Message = message
-            }
-        };
-    }
-
-    public static SendStreamingMessageResponse StreamingMessageResponse(RequestId requestId, object payload)
+    public static SendStreamingMessageResponse StreamingMessageResponse(JsonRpcId requestId, object payload)
     {
         return new SendStreamingMessageResponse()
         {

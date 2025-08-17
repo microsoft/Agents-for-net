@@ -1,7 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
-using Microsoft.Agents.Hosting.A2A.Protocol;
+﻿using Microsoft.Agents.Hosting.A2A.Protocol;
 using System;
 
 namespace Microsoft.Agents.Hosting.A2A;
@@ -16,7 +13,7 @@ namespace Microsoft.Agents.Hosting.A2A;
 /// propagated to the remote endpoint; sensitive information should not be included. If sensitive details need
 /// to be included, a different exception type should be used.
 /// </remarks>
-public class A2AException : Exception
+internal class A2AException : Exception
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="A2AException"/> class.
@@ -59,7 +56,7 @@ public class A2AException : Exception
     /// <param name="errorCode">A <see cref="A2AErrorCode"/>.</param>
     public A2AException(string message, Exception? innerException, int errorCode) : base(message, innerException)
     {
-        ErrorCode = errorCode;
+       ErrorCode = errorCode;
     }
 
     /// <summary>

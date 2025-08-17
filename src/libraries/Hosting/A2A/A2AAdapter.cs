@@ -62,7 +62,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             // Turn Begin
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Turn Begin: {Request}", A2AModel.ToJson(jsonRpcRequest));
+                _logger.LogDebug("Turn Begin: {Request}", A2AJsonUtilities.ToJson(jsonRpcRequest));
             }
 
             if (httpRequest.Method == HttpMethods.Post)
@@ -91,7 +91,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 }
                 else
                 {
-                    JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    JsonRpcResponse response = JsonRpcResponse.MethodNotFoundResponse(jsonRpcRequest.Id, $"{jsonRpcRequest.Method} not supported");
                     await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -113,14 +113,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         catch (A2AException a2aEx)
         {
             _logger.LogError("Request: {ErrorCode}/{Message}", a2aEx.ErrorCode, a2aEx.Message);
-            JsonRpcError response = A2AModel.CreateErrorResponse(null, a2aEx.ErrorCode, a2aEx.Message);
+            JsonRpcResponse response = JsonRpcResponse.CreateJsonRpcErrorResponse(a2aEx.GetRequestId(), a2aEx);
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "ProcessAsync: {Message}", ex.Message);
-            JsonRpcError response = A2AModel.CreateErrorResponse(null, A2AErrors.InternalError, ex.Message);
-            await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
+            throw;
         }
     }
 
@@ -167,7 +166,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         httpResponse.ContentType = "application/json";
-        var json = A2AModel.ToJson(agentCard);
+        var json = A2AJsonUtilities.ToJson(agentCard);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
@@ -196,7 +195,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         if (incoming.Task.IsTerminal())
         {
-            JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.UnsupportedOperationError, $"Task '{taskId}' is in a terminal state");
+            JsonRpcResponse response = JsonRpcResponse.UnsupportedOperationResponse(jsonRpcRequest.Id, $"Task '{taskId}' is in a terminal state");
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
             return;
         }
@@ -232,7 +231,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private async Task OnTasksResubscribeAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, CancellationToken cancellationToken = default)
     {
         // TODO: tasks/resubscribe
-        JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+        JsonRpcResponse response = JsonRpcResponse.MethodNotFoundResponse(jsonRpcRequest.Id, $"{jsonRpcRequest.Method} not supported");
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
@@ -245,12 +244,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         if (task == null)
         {
-            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
+            response = JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.");
         }
         else 
         {
             task = task.WithHistoryTrimmedTo(queryParams.HistoryLength);
-            response = A2AModel.CreateResponse(jsonRpcRequest.Id, task);
+            response = JsonRpcResponse.CreateJsonRpcResponse(jsonRpcRequest.Id, task);
         }
 
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, streamed, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
@@ -265,11 +264,11 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         if (task == null)
         {
-            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
+            response = JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.");
         }
         else if (task.IsTerminal())
         {
-            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotCancelableError, $"Task '{queryParams.Id}' is in a terminal state.");
+            response = JsonRpcResponse.TaskNotCancelableResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' is in a terminal state.");
         }
         else
         {
@@ -303,7 +302,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             task.Status.Timestamp = DateTimeOffset.UtcNow;
             await _taskStore.UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
 
-            response = A2AModel.CreateResponse(jsonRpcRequest.Id, task);
+            response = JsonRpcResponse.CreateJsonRpcResponse(jsonRpcRequest.Id, task);
         }
 
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);

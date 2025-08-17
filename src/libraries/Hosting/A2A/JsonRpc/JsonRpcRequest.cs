@@ -1,44 +1,43 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Hosting.A2A.JsonRpc;
 
 /// <summary>
-/// A request message in the JSON-RPC protocol.
+/// Represents a JSON-RPC 2.0 Request object.
 /// </summary>
-/// <remarks>
-/// Requests are messages that require a response from the receiver. Each request includes a unique ID
-/// that will be included in the corresponding response message (either a success response or an error).
-/// 
-/// The receiver of a request message is expected to execute the specified method with the provided parameters
-/// and return either a <see cref="JsonRpcResponse"/> with the result, or a <see cref="JsonRpcError"/>
-/// if the method execution fails.
-/// </remarks>
-internal sealed class JsonRpcRequest : JsonRpcMessageWithId
+[JsonConverter(typeof(JsonRpcRequestConverter))]
+internal sealed class JsonRpcRequest
 {
     /// <summary>
-    /// Name of the method to invoke.
+    /// Gets or sets the version of the JSON-RPC protocol.
     /// </summary>
-    [JsonPropertyName("method")]
-    public required string Method { get; init; }
+    /// <remarks>
+    /// MUST be exactly "2.0".
+    /// </remarks>
+    [JsonPropertyName("jsonrpc")]
+    // [JsonRequired] - we have to reject this with a special payload
+    public string JsonRpc { get; set; } = "2.0";
 
     /// <summary>
-    /// Optional parameters for the method.
+    /// Gets or sets the identifier established by the Client that MUST contain a String, Number.
+    /// </summary>
+    /// <remarks>
+    /// Numbers SHOULD NOT contain fractional parts.
+    /// </remarks>
+    [JsonPropertyName("id")]
+    public JsonRpcId Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the string containing the name of the method to be invoked.
+    /// </summary>
+    [JsonPropertyName("method")]
+    // [JsonRequired] - we have to reject this with a special payload
+    public string Method { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the structured value that holds the parameter values to be used during the invocation of the method.
     /// </summary>
     [JsonPropertyName("params")]
-    public JsonNode? Params { get; init; }
-
-    internal JsonRpcRequest WithId(RequestId id)
-    {
-        return new JsonRpcRequest
-        {
-            JsonRpc = JsonRpc,
-            Id = id,
-            Method = Method,
-            Params = Params,
-        };
-    }
+    public JsonElement? Params { get; set; }
 }

@@ -56,35 +56,35 @@ internal static class A2AErrors
     /// <summary>
     /// Task not found  The specified task id does not correspond to an existing or active task.It might be invalid, expired, or already completed and purged.
     /// </summary>
-    public static int TaskNotFoundError = -32001;
+    public static int TaskNotFound = -32001;
 
     /// <summary>
     /// Task cannot be canceled An attempt was made to cancel a task that is not in a cancelable state (e.g., it has already reached a terminal state like completed, failed, or canceled).
     /// </summary>
-    public static int TaskNotCancelableError = -32002;
+    public static int TaskNotCancelable = -32002;
 
     /// <summary>
     /// Push Notification is not supported  Client attempted to use push notification features(e.g., tasks/pushNotificationConfig/set) but the server agent does not support them(i.e., AgentCard.capabilities.pushNotifications is false).
     /// </summary>
-    public static int PushNotificationNotSupportedError = -32003;
+    public static int PushNotificationNotSupported = -32003;
 
     /// <summary>
     /// This operation is not supported The requested operation or a specific aspect of it(perhaps implied by parameters) is not supported by this server agent implementation.Broader than just method not found.
     /// </summary>
-    public static int UnsupportedOperationError = -32004;
+    public static int UnsupportedOperation = -32004;
 
     /// <summary>
     /// Incompatible content types  A Media Type provided in the request's message.parts (or implied for an artifact) is not supported by the agent or the specific skill being invoked.
     /// </summary>
-    public static int ContentTypeNotSupportedError = -32005;
+    public static int ContentTypeNotSupported = -32005;
 
     /// <summary>
     /// Invalid agent response type Agent generated an invalid response for the requested method.
     /// </summary>
-    public static int InvalidAgentResponseError = -32006;
+    public static int InvalidAgentResponse = -32006;
 
     /// <summary>
     /// The agent does not have an Authenticated Extended Card configured.
     /// </summary>
-    public static int AuthenticatedExtendedCardNotConfiguredError = -32007;
+    public static int AuthenticatedExtendedCardNotConfigured = -32007;
 }

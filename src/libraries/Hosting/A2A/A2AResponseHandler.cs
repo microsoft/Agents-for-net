@@ -22,14 +22,14 @@ internal class A2AResponseHandler : IChannelResponseHandler
 {
     private const string SseTemplate = "event: {0}\r\ndata: {1}\r\n\r\n";
     private readonly ITaskStore _taskStore;
-    private readonly RequestId _requestId;
+    private readonly JsonRpcId _requestId;
     private readonly ILogger _logger;
     private readonly bool _sse;
     private readonly bool _isNewTask;
     private readonly MessageSendParams _sendParams;
     private readonly AgentTask _incomingTask;
 
-    public A2AResponseHandler(ITaskStore taskStore, RequestId requestId, AgentTask incomingTask, MessageSendParams sendParams, bool sse, bool isNewTask, ILogger logger)
+    public A2AResponseHandler(ITaskStore taskStore, JsonRpcId requestId, AgentTask incomingTask, MessageSendParams sendParams, bool sse, bool isNewTask, ILogger logger)
     {
         AssertionHelpers.ThrowIfNull(requestId, nameof(requestId));
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
@@ -117,7 +117,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         else
         {
             task = task.WithHistoryTrimmedTo(_sendParams?.Configuration?.HistoryLength);
-            var response = A2AModel.CreateResponse(_requestId, task);
+            var response = JsonRpcResponse.CreateJsonRpcResponse(_requestId, task);
             await WriteResponseAsync(httpResponse, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
@@ -212,7 +212,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         var sse = string.Format(
             SseTemplate,
             eventName,
-            A2AModel.ToJson(
+            A2AJsonUtilities.ToJson(
                 A2AModel.StreamingMessageResponse(
                     _requestId,
                     payload)
@@ -235,7 +235,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         response.StatusCode = (int)code;
 
-        var json = A2AModel.ToJson(payload);
+        var json = A2AJsonUtilities.ToJson(payload);
         if (!streamed)
         {
             response.ContentType = "application/json";

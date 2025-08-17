@@ -62,7 +62,7 @@ internal static class A2AActivity
             {
                 State = taskState,
                 Timestamp = DateTimeOffset.UtcNow,
-                Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = Message.RoleType.Agent },
+                Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = MessageRole.Agent },
             },
             Final = isFinal
         };
@@ -103,7 +103,7 @@ internal static class A2AActivity
             ContextId = contextId,
             MessageId = Guid.NewGuid().ToString("N"),
             Parts = artifact.Parts,
-            Role = Message.RoleType.Agent
+            Role = MessageRole.Agent
         };
     }
 
@@ -281,7 +281,7 @@ internal static class A2AActivity
                 {
                     ContentType = "application/json",
                     Name = "A2A DataPart",
-                    Content = A2AModel.ToJson(dataPart),
+                    Content = A2AJsonUtilities.ToJson(dataPart),
                 });
             }
         }
