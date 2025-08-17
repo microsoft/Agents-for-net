@@ -564,7 +564,7 @@ namespace Microsoft.Agents.Builder
 
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        if (!TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                         {
                             System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
                         }
