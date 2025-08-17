@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Hosting.A2A.JsonRpc;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -74,5 +77,5 @@ internal static partial class A2AJsonUtilities
     [ExcludeFromCodeCoverage]
     internal sealed partial class JsonContext : JsonSerializerContext;
 
-    public static string ToJson(object obj) => JsonSerializer.Serialize(obj, A2AJsonUtilities.DefaultOptions.GetTypeInfo(obj.GetType()));
+    public static string ToJson(object obj) => JsonSerializer.Serialize(obj, A2AJsonUtilities.DefaultReflectionOptions.GetTypeInfo(obj.GetType()));
 }

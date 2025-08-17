@@ -4,22 +4,21 @@
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.A2A
+namespace Microsoft.Agents.Hosting.A2A;
+
+/// <summary>
+/// Implement to handle setting agent specific <see cref="AgentCard"/> properties.
+/// </summary>
+public interface IAgentCardHandler
 {
     /// <summary>
-    /// Implement to handle setting agent specific <see cref="AgentCard"/> properties.
+    /// Called when the A2A client needs the <see cref="AgentCard"/>.
     /// </summary>
-    public interface IAgentCardHandler
-    {
-        /// <summary>
-        /// Called when the A2A client needs the <see cref="AgentCard"/>.
-        /// </summary>
-        /// <param name="hostAgentCard">The A2A Host will create an AgentCard with proper values for most properties.<br/>
-        /// AgentApplications will likely want to set: <c>hostAgentCard.Name</c>, <c>hostAgentCard.Description</c>, 
-        /// <c>hostAgentCard.Version</c>, and <c>hostAgentCard.Skills</c>.
-        /// <para>Changing other properties, specifically around auth and capabilities, should be avoided without guidance
-        /// on supported values.</para>
-        /// </param>
-        Task<AgentCard> GetAgentCard(AgentCard hostAgentCard);
-    }
+    /// <param name="hostAgentCard">The A2A Host will create an AgentCard with proper values for most properties.<br/>
+    /// AgentApplications will likely want to set: <c>hostAgentCard.Name</c>, <c>hostAgentCard.Description</c>, 
+    /// <c>hostAgentCard.Version</c>, and <c>hostAgentCard.Skills</c>.
+    /// <para>Changing other properties, specifically around auth and capabilities, should be avoided without guidance
+    /// on supported values.</para>
+    /// </param>
+    Task<AgentCard> GetAgentCard(AgentCard hostAgentCard);
 }

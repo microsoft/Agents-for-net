@@ -27,13 +27,13 @@ internal static class A2AActivity
     {
         if (jsonRpcRequest.Params == null)
         {
-            throw new A2AException("Params is null", A2AErrors.InvalidParams);
+            throw new A2AException("Params is null", A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
         }
 
         sendParams ??= A2AModel.MessageSendParamsFromRequest(jsonRpcRequest);
         if (sendParams?.Message?.Parts == null)
         {
-            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
+            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
         }
 
         var contextId = sendParams.Message.ContextId ?? Guid.NewGuid().ToString("N");

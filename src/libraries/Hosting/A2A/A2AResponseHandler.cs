@@ -110,7 +110,6 @@ internal class A2AResponseHandler : IChannelResponseHandler
         // Send Task status
         if (_sse)
         {
-            // TODO: We could send the AgentTask if completed?
             var finalStatusUpdate = A2AActivity.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, task.Status, isFinal: true);
             await WriteEvent(httpResponse, finalStatusUpdate.Kind, finalStatusUpdate, cancellationToken).ConfigureAwait(false);
         }
@@ -118,7 +117,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             task = task.WithHistoryTrimmedTo(_sendParams?.Configuration?.HistoryLength);
             var response = JsonRpcResponse.CreateJsonRpcResponse(_requestId, task);
-            await WriteResponseAsync(httpResponse, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await WriteResponseAsync(httpResponse, _requestId, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -221,14 +220,14 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug("SSE event:\r\n{Event}", sse);
+            _logger.LogDebug("SSE event: RequestId={RequestId},\r\n{Event}", _requestId, sse);
         }
 
         await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(sse), cancellationToken).ConfigureAwait(false);
         await httpResponse.Body.FlushAsync(cancellationToken);
     }
 
-    public static async Task WriteResponseAsync(HttpResponse response, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, ILogger logger = null,  CancellationToken cancellationToken = default)
+    public static async Task WriteResponseAsync(HttpResponse response, JsonRpcId requestId, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, ILogger logger = null,  CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(payload);
@@ -248,7 +247,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         if (logger != null && logger.IsEnabled(LogLevel.Debug))
         {
-            logger.LogDebug("WriteResponseAsync: {Payload}", json);
+            logger.LogDebug("WriteResponseAsync: RequestId={RequestId}, Body={Payload}", requestId, json);
         }
 
         await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken).ConfigureAwait(false);

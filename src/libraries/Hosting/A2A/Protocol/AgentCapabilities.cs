@@ -30,5 +30,5 @@ public sealed class AgentCapabilities
     /// A list of protocol extensions supported by the agent.
     /// </summary>
     [JsonPropertyName("extensions")]
-    public ImmutableArray<AgentExtension>? Extensions { get; set; }
+    public ImmutableArray<AgentExtension> Extensions { get; set; } = [];
 }

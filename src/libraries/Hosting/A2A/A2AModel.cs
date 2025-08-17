@@ -121,12 +121,12 @@ internal static class A2AModel
         }
         catch (Exception ex)
         {
-            throw new A2AException(ex.Message, A2AErrors.InvalidParams);
+            throw new A2AException(ex.Message, A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
         }
 
-        if (sendParams?.Message?.Parts == null)
+        if (sendParams?.Message?.Parts == null || sendParams.Message.Parts.Length == 0)
         {
-            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams);
+            throw new A2AException("MessageSendParams.Parts missing or empty", A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
         }
 
         return sendParams;
