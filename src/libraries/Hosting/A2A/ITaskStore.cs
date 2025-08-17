@@ -21,11 +21,11 @@ internal interface ITaskStore
 
     Task<AgentTask> UpdateTaskAsync(AgentTask task, CancellationToken cancellationToken = default);
 
-    Task<AgentTask> UpdateTaskAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default);
+    Task<AgentTask> UpdateArtifactAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default);
 
-    Task<AgentTask> UpdateTaskAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default);
+    Task<AgentTask> UpdateStatusAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default);
 
-    Task<AgentTask> UpdateTaskAsync(Message message, CancellationToken cancellationToken = default);
+    Task<AgentTask> UpdateMessageAsync(Message message, CancellationToken cancellationToken = default);
 }
 
 internal class CreateOrContinueResult

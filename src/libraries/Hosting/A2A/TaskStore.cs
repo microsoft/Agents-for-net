@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Hosting.A2A
             return task;
         }
 
-        public async Task<AgentTask> UpdateTaskAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateArtifactAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
 
@@ -77,14 +77,18 @@ namespace Microsoft.Agents.Hosting.A2A
             return task;
         }
 
-        public async Task<AgentTask> UpdateTaskAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateStatusAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(statusUpdate), "TaskStatusUpdateEvent cannot be null.");
 
             var task = await GetTaskAsync(statusUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-            if (!task.IsTerminal() && task.Status.State != statusUpdate.Status.State)
+            if (!task.IsTerminal())
             {
                 task.Status = statusUpdate.Status;
+                if (task.Status.Message != null)
+                {
+                    task.History = AppendMessage(task.History, task.Status.Message);
+                }
 
                 await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
             }
@@ -92,7 +96,7 @@ namespace Microsoft.Agents.Hosting.A2A
             return task;
         }
 
-        public async Task<AgentTask> UpdateTaskAsync(Message message, CancellationToken cancellationToken = default)
+        public async Task<AgentTask> UpdateMessageAsync(Message message, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(nameof(message), "Message cannot be null.");
 

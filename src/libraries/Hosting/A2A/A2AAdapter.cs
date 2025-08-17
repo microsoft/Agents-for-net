@@ -56,39 +56,42 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     {
         try
         {
-            var jsonRpcRequest = await A2AResponseHandler.ReadRequestAsync<JsonRpcRequest>(httpRequest);
+            var jsonRpcRequest = await A2AModel.ReadRequestAsync<JsonRpcRequest>(httpRequest);
             var identity = HttpHelper.GetClaimsIdentity(httpRequest);
 
             // Turn Begin
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Turn Begin: {Request}", A2AConverter.ToJson(jsonRpcRequest));
+                _logger.LogDebug("Turn Begin: {Request}", A2AModel.ToJson(jsonRpcRequest));
             }
 
             if (httpRequest.Method == HttpMethods.Post)
             {
                 if (   jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) 
-                    || jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe) 
                     || jsonRpcRequest.Method.Equals(A2AMethods.MessageSend))
                 {
-                    await ProcessMessageAsync(
+                    await OnMessageAsync(
                         jsonRpcRequest,
                         httpResponse,
                         identity,
                         agent,
                         cancellationToken).ConfigureAwait(false);
                 }
+                else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe))
+                {
+                    await OnTasksResubscribeAsync(jsonRpcRequest, httpResponse, cancellationToken).ConfigureAwait(false);
+                }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
                 {
-                    await ProcessTaskGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
+                    await OnTasksGetAsync(jsonRpcRequest, httpResponse, false, cancellationToken).ConfigureAwait(false);
                 }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksCancel))
                 {
-                    await ProcessTaskCancelAsync(jsonRpcRequest, httpResponse, identity, agent, cancellationToken).ConfigureAwait(false);
+                    await OnTasksCancelAsync(jsonRpcRequest, httpResponse, identity, agent, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
-                    JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+                    JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
                     await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -110,13 +113,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         catch (A2AException a2aEx)
         {
             _logger.LogError("Request: {ErrorCode}/{Message}", a2aEx.ErrorCode, a2aEx.Message);
-            JsonRpcError response = A2AConverter.CreateErrorResponse(null, a2aEx.ErrorCode, a2aEx.Message);
+            JsonRpcError response = A2AModel.CreateErrorResponse(null, a2aEx.ErrorCode, a2aEx.Message);
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "ProcessAsync: {Message}", ex.Message);
-            JsonRpcError response = A2AConverter.CreateErrorResponse(null, A2AErrors.InternalError, ex.Message);
+            JsonRpcError response = A2AModel.CreateErrorResponse(null, A2AErrors.InternalError, ex.Message);
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -164,7 +167,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         httpResponse.ContentType = "application/json";
-        var json = A2AConverter.ToJson(agentCard);
+        var json = A2AModel.ToJson(agentCard);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
@@ -175,12 +178,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await httpResponse.Body.FlushAsync(cancellationToken);
     }
 
-    private async Task ProcessMessageAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken = default)
+    private async Task OnMessageAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken = default)
     {
         // Convert to Activity 
         bool isStreaming = !jsonRpcRequest.Method.Equals(A2AMethods.MessageSend);
-        var sendParams = A2AConverter.MessageSendParamsFromRequest(jsonRpcRequest);
-        var (activity, contextId, taskId, message) = A2AConverter.ActivityFromRequest(jsonRpcRequest, sendParams: sendParams, isStreaming: isStreaming);
+        var sendParams = A2AModel.MessageSendParamsFromRequest(jsonRpcRequest);
+        var (activity, contextId, taskId, message) = A2AActivity.ActivityFromRequest(jsonRpcRequest, sendParams: sendParams, isStreaming: isStreaming);
         if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
         {
             httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -193,12 +196,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         if (incoming.Task.IsTerminal())
         {
-            JsonRpcError response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.UnsupportedOperationError, $"Task '{taskId}' is in a terminal state");
+            JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.UnsupportedOperationError, $"Task '{taskId}' is in a terminal state");
             await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, _logger);
+        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, incoming.IsNewTask, _logger);
 
         InvokeResponse invokeResponse = null;
         
@@ -226,40 +229,47 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task ProcessTaskGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
+    private async Task OnTasksResubscribeAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, CancellationToken cancellationToken = default)
+    {
+        // TODO: tasks/resubscribe
+        JsonRpcError response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.MethodNotFound, $"{jsonRpcRequest.Method} not supported");
+        await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task OnTasksGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
     {
         object response;
 
-        var queryParams = A2AConverter.ReadParams<TaskQueryParams>(jsonRpcRequest);
+        var queryParams = A2AModel.ReadParams<TaskQueryParams>(jsonRpcRequest);
         var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
 
         if (task == null)
         {
-            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
+            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
         }
         else 
         {
             task = task.WithHistoryTrimmedTo(queryParams.HistoryLength);
-            response = A2AConverter.CreateResponse(jsonRpcRequest.Id, task);
+            response = A2AModel.CreateResponse(jsonRpcRequest.Id, task);
         }
 
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, streamed, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task ProcessTaskCancelAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken)
+    private async Task OnTasksCancelAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, ClaimsIdentity identity, IAgent agent, CancellationToken cancellationToken)
     {
         object response;
 
-        var queryParams = A2AConverter.ReadParams<TaskIdParams>(jsonRpcRequest);
+        var queryParams = A2AModel.ReadParams<TaskIdParams>(jsonRpcRequest);
         var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
 
         if (task == null)
         {
-            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
+            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotFoundError, $"Task '{queryParams.Id}' not found.");
         }
         else if (task.IsTerminal())
         {
-            response = A2AConverter.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotCancelableError, $"Task '{queryParams.Id}' is in a terminal state.");
+            response = A2AModel.CreateErrorResponse(jsonRpcRequest, A2AErrors.TaskNotCancelableError, $"Task '{queryParams.Id}' is in a terminal state.");
         }
         else
         {
@@ -279,7 +289,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 },
                 From = new ChannelAccount
                 {
-                    Id = A2AConverter.DefaultUserId,
+                    Id = A2AActivity.DefaultUserId,
                     Role = RoleTypes.User,
                 },
                 Code = EndOfConversationCodes.UserCancelled
@@ -293,7 +303,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             task.Status.Timestamp = DateTimeOffset.UtcNow;
             await _taskStore.UpdateTaskAsync(task, cancellationToken).ConfigureAwait(false);
 
-            response = A2AConverter.CreateResponse(jsonRpcRequest.Id, task);
+            response = A2AModel.CreateResponse(jsonRpcRequest.Id, task);
         }
 
         await A2AResponseHandler.WriteResponseAsync(httpResponse, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
