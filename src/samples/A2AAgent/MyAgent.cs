@@ -5,13 +5,14 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace A2AAgent;
 
@@ -50,6 +51,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     // Received an A2A Message
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        // ConversationState is associated with the A2A Task.
         var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
         if (multi != null)
         {
@@ -57,9 +59,11 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             return;
         }
 
-        // For A2A, simple one-shot message with no expectation of multi-turn should just
-        // be sent as EOC in order to complete the A2A Task. Othewise, there is no way to
-        // convey to A2A that the Task is complete.
+        await turnContext.SendActivityAsync("Working...", inputHint: InputHints.IgnoringInput, cancellationToken: cancellationToken);
+
+        // SDK always creates a Task in A2A. Simple one-shot message with no expectation of multi-turn should
+        // just be sent as EOC with Activity.Text in order to complete the A2A Task. Othewise, there is no
+        // way to convey to A2A that the Task is complete.
         var activity = new Activity()
         {
             Text = $"You said: {turnContext.Activity.Text}",
@@ -80,28 +84,31 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
-        multi.ChatHistory.Add(new ChatMessage() { Role = "user", Message = turnContext.Activity.Text });
+        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = ProtocolJsonSerializer.ToJson(turnContext.Activity) });
 
         if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
+            // Send EOC to complete the A2A Task.
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Text = "All done. Result in Artifact", // optional
+                Text = "All done. Activity list result in Artifact", // optional
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
                 Value = multi  // optional result
             };
-            multi.ChatHistory.Add(new ChatMessage() { Role = "agent", Message = eoc.Text });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.ToJson(eoc) });
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
+
+            await turnContext.SendActivityAsync("test warning", cancellationToken: cancellationToken);
 
             // No need for conversation state anymore
             turnState.Conversation.ClearState();
         }
         else
         {
-            // A2A requires ExpectingInput for multi-turn. 
+            // Hosting.A2A requires ExpectingInput for multi-turn. 
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
-            multi.ChatHistory.Add(new ChatMessage() { Role = "agent", Message = activity.Text });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.ToJson(activity) });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
     }
@@ -110,20 +117,20 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     {
         initialCard.Name = "A2AAgent";
         initialCard.Description = "Demonstrates A2A functionality in Agent SDK";
-        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
         return Task.FromResult(initialCard);
     }
 }
 
 
-class ChatMessage
+class ActivityMessage
 {
-    public string Role { get; set; }
-    public string Message { get; set; }
+    public required string Role { get; set; }
+    public required string Activity { get; set; }
 }
 
 class MultiResult
 {
-    public List<ChatMessage> ChatHistory { get; set; } = [];
+    public List<ActivityMessage> ActivityHistory { get; set; } = [];
 }

@@ -88,34 +88,11 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
     public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
     {
-        AgentTask task = null;
-
-        if (data != null)
+        if (!_sse)
         {
-            // data is probably InvokeResponse.
-            var artifactUpdate = new TaskArtifactUpdateEvent()
-            {
-                TaskId = _incomingTask.Id,
-                ContextId = _incomingTask.ContextId,
-                Artifact = A2AActivity.CreateArtifactFromObject(data, name: data.GetType().Name),
-                Append = true,
-                LastChunk = true
-            };
-            task = await _taskStore.UpdateArtifactAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
-            await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
-        }
-
-        task ??= await _taskStore.GetTaskAsync(_incomingTask.Id, cancellationToken).ConfigureAwait(false);
-
-        // Send Task status
-        if (_sse)
-        {
-            var finalStatusUpdate = A2AActivity.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, task.Status, isFinal: true);
-            await WriteEvent(httpResponse, finalStatusUpdate.Kind, finalStatusUpdate, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
+            var task = await _taskStore.GetTaskAsync(_incomingTask.Id, cancellationToken).ConfigureAwait(false);
             task = task.WithHistoryTrimmedTo(_sendParams?.Configuration?.HistoryLength);
+
             var response = JsonRpcResponse.CreateJsonRpcResponse(_requestId, task);
             await WriteResponseAsync(httpResponse, _requestId, response, logger: _logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
@@ -126,7 +103,16 @@ internal class A2AResponseHandler : IChannelResponseHandler
         // Once we have an A2A Task created (we do), everything is either an Artifact or TaskStatus.Message
         // Send a Message (from Activity)
         var statusUpdate = A2AActivity.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, activity.GetA2ATaskState(), activity: activity);
-        await _taskStore.UpdateStatusAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+        var task = await _taskStore.UpdateStatusAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+
+        if (!task.IsTerminal())
+        {
+            await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            _logger.LogWarning("OnMessageResponse: Message ignored. Task '{TaskId}' is in a terminal state.", activity.Conversation.Id);
+        }
     }
 
     private async Task OnStreamingResponse(HttpResponse httpResponse, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
@@ -138,26 +124,43 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             // Informative is a Status update with a Message
             var statusUpdate = A2AActivity.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, TaskState.Working, artifactId: entity.StreamId, activity: isInformative ? activity : activity);
-            await _taskStore.UpdateStatusAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
-            await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
+            var task = await _taskStore.UpdateStatusAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+
+            if (!task.IsTerminal())
+            {
+                await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                _logger.LogWarning("OnStreamingResponse: Message ignored. Task '{TaskId}' is in a terminal state.", activity.Conversation.Id);
+            }
         }
         else
         {
             // This is using entity.StreamId for the artifactId.  This will result in a single Artifact in the Task
             var artifactUpdate = A2AActivity.CreateArtifactUpdate(_incomingTask.ContextId, _incomingTask.Id, activity, artifactId: entity.StreamId, lastChunk: isLastChunk);
-            await _taskStore.UpdateArtifactAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
-            await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
+            var task = await _taskStore.UpdateArtifactAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
 
-            if (isLastChunk)
+            if (!task.IsTerminal())
             {
-                //var message = A2AConverter.MessageFromActivity(_incomingTask.ContextId, _incomingTask.Id, activity);
-                //await _taskStore.UpdateTaskAsync(message, cancellationToken).ConfigureAwait(false);
+                await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                _logger.LogWarning("OnStreamingResponse: Message ignored. Task '{TaskId}' is in a terminal state.", activity.Conversation.Id);
             }
         }
     }
 
     private async Task OnEndOfConversationResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
+        var task = await _taskStore.GetTaskAsync(activity.Conversation.Id, cancellationToken).ConfigureAwait(false);
+        if (task.IsTerminal())
+        {
+            _logger.LogWarning("OnEndOfConversationResponse: EndOfConversation ignored. Task '{TaskId}' is in a terminal state.", activity.Conversation.Id);
+            return;
+        }
+
         // Set optional EOC Value as an Artifact.
         if (activity.Value != null)
         {
@@ -199,6 +202,8 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         var statusUpdate = A2AActivity.CreateStatusUpdate(_incomingTask.ContextId, _incomingTask.Id, taskState, activity: statusMessage);
         await _taskStore.UpdateStatusAsync(statusUpdate, cancellationToken).ConfigureAwait(false);
+
+        await WriteEvent(httpResponse, statusUpdate.Kind, statusUpdate, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task WriteEvent(HttpResponse httpResponse, string eventName, object payload, CancellationToken cancellationToken)

@@ -213,7 +213,7 @@ internal static class A2AActivity
         TaskState taskState = activity.InputHint switch
         {
             InputHints.ExpectingInput => TaskState.InputRequired,
-            InputHints.AcceptingInput => TaskState.InputRequired,
+            InputHints.AcceptingInput => TaskState.Working,
             _ => TaskState.Working,
         };
 

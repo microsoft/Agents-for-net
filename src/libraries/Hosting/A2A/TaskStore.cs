@@ -55,6 +55,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
         }
 
         await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+
         return task;
     }
 
@@ -63,17 +64,20 @@ internal class TaskStore(IStorage storage) : ITaskStore
         AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
 
         var task = await GetTaskAsync(artifactUpdate.TaskId, cancellationToken).ConfigureAwait(false);
-
-        if (artifactUpdate.Append.HasValue && (bool)artifactUpdate.Append)
+        if (!task.IsTerminal())
         {
-            throw new NotImplementedException("Artifact Append not supported yet");
-        }
-        else
-        {
-            task.Artifacts = AddArtifact(task, artifactUpdate.Artifact);
+            if (artifactUpdate.Append.HasValue && (bool)artifactUpdate.Append)
+            {
+                throw new NotImplementedException("Artifact Append not supported yet");
+            }
+            else
+            {
+                task.Artifacts = AddArtifact(task, artifactUpdate.Artifact);
+            }
+
+            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         }
 
-        await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         return task;
     }
 
@@ -102,6 +106,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
     {
         AssertionHelpers.ThrowIfNull(nameof(message), "Message cannot be null.");
 
+        // TODO:  review for elimination.  Since we always use an AgentTask, this isn't appropirate.
         var task = await GetTaskAsync(message.TaskId, cancellationToken).ConfigureAwait(false);
         task.History = AppendMessage(task.History, message);
 

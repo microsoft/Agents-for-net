@@ -310,7 +310,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 Code = EndOfConversationCodes.UserCancelled
             };
 
-            // Note that we're not setting up to handle responses.  May need to rethink this.
+            // Note that we're not setting up to handle responses.  The task will be in terminal state regardless.
             await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
             // Update task
