@@ -23,7 +23,7 @@ This is a sample of a simple Agent that adds A2A support.
     - `Adapter.CreateConversation`
     - `Adapter.UpdateActivity`
     - `Adapter.DeleteActivity`
-  - `Message` responses.  Are interactions create a `Task` (see details below)
+  - `Message` responses.  All interactions create a `Task` (see details below)
   - `ITurnState.UserState` will not function as expected as we currently lack a unique userId for the A2A "channel".
 - Multiple A2A agents in the same host are not supported.  All A2A request are routed to the registered `IAgent`.
 
