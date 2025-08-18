@@ -23,8 +23,8 @@ This is a sample of a simple Agent that adds A2A support.
     - `Adapter.CreateConversation`
     - `Adapter.UpdateActivity`
     - `Adapter.DeleteActivity`
-  - `Message` responses.  All interactions create a `Task` (see details below)
-  - `ITurnState.UserState` will not function as expected as we currently lack a unique userId for the A2A "channel".
+  - `Message` responses.  All interactions create an A2A `Task` (see details below)
+  - `ITurnState.UserState` will not function as expected as we currently lack a unique userId for the A2A request.
 - Multiple A2A agents in the same host are not supported.  All A2A request are routed to the registered `IAgent`.
 
 ## Prerequisites
@@ -52,7 +52,7 @@ This is a sample of a simple Agent that adds A2A support.
       "TenantId": "{{TenantId}}"
     },
     ```
-- By default, it will respond to A2A request on `http://localhost:3978/a2a`
+- By default, it will respond to A2A requests on `http://localhost:3978/a2a`
 
 ## Adding A2A support to an existing SDK Agent
 
@@ -152,7 +152,7 @@ This is a sample of a simple Agent that adds A2A support.
 
 1. SDK considers taskId as it's conversationId.  i.e., `ConversationState` keys on taskId (via `Activity.Conversation.Id`)
     1. This keeps state per-task even within the same A2A contextId.
-    1. While SDK maintains contextId per A2A expectations, this isn't currently exposed at the `AgentApplication` level.
+    1. While SDK maintains contextId per A2A expectations, this isn't currently utilized at the `AgentApplication` level.  However, an SDK agent could access full `Task` information via `Activity.ChannelId`.
 
 1. The SDK concept of "end of conversation" is quite similar to "Task is complete"
 
@@ -176,10 +176,10 @@ This is a sample of a simple Agent that adds A2A support.
 ## Interacting with this sample
 > The Python [A2A CLI](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/hosts/cli) is a useful tool for exercising this sample.  Other A2A Clients have not been tested.
 
-- Sending *"-multi"* demonstrates a multi-turn interaction.  Send "end" to complete the task.
+- Sending *"-multi"* demonstrates a multi-turn interaction.  Send *"end"* to complete the task.
 - Sending *"-stream"* demonstrates `ITurnContext.StreamingResponse`
 - Any other input is echoed back.
-  - This is different in details from the `EmptyAgent` sample in that since everything is an A2A `Task`, we indicate each echo response is an `EndOfConversation`.
+  - This is different in details from the `EmptyAgent` sample in that since everything is an A2A `Task`, we send each echo response as an `EndOfConversation`.
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/) repo.

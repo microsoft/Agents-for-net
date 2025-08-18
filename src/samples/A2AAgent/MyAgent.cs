@@ -59,8 +59,6 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             return;
         }
 
-        await turnContext.SendActivityAsync("Working...", inputHint: InputHints.IgnoringInput, cancellationToken: cancellationToken);
-
         // SDK always creates a Task in A2A. Simple one-shot message with no expectation of multi-turn should
         // just be sent as EOC with Activity.Text in order to complete the A2A Task. Othewise, there is no
         // way to convey to A2A that the Task is complete.
@@ -98,8 +96,6 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             };
             multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.ToJson(eoc) });
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
-
-            await turnContext.SendActivityAsync("test warning", cancellationToken: cancellationToken);
 
             // No need for conversation state anymore
             turnState.Conversation.ClearState();

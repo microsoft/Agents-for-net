@@ -34,25 +34,38 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Add the A2A adapter to handle A2A requests
 builder.Services.AddA2AAdapter();
 
-WebApplication app = builder.Build();
-
-
 // Configure the HTTP request pipeline.
 
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+
+WebApplication app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// This receives incoming messages from Azure Bot Service or other SDK Agents
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
-})
-    .AllowAnonymous();
+});
 
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2A(requireAuth: !app.Environment.IsDevelopment());
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    incomingRoute.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
     app.Urls.Add($"http://localhost:3978");
+    app.Urls.Add($"https://localhost:3979");
 }
 
 app.Run();

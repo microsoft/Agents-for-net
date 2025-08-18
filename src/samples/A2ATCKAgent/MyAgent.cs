@@ -19,7 +19,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     {
         initialCard.Name = "A2ATCKAgent";
         initialCard.Description = "Used when running the A2A TCK";
-        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
         return Task.FromResult(initialCard);
     }
