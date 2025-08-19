@@ -51,20 +51,23 @@ namespace Microsoft.Agents.Core.HeaderPropagation.Tests
             // Arrange
             HeaderPropagationContext.HeadersToPropagate.Append("User-Agent", "extra-value-1");
             HeaderPropagationContext.HeadersToPropagate.Append("User-Agent", "extra-value-2");
-            
+            HeaderPropagationContext.HeadersToPropagate.Append("Accept", "text/html");
+
             HeaderPropagationContext.HeadersFromRequest = new Dictionary<string, StringValues>
             {
                 { "x-ms-correlation-id", new StringValues("1234") },
-                { "User-Agent", new StringValues("Value-1") }
+                { "User-Agent", new StringValues("Value-1") },
+                { "Accept", new StringValues("text/plain") }
             };
 
             // Act
             var filteredHeaders = HeaderPropagationContext.HeadersFromRequest;
 
             // Assert
-            Assert.Equal(2, filteredHeaders.Count);
+            Assert.Equal(3, filteredHeaders.Count);
             Assert.Equal("1234", filteredHeaders["x-ms-correlation-id"]);
-            Assert.Equal("Value-1,extra-value-1,extra-value-2", filteredHeaders["User-Agent"]);
+            Assert.Equal("Value-1 extra-value-1 extra-value-2", filteredHeaders["User-Agent"]);
+            Assert.Equal("text/plain,text/html", filteredHeaders["Accept"]);
         }
 
         [Fact]

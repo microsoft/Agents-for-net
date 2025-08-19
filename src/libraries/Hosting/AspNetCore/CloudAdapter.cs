@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
-    /// The <see cref="CloudAdapter"/>will queue the incoming request to be 
+    /// The <see cref="CloudAdapter"/> will queue the incoming request to be 
     /// processed by the configured background service if possible.
     /// </summary>
     /// <remarks>
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="CloudAdapter"/> class.
         /// </summary>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
