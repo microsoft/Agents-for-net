@@ -14,6 +14,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// </summary>
 public sealed class AgentTask
 {
+    [JsonPropertyName("kind")]
     public string Kind { get; } = "task";
 
     /// <summary>

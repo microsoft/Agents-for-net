@@ -12,6 +12,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 /// </summary>
 public sealed class TaskStatusUpdateEvent
 {
+    [JsonPropertyName("kind")]
     public string Kind { get; } = "status-update";
 
     /// <summary>

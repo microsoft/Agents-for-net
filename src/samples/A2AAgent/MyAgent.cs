@@ -10,7 +10,6 @@ using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -82,7 +81,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
-        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = ProtocolJsonSerializer.ToJson(turnContext.Activity) });
+        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = turnContext.Activity });
 
         if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
@@ -92,9 +91,9 @@ public class MyAgent : AgentApplication, IAgentCardHandler
                 Type = ActivityTypes.EndOfConversation,
                 Text = "All done. Activity list result in Artifact", // optional
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
-                Value = multi  // optional result
+                Value = ProtocolJsonSerializer.ToJson(multi)  // optional result
             };
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.ToJson(eoc) });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = eoc });
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
             // No need for conversation state anymore
@@ -104,7 +103,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.ToJson(activity) });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = activity });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
     }
@@ -123,7 +122,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
 class ActivityMessage
 {
     public required string Role { get; set; }
-    public required string Activity { get; set; }
+    public required IActivity Activity { get; set; }
 }
 
 class MultiResult

@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(1000); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -367,7 +367,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 _ = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
             });
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -467,7 +467,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -903,7 +903,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             context = CreateHttpContext(activity);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await Task.Delay(1000); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
