@@ -12,7 +12,6 @@ using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Builder
 {
@@ -32,14 +31,6 @@ namespace Microsoft.Agents.Builder
         /// The <see cref="IChannelServiceClientFactory" /> instance for this adapter.
         /// </value>
         protected IChannelServiceClientFactory ChannelServiceFactory { get; private set; } = channelServiceClientFactory ?? throw new ArgumentNullException(nameof(channelServiceClientFactory));
-
-        /// <summary>
-        /// Gets a <see cref="ILogger" /> to use within this adapter and its subclasses.
-        /// </summary>
-        /// <value>
-        /// The <see cref="ILogger" /> instance for this adapter.
-        /// </value>
-        protected ILogger Logger { get; private set; } = logger ?? NullLogger.Instance;
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
