@@ -135,6 +135,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                    if (agent == null)
+                    {
+                        agent = _serviceProvider.GetService(typeof(IAgent));
+                    }
+
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
 
                     if (activityWithClaims.IsProactive)

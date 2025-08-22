@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -253,5 +254,10 @@ namespace Microsoft.Agents.Builder
         /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
+        
+        /// <summary>
+        /// Channel Adapter Logger
+        /// </summary>
+        ILogger? Logger { get; set; }
     }
 }

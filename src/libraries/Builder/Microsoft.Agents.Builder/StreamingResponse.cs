@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +40,9 @@ namespace Microsoft.Agents.Builder
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
+        // Teams failed to accept streaming messages. 
+        private const string BadArgument = "BadArgument";
+        private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
         private int _nextSequence = 1;
@@ -47,7 +50,7 @@ namespace Microsoft.Agents.Builder
         private Timer _timer;
         private bool _messageUpdated = false;
         private bool _isTeamsChannel;
-        private bool _cancelled;
+        private bool _canceled;
 
         // Queue for outgoing activities
         private readonly List<Func<IActivity>> _queue = [];
@@ -210,7 +213,7 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public void QueueTextChunk(string text)
         {
-            if (string.IsNullOrEmpty(text) || _cancelled)
+            if (string.IsNullOrEmpty(text) || _canceled)
             {
                 return;
             }
@@ -276,7 +279,7 @@ namespace Microsoft.Agents.Builder
 
                     _ended = true;
 
-                    if (!IsStreamStarted() || _cancelled)
+                    if (!IsStreamStarted() || _canceled)
                     {
                         return;
                     }
@@ -369,7 +372,7 @@ namespace Microsoft.Agents.Builder
                 FinalMessage = null;
                 _nextSequence = 1;
                 StreamId = null;
-                _cancelled = false;
+                _canceled = false;
             }
         }
 
@@ -562,22 +565,40 @@ namespace Microsoft.Agents.Builder
                     // from the Timer thread and will crash the app.  A more elegant 
                     // solution would be to get it back to the calling thread.
 
+                    bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
+                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
                         {
-                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                            _context?.Adapter?.Logger?.LogWarning(
+                                "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
+                                ex.Message,
+                                errorResponse.Body.Error.Message);
+
+                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorResponse.Body.Error.Message}");
                         }
-                        else
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
+                        if (errorResponse.Body != null &&
+                            BadArgument.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase) &&
+                            errorResponse.Body.Error.Message.ToLower().Contains(TeamsStreamNotAllowed))
                         {
-                            System.Diagnostics.Trace.WriteLine("User cancelled stream on the client side.");
+                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
+                            CanceledStream = false; 
+                        }
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                        
+                        if (CanceledStream)
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
                         }
                     }
 
                     lock (this)
                     {
                         StopStream();
-                        _cancelled = true;
+                        _canceled = CanceledStream;
                     }
                 }
             }
