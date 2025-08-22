@@ -7,7 +7,7 @@ This is a sample of a simple Agent that adds A2A support.
 ### Overview of A2A in Agents SDK
 - SDK Agents can add support to an existing Agent in order to particapte in an A2A multi-agent scenario.
 - Messages sent via A2A are handled in the same `AgentApplication` as other channels.  This allows the SDK developer to leverage existing functionality and stack knowledge.
-- The `Microsoft.Agents.Hosting.A2A` package enables support for A2A requests and response handling:
+- The `Microsoft.Agents.Hosting.AspNetCore.A2A` package enables support for A2A requests and response handling:
   - A2A `Task` state handling and persistence via `IStorage`.
   - SSE and polling
 
@@ -56,7 +56,7 @@ This is a sample of a simple Agent that adds A2A support.
 
 ## Adding A2A support to an existing SDK Agent
 
-1. Add a package dependency for `Microsoft.Agents.Hosting.A2A`
+1. Add a package dependency for `Microsoft.Agents.Hosting.AspNetCore.A2A`
 
 1. Register the `A2AAdapter` in Program.cs
    
