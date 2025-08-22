@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Models
     /// </summary>
     public class AIEntity : Entity
     {
-        public AIEntity() : base("https://schema.org/Message") {}
+        public AIEntity() : base(EntityTypes.AICitation) {}
 
         /// <summary>
         /// Required. Must be "Message".
