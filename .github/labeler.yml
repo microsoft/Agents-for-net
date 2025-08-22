@@ -6,10 +6,6 @@
 - changed-files:
   - any-glob-to-any-file: ['build/**']
 
-"ML: Samples":
-- changed-files:
-  - any-glob-to-any-file: ['src/samples/**']
-
 "ML: Core":
 - changed-files:
   - any-glob-to-any-file: ['src/libraries/**']
