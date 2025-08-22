@@ -129,7 +129,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A2AAgent", "samples\A2AAgent\A2AAgent.csproj", "{04302749-0370-5406-3680-024D911759EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Hosting.A2A", "libraries\Hosting\A2A\Microsoft.Agents.Hosting.A2A.csproj", "{D4C85FCA-4875-83A4-C648-249EF8CCAF69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Hosting.AspNetCore.A2A", "libraries\Hosting\A2A\Microsoft.Agents.Hosting.AspNetCore.A2A.csproj", "{D4C85FCA-4875-83A4-C648-249EF8CCAF69}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Core.HeaderPropagation.Tests", "tests\Microsoft.Agents.Core.Tests\Microsoft.Agents.Core.HeaderPropagation.Tests.csproj", "{112E7BB8-2368-4061-90DC-3A8D6C7A43E6}"
 EndProject
