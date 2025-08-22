@@ -345,7 +345,7 @@ namespace Microsoft.Agents.Builder
 
                 if (EnableGeneratedByAILabel == true)
                 {
-                    entity.AdditionalType.Add(AIEntity.AdditionTypeAIGeneratedContent);
+                    entity.AdditionalType.Add(AIEntity.AdditionalTypeAIGeneratedContent);
                 }
 
                 activity.Entities.Add(entity);

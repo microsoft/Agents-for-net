@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Models
     /// </summary>
     public class AIEntity : Entity
     {
-        public const string AdditionTypeAIGeneratedContent = "AIGeneratedContent";
+        public const string AdditionalTypeAIGeneratedContent = "AIGeneratedContent";
 
         public AIEntity() : base("https://schema.org/Message") {}
 
