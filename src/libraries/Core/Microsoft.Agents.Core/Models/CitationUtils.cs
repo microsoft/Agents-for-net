@@ -45,6 +45,11 @@ namespace Microsoft.Agents.Core.Models
         /// <returns></returns>
         public static List<ClientCitation>? GetUsedCitations(string text, List<ClientCitation> citations)
         {
+            if (citations == null)
+            {
+                return null;
+            }
+
             Regex regex = new(@"\[(\d+)\]");
             MatchCollection matches = regex.Matches(text);
 
