@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Builder
             if (IsStreamingChannel)
             {
                 // Only append this if the channel supports streaming.
-                var hasContent = !string.IsNullOrEmpty(Message) || activity?.Attachments.Count > 0;
+                var hasContent = !string.IsNullOrEmpty(Message) || activity?.Attachments?.Count > 0;
                 activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final, StreamResult = hasContent ? StreamResults.Success : StreamResults.Error });
             }
 
