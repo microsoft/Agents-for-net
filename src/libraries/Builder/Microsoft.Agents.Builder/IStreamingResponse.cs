@@ -61,10 +61,29 @@ namespace Microsoft.Agents.Builder
         List<ClientCitation>? Citations { get; }
 
         /// <summary>
+        /// Adds a citation for the response.
+        /// </summary>
+        /// <param name="citation"></param>
+        void AddCitation(ClientCitation citation);
+
+        /// <summary>
+        /// Adds a citation for the response.
+        /// </summary>
+        /// <param name="citation"></param>
+        /// <param name="citationPosition"></param>
+        void AddCitation(Citation citation, int citationPosition);
+
+        /// <summary>
         ///  Sets the citations for the full message.
         /// </summary>
         /// <param name="citations">Citations to be included in the message.</param>
         void AddCitations(IList<Citation> citations);
+
+        /// <summary>
+        ///  Sets the citations for the full message.
+        /// </summary>
+        /// <param name="citations">Citations to be included in the message.</param>
+        void AddCitations(IList<ClientCitation> citations);
 
         /// <summary>
         /// Ends the stream by sending the final message to the client.
