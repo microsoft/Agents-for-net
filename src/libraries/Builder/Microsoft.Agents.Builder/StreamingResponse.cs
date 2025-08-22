@@ -335,7 +335,7 @@ namespace Microsoft.Agents.Builder
 
             // Add AI entity
             List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if ((bool)EnableGeneratedByAILabel || (currCitations != null && currCitations.Count > 0))
+            if ((bool)EnableGeneratedByAILabel || currCitations != null)
             {
                 AIEntity entity = new()
                 {
@@ -345,7 +345,7 @@ namespace Microsoft.Agents.Builder
 
                 if (EnableGeneratedByAILabel == true)
                 {
-                    entity.AdditionalType.Add(AIEntity.AIGeneratedContentType);
+                    entity.AdditionalType.Add(AIEntity.AdditionTypeAIGeneratedContent);
                 }
 
                 activity.Entities.Add(entity);

@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="text">Text that has citation tags.</param>
         /// <param name="citations">List of citations</param>
-        /// <returns></returns>
+        /// <returns>List of citations found in the text, or null for no matches.</returns>
         public static List<ClientCitation>? GetUsedCitations(string text, List<ClientCitation> citations)
         {
             if (citations == null)
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Core.Models
                         return false;
                     });
                 }
-                return usedCitations;
+                return usedCitations.Count > 0 ? usedCitations : null;
             }
         }
     }
