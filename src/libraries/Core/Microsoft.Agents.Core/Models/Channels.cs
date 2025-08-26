@@ -178,9 +178,9 @@ namespace Microsoft.Agents.Core.Models
                 case Webchat:
                     return buttonCnt <= 100;
 
+                // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 // https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-messages?tabs=dotnet1%2Cdotnet2%2Cdotnet3%2Cdotnet4%2Cdotnet5%2Cdotnet#send-suggested-actions
-                case M365Copilot:
-                case Msteams:
+                case Msteams:  
                     if (conversationType == "personal")
                     {
                         return buttonCnt <= 3;
@@ -207,6 +207,7 @@ namespace Microsoft.Agents.Core.Models
                 case Skype:
                     return buttonCnt <= 3;
 
+                // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Msteams:
                     return buttonCnt <= 50;
 
@@ -237,7 +238,7 @@ namespace Microsoft.Agents.Core.Models
             switch (channelId.Channel)
             {
                 case Alexa:
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Twilio:
                     return false;
 
@@ -253,11 +254,11 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public static bool SupportsReceiptCard(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Alexa:
                 case Groupme:
-                case Msteams:
+                case Msteams: // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Twilio:
                     return false;
 
@@ -295,10 +296,10 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public static bool SupportsAudioCard(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Alexa:
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Twilio:
                     return false;
 
@@ -321,10 +322,10 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public static bool SupportsAnimationCard(ChannelId channelId)
         {
-            switch (channelId)
+            switch (channelId.Channel)
             {
                 case Alexa:
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                     return false;
 
                 // Text only
@@ -380,7 +381,7 @@ namespace Microsoft.Agents.Core.Models
                 case Groupme:
                 case Kik:
                 case Line:
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Slack:
                 case Sms:
                 case Telegram:
@@ -399,7 +400,7 @@ namespace Microsoft.Agents.Core.Models
         {
             switch (channelId.Channel)
             {
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                     return true;
 
                 default: 
@@ -426,7 +427,7 @@ namespace Microsoft.Agents.Core.Models
                 case Webchat:
                     return false;
 
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Slack:
                 case Telegram:
                     return true;
