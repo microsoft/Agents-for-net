@@ -57,7 +57,7 @@ else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
+    app.Urls.Add($"http://localhost:39783");
 }
 
 app.Run();
