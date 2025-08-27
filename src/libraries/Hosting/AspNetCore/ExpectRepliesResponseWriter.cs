@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    internal class ExpectRepliesResponseWriter(IActivity incomingActivity) : IChannelResponseWriter
+    internal class ExpectRepliesResponseWriter(IActivity incomingActivity) : IChannelResponseHandler
     {
         private readonly ExpectedReplies _expectedReplies = new();
 
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return Task.CompletedTask;
         }
 
-        public Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+        public Task OnResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
             if (incomingActivity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
