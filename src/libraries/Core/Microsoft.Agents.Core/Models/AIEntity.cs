@@ -1,8 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization.Converters;
+using System;
 using System.Collections.Generic;
+using System.Numerics;
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -17,7 +23,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The AdditionalType value to indicate AI generated content.
         /// </summary>
-        public const string AdditionalTypeAIGeneratedContent = "AIGeneratedContent";  //TODO: add locialzied versions for other languages
+        public const string AdditionalTypeAIGeneratedContent = "AIGeneratedContent";  //TODO: add localized versions for other languages
 
         /// <summary>
         /// Required. Must be "Message".
@@ -74,6 +80,82 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public ClientCitationAppearance? Appearance { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientCitation"/> class with default values.
+        /// </summary>
+        public ClientCitation()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientCitation"/> class with the specified citation details.
+        /// </summary>
+        /// <param name="title">The title/name of the citation document. Will be trimmed to 80 characters if longer. Can be automatically wrapped in an Adaptive Card format.</param>
+        /// <param name="position">The position number of the citation, used for referencing in text (e.g., [1], [2]).</param>
+        /// <param name="abstractText">Extract of the referenced content. Will be trimmed to 160 characters if longer.</param>
+        /// <param name="text">The detailed citation appearance text content.</param>
+        /// <param name="keywords">Optional keywords associated with the citation for categorization and search.</param>
+        /// <param name="citationLink">The URL of the source document. This will make the citation clickable and direct users to the specified URL. Invalid URLs will be ignored.</param>
+        /// <param name="imageName">Optional icon name to display with the citation. Will create an <see cref="AppearanceImage"/> if provided.</param>
+        /// <param name="useDefaultAdaptiveCard">If true and title is provided, wraps the title in a default Adaptive Card JSON format. Default is true.</param>
+        /// <remarks>
+        /// This constructor creates a complete citation with appearance information. It performs several validations and transformations:
+        /// <list type="bullet">
+        /// <item><description>Title is trimmed to 80 characters maximum to comply with citation display requirements</description></item>
+        /// <item><description>Title can be automatically wrapped in Adaptive Card JSON format for rich display</description></item>
+        /// <item><description>URL validation is performed, and invalid URLs are ignored with warning traces</description></item>
+        /// <item><description>Abstract text is trimmed to 160 characters maximum for proper display sizing</description></item>
+        /// <item><description>Warning traces are logged when content is trimmed or URLs are invalid</description></item>
+        /// <item><description>The Position property is automatically set from the position parameter</description></item>
+        /// <item><description>A <see cref="ClientCitationAppearance"/> object is automatically created and populated</description></item>
+        /// </list>
+        /// The resulting citation can be referenced in activity text using the format [position] (e.g., [1], [2]).
+        /// </remarks>
+        public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationsIconNameEnum? imageName, bool useDefaultAdaptiveCard = true)
+        {
+            Position = position;
+            
+            if (!string.IsNullOrEmpty(title) && title.Length > 80)
+            {
+                // trim title to 80 characters
+                title = title.Substring(0, 80);
+                System.Diagnostics.Trace.TraceWarning("The citation title was trimmed to 80 characters.");
+            }
+            if (!string.IsNullOrEmpty(text) && useDefaultAdaptiveCard)
+            {
+                // wrap title in an adaptive card
+                text = "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.6\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"" + text.Trim() + "\"}]}";
+            }
+            if (citationLink != null)
+            {
+                if (!Uri.IsWellFormedUriString(citationLink, UriKind.RelativeOrAbsolute))
+                {
+                    System.Diagnostics.Trace.TraceWarning("The citation URL is not well formed. It will be ignored.");
+                    citationLink = null; // ignore invalid URL
+                }
+            }
+            if (!string.IsNullOrEmpty(abstractText) && abstractText.Length > 160)
+            {
+                abstractText = abstractText.Substring(0, 160);
+                System.Diagnostics.Trace.TraceWarning("The citation abstract was trimmed to 160 characters.");
+            }
+            Appearance = new ClientCitationAppearance()
+            {
+                Name = title,
+                Url = citationLink,
+                Abstract = abstractText,
+                Text = text,
+                Keywords = keywords
+            };
+            if (imageName != null)
+            {
+                Appearance.Image = new AppearanceImage
+                {
+                    Name = imageName.Value
+                };
+            }
+
+        }
     }
 
     /// <summary>
@@ -111,7 +193,7 @@ namespace Microsoft.Agents.Core.Models
         /// Optional. Encoding format of the `citation.appearance.text` field. 
         /// It should be one of "text/html" or "application/vnd.microsoft.card.adaptive".
         /// </summary>
-        public string? EncodingFormat { get; set; }
+        public string? EncodingFormat { get; set; } = "application/vnd.microsoft.card.adaptive"; 
 
         /// <summary>
         /// The icon provided in the citation ui.
@@ -206,7 +288,9 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The image/icon name. It should be one of <see cref="ClientCitationIconName"/>
         /// </summary>
-        public string Name { get; set; } = string.Empty;
+        [JsonConverter(typeof(JsonStringEnumMemberConverter))]
+        public ClientCitationsIconNameEnum Name { get; set; }
+
     }
 
     /// <summary>
@@ -308,5 +392,126 @@ namespace Microsoft.Agents.Core.Models
         /// Represents the PDF icon name.
         /// </summary>
         public static readonly string PDF = "PDF";
+    }
+
+    /// <summary>
+    /// Represents the different possible values for the client citation icon name as an enum.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumMemberConverter))]
+    public enum ClientCitationsIconNameEnum
+    {
+        /// <summary>
+        /// Represents the Microsoft Word icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft Word")]
+        MicrosoftWord,
+
+        /// <summary>
+        /// Represents the Microsoft Excel icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft Excel")]
+        MicrosoftExcel,
+
+        /// <summary>
+        /// Represents the Microsoft PowerPoint icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft PowerPoint")]
+        MicrosoftPowerPoint,
+
+        /// <summary>
+        /// Represents the Microsoft Visio icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft Visio")]
+        MicrosoftVisio,
+
+        /// <summary>
+        /// Represents the Microsoft Loop icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft Loop")]
+        MicrosoftLoop,
+
+        /// <summary>
+        /// Represents the Microsoft Whiteboard icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft Whiteboard")]
+        MicrosoftWhiteboard,
+
+        /// <summary>
+        /// Represents the Adobe Illustrator icon name.
+        /// </summary>
+        [EnumMember(Value = "Adobe Illustrator")]
+        AdobeIllustrator,
+
+        /// <summary>
+        /// Represents the Adobe Photoshop icon name.
+        /// </summary>
+        [EnumMember(Value = "Adobe Photoshop")]
+        AdobePhotoshop,
+
+        /// <summary>
+        /// Represents the Adobe InDesign icon name.
+        /// </summary>
+        [EnumMember(Value = "Adobe InDesign")]
+        AdobeInDesign,
+
+        /// <summary>
+        /// Represents the Adobe Flash icon name.
+        /// </summary>
+        [EnumMember(Value = "Adobe Flash")]
+        AdobeFlash,
+
+        /// <summary>
+        /// Represents the Sketch icon name.
+        /// </summary>
+        [EnumMember(Value = "Sketch")]
+        Sketch,
+
+        /// <summary>
+        /// Represents the Source Code icon name.
+        /// </summary>
+        [EnumMember(Value = "Source Code")]
+        SourceCode,
+
+        /// <summary>
+        /// Represents the Image icon name.
+        /// </summary>
+        [EnumMember(Value = "Image")]
+        Image,
+
+        /// <summary>
+        /// Represents the GIF icon name.
+        /// </summary>
+        [EnumMember(Value = "GIF")]
+        GIF,
+
+        /// <summary>
+        /// Represents the Video icon name.
+        /// </summary>
+        [EnumMember(Value = "Video")]
+        Video,
+
+        /// <summary>
+        /// Represents the Sound icon name.
+        /// </summary>
+        [EnumMember(Value = "Sound")]
+        Sound,
+
+        /// <summary>
+        /// Represents the ZIP icon name.
+        /// </summary>
+        [EnumMember(Value = "ZIP")]
+        ZIP,
+
+        /// <summary>
+        /// Represents the Text icon name.
+        /// </summary>
+        [EnumMember(Value = "Text")]
+        Text,
+
+        /// <summary>
+        /// Represents the PDF icon name.
+        /// </summary>
+        [EnumMember(Value = "PDF")]
+        PDF
     }
 }
