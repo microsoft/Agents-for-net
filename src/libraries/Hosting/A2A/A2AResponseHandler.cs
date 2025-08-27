@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Net;
+using System.Runtime.ExceptionServices;
+using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -177,7 +179,10 @@ internal class A2AResponseHandler : IChannelResponseHandler
                 LastChunk = true
             };
 
+            System.Diagnostics.Trace.WriteLine($"OnEndOfConversationResponse BEFORE UPDATEARTIFACT");
             await _taskStore.UpdateArtifactAsync(artifactUpdate, cancellationToken).ConfigureAwait(false);
+            System.Diagnostics.Trace.WriteLine($"OnEndOfConversationResponse AFTER UPDATEARTIFACT");
+
             await WriteEvent(httpResponse, artifactUpdate.Kind, artifactUpdate, cancellationToken).ConfigureAwait(false);
         }
 
@@ -213,10 +218,12 @@ internal class A2AResponseHandler : IChannelResponseHandler
             return;
         }
 
+        System.Diagnostics.Trace.WriteLine($"EVENT NAME: {eventName}");
+
         var sse = string.Format(
             SseTemplate,
             eventName,
-            A2AJsonUtilities.ToJson(
+            ProtocolJsonSerializer.ToJson(
                 A2AModel.StreamingMessageResponse(
                     _requestId,
                     payload)
@@ -239,7 +246,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
 
         response.StatusCode = (int)code;
 
-        var json = A2AJsonUtilities.ToJson(payload);
+        var json = ProtocolJsonSerializer.ToJson(payload);
         if (!streamed)
         {
             response.ContentType = "application/json";

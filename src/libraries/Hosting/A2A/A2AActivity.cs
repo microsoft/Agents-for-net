@@ -196,7 +196,7 @@ internal static class A2AActivity
             Description = description,
             Parts = [new DataPart()
             {
-                Data = data.ToJsonElements(),
+                Data = data,
                 Metadata = data.ToA2AMetadata(mediaType ?? data.GetType().Name)
             }]
         };
@@ -281,7 +281,7 @@ internal static class A2AActivity
                 {
                     ContentType = "application/json",
                     Name = "A2A DataPart",
-                    Content = A2AJsonUtilities.ToJson(dataPart),
+                    Content = ProtocolJsonSerializer.ToJson(dataPart),
                 });
             }
         }

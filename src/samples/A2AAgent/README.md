@@ -127,8 +127,6 @@ This is a sample of a simple Agent that adds A2A support.
 
     1. Be explicit with setting `Activity.InputHint`.  This is required for A2A multi-turn behavior (see below).
 
-    1. In this version of Hosting.A2A, if you are setting `Activity.Value` (or other `object` type properties) you will need to serialize to a JSON string using `ProtocolJsonSerializer.ToJson`.
- 
 ## Turn concepts in A2A and Activity Protocol
 
 ### Single vs Multi turn

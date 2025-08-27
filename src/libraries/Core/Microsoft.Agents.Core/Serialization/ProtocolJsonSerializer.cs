@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
             //options.UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode;
 
-            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            //options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());

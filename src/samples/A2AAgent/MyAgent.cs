@@ -89,11 +89,13 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Text = "All done. Activity list result in Artifact", // optional
+                Text = "All done. Activity list result in Artifacts", // optional, added as a message is TaskStatus
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
-                Value = ProtocolJsonSerializer.ToJson(multi)  // optional result
             };
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = eoc });
+
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.CloneTo<IActivity>(eoc) });
+            eoc.Value = multi;  // optional, added to Task Artifacts
+
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
             // No need for conversation state anymore

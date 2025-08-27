@@ -5,6 +5,7 @@ using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -19,6 +20,8 @@ namespace Microsoft.Agents.Hosting.A2A;
 /// </summary>
 internal static class A2AModel
 {
+    private static readonly ConcurrentDictionary<string, JsonNode> _schemas = new();
+
     public static bool IsTerminal(this AgentTask task)
     {
         return task.Status.State == TaskState.Completed
@@ -47,12 +50,16 @@ internal static class A2AModel
 
     public static IReadOnlyDictionary<string, object> ToA2AMetadata(this object data, string contentType)
     {
-        JsonSchemaExporterOptions exporterOptions = new()
+        if (!_schemas.TryGetValue(data.GetType().FullName, out JsonNode schema))
         {
-            TreatNullObliviousAsNonNullable = true,
-        };
+            JsonSchemaExporterOptions exporterOptions = new()
+            {
+                TreatNullObliviousAsNonNullable = true,
+            };
 
-        JsonNode schema = A2AJsonUtilities.DefaultReflectionOptions.GetJsonSchemaAsNode(data.GetType(), exporterOptions);
+            schema = A2AJsonUtilities.DefaultReflectionOptions.GetJsonSchemaAsNode(data.GetType(), exporterOptions);
+            _schemas[data.GetType().FullName] = schema;
+        }
 
         return new Dictionary<string, object>
         {

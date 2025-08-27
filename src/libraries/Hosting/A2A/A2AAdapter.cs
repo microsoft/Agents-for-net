@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
@@ -62,7 +63,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             // Turn Begin
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Turn Begin: RequestId={RequestId}, Body={RequestBody}", jsonRpcRequest.Id, A2AJsonUtilities.ToJson(jsonRpcRequest));
+                _logger.LogDebug("Turn Begin: RequestId={RequestId}, Body={RequestBody}", jsonRpcRequest.Id, ProtocolJsonSerializer.ToJson(jsonRpcRequest));
             }
 
             if (httpRequest.Method == HttpMethods.Post)
@@ -108,6 +109,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
         catch(OperationCanceledException)
         {
+            // TODO: probably need to cleanup to ChannelResponseQueue?
             _logger.LogDebug("ProcessAsync: OperationCanceledException");
         }
         catch (A2AException a2aEx)
@@ -116,7 +118,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogError("Turn End: RequestId={RequestId}, Error={ErrorBody}", a2aEx.GetRequestId(), A2AJsonUtilities.ToJson(response));
+                _logger.LogError("Turn End: RequestId={RequestId}, Error={ErrorBody}", a2aEx.GetRequestId(), ProtocolJsonSerializer.ToJson(response));
             }
             else
             {
@@ -175,7 +177,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         httpResponse.ContentType = "application/json";
-        var json = A2AJsonUtilities.ToJson(agentCard);
+        var json = ProtocolJsonSerializer.ToJson(agentCard);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
@@ -200,7 +202,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         // Create/update Task
         var incoming = await _taskStore.CreateOrContinueTaskAsync(contextId, taskId, message: message, cancellationToken: cancellationToken).ConfigureAwait(false);
-        activity.ChannelData = incoming.Task;
+        //activity.ChannelData = incoming.Task;
 
         if (incoming.Task.IsTerminal())
         {
