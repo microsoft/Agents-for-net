@@ -152,7 +152,7 @@ This is a sample of a simple Agent that adds A2A support.
 
 1. SDK considers taskId as it's conversationId.  i.e., `ConversationState` keys on taskId (via `Activity.Conversation.Id`)
     1. This keeps state per-task even within the same A2A contextId.
-    1. While SDK maintains contextId per A2A expectations, this isn't currently utilized at the `AgentApplication` level.  However, an SDK agent could access full `Task` information via `Activity.ChannelId`.
+    1. While SDK maintains contextId per A2A expectations, this isn't currently utilized at the `AgentApplication` level.  However, an SDK agent could access full `Task` information via `Activity.ChannelData`.
 
 1. The SDK concept of "end of conversation" is quite similar to "Task is complete"
 
