@@ -611,7 +611,7 @@ namespace Microsoft.Agents.Builder
                     bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        if (errorResponse.Body != null && !TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
                         {
                             _context?.Adapter?.Logger?.LogWarning(
                                 "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",

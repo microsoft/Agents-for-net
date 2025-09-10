@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Core.Models
@@ -65,6 +66,10 @@ namespace Microsoft.Agents.Core.Models
                     {
                         if ($"[{citation.Position}]" == match.Value)
                         {
+                            if (usedCitations.Any(a => a.Position == citation.Position))
+                            { // only add citation once if it has already been added to the list
+                                return false;
+                            }
                             usedCitations.Add(citation);
                             return true;
                         }
