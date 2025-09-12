@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Serialization
             // Register handler for new assembly loads.  This is needed because
             // C# doesn't load a package until accessed.
 
-            AppDomain.CurrentDomain.AssemblyLoad += (s, o) => InitAssembly(o.LoadedAssembly);
+            AppDomain.CurrentDomain.AssemblyLoad += (s, o) => InitAssembly(o.LoadedAssembly, true);
             System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.Register Assembly Loader: At {go.ElapsedMilliseconds}ms");
 
             // Call serialization init on currently loaded assemblies.
@@ -35,10 +35,10 @@ namespace Microsoft.Agents.Core.Serialization
             System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.InitSerialization total: {go.ElapsedMilliseconds}ms");
         }
 
-        private static void InitAssembly(Assembly assembly)
+        private static void InitAssembly(Assembly assembly, bool ScanAssembly = false)
         {
             var b = Stopwatch.StartNew();
-            if (!assembly.GetTypes().Any(a => Attribute.IsDefined(a, typeof(SerializationInitAttribute))))
+            if (ScanAssembly && !assembly.GetTypes().Any(a => Attribute.IsDefined(a, typeof(SerializationInitAttribute))))
             {
                 b.Stop();
                 return;
