@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Core.Serialization
 
             // Call serialization init on currently loaded assemblies.
             var listOfAssembliesForScaning = AppDomain.CurrentDomain.GetAssemblies().Where(w => w.GetTypes().Where(a => Attribute.IsDefined(a, typeof(SerializationInitAttribute))).Any());
-            System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.FilterAssemblies: At {go.ElapsedMilliseconds}ms - Found: {l.Count()}");
+            System.Diagnostics.Trace.WriteLine($"SerializationInitAttribute.FilterAssemblies: At {go.ElapsedMilliseconds}ms - Found: {listOfAssembliesForScaning.Count()}");
             foreach (var assembly in listOfAssembliesForScaning)
             {
                 InitAssembly(assembly);
