@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
 
             // Making sure each request is handled separately.  10 conversations, 3 requests each
-            var requests = new Dictionary<string,DefaultHttpContext>();
+            var requests = new Dictionary<string, DefaultHttpContext>();
             for (int i = 1; i <= 10; i++)
             {
                 var convoId = $"{Guid.NewGuid()}:{i}";
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500);  // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -361,11 +361,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // Test
             await record.Service.StartAsync(CancellationToken.None);
+
             await Task.Run(() =>
             {
                 _ = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
             });
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
+
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -462,9 +464,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // Test
             await record.Service.StartAsync(CancellationToken.None);
-            
+
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -900,6 +903,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             context = CreateHttpContext(activity);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await record.Service.StopAsync(CancellationToken.None);
+
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
             // get ExpectedReplies, should have received the token in a response
@@ -915,9 +921,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
             Assert.Equal(activity.From.Id, expectedReplies.Activities[0].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
-
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
-            await record.Service.StopAsync(CancellationToken.None);
         }
 
         [Fact]
@@ -980,7 +983,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
             var adapter = new CloudAdapter(factory.Object, queue, queueLogger.Object, middlewares: middleware);
-            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), adapter, queue, serviceLogger.Object);
+            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
 
             var record = new Record(null, adapter, factory, service, queue, queueLogger, serviceLogger);
 
@@ -1021,7 +1024,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var message = $"Response {turnContext.Activity.Conversation.Id}:{turnContext.Activity.Id}";
 
                 await Task.Delay(delay);
-                
+
                 await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
             }
 

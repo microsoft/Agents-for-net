@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var logger = new Mock<ILogger<HostedActivityService>>();
             var sp = new Mock<IServiceProvider>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, null, adapter, queue, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, null, queue, logger.Object));
         }
 
         [Fact]
@@ -38,19 +38,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var queue = new ActivityTaskQueue();
             var logger = new Mock<ILogger<HostedActivityService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, config, adapter, queue, logger.Object));
-        }
-
-        [Fact]
-        public void Constructor_ShouldThrowWithNullAdapter()
-        {
-            var config = new ConfigurationBuilder().Build();
-            var bot = new ActivityHandler();
-            var queue = new ActivityTaskQueue();
-            var logger = new Mock<ILogger<HostedActivityService>>();
-            var sp = new Mock<IServiceProvider>();
-
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, config, null, queue, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, config, queue, logger.Object));
         }
 
         [Fact]
@@ -62,7 +50,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var logger = new Mock<ILogger<HostedActivityService>>();
             var sp = new Mock<IServiceProvider>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, config, adapter, null, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, config, null, logger.Object));
         }
 
         [Fact]
@@ -76,7 +64,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             try
             {
-                var service = new HostedActivityService(sp.Object, config, adapter, queue, null);
+                var service = new HostedActivityService(sp.Object, config, queue, null);
                 await service.StopAsync(CancellationToken.None);
             }
             catch (Exception)
@@ -97,7 +85,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .ReturnsAsync(new InvokeResponse())
                 .Verifiable(Times.Once);
 
-            record.Queue.QueueBackgroundActivity(claims, activity);
+            record.Queue.QueueBackgroundActivity(claims, record.Adapter.Object, activity);
             await record.Service.StartAsync(source.Token).ContinueWith(async e =>
             {
                 // Start and stop the service, waiting for the activity to be processed.
@@ -125,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()))
                 .Verifiable(Times.Once);
 
-            record.Queue.QueueBackgroundActivity(claims, activity);
+            record.Queue.QueueBackgroundActivity(claims, record.Adapter.Object, activity);
             await record.Service.StartAsync(source.Token).ContinueWith(async e =>
             {
                 // Start and stop the service, waiting for the activity to be processed.
@@ -164,7 +152,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Setup(s => s.GetService(It.IsAny<Type>()))
                 .Returns(agent);
 
-            var service = new HostedActivityService(sp.Object, config, adapter.Object, queue, logger.Object);
+            var service = new HostedActivityService(sp.Object, config, queue, logger.Object);
             return new(service, queue, bot, adapter, logger);
         }
 

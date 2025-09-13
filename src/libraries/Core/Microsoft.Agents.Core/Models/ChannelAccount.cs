@@ -38,6 +38,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Role of the entity behind the account (Example: User, Agent, etc.). </summary>
         public string Role { get; set; }
 
+        public string AadClientId { get; set; }
+
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="ChannelAccount"/> type but that
         /// might appear in the REST JSON object.
