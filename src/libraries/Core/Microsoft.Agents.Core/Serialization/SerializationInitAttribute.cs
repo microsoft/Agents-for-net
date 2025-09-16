@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Core.Serialization
 
             foreach (Type type in types)
             {
-                if (type.GetCustomAttributes(typeof(SerializationInitAttribute), true).Length > 0)
+                if (type.GetCustomAttributes(typeof(SerializationInitAttribute), false).Length > 0)
                 {
                     result.Add(type);
                 }
