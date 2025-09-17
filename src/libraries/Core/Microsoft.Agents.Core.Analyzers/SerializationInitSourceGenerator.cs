@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Analyzers
     public class SerializationInitSourceGenerator : IIncrementalGenerator
     {
         internal const string SerializationInitAttributeFullName = "Microsoft.Agents.Core.Serialization.SerializationInitAttribute";
-        internal const string SerializationInitAssemblyAttributeFullName = "Microsoft.CCI.ProtocolJsonSerializerCustom.SerializationInitAssemblyAttribute";    
+        internal const string SerializationInitAssemblyAttributeFullName = "Microsoft.Agents.Core.Serialization.SerializationInitAssemblyAttribute";    
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
