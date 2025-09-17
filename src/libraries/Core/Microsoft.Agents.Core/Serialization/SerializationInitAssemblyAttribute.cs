@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Core.Serialization
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public class SerializationInitAssemblyAttribute(Type type) : Attribute
     {
-        public Type InitType = type;
+        public readonly Type InitType = type;
 
         internal static void InitSerialization()
         {
