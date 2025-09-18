@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(new SimpleAdapter(), activity);
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
+                x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<CancellationToken>()));
 
             context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
 
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             // Assert
             mockUserTokenClient.Verify(
-                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.Settings.AzureBotOAuthConnectionName), It.Is<string>(s => s == channelId), It.IsAny<CancellationToken>()), Times.Once());
+                x => x.SignOutUserAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == _flow.Settings.AzureBotOAuthConnectionName), It.Is<ChannelId>(s => s.Channel == channelId), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TokenResponse)null);
 
             context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var mockTokenClient = new Mock<IUserTokenClient>();
             mockTokenClient
-                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new ErrorResponseException("exception") { Body = new ErrorResponse() { Error = new Error() { Code = Error.ConsentRequiredCode } } });
 
             context.Services.Set(mockTokenClient.Object);

@@ -66,7 +66,7 @@ public class AttachmentsAgent : AgentApplication
             ],
         };
 
-        if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.OrdinalIgnoreCase))
+        if (turnContext.Activity.ChannelId == Channels.Msteams)
         {
             card.Buttons.Add(new CardAction(ActionTypes.ImBack, title: "3. Uploaded Attachment", value: "3"));
         }

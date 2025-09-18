@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500);  // There is a race between StopAsync and start of background processing,  To be fixed.
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -361,11 +361,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // Test
             await record.Service.StartAsync(CancellationToken.None);
+
             await Task.Run(() =>
             {
                 _ = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
             });
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
+
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -465,6 +467,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
+            await Task.Delay(2000);
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -900,6 +903,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             context = CreateHttpContext(activity);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
+            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
+            await record.Service.StopAsync(CancellationToken.None);
+
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
             // get ExpectedReplies, should have received the token in a response
@@ -915,9 +921,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
             Assert.Equal(activity.From.Id, expectedReplies.Activities[0].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
-
-            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
-            await record.Service.StopAsync(CancellationToken.None);
         }
 
         [Fact]
@@ -962,7 +965,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
         private static DefaultHttpContext CreateHttpContext(Activity activity = null)
         {
-            var content = activity == null ? "" : JsonSerializer.Serialize(activity);
+            var content = activity == null ? "" : ProtocolJsonSerializer.ToJson(activity);
             var context = new DefaultHttpContext();
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(content));
             context.Request.Method = HttpMethods.Post;

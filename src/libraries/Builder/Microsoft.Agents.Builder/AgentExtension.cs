@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder
 {
@@ -11,9 +12,9 @@ namespace Microsoft.Agents.Builder
     public abstract class AgentExtension : IAgentExtension
     {
 #if !NETSTANDARD
-        public virtual string ChannelId { get; init;}
+        public virtual ChannelId ChannelId { get; init;}
 #else
-        public virtual string ChannelId { get; set; } = string.Empty;
+        public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) {
             var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {

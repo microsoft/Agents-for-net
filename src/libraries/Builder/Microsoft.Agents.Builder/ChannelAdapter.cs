@@ -27,11 +27,11 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Logger for the Adapter. 
         /// </summary>
-        private readonly ILogger? _logger;
+        public ILogger? Logger { get; set; }
 
         public ChannelAdapter(ILogger logger = null)
         {
-            _logger = logger ?? NullLogger.Instance;
+            Logger = logger ?? NullLogger.Instance;
         }
 
         /// <inheritdoc/>

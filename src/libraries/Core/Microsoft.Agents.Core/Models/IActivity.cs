@@ -49,9 +49,9 @@ namespace Microsoft.Agents.Core.Models
         object ChannelData { get; set; }
 
         /// <summary>
-        /// The ChannelId field establishes the channel and authoritative store for the Activity.
+        /// The ChannelId field establishes the channel and authoritative store for the Activity. This can be a combination id for a base channel and sub-channel, such as "msteams:Copilot" or "webchat:Sharepoint".
         /// </summary>
-        string ChannelId { get; set; }
+        ChannelId ChannelId { get; set; }
 
         /// <summary>
         /// The Code field contains a programmatic value describing why or how the conversation was ended. The value of 

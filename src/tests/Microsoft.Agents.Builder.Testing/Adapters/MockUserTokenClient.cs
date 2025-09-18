@@ -26,12 +26,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
         /// <param name="userId">The user ID.</param>
         /// <param name="token">The token to store.</param>
         /// <param name="magicCode">The optional magic code to associate with this token.</param>
-        public void AddUserToken(string connectionName, string channelId, string userId, string token, string magicCode = null)
+        public void AddUserToken(string connectionName, ChannelId channelId, string userId, string token, string magicCode = null)
         {
             var key = new UserTokenKey()
             {
                 ConnectionName = connectionName,
-                ChannelId = channelId,
+                ChannelId = channelId.Channel,
                 UserId = userId,
             };
 
@@ -65,12 +65,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
         /// <param name="userId">The user ID.</param>
         /// <param name="exchangableItem">The exchangeable token or resource URI.</param>
         /// <param name="token">The token to store.</param>
-        public void AddExchangeableToken(string connectionName, string channelId, string userId, string exchangableItem, string token)
+        public void AddExchangeableToken(string connectionName, ChannelId channelId, string userId, string exchangableItem, string token)
         {
             var key = new ExchangableTokenKey()
             {
                 ConnectionName = connectionName,
-                ChannelId = channelId,
+                ChannelId = channelId.Channel,
                 UserId = userId,
                 ExchangableItem = exchangableItem
             };
@@ -91,12 +91,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
         /// <param name="channelId">The channel ID.</param>
         /// <param name="userId">The user ID.</param>
         /// <param name="exchangableItem">The exchangeable token or resource URI.</param>
-        public void ThrowOnExchangeRequest(string connectionName, string channelId, string userId, string exchangableItem)
+        public void ThrowOnExchangeRequest(string connectionName, ChannelId channelId, string userId, string exchangableItem)
         {
             var key = new ExchangableTokenKey()
             {
                 ConnectionName = connectionName,
-                ChannelId = channelId,
+                ChannelId = channelId.Channel,
                 UserId = userId,
                 ExchangableItem = exchangableItem
             };
@@ -111,12 +111,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             }
         }
 
-        public Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, string channelId, string magicCode, CancellationToken cancellationToken)
+        public Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, ChannelId channelId, string magicCode, CancellationToken cancellationToken)
         {
             var key = new UserTokenKey()
             {
                 ConnectionName = connectionName,
-                ChannelId = channelId, //turnContext.Activity.ChannelId,
+                ChannelId = channelId.Channel, //turnContext.Activity.ChannelId,
                 UserId = userId //turnContext.Activity.From.Id,
             };
 
@@ -182,12 +182,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             });
         }
 
-        public Task SignOutUserAsync(string userId, string connectionName, string channelId, CancellationToken cancellationToken)
+        public Task SignOutUserAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken)
         {
             var records = _userTokens.ToArray();
             foreach (var t in records)
             {
-                if (t.Key.ChannelId == channelId &&
+                if (t.Key.ChannelId == channelId.Channel &&
                     t.Key.UserId == userId &&
                     (connectionName == null || connectionName == t.Key.ConnectionName))
                 {
@@ -198,12 +198,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             return Task.CompletedTask;
         }
 
-        public Task<TokenStatus[]> GetTokenStatusAsync(string userId, string channelId, string includeFilter, CancellationToken cancellationToken)
+        public Task<TokenStatus[]> GetTokenStatusAsync(string userId, ChannelId channelId, string includeFilter, CancellationToken cancellationToken)
         {
             var filter = includeFilter == null ? null : includeFilter.Split(',');
             var records = _userTokens.
                 Where(x =>
-                    x.Key.ChannelId == channelId &&
+                    x.Key.ChannelId == channelId.Channel &&
                     x.Key.UserId == userId &&
                     (includeFilter == null || filter.Contains(x.Key.ConnectionName))).
                 Select(r => new TokenStatus() { ConnectionName = r.Key.ConnectionName, HasToken = true, ServiceProviderDisplayName = r.Key.ConnectionName }).ToArray();
@@ -216,12 +216,12 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             return Task.FromResult<TokenStatus[]>(null);
         }
 
-        public Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, string channelId, CancellationToken cancellationToken)
+        public Task<Dictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, string[] resourceUrls, ChannelId channelId, CancellationToken cancellationToken)
         {
             return Task.FromResult(new Dictionary<string, TokenResponse>());
         }
 
-        public Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken)
+        public Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken)
         {
             var exchangableValue = !string.IsNullOrEmpty(exchangeRequest?.Token) ?
                 exchangeRequest?.Token :
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
 
             var key = new ExchangableTokenKey()
             {
-                ChannelId = channelId,
+                ChannelId = channelId.Channel,
                 ConnectionName = connectionName,
                 ExchangableItem = exchangableValue,
                 UserId = userId,

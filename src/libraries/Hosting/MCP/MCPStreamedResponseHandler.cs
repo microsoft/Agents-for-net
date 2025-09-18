@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.MCP
 {
-    public class MCPStreamedResponseWriter() : IChannelResponseWriter
+    public class MCPStreamedResponseHandler() : IChannelResponseHandler
     {
         public const string MessageTemplate = "event: message\r\ndata: {0}\r\n\r\n";
 
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.MCP
             return Task.CompletedTask;
         }
 
-        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task OnResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
             var response = MCPConverter.CreateStreamMessageFromActivity(activity);
             var sse = string.Format(MessageTemplate, response);

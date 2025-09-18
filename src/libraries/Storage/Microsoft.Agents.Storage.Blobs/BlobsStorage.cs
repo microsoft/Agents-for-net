@@ -90,13 +90,14 @@ namespace Microsoft.Agents.Storage.Blobs
         /// </summary>
         /// <param name="containerClient">The custom implementation of BlobContainerClient.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
-        internal BlobsStorage(BlobContainerClient containerClient, JsonSerializerOptions jsonSerializerOptions = null)
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        public BlobsStorage(BlobContainerClient containerClient, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializerOptions = null)
         {
+            AssertionHelpers.ThrowIfNull(containerClient, nameof(containerClient));
+
             _containerClient = containerClient;
-
             _serializerOptions = jsonSerializerOptions ?? DefaultJsonSerializerOptions;
-
-            // Triggers a check for the existence of the container
+            _storageTransferOptions = storageTransferOptions;
             _checkForContainerExistence = 1;
         }
 

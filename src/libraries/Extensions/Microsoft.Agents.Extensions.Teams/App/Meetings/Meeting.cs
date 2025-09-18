@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
+                && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingStart")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
+                && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingEnd")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
+                && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantJoin")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
+                && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantLeave")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>

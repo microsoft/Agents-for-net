@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Hosting.MCP
 
                     var activity = MCPConverter.CreateActivityFromRequest(rpcRequest, sessionId);
 
-                    await ProcessStreamedAsync(activity, HttpHelper.GetClaimsIdentity(httpRequest), httpResponse, agent, new MCPStreamedResponseWriter(), cancellationToken);
+                    await ProcessStreamedAsync(activity, HttpHelper.GetClaimsIdentity(httpRequest), httpResponse, agent, new MCPStreamedResponseHandler(), cancellationToken);
                 }
                 else
                 {
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Hosting.MCP
             }
         }
 
-        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPStreamedResponseWriter writer, CancellationToken cancellationToken = default)
+        private async Task ProcessStreamedAsync(IActivity activity, ClaimsIdentity identity, HttpResponse httpResponse, IAgent agent, MCPStreamedResponseHandler writer, CancellationToken cancellationToken = default)
         {
             if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]) || activity.DeliveryMode != DeliveryModes.Stream)
             {
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Hosting.MCP
             // block until turn is complete
             await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
             {
-                await writer.WriteActivity(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await writer.OnResponse(httpResponse, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
 
             await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Hosting.MCP
             if (httpRequest.Headers.Accept.Contains("text/event-stream"))
             {
                 httpResponse.ContentType = "text/event-stream";
-                json = string.Format(MCPStreamedResponseWriter.MessageTemplate, json);
+                json = string.Format(MCPStreamedResponseHandler.MessageTemplate, json);
             }
             else
             {
