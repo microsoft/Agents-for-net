@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <param name="client">The custom implementation of CosmosClient.</param>
         /// <param name="cosmosDbStorageOptions">Cosmos DB partitioned storage configuration options.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
-        internal CosmosDbPartitionedStorage(CosmosClient client, CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = default)
+        public CosmosDbPartitionedStorage(CosmosClient client, CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = default)
             : this(cosmosDbStorageOptions, jsonSerializerOptions)
         {
             _client = client;
