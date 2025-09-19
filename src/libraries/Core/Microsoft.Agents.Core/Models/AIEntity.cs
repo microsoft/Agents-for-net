@@ -4,11 +4,9 @@
 using Microsoft.Agents.Core.Serialization.Converters;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.Serialization;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -64,6 +62,9 @@ namespace Microsoft.Agents.Core.Models
     /// </summary>
     public class ClientCitation
     {
+        private const int MaxTitleLength = 80;
+        private const int MaxAbstractTextLength = 160;
+
         /// <summary>
         /// Required. Must be "Claim".
         /// </summary>
@@ -115,16 +116,37 @@ namespace Microsoft.Agents.Core.Models
         {
             Position = position;
             
-            if (!string.IsNullOrEmpty(title) && title.Length > 80)
+            if (!string.IsNullOrEmpty(title) && title.Length > MaxTitleLength)
             {
                 // trim title to 80 characters
-                title = title.Substring(0, 80);
-                System.Diagnostics.Trace.TraceWarning("The citation title was trimmed to 80 characters.");
+                title = title.Substring(0, MaxTitleLength);
+                System.Diagnostics.Trace.TraceWarning($"The citation title was trimmed to {MaxTitleLength} characters.");
             }
             if (!string.IsNullOrEmpty(text) && useDefaultAdaptiveCard)
             {
-                // wrap title in an adaptive card
-                text = "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.6\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"" + text.Trim() + "\"}]}";
+                // Check the text value to see if it is already in the adaptive card format
+                if (text.StartsWith("{\"type\":\"AdaptiveCard\""))
+                {
+                    useDefaultAdaptiveCard = false; // already in adaptive card format
+                }
+                else
+                {
+                    // Wrap the text in a default adaptive card format
+                    var card = new JsonObject
+                    {
+                        ["type"] = "AdaptiveCard",
+                        ["$schema"] = "http://adaptivecards.io/schemas/adaptive-card.json",
+                        ["version"] = "1.6",
+                        ["body"] = new JsonArray(
+                                               new JsonObject
+                                               {
+                                                   ["type"] = "TextBlock",
+                                                   ["wrap"] = true,
+                                                   ["text"] = text.Trim()
+                                               })
+                    };
+                    text = card.ToJsonString();
+                }
             }
             if (citationLink != null)
             {
@@ -134,10 +156,10 @@ namespace Microsoft.Agents.Core.Models
                     citationLink = null; // ignore invalid URL
                 }
             }
-            if (!string.IsNullOrEmpty(abstractText) && abstractText.Length > 160)
+            if (!string.IsNullOrEmpty(abstractText) && abstractText.Length > MaxAbstractTextLength)
             {
-                abstractText = abstractText.Substring(0, 160);
-                System.Diagnostics.Trace.TraceWarning("The citation abstract was trimmed to 160 characters.");
+                abstractText = abstractText.Substring(0, MaxAbstractTextLength);
+                System.Diagnostics.Trace.TraceWarning($"The citation abstract was trimmed to {MaxAbstractTextLength} characters.");
             }
             Appearance = new ClientCitationAppearance()
             {

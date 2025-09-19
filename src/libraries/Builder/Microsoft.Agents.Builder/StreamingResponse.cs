@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder
                 Position = citationPosition,
                 Appearance = new ClientCitationAppearance()
                 {
-                    Name = citation.Title ?? $"Document #${citationPosition}",
+                    Name = citation.Title ?? $"Document #{citationPosition}",
                     Abstract = CitationUtils.Snippet(citation.Content, 480),
                     Url = citation.Url
                 }
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Builder
                         Position = currPos + 1,
                         Appearance = new ClientCitationAppearance()
                         {
-                            Name = citation.Title ?? $"Document #${currPos + 1}",
+                            Name = citation.Title ?? $"Document #{currPos + 1}",
                             Abstract = CitationUtils.Snippet(citation.Content, 480),
                             Url = citation.Url
                         }
