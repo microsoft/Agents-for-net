@@ -5,8 +5,8 @@ using System;
 
 namespace Microsoft.Agents.Core.Serialization
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
-    public class SerializationInitAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+    public class SerializationInitAttribute(Type type) : Attribute
     {
     }
 }

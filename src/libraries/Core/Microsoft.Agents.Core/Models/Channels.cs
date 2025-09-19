@@ -137,6 +137,35 @@ namespace Microsoft.Agents.Core.Models
         public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
 
         /// <summary>
+        /// Agents parent channel
+        /// </summary>
+        public const string Agents = "agents";
+        public const string AgentsEmailSubChannel = "email";
+        public const string AgentsExcelSubChannel = "excel";
+        public const string AgentsWordSubChannel = "word";
+        public const string AgentsPowerPointSubChannel = "powerpoint";
+
+        /// <summary>
+        /// AgentsEmail channelId
+        /// </summary>
+        public const string AgentsEmail = $"{Agents}:{AgentsEmailSubChannel}";
+
+        /// <summary>
+        /// AgentExcel channelId
+        /// </summary>
+        public const string AgentsExcel = $"{Agents}:{AgentsExcelSubChannel}";
+
+        /// <summary>
+        /// AgentsWord channelId
+        /// </summary>
+        public const string AgentsWord = $"{Agents}:{AgentsWordSubChannel}";
+
+        /// <summary>
+        /// AgentsPowerPoint channelId
+        /// </summary>
+        public const string AgentsPowerPoint = $"{Agents}:{AgentsPowerPointSubChannel}";
+
+        /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.
         /// </summary>
         /// <param name="channelId">The Channel to check the if Suggested Actions are supported in.</param>
