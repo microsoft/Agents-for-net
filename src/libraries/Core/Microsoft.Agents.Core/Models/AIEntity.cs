@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Name of the document (max length 80).
         /// </summary>
-        public string? Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Optional. The citation appearance text.
