@@ -38,7 +38,9 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Role of the entity behind the account (Example: User, Agent, etc.). </summary>
         public string Role { get; set; }
 
-        public string AadClientId { get; set; }
+        public string AgenticUserId { get; set; }
+        public string AgenticAppId { get; set; }
+        public string TenantId { get; set; }
 
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="ChannelAccount"/> type but that
