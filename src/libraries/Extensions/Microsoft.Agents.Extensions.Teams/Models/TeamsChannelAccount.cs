@@ -87,12 +87,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public string UserRole { get; set; }
 
         /// <summary>
-        /// Gets or sets the TenantId.
-        /// </summary>
-        /// <value>The tenant ID.</value>
-        public string TenantId { get; set; }
-
-        /// <summary>
         ///  List of membership sources associated with the channel account.
         /// </summary>
         public List<MembershipSource>? MembershipSource { get; set; }

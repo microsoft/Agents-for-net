@@ -1,13 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Graph;
+using Microsoft.Graph.Me.SendMail;
+using Microsoft.Graph.Models;
+using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Graph;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace TeamsConversationSsoQuickstart
 {
@@ -70,22 +76,22 @@ namespace TeamsConversationSsoQuickstart
             };
 
             // Send the message.
-            await graphClient.Me.SendMail(email, true).Request().PostAsync();
+            await graphClient.Me.SendMail.PostAsync(new SendMailPostRequestBody() { Message = email, SaveToSentItems = true });
         }
 
         // Gets mail for the user using the Microsoft Graph API
         public async Task<Message[]> GetRecentMailAsync()
         {
             var graphClient = GetAuthenticatedClient();
-            var messages = await graphClient.Me.MailFolders.Inbox.Messages.Request().GetAsync();
-            return messages.Take(5).ToArray();
+            var messages = await graphClient.Me.Messages.GetAsync();
+            return [.. messages.Value.Take(5)];
         }
 
         // Get information about the user.
         public async Task<User> GetMeAsync()
         {
             var graphClient = GetAuthenticatedClient();
-            var me = await graphClient.Me.Request().GetAsync();
+            var me = await graphClient.Me.GetAsync();
             return me;
         }
 
@@ -93,7 +99,7 @@ namespace TeamsConversationSsoQuickstart
         public async Task<string> GetPhotoAsync()
         {
             var graphClient = GetAuthenticatedClient();
-            var photo = await graphClient.Me.Photo.Content.Request().GetAsync();
+            var photo = await graphClient.Me.Photo.Content.GetAsync();
             if (photo != null)
             {
                 MemoryStream ms = new MemoryStream();
@@ -111,20 +117,23 @@ namespace TeamsConversationSsoQuickstart
         // Get an Authenticated Microsoft Graph client using the token issued to the user.
         private GraphServiceClient GetAuthenticatedClient()
         {
-            var graphClient = new GraphServiceClient(
-                new DelegateAuthenticationProvider(
-                    requestMessage =>
-                    {
-                        // Append the access token to the request.
-                        requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", _token);
+            var authProvider = new ManualTokenAuthenticationProvider(() =>
+            {
+                return Task.FromResult(_token);
+            });
 
-                        // Get event times in the current time zone.
-                        requestMessage.Headers.Add("Prefer", "outlook.timezone=\"" + TimeZoneInfo.Local.Id + "\"");
-
-                        return Task.CompletedTask;
-                    }));
+            var graphClient = new GraphServiceClient(authProvider);
 
             return graphClient;
+        }
+    }
+
+    class ManualTokenAuthenticationProvider(Func<Task<string>> AccessTokenProvider) : IAuthenticationProvider
+    {
+        public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+        {
+            var accessToken = await AccessTokenProvider();
+            request.Headers.Add("Authorization", $"Bearer {accessToken}");
         }
     }
 }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
 {
+    [Collection("ProductUInfo Collection")]
     public class ProductInfoTests()
     {
         [Fact]

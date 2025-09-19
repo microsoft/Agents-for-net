@@ -26,11 +26,11 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Agentic AI - AAI role
         /// </summary>
-        public const string AgentIdentity = "agentidentity";
+        public const string AgenticIdentity = "agenticAppInstance";
 
         /// <summary>
         /// Agentic AI - AAI role
         /// </summary>
-        public const string AgentUser = "agentuser";
+        public const string AgenticUser = "agenticUser";
     }
 }
