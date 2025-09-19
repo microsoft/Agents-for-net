@@ -10,7 +10,7 @@
 	<Import Project="..\..\..\Build.Common.core.props" />
 
     <PropertyGroup>
-        <PackageId>Microsoft.Agents.Hosting.AspNetCore.A2A</PackageId>
+        <PackageId>Microsoft.Agents.Hosting.AspNetCore.A2A.Preview</PackageId>
         <Description>Library adding A2A handling to a SDK Agent</Description>
 		<Summary>Library adding A2A handling to a SDK Agent</Summary>
     </PropertyGroup>
