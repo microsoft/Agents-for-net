@@ -169,7 +169,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 Text = question,
                 Conversation = new ConversationAccount { Id = conversationId }
             };
-            return AskQuestionAsync(activity, ct);
+            return SendActivityAsync(activity, ct);
         }
 
         /// <summary>
@@ -178,9 +178,9 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <param name="activity" >Activity to send</param>
         /// <param name="ct">Event Cancelation Token</param>
         /// <returns></returns>
-        public IAsyncEnumerable<IActivity> AskQuestionAsync(IActivity activity, CancellationToken ct = default)
+        public IAsyncEnumerable<IActivity> SendActivityAsync(IActivity activity, CancellationToken ct = default)
         {
-            using (_logger.BeginScope("D2E:AskQuestionAsync"))
+            using (_logger.BeginScope("D2E:SendActivityAsync"))
             {
                 AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
@@ -210,6 +210,24 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 };
                 qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
                 return PostRequestAsync(qreq, ct);
+            }
+
+        }
+
+
+        /// <summary>
+        /// [Deprecated] Use SendActivityAsync(IActivity, CancellationToken) instead.
+        /// Sends an activity to the remote bot and returns the response as an IAsyncEnumerable of IActivity
+        /// </summary>
+        /// <param name="activity" >Activity to send</param>
+        /// <param name="ct">Event Cancellation Token</param>
+        /// <returns></returns>
+        [Obsolete("AskQuestionAsync(IActivity, CancellationToken) is deprecated. Use SendActivityAsync(IActivity, CancellationToken) instead.", false)]
+        public IAsyncEnumerable<IActivity> AskQuestionAsync(IActivity activity, CancellationToken ct = default)
+        {
+            using (_logger.BeginScope("D2E:AskQuestionAsync"))
+            {
+                return SendActivityAsync(activity, ct);
             }
         }
 
