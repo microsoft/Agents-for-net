@@ -390,6 +390,18 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
+        public static IActivity CreateMessageActivity( string messageText , string textFormat = TextFormatTypes.Plain)
+        {
+            return new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Attachments = [],
+                Entities = [],
+                Text = messageText,
+                TextFormat = textFormat
+            };
+        }
+
         public static Activity CreateTrace(IActivity activity, string name, object value = null, string valueType = null, [CallerMemberName] string label = null)
         {
             var reply = new Activity
