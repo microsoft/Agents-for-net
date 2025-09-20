@@ -130,6 +130,9 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public const string M365 = "m365extensions";
 
+        public const string A2A = "a2a";
+        public const string MCP = "mcp";
+
         /// <summary>
         /// M365 Copilot Teams Subchannel
         /// </summary>
