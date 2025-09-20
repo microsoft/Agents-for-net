@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         static ProtocolJsonSerializer()
         {
-            SerializationInit.InitSerialization();
+            SerializationInitAssemblyAttribute.InitSerialization();
         }
 
         private static JsonSerializerOptions CreateConnectorOptions()

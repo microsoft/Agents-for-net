@@ -5,6 +5,7 @@
 		<ComponentAreaName>CplCore</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddAnalyzers</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 
@@ -25,8 +26,29 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
+	<Target Name = "GetAnalyzers" AfterTargets="AfterBuild">
+		<MSBuild 
+			Projects="@(ProjectReference)"
+			Condition="'%(ProjectReference.Filename)' == 'Microsoft.Agents.Core.Analyzers'"
+			Targets="GetTargetPath" >
+			<Output TaskParameter="TargetOutputs" ItemName="Analyzers" />
+		</MSBuild>
+	</Target>
+
+	<Target Name="AddAnalyzers" AfterTargets="GetAnalyzers" Condition="'$(TargetFramework)' == 'netstandard2.0'">
+	  <ItemGroup>
+	    <TfmSpecificPackageFile Include="@(Analyzers)">
+	      <PackagePath>analyzers/dotnet/cs</PackagePath>
+	    </TfmSpecificPackageFile>
+	  </ItemGroup>
+	</Target>
+
 	<ItemGroup>
 	  <None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
 </Project>
