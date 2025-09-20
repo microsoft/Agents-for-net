@@ -7,6 +7,7 @@ using static Microsoft.Agents.Hosting.A2A.A2AJsonUtilities;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A
 {
+    [SerializationInit]
     internal class SerializationInit
     {
         public static void Init()
