@@ -64,6 +64,10 @@ namespace Microsoft.Agents.Builder.Errors
 
         // Extensions
         internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
+
+        // ConnectorUserAuthorization
+        internal static AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

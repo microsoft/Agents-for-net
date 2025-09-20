@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
@@ -434,7 +435,7 @@ namespace Microsoft.Agents.Connector.RestClients
                         // in which case we will use the JWT token expiration value.
                         tokenResponse.Expiration = jwtToken.ValidTo;
                     }
-                    tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
+                    tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
                 }
                 catch (Exception)
                 {
@@ -454,12 +455,6 @@ namespace Microsoft.Agents.Connector.RestClients
                         });
                 }
             }
-        }
-
-        private static bool IsExchangeableToken(JwtSecurityToken jwtToken)
-        {
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud");
-            return aud != null && aud.Value.StartsWith("api://");
         }
     }
 }

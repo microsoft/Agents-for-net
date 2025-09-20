@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder
 {
@@ -91,6 +92,18 @@ namespace Microsoft.Agents.Builder
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
+        }
+
+        public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+
+            if (turnContext.Activity.Recipient.Role == RoleTypes.ConnectorUser)
+            {
+                return Task.FromResult((IConnectorClient) new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
+            }
+
+            return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
         }
 
         /// <inheritdoc />

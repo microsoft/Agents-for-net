@@ -24,6 +24,11 @@ namespace Microsoft.Agents.Core.Models
         public const string Skill = "skill";
 
         /// <summary>
+        /// Indicates the ChannelAccount is via the Power Platform Connector
+        /// </summary>
+        public const string ConnectorUser = "connectoruser";
+
+        /// <summary>
         /// Agentic AI - AAI role
         /// </summary>
         public const string AgenticIdentity = "agenticAppInstance";

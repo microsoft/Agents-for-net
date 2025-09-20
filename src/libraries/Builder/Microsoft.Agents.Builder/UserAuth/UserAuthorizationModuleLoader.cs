@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.UserAuth.AgenticAuth;
+using Microsoft.Agents.Builder.UserAuth.Connector;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
@@ -50,10 +51,14 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 typeName = typeof(AgenticUserAuthorization).FullName;
             }
-
+            else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(ConnectorUserAuthorization).FullName;
+            }
+            
             // This throws for invalid assembly name.
 #if !NETSTANDARD
-            Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+                Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
 #else
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.Load(assemblyName);

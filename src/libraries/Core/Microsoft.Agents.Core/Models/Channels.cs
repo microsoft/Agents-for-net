@@ -126,6 +126,11 @@ namespace Microsoft.Agents.Core.Models
         public const string Outlook = "outlook";
 
         /// <summary>
+        /// Microsfot Copilot Studio
+        /// </summary>
+        public const string CopilotStudio = "pva-studio";
+
+        /// <summary>
         /// M365 channel.
         /// </summary>
         public const string M365 = "m365extensions";

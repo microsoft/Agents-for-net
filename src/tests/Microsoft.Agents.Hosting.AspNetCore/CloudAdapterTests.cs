@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     ));
 
             record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
 
@@ -541,7 +541,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 ));
 
             record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
             // Using ExpectReplies, but it doesn't matter.  Do this to help separate responses to make Asserts easier
@@ -655,6 +655,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult(mockConnectorClient.Object));
+            record.Factory
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
             var activity = new Activity()
@@ -770,7 +773,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 ));
 
             record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
             var activity = new Activity()

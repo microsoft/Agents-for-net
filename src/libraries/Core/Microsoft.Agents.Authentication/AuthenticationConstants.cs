@@ -103,6 +103,11 @@ namespace Microsoft.Agents.Authentication
         public const string AppIdClaim = "appid";
 
         /// <summary>
+        /// App ID claim name. As used in Microsoft AAD 2.0 tokens.
+        /// </summary>
+        public const string AzpClaim = "azp";
+
+        /// <summary>
         /// Tenant Id claim name. As used in Microsoft AAD tokens.
         /// </summary>
         public const string TenantIdClaim = "tid";
