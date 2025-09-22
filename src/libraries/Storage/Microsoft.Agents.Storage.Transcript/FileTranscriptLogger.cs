@@ -291,9 +291,9 @@ namespace Microsoft.Agents.Storage.Transcript
 
             var channelFolder = GetChannelFolder(channelId);
             var fileName = SanitizeString(conversationId, Path.GetInvalidFileNameChars());
-            if (fileName != null && fileName.Length > MaxFileNameSize)
+            if (fileName != null && fileName.Length > MaxFileNameSize - TranscriptFileExtension.Length)
             {
-                fileName = fileName.Substring(0, MaxFileNameSize);
+                fileName = fileName.Substring(0, MaxFileNameSize - TranscriptFileExtension.Length);
             }
 
             return Path.Combine(channelFolder, fileName + TranscriptFileExtension);
