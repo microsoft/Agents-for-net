@@ -159,7 +159,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             ((IAgent)agent).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
 
-                        await activityWithClaims.OnComplete?.Invoke(response);
+                        if (activityWithClaims.OnComplete != null)
+                        {
+                            await activityWithClaims.OnComplete.Invoke(response);
+                        }
                     }
                 }
                 catch (Exception ex)
