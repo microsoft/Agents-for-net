@@ -21,6 +21,8 @@ namespace Microsoft.Agents.Storage.Transcript
     /// </remarks>
     public class FileTranscriptLogger : ITranscriptStore
     {
+        private const string TranscriptFileExtension = ".transcript";
+        private const int MaxFileNameSize = 100;
         private readonly string _folder;
         private readonly bool _unitTestMode;
         private readonly HashSet<string> _started = [];
@@ -289,8 +291,12 @@ namespace Microsoft.Agents.Storage.Transcript
 
             var channelFolder = GetChannelFolder(channelId);
             var fileName = SanitizeString(conversationId, Path.GetInvalidFileNameChars());
+            if (fileName != null && fileName.Length > MaxFileNameSize)
+            {
+                fileName = fileName.Substring(0, MaxFileNameSize);
+            }
 
-            return Path.Combine(channelFolder, fileName + ".transcript");
+            return Path.Combine(channelFolder, fileName + TranscriptFileExtension);
         }
 
         private string GetChannelFolder(string channelId)
