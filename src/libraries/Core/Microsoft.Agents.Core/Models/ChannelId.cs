@@ -1,5 +1,7 @@
 ﻿using System;
 
+#nullable enable
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
@@ -13,24 +15,25 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// Gets or sets the main channel name.
         /// </summary>
-        public string Channel { get; set; }
+        public string? Channel { get; set; }
 
         /// <summary>
         /// Gets or sets the sub-channel name, if present.
         /// </summary>
-        public string SubChannel { get; set; }
+        public string? SubChannel { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelId"/> class by parsing the specified channel ID string.
         /// </summary>
         /// <param name="channelId">The channel ID string, optionally in the format "Channel:SubChannel".</param>
         /// <param name="fullNotation">Indicates whether to use full notation (include sub-channel in string representation).</param>
-        public ChannelId(string channelId, bool fullNotation = true)
+        public ChannelId(string? channelId, bool fullNotation = true)
         {
             _fullNotation = fullNotation;
             if (!string.IsNullOrEmpty(channelId))
             {
-                var split = channelId.Split(':');
+                // IsNullOrEmpty in netstandard is not annotated to guarantee non-null value upon return, so use the ! operator.
+                var split = channelId!.Split(':');
                 Channel = split[0];
                 SubChannel = split.Length == 2 ? split[1] : null;
             }
@@ -41,7 +44,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="channelId">The channel ID to compare.</param>
         /// <returns><c>true</c> if the specified channel ID matches the parent channel; otherwise, <c>false</c>.</returns>
-        public bool IsParentChannel(string channelId)
+        public bool IsParentChannel(string? channelId)
         {
             return string.Equals(Channel, channelId, StringComparison.OrdinalIgnoreCase);
         }
@@ -61,7 +64,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="obj1">The first <see cref="ChannelId"/> instance.</param>
         /// <param name="obj2">The second <see cref="ChannelId"/> instance.</param>
         /// <returns><c>true</c> if the instances are equal; otherwise, <c>false</c>.</returns>
-        public static bool operator ==(ChannelId obj1, ChannelId obj2)
+        public static bool operator ==(ChannelId? obj1, ChannelId? obj2)
         {
             return string.Equals(obj1?.ToString(), obj2?.ToString(), StringComparison.OrdinalIgnoreCase);
         }
@@ -72,7 +75,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="obj1">The first <see cref="ChannelId"/> instance.</param>
         /// <param name="obj2">The second <see cref="ChannelId"/> instance.</param>
         /// <returns><c>true</c> if the instances are not equal; otherwise, <c>false</c>.</returns>
-        public static bool operator !=(ChannelId obj1, ChannelId obj2)
+        public static bool operator !=(ChannelId? obj1, ChannelId? obj2)
         {
             return !string.Equals(obj1?.ToString(), obj2?.ToString(), StringComparison.OrdinalIgnoreCase);
         }
@@ -82,13 +85,13 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="other">The <see cref="ChannelId"/> to compare with the current instance.</param>
         /// <returns><c>true</c> if the specified <see cref="ChannelId"/> is equal to the current instance; otherwise, <c>false</c>.</returns>
-        public bool Equals(ChannelId other)
+        public bool Equals(ChannelId? other)
         {
             return string.Equals(ToString(), other?.ToString(), StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => Equals(obj as ChannelId);
+        public override bool Equals(object? obj) => Equals(obj as ChannelId);
 
         /// <inheritdoc/>
         public override int GetHashCode()
@@ -101,7 +104,7 @@ namespace Microsoft.Agents.Core.Models
         /// Implicitly converts a string to a <see cref="ChannelId"/> instance.
         /// </summary>
         /// <param name="value">The channel ID string.</param>
-        public static implicit operator ChannelId(string value)
+        public static implicit operator ChannelId(string? value)
         {
             return new ChannelId(value);
         }
@@ -110,7 +113,7 @@ namespace Microsoft.Agents.Core.Models
         /// Implicitly converts a <see cref="ChannelId"/> instance to a string.
         /// </summary>
         /// <param name="channelId">The <see cref="ChannelId"/> instance.</param>
-        public static implicit operator string(ChannelId channelId)
+        public static implicit operator string?(ChannelId? channelId)
         {
             return channelId?.ToString();
         }
@@ -126,7 +129,9 @@ namespace Microsoft.Agents.Core.Models
             {
                 return $"{Channel}:{SubChannel}";
             }
-            return Channel;
+
+            // ToString should not return null. If Channel is null, return empty string?
+            return Channel!;
         }
     }
 }
