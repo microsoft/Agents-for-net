@@ -48,7 +48,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" PrivateAssets="all" />
 	</ItemGroup>
 
 </Project>
