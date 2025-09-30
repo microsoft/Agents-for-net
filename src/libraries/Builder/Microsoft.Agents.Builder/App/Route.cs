@@ -28,25 +28,28 @@ namespace Microsoft.Agents.Builder.App
 
     internal class Route
     {
-        public Route(RouteSelector selector, bool isInvokeRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isInvokeRoute)
+        public Route(RouteSelector selector, bool isInvokeRoute = false, bool isAgenticRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isAgenticRoute, isInvokeRoute)
         {
         }
 
-        public Route(RouteHandler handler, bool isInvokeRoute = false) : this((_, _) => Task.FromResult(true), handler, isInvokeRoute, null)
+        public Route(RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false) : this((_, _) => Task.FromResult(true), handler, isInvokeRoute, isAgenticRoute, null)
         {
         }
 
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, params string[] autoSignInHandler)
+        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, params string[] autoSignInHandler)
         {
             Selector = selector;
             Handler = handler;
             IsInvokeRoute = isInvokeRoute;
+            IsAgenticRoute = isAgenticRoute;
             AutoSignInHandler = autoSignInHandler;
         }
 
         public RouteSelector Selector { get; private set; }
 
         public RouteHandler Handler { get; private set; }
+
+        public bool IsAgenticRoute { get; private set; }
 
         public bool IsInvokeRoute { get; private set; }
 
