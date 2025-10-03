@@ -45,8 +45,12 @@ namespace Microsoft.Agents.Core.Models
                     if (activity.Entities != null)
                     {
                         // strip entity.mention records for recipient id.
-                        activity.Entities = activity.Entities.Where(entity => entity is Mention mention &&
+                        var ListToRemove = activity.Entities.Where(entity => entity is Mention mention &&
                            mention.Mentioned.Id != activity.Recipient.Id).ToList();
+                        foreach (var entity in ListToRemove)
+                        {
+                            activity.Entities.Remove(entity);
+                        }
                     }
                 }
 
