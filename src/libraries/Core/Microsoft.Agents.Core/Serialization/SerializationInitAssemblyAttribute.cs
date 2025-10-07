@@ -36,6 +36,31 @@ namespace Microsoft.Agents.Core.Serialization
             {
                 var init = type.GetMethod("Init", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
                 init?.Invoke(null, null);
+
+                // if the assembly has types that are based on entities (e.g. derived from Entity) iterate over those entities and add them to the EntityTypes dictionary
+                var entityTypes = type.Assembly.GetTypes()
+                    .Where(t => t.IsSubclassOf(typeof(Models.Entity)))
+                    .ToList();
+
+                foreach (var entityType in entityTypes)
+                {
+                    try
+                    {
+                        var entityNameOveride = entityType.GetCustomAttribute<EntityNameAttribute>(false);
+                        if (entityNameOveride != null)
+                        {
+                            ProtocolJsonSerializer.EntityTypes[entityNameOveride.EntityName] = entityType;
+                            continue;
+                        }
+                        else
+                            ProtocolJsonSerializer.EntityTypes[entityType.Name] = entityType;
+                    }
+                    catch (Exception)
+                    {
+                        // ignore errors, likely duplicate keys
+                        // TODO: log this
+                    }
+                }
             }
         }
 
