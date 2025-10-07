@@ -126,6 +126,11 @@ namespace Microsoft.Agents.Core.Models
         public const string Outlook = "outlook";
 
         /// <summary>
+        /// Microsoft Copilot Studio
+        /// </summary>
+        public const string CopilotStudio = "pva-studio";
+
+        /// <summary>
         /// M365 channel.
         /// </summary>
         public const string M365 = "m365extensions";
@@ -143,30 +148,6 @@ namespace Microsoft.Agents.Core.Models
         /// Agents parent channel
         /// </summary>
         public const string Agents = "agents";
-        public const string AgentsEmailSubChannel = "email";
-        public const string AgentsExcelSubChannel = "excel";
-        public const string AgentsWordSubChannel = "word";
-        public const string AgentsPowerPointSubChannel = "powerpoint";
-
-        /// <summary>
-        /// AgentsEmail channelId
-        /// </summary>
-        public const string AgentsEmail = $"{Agents}:{AgentsEmailSubChannel}";
-
-        /// <summary>
-        /// AgentExcel channelId
-        /// </summary>
-        public const string AgentsExcel = $"{Agents}:{AgentsExcelSubChannel}";
-
-        /// <summary>
-        /// AgentsWord channelId
-        /// </summary>
-        public const string AgentsWord = $"{Agents}:{AgentsWordSubChannel}";
-
-        /// <summary>
-        /// AgentsPowerPoint channelId
-        /// </summary>
-        public const string AgentsPowerPoint = $"{Agents}:{AgentsPowerPointSubChannel}";
 
         /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.

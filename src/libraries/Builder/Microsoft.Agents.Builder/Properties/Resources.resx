@@ -178,7 +178,7 @@
     <comment>Raised when user sign in is already in progress.  Only one sign in at a time can occur.</comment>
   </data>
   <data name="OBONotExchangeableToken" xml:space="preserve">
-    <value>OBO for '{0}' cannot exchange an application that does not have an api:// audience.</value>
+    <value>OBO for '{0}' is not setup for exchangeable tokens.  For Token Service handlers, the 'Scopes' field on the Azure Bot OAuth Connection should be in the format of 'api://{{appid_uri}}/{{scopeName}}'.</value>
     <comment>Raised when the Azure Bot OAuth Connection is not configured to return an exchangeable token.</comment>
   </data>
   <data name="OBONotSupported" xml:space="preserve">
@@ -186,7 +186,7 @@
     <comment>Raised when User Authorization is using a provider that does not support IOBOExchange</comment>
   </data>
   <data name="OBOExchangeFailed" xml:space="preserve">
-    <value>OBO exchange failed for connection '{0}' with scopes {1}.  Check your connection name and scope(s) for correctness.</value>
+    <value>OBO exchange failed for connection '{0}' with scopes '{1}'.  Check your OBOConnectionName and scope(s).</value>
     <comment>Raised when an OBO exchange was attempted.</comment>
   </data>
   <data name="UserAuthorizationDefaultHandlerNotFound" xml:space="preserve">
@@ -205,5 +205,25 @@
   <data name="UnexpectedAuthorizationState" xml:space="preserve">
     <value>Unexpected state for handler '{0}' </value>
     <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
+  </data>
+  <data name="IAgenticTokenProviderNotFound" xml:space="preserve">
+    <value>An instance of IAgenticTokenProvider not found or not supported for '{0}'</value>
+    <comment>Raised when the call get an Agentic token provider returns null.</comment>
+  </data>
+  <data name="AgenticTokenProviderFailed" xml:space="preserve">
+    <value>Unable to get Agentic token for InstanceId '{0}', UPN '{1}', Role '{2}'</value>
+    <comment>Raised when getting a token for Agentic responses.</comment>
+  </data>
+  <data name="NotAnAgenticRequest" xml:space="preserve">
+    <value>Invalid operation '{0}' on a non-Agentic request.</value>
+    <comment>Raised when an Agentic operation is attempted against a non-Agentic request.</comment>
+  </data>
+  <data name="UnexpectedConnectorRequestToken" xml:space="preserve">
+    <value>Unexpected request token for handler '{0}'.</value>
+    <comment>Raised when handling tokens supplied by Copilot Studio Connectors.</comment>
+  </data>
+  <data name="UnexpectedConnectorTokenExpiration" xml:space="preserve">
+    <value>The token for handler '{0}' has expired.</value>
+    <comment>Raised when an authorization token from a Copilot Studio Connector request has expired.</comment>
   </data>
 </root>

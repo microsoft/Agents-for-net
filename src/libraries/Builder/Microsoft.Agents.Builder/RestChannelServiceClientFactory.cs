@@ -1,19 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Connector;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Builder
 {
@@ -67,12 +69,11 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc />
-        public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false)
+        public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken = default, IList<string> scopes = null, bool useAnonymous = false)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(serviceUrl, nameof(serviceUrl));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(audience, nameof(audience));
 
-            // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
             return Task.FromResult<IConnectorClient>(new RestConnectorClient(
                 new Uri(serviceUrl),
                 _httpClientFactory,
@@ -88,6 +89,58 @@ namespace Microsoft.Agents.Builder
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
                                 ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+                    }
+                },
+                typeof(RestChannelServiceClientFactory).FullName));
+        }
+
+        public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
+        {
+            if (turnContext.Activity.Recipient.Role == RoleTypes.ConnectorUser)
+            {
+                return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
+            }
+
+            if (!AgenticAuthorization.IsAgenticRequest(turnContext))
+            {
+                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
+            }
+
+            return Task.FromResult<IConnectorClient>(new RestConnectorClient(
+                new Uri(turnContext.Activity.ServiceUrl),
+                _httpClientFactory,
+                () =>
+                {
+                    var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                    if (connection is IAgenticTokenProvider agenticTokenProvider)
+                    {
+                        try
+                        {
+                            if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+                            {
+                                return agenticTokenProvider.GetAgenticInstanceTokenAsync(
+                                    AgenticAuthorization.GetAgentInstanceId(turnContext),
+                                    cancellationToken);
+                            }
+
+                            return agenticTokenProvider.GetAgenticUserTokenAsync(
+                                AgenticAuthorization.GetAgentInstanceId(turnContext), 
+                                AgenticAuthorization.GetAgenticUser(turnContext),
+                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
+                                cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            // have to do it this way b/c of the lambda expression. 
+                            throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                    ErrorHelper.AgenticTokenProviderFailed, ex, AgenticAuthorization.GetAgentInstanceId(turnContext), AgenticAuthorization.GetAgenticUser(turnContext), turnContext.Activity.Recipient.Role);
+                        }
+                    }
+                    else
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
@@ -109,7 +162,7 @@ namespace Microsoft.Agents.Builder
                     try
                     {
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
-                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, [$"{_tokenServiceAudience}/.default"]);
                     }
                     catch (Exception ex)
                     {
