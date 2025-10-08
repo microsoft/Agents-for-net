@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -164,6 +165,25 @@ namespace Microsoft.Agents.Authentication
 
             // Otherwise, return the first connection.
             return GetConnectionInstance(_connections.FirstOrDefault().Value);
+        }
+
+        /// <inheritdoc/>
+        public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, IActivity activity)
+        {
+            var connection = GetTokenProvider(claimsIdentity, activity.ServiceUrl);
+
+            // This is for if the Agentic BlueprintId is not the same as the AppId
+            if (connection != null 
+                && (RoleTypes.AgenticIdentity.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)
+                || RoleTypes.AgenticUser.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (!string.IsNullOrEmpty(connection.ConnectionSettings?.AlternateBlueprintConnectionName))
+                {
+                    connection = GetConnection(connection.ConnectionSettings.AlternateBlueprintConnectionName);
+                }
+            }
+
+            return connection;
         }
 
         /// <summary>

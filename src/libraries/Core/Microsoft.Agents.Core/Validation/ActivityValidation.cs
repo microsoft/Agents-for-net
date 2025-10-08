@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using System.Linq;
 
 namespace Microsoft.Agents.Core.Validation
 {
@@ -21,17 +20,22 @@ namespace Microsoft.Agents.Core.Validation
         /// <param name="activity"></param>
         /// <param name="context">Array of <see cref="ValidationContext"/></param>
         /// <returns></returns>
-        public static bool Validate(this IActivity activity, string[] context)
+        public static bool Validate(this IActivity activity, ValidationContext context)
         {
             // For now, until there is rules based validation, perform in-code validation
             var isValid = AllValidation(activity);
 
-            if (context.Contains(ValidationContext.Channel))
+            if ((context & ValidationContext.Channel) == ValidationContext.Channel)
             {
                 isValid &= ChannelValidation(activity);
             }
 
-            if (context.Contains(ValidationContext.Receiver))
+            if ((context & ValidationContext.Agent) == ValidationContext.Agent)
+            {
+                isValid &= AgentValidation(activity);
+            }
+
+            if ((context & ValidationContext.Receiver) == ValidationContext.Receiver)
             {
                 isValid &= ReceiverValidation(activity);
             }
@@ -75,6 +79,23 @@ namespace Microsoft.Agents.Core.Validation
                 return false;
             }
 
+            if (string.IsNullOrEmpty(activity?.From?.Id))
+            {
+                System.Diagnostics.Trace.WriteLine("A2060: Channels MUST include the from and from.id fields when generating an activity.");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(activity?.Recipient?.Id))
+            {
+                System.Diagnostics.Trace.WriteLine("A2070: Channels MUST include the recipient and recipient.id fields when transmitting an activity to a single recipient.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool AgentValidation(IActivity activity)
+        {
             return true;
         }
 

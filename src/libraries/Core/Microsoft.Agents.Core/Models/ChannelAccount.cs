@@ -20,13 +20,19 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="id"> Channel id for the user or Agent on this channel (Example: joe@smith.com, or @joesmith or 123456). </param>
         /// <param name="name"> Display friendly name. </param>
         /// <param name="aadObjectId"> This account's object ID within Azure Active Directory (AAD). </param>
+        /// <param name="agenticUserId"></param>
+        /// <param name="agenticAppId"></param>
+        /// <param name="tenantId"></param>
         /// <param name="role"> Role of the entity behind the account (Example: User, Agent, etc.). </param>
-        public ChannelAccount(string id = default, string name = default, string role = default, string aadObjectId = default)
+        public ChannelAccount(string id = default, string name = default, string role = default, string aadObjectId = default, string agenticUserId = default, string agenticAppId = default, string tenantId = default)
         {
             Id = id;
             Name = name;
             AadObjectId = aadObjectId;
             Role = role;
+            AgenticUserId = agenticUserId;
+            AgenticAppId = agenticAppId;
+            TenantId = tenantId;
         }
 
         /// <summary> Channel id for the user or Agent on this channel (Example: joe@smith.com, or @joesmith or 123456). </summary>

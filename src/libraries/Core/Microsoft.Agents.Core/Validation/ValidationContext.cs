@@ -1,14 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Core.Validation
 {
-    public static class ValidationContext
+    [Flags]
+    public enum ValidationContext
     {
-        public const string User = "user";
-        public const string Channel = "channel";
-        public const string Agent = "agent";
-        public const string Sender = "sender";
-        public const string Receiver = "receiver";
+        Channel = 0x01,
+        Agent = 0x02,
+        Sender = 0x04,
+        Receiver = 0x08
     }
 }
