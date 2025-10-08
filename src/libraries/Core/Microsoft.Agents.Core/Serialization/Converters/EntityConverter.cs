@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Linq;
 using System.Text.Json;
 
 namespace Microsoft.Agents.Core.Serialization.Converters
@@ -41,13 +42,22 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 return JsonSerializer.Deserialize<ProductInfo>(JsonSerializer.Serialize(entity, options), options);
             }
-            
             else if (string.Equals(EntityTypes.AICitation, entity.Type, StringComparison.OrdinalIgnoreCase))
             {
                 return JsonSerializer.Deserialize<AIEntity>(JsonSerializer.Serialize(entity, options), options);
             }
-
-            return entity;
+            else
+            {
+                bool bFound = ProtocolJsonSerializer.EntityTypes.Where(w=>w.Key.Equals(entity.Type, StringComparison.OrdinalIgnoreCase)).Any();
+                if (bFound)
+                {
+                    Type type = ProtocolJsonSerializer.EntityTypes.Where(w => w.Key.Equals(entity.Type, StringComparison.OrdinalIgnoreCase)).First().Value;
+                    return (Entity)JsonSerializer.Deserialize(JsonSerializer.Serialize(entity, options), type, options);
+                    //return JsonSerializer.Deserialize(JsonSerializer.Serialize(entity, options), type, options) as typeof(type);
+                }
+            }
+                
+                return entity;
         }
 
         protected override void ReadExtensionData(ref Utf8JsonReader reader, Entity value, string propertyName, JsonSerializerOptions options)
