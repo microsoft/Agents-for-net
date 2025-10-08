@@ -210,7 +210,12 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(upn, nameof(upn));
 
-            var cacheKey = $"{agentAppInstanceId}/{upn}/{string.Join(";", scopes)}";
+            string k1 = "";
+            if ( scopes != null )
+            {
+                k1 = string.Join(";", scopes);
+            }
+            var cacheKey = $"{agentAppInstanceId}/{upn}/{k1}";
             var value = _agenticTokenCache.Get(cacheKey);
             if (value != null)
             {
@@ -250,11 +255,16 @@ namespace Microsoft.Agents.Authentication.Msal
             var tokenEndpoint = _connectionSettings.Authority != null 
                 ? $"{_connectionSettings.Authority}/oauth2/v2.0/token"
                 : $"https://login.microsoftonline.com/{_connectionSettings.TenantId}/oauth2/v2.0/token";
-
+            
+            string scp = "";
+            if (scopes != null)
+            {
+                scp = string.Join(" ", scopes);
+            }
             var parameters = new Dictionary<string, string>
             {
                 { "client_id", agentAppInstanceId },
-                { "scope", string.Join(" ", scopes) },
+                { "scope", scp },
                 { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
                 { "client_assertion", agentToken },
                 { "username", upn },
