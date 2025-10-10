@@ -33,9 +33,16 @@ namespace Microsoft.Agents.Core.Models
             if (!string.IsNullOrEmpty(channelId))
             {
                 // IsNullOrEmpty in netstandard is not annotated to guarantee non-null value upon return, so use the ! operator.
-                var split = channelId!.Split(':');
-                Channel = split[0];
-                SubChannel = split.Length == 2 ? split[1] : null;
+                var delim = channelId!.IndexOf(':');
+                if (delim > 0)
+                {
+                    Channel = channelId!.Substring(0, delim);
+                    SubChannel = channelId.Substring(delim + 1);
+                }
+                else
+                {
+                    Channel = channelId;
+                }
             }
         }
 

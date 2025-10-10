@@ -27,6 +27,11 @@ namespace Microsoft.Agents.Model.Tests
             var channelId = new ChannelId(Channels.Msteams);
             Assert.Equal(Channels.Msteams, channelId);
 
+            channelId = new ChannelId("1:2:3");
+            Assert.Equal("1", channelId.Channel);
+            Assert.Equal("2:3", channelId.SubChannel);
+            Assert.Equal("1:2:3", channelId);
+
             // Can change SubChannel
             channelId = new ChannelId(Channels.M365Copilot);
             Assert.Equal(Channels.M365Copilot, channelId.ToString());
