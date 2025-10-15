@@ -99,10 +99,12 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateSendToConversationRequest(string conversationId, IActivity body)
         {
+            var convId = conversationId.Length > 325 ? conversationId[..325] : conversationId;
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{convId}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -244,10 +246,12 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
         {
+            var convId = conversationId.Length > 325 ? conversationId[..325] : conversationId;
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{convId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
