@@ -46,10 +46,10 @@ namespace Microsoft.Agents.Core.Serialization
                 {
                     try
                     {
-                        var entityNameOveride = entityType.GetCustomAttribute<EntityNameAttribute>(false);
-                        if (entityNameOveride != null)
+                        var entityNameOverride = entityType.GetCustomAttribute<EntityNameAttribute>(false);
+                        if (entityNameOverride != null)
                         {
-                            ProtocolJsonSerializer.EntityTypes[entityNameOveride.EntityName] = entityType;
+                            ProtocolJsonSerializer.EntityTypes[entityNameOverride.EntityName] = entityType;
                             continue;
                         }
                         else
