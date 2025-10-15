@@ -53,7 +53,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     Type type = ProtocolJsonSerializer.EntityTypes.Where(w => w.Key.Equals(entity.Type, StringComparison.OrdinalIgnoreCase)).First().Value;
                     return (Entity)JsonSerializer.Deserialize(JsonSerializer.Serialize(entity, options), type, options);
-                    //return JsonSerializer.Deserialize(JsonSerializer.Serialize(entity, options), type, options) as typeof(type);
                 }
             }
                 
