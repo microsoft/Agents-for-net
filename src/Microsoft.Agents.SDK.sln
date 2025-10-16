@@ -147,6 +147,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgenticAI", "samples\Agenti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioAgentConnector", "samples\CopilotStudioAgentConnector\CopilotStudioAgentConnector.csproj", "{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTelAgent", "samples\OTelAgent\OTelAgent.csproj", "{E49D17AD-D0D2-4E27-223A-EAC12AED4653}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -829,6 +831,18 @@ Global
 		{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}.Release|x64.Build.0 = Release|Any CPU
 		{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}.Release|x86.ActiveCfg = Release|Any CPU
 		{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}.Release|x86.Build.0 = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|x64.Build.0 = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Debug|x86.Build.0 = Debug|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x64.ActiveCfg = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x64.Build.0 = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x86.ActiveCfg = Release|Any CPU
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -903,6 +917,7 @@ Global
 		{F2857CA8-F1D5-17AF-538F-7E6DE4E8FE9C} = {C0F4149C-BB92-423D-A8E2-855448E3A0C0}
 		{8E21BC5B-1E3C-313D-2F5B-4F0181A27AB3} = {674A812C-7287-4883-97F9-697D83750648}
 		{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED} = {674A812C-7287-4883-97F9-697D83750648}
+		{E49D17AD-D0D2-4E27-223A-EAC12AED4653} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
