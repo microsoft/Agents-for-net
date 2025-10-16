@@ -58,7 +58,7 @@
 		In order for packing targets to work correctly in this situation - analyzer project either should have <TargetFramework> (without 's'),
 		or be referenced with Condition on a single TargetFramework.
 	   -->
-	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" Condition="'$(TargetFramework)' == 'netstandard2.0'" PrivateAssets="all" />
 	</ItemGroup>
 
 </Project>

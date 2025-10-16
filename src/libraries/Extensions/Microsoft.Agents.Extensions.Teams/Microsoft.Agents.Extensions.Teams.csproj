@@ -5,6 +5,8 @@
 		<ComponentAreaName>CplTeams</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<!-- Set to true to see generated file in obj/Debug/.../Generated folder -->
+	    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 
@@ -33,6 +35,7 @@
 	  <ProjectReference Include="..\..\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 	  <ProjectReference Include="..\..\Client\Microsoft.Agents.Connector\Microsoft.Agents.Connector.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
 	</ItemGroup>
 
 </Project>
