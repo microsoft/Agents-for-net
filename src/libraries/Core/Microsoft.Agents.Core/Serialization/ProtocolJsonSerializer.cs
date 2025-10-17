@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         public static bool ChannelIdIncludesProduct { get; set; } = true;
 
-        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+        private static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
 
         private static readonly object _optionsLock = new object();
 
