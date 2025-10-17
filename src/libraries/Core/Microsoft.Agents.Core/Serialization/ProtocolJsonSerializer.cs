@@ -29,7 +29,10 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         public static bool ChannelIdIncludesProduct { get; set; } = true;
 
-        private static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+        /// <summary>
+        /// Maintains a mapping of entity type names to their corresponding Type objects.
+        /// </summary>
+        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
 
         private static readonly object _optionsLock = new object();
 
@@ -79,7 +82,7 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
-        private static void AddEntityType(string entityTypeName, Type entityType)
+        public static void AddEntityType(string entityTypeName, Type entityType)
         {
             EntityTypes[entityTypeName] = entityType;
         }
