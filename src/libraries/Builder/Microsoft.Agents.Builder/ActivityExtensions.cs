@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder
         public static string GetAgenticUser(this IActivity activity)
         {
             if (!activity.IsAgenticRequest()) return null;
-            return activity?.Recipient?.Id;
+            return activity?.Recipient?.AgenticUserId;
         }
     }
 }

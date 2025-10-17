@@ -205,12 +205,12 @@ namespace Microsoft.Agents.Authentication.Msal
             return agentInstanceToken.AccessToken;
         }
 
-        public async Task<string> GetAgenticUserTokenAsync(string agentAppInstanceId, string upn, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticUserTokenAsync(string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(upn, nameof(upn));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
 
-            var cacheKey = $"{agentAppInstanceId}/{upn}/{string.Join(";", scopes)}";
+            var cacheKey = $"{agentAppInstanceId}/{agenticUserId}/{string.Join(";", scopes)}";
             var value = _agenticTokenCache.Get(cacheKey);
             if (value != null)
             {
@@ -257,7 +257,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 { "scope", string.Join(" ", scopes) },
                 { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
                 { "client_assertion", agentToken },
-                { "username", upn },
+                { "user_id", agenticUserId },
                 { "user_federated_identity_credential", instanceToken },
                 { "grant_type", "user_fic" }
             };
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"Failed to acquire Agentic User token: AAI={agentAppInstanceId}, UPN={upn}, Scopes={string.Join(";", scopes)}, Response={response.StatusCode}/{responseContent}");
+                throw new InvalidOperationException($"Failed to acquire Agentic User token: AAI={agentAppInstanceId}, AgenticUserId={agenticUserId}, Scopes={string.Join(";", scopes)}, Response={response.StatusCode}/{responseContent}");
             }
 
             var acccessTokenResult = System.Text.Json.JsonSerializer.Deserialize<HttpMsalResponse>(responseContent);
