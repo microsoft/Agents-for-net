@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
-        public static void AddEntityType(string entityTypeName, Type entityType)
+        private static void AddEntityType(string entityTypeName, Type entityType)
         {
             EntityTypes[entityTypeName] = entityType;
         }
