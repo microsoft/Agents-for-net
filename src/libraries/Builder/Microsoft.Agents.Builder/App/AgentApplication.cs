@@ -7,10 +7,12 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -622,6 +624,52 @@ namespace Microsoft.Agents.Builder.App
             AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
             return this;
         }
+
+        /// <summary>
+        /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
+        /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
+        /// </summary>
+        /// <param name="handler">Function to call when the route is triggered</param>
+        /// <param name="rank"></param>
+        /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly"></param>
+        /// <returns></returns>
+        public AgentApplication OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+            {
+                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
+                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
+                return Task.FromResult
+                (
+                    (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
+                    && context.Activity.Type == ActivityTypes.Invoke
+                    && context.Activity.Name == "message/submitAction"
+                    && actionName == "feedback"
+                );
+            }
+
+            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value)!;
+                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
+
+                await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
+
+                // Check to see if an invoke response has already been added
+                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
+                {
+                    var activity = Activity.CreateInvokeResponseActivity();
+                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                }
+            }
+
+            AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
+            return this;
+        }
+
 
         /// <summary>
         /// Add a handler that will execute before the turn's activity handler logic is processed.
