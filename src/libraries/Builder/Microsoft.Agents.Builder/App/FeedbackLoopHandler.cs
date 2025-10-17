@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Function for feedback loop activites
+    /// Function for feedback loop activities
     /// </summary>
     /// <param name="turnContext">A strongly-typed context object for this turn.</param>
     /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>

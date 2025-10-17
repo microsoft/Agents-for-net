@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.App
         public string? Reaction { get; set; }
 
         /// <summary>
-        /// The feedback provided by the user when prompted with "What did you lke/dislike?"
+        /// The feedback provided by the user when prompted with "What did you like/dislike?"
         /// </summary>
         public string? Feedback { get; set; }
     }

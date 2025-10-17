@@ -630,10 +630,10 @@ namespace Microsoft.Agents.Builder.App
         /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered</param>
-        /// <param name="rank"></param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
-        /// <param name="isAgenticOnly"></param>
-        /// <returns></returns>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
