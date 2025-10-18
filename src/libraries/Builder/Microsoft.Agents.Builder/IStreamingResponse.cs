@@ -8,6 +8,16 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
+    public enum StreamingResponseResult
+    {
+        Success,
+        NotStarted,
+        AlreadyEnded,
+        UserCancelled,
+        Timeout,
+        Error
+    };
+
     public interface IStreamingResponse
     {
         /// <summary>
@@ -94,7 +104,7 @@ namespace Microsoft.Agents.Builder
         /// </remarks>
         /// <returns>A Task representing the async operation</returns>
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        Task EndStreamAsync(CancellationToken cancellationToken = default);
+        Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default);
 
         bool IsStreamStarted();
 
