@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -27,6 +28,11 @@ namespace Microsoft.Agents.Core.Serialization
         /// It is not recommended to set false without guidance.
         /// </summary>
         public static bool ChannelIdIncludesProduct { get; set; } = true;
+
+        /// <summary>
+        /// Maintains a mapping of entity type names to their corresponding Type objects.
+        /// </summary>
+        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
 
         private static readonly object _optionsLock = new object();
 
@@ -74,6 +80,11 @@ namespace Microsoft.Agents.Core.Serialization
 
                 SerializationOptions = applyFunc(newOptions);
             }
+        }
+
+        public static void AddEntityType(string entityTypeName, Type entityType)
+        {
+            EntityTypes[entityTypeName] = entityType;
         }
 
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
