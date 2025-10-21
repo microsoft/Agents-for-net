@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Net;
 
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
@@ -23,6 +24,16 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 StatusCode = 200,
                 Type = "application/vnd.microsoft.card.adaptive",
                 Value = adaptiveCardJson
+            };
+        }
+
+        public static AdaptiveCardInvokeResponse SearchResponse(object result)
+        {
+            return new AdaptiveCardInvokeResponse
+            {
+                StatusCode = 200,
+                Type = "application/vnd.microsoft.search.searchResponse",
+                Value = result
             };
         }
 
@@ -86,6 +97,46 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                     Message = message
                 }
             };
+        }
+
+        public static bool TryValidateSearchInvokeValue(IActivity activity, out AdaptiveCardSearchInvokeValue searchInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        {
+            searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(activity.Value);
+
+            if (searchInvokeValue == null)
+            {
+                errorResponse = BadRequest("Missing value property for search");
+                return false;
+            }
+
+            string missingField = null;
+
+            if (string.IsNullOrEmpty(searchInvokeValue.Kind))
+            {
+                // Teams does not always send the 'kind' field. Default to 'search'.
+                if (activity.ChannelId.IsParentChannel(Channels.Msteams))
+                {
+                    searchInvokeValue.Kind = SearchInvokeTypes.Search;
+                }
+                else
+                {
+                    missingField = "kind";
+                }
+            }
+
+            if (string.IsNullOrEmpty(searchInvokeValue.QueryText))
+            {
+                missingField = missingField == null ? "queryText" : ", queryText";
+            }
+
+            if (missingField != null)
+            {
+                errorResponse = BadRequest($"Missing '{missingField}' property for search");
+                return false;
+            }
+
+            errorResponse = null;
+            return true;
         }
     }
 }

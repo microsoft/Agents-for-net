@@ -459,6 +459,166 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("Unexpected AdaptiveCards.OnSearch() triggered for activity type: invoke", exception.Message);
         }
 
+        [Fact]
+        public async Task Test_OnSearch_NoValue()
+        {
+            // Arrange
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "application/search",
+                Recipient = new("test-id"),
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+            });
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
+            {
+                throw new NotImplementedException();
+            };
+
+            // Act
+            app.AdaptiveCards.OnSearch((ctx, ct) => Task.FromResult(true), handler);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(activitiesToSend);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            Assert.Equal(400, ((InvokeResponse)activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task Test_OnSearch_NoKind()
+        {
+            // Arrange
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "application/search",
+                Recipient = new("test-id"),
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                {
+                    //kind = "search",
+                    queryText = "test-query",
+                    queryOptions = new
+                    {
+                        skip = 0,
+                        top = 15
+                    },
+                    dataset = "test-dataset"
+                }),
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+            });
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
+            {
+                throw new NotImplementedException();
+            };
+
+            // Act
+            app.AdaptiveCards.OnSearch((ctx, ct) => Task.FromResult(true), handler);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(activitiesToSend);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(400, invokeResponse.Status);
+            Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
+            var response = (AdaptiveCardInvokeResponse)invokeResponse.Body;
+            Assert.Equal("application/vnd.microsoft.error", response.Type);
+            Assert.IsAssignableFrom<Core.Models.Error>(response.Value);
+            var error = (Core.Models.Error)response.Value;
+            Assert.Contains("kind", error.Message);
+        }
+
+        [Fact]
+        public async Task Test_OnSearch_NoQueryText()
+        {
+            // Arrange
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "application/search",
+                Recipient = new("test-id"),
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                {
+                    kind = "search",
+                    //queryText = "test-query",
+                    queryOptions = new
+                    {
+                        skip = 0,
+                        top = 15
+                    },
+                    dataset = "test-dataset"
+                }),
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+            });
+            SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
+            {
+                throw new NotImplementedException();
+            };
+
+            // Act
+            app.AdaptiveCards.OnSearch((ctx, ct) => Task.FromResult(true), handler);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(activitiesToSend);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(400, invokeResponse.Status);
+            Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
+            var response = (AdaptiveCardInvokeResponse)invokeResponse.Body;
+            Assert.Equal("application/vnd.microsoft.error", response.Type);
+            Assert.IsAssignableFrom<Core.Models.Error>(response.Value);
+            var error = (Core.Models.Error)response.Value;
+            Assert.Contains("queryText", error.Message);
+        }
+
+
         private static T Cast<T>(object data)
         {
             T result = ProtocolJsonSerializer.ToObject<T>(data);

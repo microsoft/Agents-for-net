@@ -6,6 +6,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <summary>
     /// AdaptiveCards class to enable fluent style registration of handlers related to Adaptive Cards.
     /// </summary>
-    public class AdaptiveCard
+    public partial class AdaptiveCard
     {
         private static readonly string ACTION_EXECUTE_TYPE = "Action.Execute";
         private static readonly string SEARCH_INVOKE_NAME = "application/search";
@@ -330,32 +331,34 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+
+            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
             {
-                AdaptiveCardSearchInvokeValue? searchInvokeValue;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
-                    || (searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value)) == null)
+                    || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME))
                 {
                     throw new InvalidOperationException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
-                Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
-                IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
-
-                SearchInvokeResponse searchInvokeResponse = new()
+                if (AdaptiveCardInvokeResponseFactory.TryValidateSearchInvokeValue(turnContext.Activity, out var searchInvokeValue, out var response))
                 {
-                    StatusCode = 200,
-                    Type = "application/vnd.microsoft.search.searchResponse",
-                    Value = new AdaptiveCardsSearchInvokeResponseValue
-                    {
-                        Results = results
-                    }
-                };
-                var activity = Activity.CreateInvokeResponseActivity(searchInvokeResponse);
-                await turnContext.SendActivityAsync(activity, cancellationToken);
-            };
+                    AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
+                    Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
+
+                    IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
+
+                    response = AdaptiveCardInvokeResponseFactory.SearchResponse(
+                        new AdaptiveCardsSearchInvokeResponseValue
+                        {
+                            Results = results
+                        }
+                    );
+                }
+
+                var invokeResponse = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                await turnContext.SendActivityAsync(invokeResponse, cancellationToken);
+            }
+
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
             return _app;
         }
@@ -434,15 +437,9 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
-                    && (searchInvokeValue != null
-                    && isMatch(searchInvokeValue.Dataset!)));
+                    && isMatch(searchInvokeValue?.Dataset!));
             };
             return routeSelector;
-        }
-
-        private class AdaptiveCardSearchInvokeValue : SearchInvokeValue
-        {
-            public string? Dataset { get; set; }
         }
 
         private class AdaptiveCardsSearchInvokeResponseValue
