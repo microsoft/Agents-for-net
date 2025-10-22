@@ -253,8 +253,8 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             var convId = string.Empty;
             // Truncate conversationId for Teams and Agentic roles to 150 characters
-            if ((body?.ChannelId.Channel == Channels.Msteams ||
-                body?.ChannelId.Channel == Channels.Agents)
+            if ((body?.ChannelId?.Channel == Channels.Msteams ||
+                body?.ChannelId?.Channel == Channels.Agents)
                 && (body?.From?.Role == RoleTypes.AgenticIdentity
                 || body?.From?.Role == RoleTypes.AgenticUser))
             {
