@@ -32,6 +32,7 @@ namespace Microsoft.Agents.Builder
     {
         private readonly string _tokenServiceEndpoint;
         private readonly string _tokenServiceAudience;
+        private readonly int? _iMaxApxConversationIdLength;
         private readonly ILogger _logger;
         private readonly IConnections _connections;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -66,6 +67,8 @@ namespace Microsoft.Agents.Builder
             _tokenServiceAudience = string.IsNullOrWhiteSpace(tokenAudience)
                 ? tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience))
                 : tokenAudience;
+
+            _iMaxApxConversationIdLength = configuration?.GetValue<int?>($"{nameof(RestChannelServiceClientFactory)}:MaxApxConversationIdLength");
         }
 
         /// <inheritdoc />
@@ -91,7 +94,8 @@ namespace Microsoft.Agents.Builder
                                 ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
                     }
                 },
-                typeof(RestChannelServiceClientFactory).FullName));
+                typeof(RestChannelServiceClientFactory).FullName,
+                maxApxConversationIdLength: _iMaxApxConversationIdLength));
         }
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
@@ -143,7 +147,8 @@ namespace Microsoft.Agents.Builder
                                 ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
                     }
                 },
-                typeof(RestChannelServiceClientFactory).FullName));
+                typeof(RestChannelServiceClientFactory).FullName, 
+                maxApxConversationIdLength: _iMaxApxConversationIdLength));
         }
 
         /// <inheritdoc />
