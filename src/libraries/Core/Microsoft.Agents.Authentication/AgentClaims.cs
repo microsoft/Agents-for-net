@@ -193,14 +193,22 @@ namespace Microsoft.Agents.Authentication
             return identity != null && !identity.IsAuthenticated && !identity.Claims.Any();
         }
 
-        public static ClaimsIdentity CreateIdentity(string clientId, bool anonymous = false)
+        /// <summary>
+        /// Creates an Agent Identity.
+        /// </summary>
+        /// <param name="audience">The aud of the claim.  Typically the ClientId of the Agent.</param>
+        /// <param name="anonymous"></param>
+        /// <param name="appId">The appId of the incoming token.</param>
+        /// <returns></returns>
+        public static ClaimsIdentity CreateIdentity(string audience, bool anonymous = false, string appId = null)
         {
             return anonymous
                 ? new ClaimsIdentity()
                 : new ClaimsIdentity(
                 [
-                    new(AuthenticationConstants.AudienceClaim, clientId),
-                    new(AuthenticationConstants.AppIdClaim, clientId),
+                    new(AuthenticationConstants.AudienceClaim, audience),
+                    new(AuthenticationConstants.AppIdClaim, appId ?? audience),
+                    new(AuthenticationConstants.VersionClaim, "1.0")
                 ]);
         }
     }

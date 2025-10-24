@@ -78,6 +78,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
         /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)")]
         Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -104,6 +105,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
         /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)")]
         Task ContinueConversationAsync(string agentId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -124,7 +126,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
         /// <param name="reference">A reference to the conversation to continue.</param>
-        /// <param name="audience">A value signifying the recipient of the proactive message.</param>
+        /// <param name="audience">A value signifying the recipient of the proactive message.  This overrides the default use of ClaimsIdentity for the audience.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
@@ -145,6 +147,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
         /// </remarks>
+        [Obsolete("Use ProcessProactiveAsync")]
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
