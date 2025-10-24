@@ -8,6 +8,16 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
+    public enum StreamingResponseResult
+    {
+        Success,
+        NotStarted,
+        AlreadyEnded,
+        UserCancelled,
+        Timeout,
+        Error
+    };
+
     public interface IStreamingResponse
     {
         /// <summary>
@@ -92,9 +102,11 @@ namespace Microsoft.Agents.Builder
         /// Since the messages are sent on an interval, this call will block until all have been sent
         /// before sending the final Message.
         /// </remarks>
-        /// <returns>A Task representing the async operation</returns>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        Task EndStreamAsync(CancellationToken cancellationToken = default);
+        /// <returns>
+        /// A Task representing the async operation. The result indicates the outcome of ending the stream,
+        /// such as Success, AlreadyEnded, Timeout, or Error.
+        /// </returns>
+        Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default);
 
         bool IsStreamStarted();
 

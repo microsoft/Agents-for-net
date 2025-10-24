@@ -51,6 +51,7 @@ namespace Microsoft.Agents.Builder
         private bool _messageUpdated = false;
         private bool _isTeamsChannel;
         private bool _canceled;
+        private bool _userCanceled;
 
         // Queue for outgoing activities
         private readonly List<Func<IActivity>> _queue = [];
@@ -289,9 +290,8 @@ namespace Microsoft.Agents.Builder
         /// Since the messages are sent on an interval, this call will block until all have been sent
         /// before sending the final Message.
         /// </remarks>
-        /// <returns>A Task representing the async operation</returns>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task EndStreamAsync(CancellationToken cancellationToken = default)
+        /// <returns>StreamingResponseResult with the result of the streaming response.</returns>
+        public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Builder
                 {
                     if (_ended)
                     {
-                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
+                        return StreamingResponseResult.AlreadyEnded;
                     }
 
                     _ended = true;
@@ -310,6 +310,8 @@ namespace Microsoft.Agents.Builder
                 {
                     await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
+
+                return StreamingResponseResult.Success;
             }
             else
             {
@@ -317,34 +319,48 @@ namespace Microsoft.Agents.Builder
                 {
                     if (_ended)
                     {
-                        return;
+                        return StreamingResponseResult.AlreadyEnded;
                     }
 
                     _ended = true;
 
-                    if (!IsStreamStarted() || _canceled)
+                    if (_canceled)
                     {
-                        return;
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                    }
+
+                    if (!IsStreamStarted())
+                    {
+                        return StreamingResponseResult.NotStarted;
                     }
                 }
 
-                if (IsStreamStarted())
+                StreamingResponseResult result = StreamingResponseResult.Success;
+
+                // Wait for queue items to be sent per Interval
+                try
                 {
-                    // Wait for queue items to be sent per Interval
-                    try
+                    if (!_queueEmpty.WaitOne(EndStreamTimeout))
                     {
-                        _queueEmpty.WaitOne(EndStreamTimeout);
+                        result = StreamingResponseResult.Timeout;
                     }
-                    catch (AbandonedMutexException)
+
+                    if (_canceled)
                     {
-                        StopStream();
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
                     }
+                }
+                catch (AbandonedMutexException)
+                {
+                    StopStream();
                 }
 
                 if (UpdatesSent() > 0 || FinalMessage != null)
                 {
                     await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
+
+                return result;
             }
         }
 
@@ -417,6 +433,7 @@ namespace Microsoft.Agents.Builder
                 _nextSequence = 1;
                 StreamId = null;
                 _canceled = false;
+                _userCanceled = false;
             }
         }
 
@@ -612,26 +629,38 @@ namespace Microsoft.Agents.Builder
                     bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (errorResponse.Body != null && !TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        // User canceled?
+                        if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                         {
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
+
+                            _userCanceled = true;
+                        }
+                        // Stream not allowed?
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
+                        else if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
+                            errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                            System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+
+                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
+                            CanceledStream = false;
+                        }
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                        else
+                        {
+                            var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
+
                             _context?.Adapter?.Logger?.LogWarning(
                                 "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
                                 ex.Message,
-                                errorResponse.Body.Error.Message);
+                                errorMessage);
 
-                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorResponse.Body.Error.Message}");
+                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
                         }
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
-                        if (errorResponse.Body != null &&
-                            BadArgument.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase) &&
-                            errorResponse.Body.Error.Message.ToLower().Contains(TeamsStreamNotAllowed))
-                        {
-                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
-                            CanceledStream = false; 
-                        }
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-                        
+
                         if (CanceledStream)
                         {
                             _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
@@ -643,6 +672,7 @@ namespace Microsoft.Agents.Builder
                     {
                         StopStream();
                         _canceled = CanceledStream;
+                        _queueEmpty.Set();
                     }
                 }
             }
