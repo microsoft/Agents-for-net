@@ -5,7 +5,6 @@ using HandlingAttachments;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -26,7 +25,7 @@ builder.AddAgentApplicationOptions();
 // Register FileDownloaders
 builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
     new AttachmentDownloader(sp.GetService<IHttpClientFactory>()!),
-    new TeamsAttachmentDownloader(new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" }, sp.GetService<IConnections>()!, sp.GetService<IHttpClientFactory>()!)
+    new TeamsAttachmentDownloader(sp.GetService<IConnections>()!, sp.GetService<IHttpClientFactory>()!, new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" })
 ]);
 
 // Add the AgentApplication, which contains the logic for responding to
