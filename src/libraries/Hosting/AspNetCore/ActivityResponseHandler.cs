@@ -4,8 +4,6 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -13,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    internal class ActivityStreamedResponseWriter : IChannelResponseWriter
+    internal class ActivityResponseHandler : IChannelResponseHandler
     {
         private const string ActivityEventTemplate = "event: activity\r\ndata: {0}\r\n\r\n";
         private const string InvokeResponseEventTemplate = "event: invokeResponse\r\ndata: {0}\r\n\r\n";
@@ -25,7 +23,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return Task.CompletedTask;
         }
 
-        public async Task WriteActivity(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task OnResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
         {
             await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(string.Format(ActivityEventTemplate, ProtocolJsonSerializer.ToJson(activity))), cancellationToken).ConfigureAwait(false);
             await httpResponse.Body.FlushAsync(cancellationToken);

@@ -289,7 +289,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var activity = new Activity()
             {
-                Type = (ActivityType) ActivityType.FromString(activityType),
+                Type = activityType,
             };
 
             // This will return null if casting was unsuccessful, otherwise it should return an Activity

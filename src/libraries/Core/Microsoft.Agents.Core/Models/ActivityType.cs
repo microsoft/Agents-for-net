@@ -80,6 +80,7 @@ namespace Microsoft.Agents.Core.Models
     ///   </item>
     /// </list>
     /// </summary>
+    [JsonConverter(typeof(ActivityTypeConverter))]
     public class ActivityType : IEquatable<ActivityType>
     {
         private readonly string _type;
@@ -193,7 +194,7 @@ namespace Microsoft.Agents.Core.Models
         public ActivityType(string type)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(nameof(type), "Activity type cannot be null or whitespace");
-            _type = type;
+            _type = FromString(type);
         }
 
         public static bool operator ==(ActivityType left, ActivityType right)
@@ -244,10 +245,15 @@ namespace Microsoft.Agents.Core.Models
             return type?.ToString();
         }
 
-        /*
-        public static ActivityType FromString(string type)
+        private static string FromString(string type)
         {
-            return (ActivityType)typeof(ActivityType).GetProperty(type, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.IgnoreCase)?.GetValue(null) ?? new ActivityType(type);
+            var propertyInfo = typeof(ActivityType).GetField(type, BindingFlags.GetField | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.IgnoreCase);
+            if (propertyInfo != null)
+            {
+                return propertyInfo.GetValue(null).ToString();
+            }
+            
+            return type;
         }
 
         internal sealed class ActivityTypeConverter : JsonConverter<ActivityType>
@@ -259,13 +265,13 @@ namespace Microsoft.Agents.Core.Models
                     throw new JsonException("Expected a string for ActivityType.");
                 }
 
-                var protocol = reader.GetString();
-                if (string.IsNullOrWhiteSpace(protocol))
+                var activityType = reader.GetString();
+                if (string.IsNullOrWhiteSpace(activityType))
                 {
                     return null;
                 }
 
-                return FromString(protocol!);
+                return new ActivityType(activityType!);
             }
 
             public override void Write(Utf8JsonWriter writer, ActivityType value, JsonSerializerOptions options)
@@ -273,6 +279,5 @@ namespace Microsoft.Agents.Core.Models
                 writer.WriteStringValue(value._type);
             }
         }
-        */
     }
 }

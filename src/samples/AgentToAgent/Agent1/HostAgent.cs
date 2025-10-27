@@ -51,7 +51,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles messages sent by the user.
-    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [Route(RouteType = RouteType.Activity, Type = ActivityType.Message, Rank = RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
@@ -78,7 +78,7 @@ public class HostAgent : AgentApplication
     protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
     {
         // Agents can send an EndOfConversation Activity.  This Activity can optionally contain a result value.
-        if (agentActivity.IsType(ActivityTypes.EndOfConversation))
+        if (agentActivity.Type == ActivityType.EndOfConversation)
         {
             // Agent2 signaled that the conversation is over.  Remove the conversation because we're done with it.
             await _agentHost.DeleteConversationAsync(turnContext, reference.AgentConversationId, cancellationToken);

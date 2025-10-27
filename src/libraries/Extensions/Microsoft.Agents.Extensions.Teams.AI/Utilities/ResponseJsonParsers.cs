@@ -55,7 +55,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
             {
                 string objText = text.Substring(startBrace);
                 List<char> nesting = new() { '}' };
+#pragma warning disable JSON001 // Invalid JSON pattern
                 string cleaned = "{";
+#pragma warning restore JSON001 // Invalid JSON pattern
                 bool inString = false;
 
                 for (int i = 1; i < objText.Length && nesting.Count > 0; i++)

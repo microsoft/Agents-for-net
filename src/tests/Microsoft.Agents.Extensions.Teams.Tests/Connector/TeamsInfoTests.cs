@@ -20,6 +20,7 @@ using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -1550,6 +1551,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             public Func<ITurnContext, Exception, Task> OnTurnError { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
             public IMiddlewareSet MiddlewareSet => throw new NotImplementedException();
+
+            public ILogger Logger { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
             public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {

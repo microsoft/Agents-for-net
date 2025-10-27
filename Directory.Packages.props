@@ -18,6 +18,11 @@
 	<Microsoft_IdentityClient_PkgVer>4.70.2</Microsoft_IdentityClient_PkgVer>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />  
     <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
@@ -45,7 +50,7 @@
 	<PackageVersion Include="System.Text.Json" Version="9.0.2" />
     <PackageVersion Include="System.Memory.Data" Version="8.0.1" />
 	<PackageVersion Include="System.Runtime.Caching" Version="8.0.1" />
-	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 	<!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft_AspNetCore_PkgVer)" />
@@ -82,8 +87,8 @@
     <PackageVersion Include="AdaptiveCards" Version="3.1.0" />
     <PackageVersion Include="AdaptiveCards.Templating" Version="2.0.3" />
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
-	<PackageVersion Include="Microsoft.Graph" Version="4.47.0" />
-    <PackageVersion Include="Microsoft.Graph.Core" Version="2.0.14" />
+	<PackageVersion Include="Microsoft.Graph" Version="5.56.0" />
+    <PackageVersion Include="Microsoft.Graph.Core" Version="3.2.4" />
     <!-- Semantic Kernel Samples -->
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.45.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.45.0-preview" />
@@ -101,5 +106,25 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.27.3" />
+	<!-- MCP -->
+	<PackageVersion Include="ModelContextProtocol" Version="0.2.0-preview.2" />
+	<PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
+	<PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+
+	  <!-- OpenTelemetry packages -->
+	  <PackageVersion Include="OpenTelemetry" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="0.5.0-beta.5" />
+
+	  <!-- OpenTelemetry Exporters -->
+	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+
+	  <!-- Azure Monitor (Application Insights) Exporter -->
+	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
+  
   </ItemGroup>
 </Project>

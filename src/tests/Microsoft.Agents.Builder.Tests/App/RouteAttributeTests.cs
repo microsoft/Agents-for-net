@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Event)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Event)]
         protected Task ActivityTypeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeAsync));

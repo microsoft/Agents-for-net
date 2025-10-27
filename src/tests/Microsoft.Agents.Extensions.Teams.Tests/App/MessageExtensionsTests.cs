@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -269,7 +269,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -313,7 +313,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -359,7 +359,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -425,7 +425,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -434,7 +434,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -478,7 +478,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -523,7 +523,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/fetchTask",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -578,7 +578,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/fetchTask",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -618,7 +618,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/submitAction",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -664,7 +664,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -733,7 +733,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -786,7 +786,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/selectItem",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -833,7 +833,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/selectItem",
                 Value = ProtocolJsonSerializer.ToJsonElements(new { }),
                 Recipient = new() { Id = "recipientId" },
@@ -887,7 +887,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new { }),
                 Recipient = new() { Id = "recipientId" },
@@ -938,7 +938,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/queryLink",
                 Value = new
                 {
@@ -996,7 +996,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/query",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1039,7 +1039,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/anonymousQueryLink",
                 Value = new
                 {
@@ -1097,7 +1097,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/query",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1139,7 +1139,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1191,7 +1191,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/settings",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1233,7 +1233,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/setting",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
@@ -1288,7 +1288,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1329,7 +1329,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/onCardButtonClicked",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1377,7 +1377,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },

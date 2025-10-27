@@ -31,10 +31,10 @@ namespace DialogSkillBot.Dialogs
 
             switch (stepContext.Context.Activity.Type)
             {
-                case ActivityTypes.Event:
+                case ActivityType.Event:
                     return await OnEventActivityAsync(stepContext, cancellationToken);
 
-                case ActivityTypes.Message:
+                case ActivityType.Message:
                     return await OnMessageActivityAsync(stepContext, cancellationToken);
 
                 default:

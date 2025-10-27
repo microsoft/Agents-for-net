@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.Compat
+namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Middleware for logging incoming and outgoing activities to an <see cref="ITranscriptStore"/>.
@@ -35,74 +35,81 @@ namespace Microsoft.Agents.Builder.Compat
         {
             var transcript = new Queue<IActivity>();
 
-            // log incoming activity at beginning of turn
-            if (turnContext.Activity != null)
+            try
             {
-                turnContext.Activity.From ??= new ChannelAccount();
-
-                if (string.IsNullOrEmpty(turnContext.Activity.From.Role))
+                // log incoming activity at beginning of turn
+                if (turnContext.Activity != null)
                 {
-                    turnContext.Activity.From.Role = RoleTypes.User;
+                    turnContext.Activity.From ??= new ChannelAccount();
+
+                    if (string.IsNullOrEmpty(turnContext.Activity.From.Role))
+                    {
+                        turnContext.Activity.From.Role = RoleTypes.User;
+                    }
+
+                    // We should not log ContinueConversation events used by Agents to initialize the middleware.
+                    if (!(turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
+                    {
+                        LogActivity(transcript, CloneActivity(turnContext.Activity));
+                    }
                 }
 
-                // We should not log ContinueConversation events used by Agents to initialize the middleware.
-                if (!(turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
+                // hook up onSend pipeline
+                turnContext.OnSendActivities(async (ctx, activities, nextSend) =>
                 {
-                    LogActivity(transcript, CloneActivity(turnContext.Activity));
-                }
+                    // run full pipeline
+                    var responses = await nextSend().ConfigureAwait(false);
+
+                    foreach (var activity in activities)
+                    {
+                        LogActivity(transcript, CloneActivity(activity));
+                    }
+
+                    return responses;
+                });
+
+                // hook up update activity pipeline
+                turnContext.OnUpdateActivity(async (ctx, activity, nextUpdate) =>
+                {
+                    // run full pipeline
+                    var response = await nextUpdate().ConfigureAwait(false);
+
+                    // add Message Update activity
+                    var updateActivity = CloneActivity(activity);
+                    updateActivity.Type = ActivityType.MessageUpdate;
+                    LogActivity(transcript, updateActivity);
+                    return response;
+                });
+
+                // hook up delete activity pipeline
+                turnContext.OnDeleteActivity(async (ctx, reference, nextDelete) =>
+                {
+                    // run full pipeline
+                    await nextDelete().ConfigureAwait(false);
+
+                    // add MessageDelete activity
+                    // log as MessageDelete activity
+                    var deleteActivity = new Activity
+                    {
+                        Type = ActivityType.MessageDelete,
+                        Id = reference.ActivityId,
+                    }
+                        .ApplyConversationReference(reference, isIncoming: false);
+
+                    LogActivity(transcript, deleteActivity);
+                });
+
+                // process Agent logic
+                await nextTurn(cancellationToken).ConfigureAwait(false);
             }
-
-            // hook up onSend pipeline
-            turnContext.OnSendActivities(async (ctx, activities, nextSend) =>
+            finally
             {
-                // run full pipeline
-                var responses = await nextSend().ConfigureAwait(false);
-
-                foreach (var activity in activities)
-                {
-                    LogActivity(transcript, CloneActivity(activity));
-                }
-
-                return responses;
-            });
-
-            // hook up update activity pipeline
-            turnContext.OnUpdateActivity(async (ctx, activity, nextUpdate) =>
-            {
-                // run full pipeline
-                var response = await nextUpdate().ConfigureAwait(false);
-
-                // add Message Update activity
-                var updateActivity = CloneActivity(activity);
-                updateActivity.Type = ActivityType.MessageUpdate;
-                LogActivity(transcript, updateActivity);
-                return response;
-            });
-
-            // hook up delete activity pipeline
-            turnContext.OnDeleteActivity(async (ctx, reference, nextDelete) =>
-            {
-                // run full pipeline
-                await nextDelete().ConfigureAwait(false);
-
-                // add MessageDelete activity
-                // log as MessageDelete activity
-                var deleteActivity = new Activity
-                {
-                    Type = ActivityType.MessageDelete,
-                    Id = reference.ActivityId,
-                }
-                    .ApplyConversationReference(reference, isIncoming: false);
-
-                LogActivity(transcript, deleteActivity);
-            });
-
-            // process Agent logic
-            await nextTurn(cancellationToken).ConfigureAwait(false);
-
-            // flush transcript at end of turn
-            // NOTE: We are not awaiting this task by design, TryLogTranscriptAsync() observes all exceptions and we don't need to or want to block execution on the completion.
-            _ = TryLogTranscriptAsync(_logger, transcript);
+                // Ensure we flush the transcript even if there is an error.
+                // This ensures we capture the activity stream leading up to the error.
+                // flush transcript at end of turn
+                // NOTE: We are not awaiting this task by design, TryLogTranscriptAsync() observes all exceptions and we don't need to or want to block execution on the completion.
+                _ = TryLogTranscriptAsync(_logger, transcript);
+            }
         }
 
         /// <summary>

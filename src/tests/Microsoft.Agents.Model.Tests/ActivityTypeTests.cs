@@ -34,16 +34,13 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ActivityType_Comparisons()
         {
-            Assert.Equal(ActivityType.Message, ActivityType.FromString("Message"));
-            Assert.True(ActivityType.Message == "mEsSaGe");
-        }
-
-        [Fact]
-        public void ActivityType_FromString()
-        {
-            Assert.Equal(ActivityType.Message, ActivityType.FromString("Message"));
-            Assert.Equal(ActivityType.Message, ActivityType.FromString("message"));
-            Assert.Equal("myActivityType", ActivityType.FromString("myActivityType"));
+            Assert.Equal(ActivityType.Message, new Activity("Message").Type);    // uses string.Equals
+            Assert.Equal(ActivityType.Message, new Activity("mEsSaGe").Type);    // uses string.Equals
+            Assert.True((new Activity("mEsSaGe")).Type == ActivityType.Message); // uses ActivityType.Equals
+            Assert.True((new Activity("MyActivityType")).Type == "myactivitytype"); // uses ActivityType.Equals
+            Assert.Equal("custom", new Activity("custom").Type);
+            Assert.False((new Activity()).Type == ActivityType.Message);
+            Assert.False(ActivityType.Message == (new Activity()).Type);
         }
 
         [Fact]

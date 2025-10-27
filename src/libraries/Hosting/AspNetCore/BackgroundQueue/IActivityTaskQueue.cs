@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -22,13 +23,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <remarks>It is assumed these Claims have been authenticated via JwtTokenValidation.AuthenticateRequest.</remarks>
         /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
         /// activity.</param>
+        /// <param name="adapter"></param>
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
         /// <param name="proactive"></param>
         /// <param name="proactiveAudience"></param>
         /// <param name="agentType"></param>
         /// <param name="onComplete"></param>
         /// <param name="headers">Headers used for the current <see cref="Activity"/> request.</param>
-        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null);
+        /// <returns>true if the item was queued.  false would indicate the queue has been disabled (probably shutting down).</returns>
+        bool QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null);
 
         /// <summary>
         /// Wait for a signal of an enqueued Activity with Claims to be processed.
@@ -37,5 +40,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <returns>An ActivityWithClaims to be processed.</returns>
         /// <remarks>It is assumed these claims have already been authenticated.</remarks>
         Task<ActivityWithClaims> WaitForActivityAsync(CancellationToken cancellationToken);
+
+        void Stop(bool waitForEmpty = true);
     }
 }

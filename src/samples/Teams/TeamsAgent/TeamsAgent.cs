@@ -29,11 +29,21 @@ public class TeamsAgent : AgentApplication
             tae.MessageExtensions.OnQuery("findNuGetPackage", OnQuery);
             tae.MessageExtensions.OnSelectItem(OnSelectItem);
             tae.MessageExtensions.OnQueryLink(OnQueryLink);
+#pragma warning disable CS0618 // Type or member is obsolete
+            tae.OnFeedbackLoop(MyFeedbackLoopHandler);
+#pragma warning restore CS0618 // Type or member is obsolete
         });
         AdaptiveCards.OnSearch("dataset", OnSearchDS);
         OnMessageReactionsAdded(OnMessageReaction);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnActivity(ActivityType.Message, OnMessageAsync);
+    }
+
+    private Task MyFeedbackLoopHandler(ITurnContext turnContext, ITurnState turnState, FeedbackLoopData feedbackLoopData, CancellationToken cancellationToken)
+    {
+        // Do something with FeedbackLoopData
+        System.Diagnostics.Trace.WriteLine("FeedbackLoop handler");
+        return Task.CompletedTask;
     }
 
     private Task<MessagingExtensionResult> OnQueryLink(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)

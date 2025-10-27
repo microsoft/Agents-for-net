@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Net;
-using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Net;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
@@ -32,14 +32,6 @@ namespace Microsoft.Agents.Builder
         /// The <see cref="IChannelServiceClientFactory" /> instance for this adapter.
         /// </value>
         protected IChannelServiceClientFactory ChannelServiceFactory { get; private set; } = channelServiceClientFactory ?? throw new ArgumentNullException(nameof(channelServiceClientFactory));
-
-        /// <summary>
-        /// Gets a <see cref="ILogger" /> to use within this adapter and its subclasses.
-        /// </summary>
-        /// <value>
-        /// The <see cref="ILogger" /> instance for this adapter.
-        /// </value>
-        protected ILogger Logger { get; private set; } = logger ?? NullLogger.Instance;
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
@@ -73,6 +65,11 @@ namespace Microsoft.Agents.Builder
                 {
                     if (!await HostResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                        }
+
                         // Respond via ConnectorClient
                         if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
                         {
@@ -190,7 +187,8 @@ namespace Microsoft.Agents.Builder
                 using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
                 // Create a turn context and run the pipeline.
-                using var context = CreateTurnContext(createActivity, claimsIdentity, connectorClient, userTokenClient, callback);
+                using var context = new TurnContext(this, createActivity, claimsIdentity);
+                SetTurnContextServices(context, connectorClient, userTokenClient);
 
                 // Run the pipeline.
                 await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -213,14 +211,20 @@ namespace Microsoft.Agents.Builder
             audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
+            // Create a turn context and clients
+            using var context = new TurnContext(this, continuationActivity, claimsIdentity);
+
             // Create the connector client to use for outbound requests.
-            using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, continuationActivity.ServiceUrl, audience, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
+                context,
+                audience,
+                useAnonymous: useAnonymousAuthCallback,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
-            // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(continuationActivity, claimsIdentity, connectorClient, userTokenClient, callback);
+            SetTurnContextServices(context, connectorClient, userTokenClient);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -247,36 +251,29 @@ namespace Microsoft.Agents.Builder
                 Logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", activity.ChannelId);
             }
 
+            // Create a turn context and clients
+            using var context = new TurnContext(this, activity, claimsIdentity);
+
             // Create the connector client to use for outbound requests.
             using IConnectorClient connectorClient =
-                ResolveIfConnectorClientIsNeeded(activity) ?  // if Delivery Mode == ExpectReplies, we don't need a connector client.
-                    await ChannelServiceFactory.CreateConnectorClientAsync(
-                    claimsIdentity,
-                    activity.ServiceUrl,
-                    AgentClaims.GetTokenAudience(claimsIdentity),
-                    cancellationToken,
-                    scopes: AgentClaims.GetTokenScopes(claimsIdentity),
-                    useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false)
+                ResolveIfConnectorClientIsNeeded(activity)  // if Delivery Mode == ExpectReplies, we don't need a connector client.
+                    ? await ChannelServiceFactory.CreateConnectorClientAsync(
+                        context,
+                        scopes: AgentClaims.GetTokenScopes(claimsIdentity),
+                        useAnonymous: useAnonymousAuthCallback,
+                        cancellationToken: cancellationToken).ConfigureAwait(false)
                     : null;
 
             // Create a UserTokenClient instance for OAuth flow.
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
-            // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(activity, claimsIdentity, connectorClient, userTokenClient, callback);
+            SetTurnContextServices(context, connectorClient, userTokenClient);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
-
-        }
-
-        [Obsolete("Use HostResponseAsync")]
-        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
-        {
-            return HostResponseAsync(incomingActivity, outActivity, cancellationToken);
         }
 
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
@@ -300,11 +297,8 @@ namespace Microsoft.Agents.Builder
             return (Activity)activity;
         }
 
-        private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, IConnectorClient connectorClient, IUserTokenClient userTokenClient, AgentCallbackHandler callback)
+        private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
         {
-            var turnContext = new TurnContext(this, activity);
-
-            turnContext.Identity = claimsIdentity;
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
             if (userTokenClient != null)

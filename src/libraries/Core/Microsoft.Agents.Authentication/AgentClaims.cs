@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 
@@ -15,6 +16,39 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     public static class AgentClaims
     {
+        public static bool IsExchangeableToken(JwtSecurityToken jwtToken)
+        {
+            AssertionHelpers.ThrowIfNull(jwtToken, nameof(jwtToken));
+
+            var idtyp = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "idtyp")?.Value;
+            if ("user".Equals(idtyp))
+            {
+                return false;
+            }
+
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud")?.Value;
+            var appId = GetAppId(jwtToken);  // this will use either "appid" or "azp" based on 'ver'
+            return (bool)(aud?.Contains(appId));
+        }
+
+        public static string GetAppId(JwtSecurityToken jwtToken)
+        {
+            AssertionHelpers.ThrowIfNull(jwtToken, nameof(jwtToken));
+
+            string appIdClaim;
+            var ver = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "ver")?.Value ?? "1.0";
+            if (ver.Equals("1.0"))
+            {
+                appIdClaim = jwtToken.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim)?.Value;
+            }
+            else
+            {
+                appIdClaim = jwtToken.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AzpClaim)?.Value;
+            }
+
+            return appIdClaim;
+        }
+
         /// <summary>
         /// Retrieves the AppId from the given claims identity.
         /// </summary>
@@ -133,7 +167,7 @@ namespace Microsoft.Agents.Authentication
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)
-                ? $"app://{AgentClaims.GetOutgoingAppId(identity)}"
+                ? $"api://{AgentClaims.GetOutgoingAppId(identity)}"
                 : AuthenticationConstants.BotFrameworkScope;
         }
 

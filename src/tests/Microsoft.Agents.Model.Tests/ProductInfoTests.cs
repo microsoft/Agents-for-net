@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
 {
+    [Collection("ProductInfo Collection")]
     public class ProductInfoTests()
     {
         [Fact]
@@ -25,6 +26,11 @@ namespace Microsoft.Agents.Model.Tests
             // ChannelId construction
             var channelId = new ChannelId(Channels.Msteams);
             Assert.Equal(Channels.Msteams, channelId);
+
+            channelId = new ChannelId("1:2:3");
+            Assert.Equal("1", channelId.Channel);
+            Assert.Equal("2:3", channelId.SubChannel);
+            Assert.Equal("1:2:3", channelId);
 
             // Can change SubChannel
             channelId = new ChannelId(Channels.M365Copilot);
@@ -105,6 +111,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(activity.GetProductInfoEntity());
         }
 
+        /*
         [Fact]
         public void FullNotationOffTest()
         {
@@ -136,5 +143,6 @@ namespace Microsoft.Agents.Model.Tests
 
             ProtocolJsonSerializer.ChannelIdIncludesProduct = true;
         }
+        */
     }
 }

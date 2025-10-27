@@ -27,7 +27,7 @@ public class MyAgent : AgentApplication
 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
-        OnActivity(ActivityTypes.Message, MessageActivityAsync, rank: RouteRank.Last);
+        OnActivity(ActivityType.Message, MessageActivityAsync, rank: RouteRank.Last);
     }
 
     protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

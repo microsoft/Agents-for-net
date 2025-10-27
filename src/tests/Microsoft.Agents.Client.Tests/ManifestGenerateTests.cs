@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Client.Tests
         {
         }
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Message, Rank = RouteRank.Last)]
         protected Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;

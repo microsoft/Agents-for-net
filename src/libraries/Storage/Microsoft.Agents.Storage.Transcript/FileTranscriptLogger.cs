@@ -21,6 +21,8 @@ namespace Microsoft.Agents.Storage.Transcript
     /// </remarks>
     public class FileTranscriptLogger : ITranscriptStore
     {
+        private const string TranscriptFileExtension = ".transcript";
+        private const int MaxFileNameSize = 100;
         private readonly string _folder;
         private readonly bool _unitTestMode;
         private readonly HashSet<string> _started = [];
@@ -88,21 +90,20 @@ namespace Microsoft.Agents.Storage.Transcript
                         return;
                     }
 
-                    if (activity.Type == ActivityType.MessageDelete)
+                    switch (activity.Type)
                     {
-                        await MessageDeleteAsync(activity, transcriptFile).ConfigureAwait(false);
-                        return;
-                    }
-                    else if (activity.Type == ActivityType.MessageUpdate)
-                    {
-                        await MessageUpdateAsync(activity, transcriptFile).ConfigureAwait(false);
-                        return;
-                    }
-                    else 
-                    {
-                        // append
-                        await LogActivityAsync(activity, transcriptFile).ConfigureAwait(false);
-                        return;
+                        case ActivityType.MessageDelete:
+                            await MessageDeleteAsync(activity, transcriptFile).ConfigureAwait(false);
+                            return;
+
+                        case ActivityType.MessageUpdate:
+                            await MessageUpdateAsync(activity, transcriptFile).ConfigureAwait(false);
+                            return;
+
+                        default:
+                            // append
+                            await LogActivityAsync(activity, transcriptFile).ConfigureAwait(false);
+                            return;
                     }
                 }
                 catch (Exception e)
@@ -268,13 +269,18 @@ namespace Microsoft.Agents.Storage.Transcript
 
         private static string SanitizeString(string str, char[] invalidChars)
         {
+            // Preemptively check for : in string and replace with _
+            if (!string.IsNullOrEmpty(str) && str.Contains(':'))
+            {
+                str = str.Replace(':', '_');
+            }
+
             var sb = new StringBuilder(str);
 
             foreach (var invalidChar in invalidChars)
             {
                 sb.Replace(invalidChar.ToString(), string.Empty);
             }
-
             return sb.ToString();
         }
 
@@ -285,8 +291,12 @@ namespace Microsoft.Agents.Storage.Transcript
 
             var channelFolder = GetChannelFolder(channelId);
             var fileName = SanitizeString(conversationId, Path.GetInvalidFileNameChars());
+            if (fileName != null && fileName.Length > MaxFileNameSize - TranscriptFileExtension.Length)
+            {
+                fileName = fileName.Substring(0, MaxFileNameSize - TranscriptFileExtension.Length);
+            }
 
-            return Path.Combine(channelFolder, fileName + ".transcript");
+            return Path.Combine(channelFolder, fileName + TranscriptFileExtension);
         }
 
         private string GetChannelFolder(string channelId)

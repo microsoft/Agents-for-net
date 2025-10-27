@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelCreated",
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelRenamed",
@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelDeleted",
@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelRestored",
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelUnshared",
@@ -242,7 +242,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelShared",
@@ -285,7 +285,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRenamed",
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamDeleted",
@@ -369,7 +369,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamHardDeleted",
@@ -411,7 +411,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamArchived",
@@ -453,7 +453,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamUnarchived",
@@ -495,7 +495,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRestored",
@@ -537,7 +537,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRenamed",
@@ -552,7 +552,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -560,7 +560,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRenamed"
@@ -609,7 +609,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new() },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -619,7 +619,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelDeleted",
@@ -633,7 +633,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRenamed"
@@ -678,7 +678,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new() },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -688,7 +688,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "channelDeleted"
@@ -701,7 +701,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 ChannelData = new TeamsChannelData
                 {
                     EventType = "teamRenamed"
@@ -756,7 +756,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.MessageUpdate,
+                Type = ActivityType.MessageUpdate,
                 ChannelId = Channels.Msteams,
                 ChannelData = new TeamsChannelData
                 {
@@ -769,7 +769,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageUpdate,
+                Type = ActivityType.MessageUpdate,
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -780,7 +780,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -823,7 +823,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.MessageUpdate,
+                Type = ActivityType.MessageUpdate,
                 ChannelId = Channels.Msteams,
                 ChannelData = new TeamsChannelData
                 {
@@ -836,7 +836,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageUpdate,
+                Type = ActivityType.MessageUpdate,
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -847,7 +847,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -890,7 +890,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 ChannelId = Channels.Msteams,
                 ChannelData = new TeamsChannelData
                 {
@@ -903,7 +903,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 ChannelId = Channels.Msteams,
                 ChannelData = new TeamsChannelData
                 {
@@ -915,7 +915,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -966,7 +966,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/fetch",
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
@@ -975,7 +975,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/fetch",
                 ChannelId = Channels.Outlook,
                 Recipient = new() { Id = "recipientId" },
@@ -984,7 +984,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/submit",
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
@@ -993,7 +993,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity4 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1059,7 +1059,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/submit",
                 ChannelId = Channels.Msteams,
                 Value = ProtocolJsonSerializer.ToJsonElements(data),
@@ -1069,7 +1069,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/submit",
                 ChannelId = Channels.Outlook,
                 Value = ProtocolJsonSerializer.ToJsonElements(data),
@@ -1079,7 +1079,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "config/fetch",
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
@@ -1088,7 +1088,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity4 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1150,7 +1150,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "fileConsent/invoke",
                 Value = new
                 {
@@ -1164,7 +1164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "fileConsent/invoke",
                 Value = new
                 {
@@ -1177,7 +1177,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/queryLink",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1234,7 +1234,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "fileConsent/invoke",
                 Value = new
                 {
@@ -1248,7 +1248,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "fileConsent/invoke",
                 Value = new
                 {
@@ -1261,7 +1261,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/queryLink",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1318,7 +1318,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "actionableMessage/executeAction",
                 Value = new { },
                 Id = "test",
@@ -1329,7 +1329,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "actionableMessage/executeAction",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1338,7 +1338,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/queryLink",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1389,7 +1389,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 ChannelId = Channels.Msteams,
                 Name = "application/vnd.microsoft.readReceipt",
                 Value = new
@@ -1433,7 +1433,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 ChannelId = Channels.Msteams,
                 Name = "application/vnd.microsoft.meetingStart",
                 Value = ProtocolJsonSerializer.ToJsonElements(new

@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +40,9 @@ namespace Microsoft.Agents.Builder
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
+        // Teams failed to accept streaming messages. 
+        private const string BadArgument = "BadArgument";
+        private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
         private int _nextSequence = 1;
@@ -47,7 +50,7 @@ namespace Microsoft.Agents.Builder
         private Timer _timer;
         private bool _messageUpdated = false;
         private bool _isTeamsChannel;
-        private bool _cancelled;
+        private bool _canceled;
 
         // Queue for outgoing activities
         private readonly List<Func<IActivity>> _queue = [];
@@ -124,8 +127,30 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
+        /// Adds a citation to the collection at the specified position.
+        /// </summary>
+        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL.</remarks>
+        /// <param name="citation">The citation to add. Must not be <see langword="null"/>.</param>
+        /// <param name="citationPosition">The position of the citation in the collection. Must be a non-negative integer.</param>
+        public void AddCitation(Citation citation, int citationPosition)
+        {
+            Citations ??= [];
+            Citations.Add(new ClientCitation()
+            {
+                Position = citationPosition,
+                Appearance = new ClientCitationAppearance()
+                {
+                    Name = citation.Title ?? $"Document #{citationPosition}",
+                    Abstract = CitationUtils.Snippet(citation.Content, 480),
+                    Url = citation.Url
+                }
+            });
+        }
+
+        /// <summary>
         ///  Sets the citations for the full message.
         /// </summary>
+        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL. Citations are numbed in the order they appear on the list.</remarks>
         /// <param name="citations">Citations to be included in the message.</param>
         public void AddCitations(IList<Citation> citations)
         {
@@ -137,20 +162,41 @@ namespace Microsoft.Agents.Builder
 
                 foreach (Citation citation in citations)
                 {
-                    string abs = CitationUtils.Snippet(citation.Content, 480);
-
                     Citations.Add(new ClientCitation()
                     {
                         Position = currPos + 1,
                         Appearance = new ClientCitationAppearance()
                         {
-                            Name = citation.Title ?? $"Document #${currPos + 1}",
-                            Abstract = abs,
+                            Name = citation.Title ?? $"Document #{currPos + 1}",
+                            Abstract = CitationUtils.Snippet(citation.Content, 480),
                             Url = citation.Url
                         }
                     });
                     currPos++;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Adds a ClientCitation to the Citations list.
+        /// </summary>
+        /// <param name="citation">ClientCitation to add to the stream</param>
+        public void AddCitation(ClientCitation citation)
+        {
+            Citations ??= [];
+            Citations.Add(citation);
+        }
+
+        /// <summary>
+        /// Adds multiple ClientCitations to the Citations list.
+        /// </summary>
+        /// <param name="citations">The ClientCitations to add.</param>
+        public void AddCitations(IList<ClientCitation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= [];
+                Citations.AddRange(citations);
             }
         }
 
@@ -210,7 +256,7 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public void QueueTextChunk(string text)
         {
-            if (string.IsNullOrEmpty(text) || _cancelled)
+            if (string.IsNullOrEmpty(text) || _canceled)
             {
                 return;
             }
@@ -276,7 +322,7 @@ namespace Microsoft.Agents.Builder
 
                     _ended = true;
 
-                    if (!IsStreamStarted() || _cancelled)
+                    if (!IsStreamStarted() || _canceled)
                     {
                         return;
                     }
@@ -330,19 +376,20 @@ namespace Microsoft.Agents.Builder
             }
 
             // Add in Generated by AI
-            if (EnableGeneratedByAILabel == true)
+            List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
+            if((bool)EnableGeneratedByAILabel || currCitations != null)
             {
-                AIEntity entity = new();
-                if (Citations != null && Citations.Count > 0)
+                AIEntity entity = new()
                 {
-                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-                    if (currCitations != null && currCitations.Count > 0)
-                    {
-                        entity.Citation = currCitations;
-                    }
+                    Citation = currCitations,
+                    UsageInfo = SensitivityLabel
+                };
+
+                if (EnableGeneratedByAILabel == true)
+                {
+                    entity.AdditionalType.Add(AIEntity.AdditionalTypeAIGeneratedContent);
                 }
 
-                entity.UsageInfo = this.SensitivityLabel;
                 activity.Entities.Add(entity);
             }
 
@@ -369,7 +416,7 @@ namespace Microsoft.Agents.Builder
                 FinalMessage = null;
                 _nextSequence = 1;
                 StreamId = null;
-                _cancelled = false;
+                _canceled = false;
             }
         }
 
@@ -438,7 +485,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId;
+            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
@@ -453,7 +500,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (Channels.Webchat == turnContext.Activity.ChannelId || Channels.Directline == turnContext.Activity.ChannelId)
+            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
@@ -466,6 +513,7 @@ namespace Microsoft.Agents.Builder
                 // Support streaming for DeliveryMode.Stream
                 IsStreamingChannel = true;
                 Interval = 100;
+                StreamId = Guid.NewGuid().ToString();
             }
             else
             {
@@ -561,22 +609,40 @@ namespace Microsoft.Agents.Builder
                     // from the Timer thread and will crash the app.  A more elegant 
                     // solution would be to get it back to the calling thread.
 
+                    bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        if (errorResponse.Body != null && !TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
                         {
-                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                            _context?.Adapter?.Logger?.LogWarning(
+                                "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
+                                ex.Message,
+                                errorResponse.Body.Error.Message);
+
+                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorResponse.Body.Error.Message}");
                         }
-                        else
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
+                        if (errorResponse.Body != null &&
+                            BadArgument.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase) &&
+                            errorResponse.Body.Error.Message.ToLower().Contains(TeamsStreamNotAllowed))
                         {
-                            System.Diagnostics.Trace.WriteLine("User cancelled stream on the client side.");
+                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
+                            CanceledStream = false; 
+                        }
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                        
+                        if (CanceledStream)
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
                         }
                     }
 
                     lock (this)
                     {
                         StopStream();
-                        _cancelled = true;
+                        _canceled = CanceledStream;
                     }
                 }
             }

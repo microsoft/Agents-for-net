@@ -81,14 +81,14 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Message, Rank = RouteRank.Last)]
         public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageAsync");
             return Task.CompletedTask;
         }
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Message, Rank = RouteRank.Last)]
         public Task OnMessageDuplicateAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageDuplicateAsync");

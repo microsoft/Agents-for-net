@@ -6,7 +6,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.App;
@@ -164,7 +163,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    turnContext.Activity.Type == ActivityType.MessageUpdate
+                    turnContext.Activity?.Type == ActivityType.MessageUpdate
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "editMessage"));
             };
@@ -186,7 +185,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    turnContext.Activity.Type == ActivityType.MessageUpdate
+                    turnContext.Activity?.Type == ActivityType.MessageUpdate
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
             };
@@ -208,7 +207,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    turnContext.Activity.Type == ActivityType.MessageDelete
+                    turnContext.Activity?.Type == ActivityType.MessageDelete
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
             };
@@ -251,7 +250,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                turnContext.Activity.Type == ActivityType.Invoke
+                turnContext.Activity?.Type == ActivityType.Invoke
                 && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -279,7 +278,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                turnContext.Activity.Type == ActivityType.Invoke
+                turnContext.Activity?.Type == ActivityType.Invoke
                 && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -385,38 +384,18 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns></returns>
+        [Obsolete("Use AgentApplication.OnFeedbackLoop instead")]
         public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            RouteSelector routeSelector = (context, _) =>
+            // This is for back-compat with existing usage.  We need to convert from Core FeedbackData to existing Teams Extension FeedbackLoopData.
+            async Task coreHandler(ITurnContext turnContext, ITurnState turnState, Builder.App.FeedbackData coreFeedbackData, CancellationToken cancellationToken)
             {
-                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
-                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
-                return Task.FromResult
-                (
-                    context.Activity.Type == ActivityType.Invoke
-                    && context.Activity.Name == "message/submitAction"
-                    && actionName == "feedback"
-                );
-            };
+                var teamsFeedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackLoopData>(coreFeedbackData);
+                await handler(turnContext, turnState, teamsFeedbackLoopData, cancellationToken).ConfigureAwait(false);
+            }
 
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                FeedbackLoopData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackLoopData>(turnContext.Activity.Value)!;
-                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
-
-                await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
+            // Use Core route handling for this.
+            AgentApplication.OnFeedbackLoop(coreHandler, rank, autoSignInHandlers, false);
             return this;
         }
     }

@@ -1,8 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 namespace Microsoft.Agents.Core.Models
 {
+    /// <summary>
+    /// Channel definitions.
+    /// The various "support" methods come from:  https://learn.microsoft.com/en-us/azure/bot-service/bot-service-channels-reference?view=azure-bot-service-4.0
+    /// </summary>
     public static class Channels
     {
         /// <summary>
@@ -121,15 +126,28 @@ namespace Microsoft.Agents.Core.Models
         public const string Outlook = "outlook";
 
         /// <summary>
+        /// Microsoft Copilot Studio
+        /// </summary>
+        public const string CopilotStudio = "pva-studio";
+
+        /// <summary>
         /// M365 channel.
         /// </summary>
         public const string M365 = "m365extensions";
+
+        public const string A2A = "a2a";
+        public const string MCP = "mcp";
 
         /// <summary>
         /// M365 Copilot Teams Subchannel
         /// </summary>
         public const string M365CopilotSubChannel = "COPILOT";
         public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
+
+        /// <summary>
+        /// Agents parent channel
+        /// </summary>
+        public const string Agents = "agents";
 
         /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.
@@ -173,9 +191,9 @@ namespace Microsoft.Agents.Core.Models
                 case Webchat:
                     return buttonCnt <= 100;
 
+                // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 // https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-messages?tabs=dotnet1%2Cdotnet2%2Cdotnet3%2Cdotnet4%2Cdotnet5%2Cdotnet#send-suggested-actions
-                case M365Copilot:
-                case Msteams:
+                case Msteams:  
                     if (conversationType == "personal")
                     {
                         return buttonCnt <= 3;
@@ -202,6 +220,7 @@ namespace Microsoft.Agents.Core.Models
                 case Skype:
                     return buttonCnt <= 3;
 
+                // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Msteams:
                     return buttonCnt <= 50;
 
@@ -219,6 +238,117 @@ namespace Microsoft.Agents.Core.Models
 
                 default:
                     return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines if the specified channel supports video cards.
+        /// </summary>
+        /// <param name="channelId">The channel identifier to check for video card support.</param>
+        /// <returns>True if the channel supports video cards; otherwise, false.</returns>
+        public static bool SupportsVideoCard(ChannelId channelId)
+        {
+            switch (channelId.Channel)
+            {
+                case Alexa:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the specified channel supports receipt cards.
+        /// Returns true if the channel supports receipt cards; otherwise, false.
+        /// Returns false for Alexa, GroupMe, Microsoft Teams, and Twilio channels; true for others.
+        /// </summary>
+        public static bool SupportsReceiptCard(ChannelId channelId)
+        {
+            switch (channelId.Channel)
+            {
+                case Alexa:
+                case Groupme:
+                case Msteams: // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the specified channel supports thumbnail cards.
+        /// Returns true if the channel supports thumbnail cards; otherwise, false.
+        /// </summary>
+        public static bool SupportsThumbnailCard(ChannelId channelId)
+        {
+            switch (channelId)
+            {
+                case Alexa:
+                    return false;
+
+                // Text only
+                case Groupme:
+                case Line:
+                case Slack:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the specified channel supports audio cards.
+        /// Returns <c>true</c> if the channel supports audio cards; otherwise, <c>false</c>.
+        /// </summary>
+        public static bool SupportsAudioCard(ChannelId channelId)
+        {
+            switch (channelId.Channel)
+            {
+                case Alexa:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
+                case Twilio:
+                    return false;
+
+                // Text only
+                case Email:
+                case Groupme:
+                case Line:
+                case Slack:
+                case Telegram:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Determines if the specified channel supports Animation Cards.
+        /// Returns true if Animation Cards are supported; otherwise, false.
+        /// </summary>
+        public static bool SupportsAnimationCard(ChannelId channelId)
+        {
+            switch (channelId.Channel)
+            {
+                case Alexa:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
+                    return false;
+
+                // Text only
+                case Email:
+                case Groupme:
+                case Twilio:
+                    return false;
+
+                default:
+                    return true;
             }
         }
 
@@ -264,7 +394,7 @@ namespace Microsoft.Agents.Core.Models
                 case Groupme:
                 case Kik:
                 case Line:
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Slack:
                 case Sms:
                 case Telegram:
@@ -283,7 +413,7 @@ namespace Microsoft.Agents.Core.Models
         {
             switch (channelId.Channel)
             {
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                     return true;
 
                 default: 
@@ -310,7 +440,7 @@ namespace Microsoft.Agents.Core.Models
                 case Webchat:
                     return false;
 
-                case Msteams:
+                case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 case Slack:
                 case Telegram:
                     return true;

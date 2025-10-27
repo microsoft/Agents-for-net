@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.Compat
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(
                         turnContext.Activity.From.Id,
                         _oAuthConnectionName,
-                        turnContext.Activity.ChannelId,
+                        turnContext.Activity.ChannelId?.Channel,
                         new TokenExchangeRequest { Token = tokenExchangeRequest.Token },
                         cancellationToken).ConfigureAwait(false);
                 }
