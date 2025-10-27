@@ -136,11 +136,11 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnActivity(ActivityType type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
+            RouteSelector routeSelector = (context, _) => Task.FromResult(context.Activity?.Type == type);
             OnActivity(routeSelector, handler, rank, autoSignInHandlers);
             return this;
         }

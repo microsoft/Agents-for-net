@@ -9,116 +9,175 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// 
+    /// <list type="bullet">
+    ///   <item>
+    ///     <term>ContactRelationUpdate</term>
+    ///     <description>Contact relation update activities</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>ConversationUpdate</term>
+    ///     <description>A conversation update occurred</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>EndOfConversation</term>
+    ///     <description>Notify/Receive end of conversation</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Event</term>
+    ///     <description>Notify/Receive an event Activity.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>DeleteUserData</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Handoff</term>
+    ///     <description><seealso cref="Handoff"/></description>
+    ///   </item>
+    ///   <item>
+    ///     <term>InstallationUpdate</term>
+    ///     <description>Indicates the agents was added to a conversation in Teams</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Invoke</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Message</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>MessageDelete</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>MessageReaction</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>MessageUpdate</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Suggestion</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Trace</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Typing</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Command</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>CommandResult</term>
+    ///     <description>The type value for contact relation update activities.</description>
+    ///   </item>
+    /// </list>
     /// </summary>
-    [JsonConverter(typeof(ActivityTypeConverter))]
     public class ActivityType : IEquatable<ActivityType>
     {
         private readonly string _type;
 
-        private static readonly ActivityType _contactRelationUpdate = new("contactRelationUpdate");
-        private static readonly ActivityType _conversationUpdate = new("conversationUpdate");
-        private static readonly ActivityType _endOfConversation = new("endOfConversation");
-        private static readonly ActivityType _event = new("event");
-        private static readonly ActivityType _deleteUserData = new("deleteUserData");
-        private static readonly ActivityType _handoff = new("handoff");
-        private static readonly ActivityType _installationUpdate = new("installationUpdate");
-        private static readonly ActivityType _invoke = new("invoke");
-        private static readonly ActivityType _message = new("message");
-        private static readonly ActivityType _messageDelete = new("messageDelete");
-        private static readonly ActivityType _messageReaction = new("messageReaction");
-        private static readonly ActivityType _messageUpdate = new("messageUpdate");
-        private static readonly ActivityType _suggestion = new("suggestion");
-        private static readonly ActivityType _trace = new("trace");
-        private static readonly ActivityType _typing = new("typing");
-        private static readonly ActivityType _command = new("command");
-        private static readonly ActivityType _commandResult = new("commandResult");
-        private static readonly ActivityType _invokeResponse = new("invokeResponse");
+        /// <summary>
+        /// Contact relation update occurred.
+        /// </summary>
+        public const string ContactRelationUpdate = "contactRelationUpdate";
 
         /// <summary>
-        /// The type value for contact relation update activities.
+        /// A conversation update occurred.
         /// </summary>
-        public static ActivityType ContactRelationUpdate => _contactRelationUpdate;
+        public const string ConversationUpdate = "conversationUpdate";
 
         /// <summary>
-        /// The type value for conversation update activities.
+        /// Notify/Receive end of conversation.
         /// </summary>
-        public static ActivityType ConversationUpdate => _conversationUpdate;
+        /// <remarks>
+        /// Received: Channel side is ending conversation.
+        /// Send: Agent side is ending conversation.
+        /// </remarks>
+        public const string EndOfConversation = "endOfConversation";
 
         /// <summary>
-        /// The type value for end of conversation activities.
+        /// Notify/Receive an event Activity.
         /// </summary>
-        public static ActivityType EndOfConversation => _endOfConversation;
-
-        /// <summary>
-        /// The type value for event activities.
-        /// </summary>
-        public static ActivityType Event => _event;
+        /// <remarks>
+        /// The IActivity.Name contains the unique event name.
+        /// </remarks>
+        public const string Event = "event";
 
         /// <summary>
         /// The type value for delete user data activities.
         /// </summary>
-        public static ActivityType DeleteUserData => _deleteUserData;
+        public const string DeleteUserData = "deleteUserData";
 
         /// <summary>
         /// The type value for handoff activities.
         /// </summary>
-        public static ActivityType Handoff => _handoff;
+        public const string Handoff = "handoff";
 
         /// <summary>
-        /// The type value for installation update activities.
+        /// The agent receives an installationUpdate event when you install an agent to a conversation thread in Teams. 
         /// </summary>
-        public static ActivityType InstallationUpdate => _installationUpdate;
+        public const string InstallationUpdate = "installationUpdate";
 
         /// <summary>
         /// The type value for invoke activities.
         /// </summary>
-        public static ActivityType Invoke => _invoke;
+        /// <remarks>
+        /// The IActivity.Name contains the unique Invoke name.
+        /// </remarks>
+        public const string Invoke = "invoke";
 
         /// <summary>
         /// The type value for message activities.
         /// </summary>
-        public static ActivityType Message => _message;
+        public const string Message = "message";
 
         /// <summary>
         /// The type value for message delete activities.
         /// </summary>
-        public static ActivityType MessageDelete => _messageDelete;
+        public const string MessageDelete = "messageDelete";
 
         /// <summary>
         /// The type value for message reaction activities.
         /// </summary>
-        public static ActivityType MessageReaction => _messageReaction;
+        public const string MessageReaction = "messageReaction";
 
         /// <summary>
         /// The type value for message update activities.
         /// </summary>
-        public static ActivityType MessageUpdate => _messageUpdate;
+        public const string MessageUpdate = "messageUpdate";
 
         /// <summary>
         /// The type value for suggestion activities.
         /// </summary>
-        public static ActivityType Suggestion => _suggestion;
+        public const string Suggestion = "suggestion";
 
         /// <summary>
         /// The type value for trace activities.
         /// </summary>
-        public static ActivityType Trace => _trace;
+        public const string Trace = "trace";
 
         /// <summary>
         /// The type value for typing activities.
         /// </summary>
-        public static ActivityType Typing => _typing;
+        public const string Typing = "typing";
 
         /// <summary>
         /// The type value for command activities.
         /// </summary>
-        public static ActivityType Command => _command;
+        public const string Command = "command";
 
         /// <summary>
         /// The type value for command result activities.
         /// </summary>
-        public static ActivityType CommandResult => _commandResult;
+        public const string CommandResult = "commandResult";
 
         /// <summary>
         /// The type value for invoke response activities.
@@ -128,7 +187,7 @@ namespace Microsoft.Agents.Core.Models
         /// have a corresponding return payload for use within the channel. The meaning of an invoke activity
         /// is defined by the <see cref="Activity.Name"/> field, which is meaningful within the scope of a channel.
         /// </remarks>
-        public static ActivityType InvokeResponse => _invokeResponse;
+        public const string InvokeResponse = "invokeResponse";
 
         [JsonConstructor]
         public ActivityType(string type)
@@ -185,6 +244,7 @@ namespace Microsoft.Agents.Core.Models
             return type?.ToString();
         }
 
+        /*
         public static ActivityType FromString(string type)
         {
             return (ActivityType)typeof(ActivityType).GetProperty(type, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.IgnoreCase)?.GetValue(null) ?? new ActivityType(type);
@@ -213,5 +273,6 @@ namespace Microsoft.Agents.Core.Models
                 writer.WriteStringValue(value._type);
             }
         }
+        */
     }
 }
