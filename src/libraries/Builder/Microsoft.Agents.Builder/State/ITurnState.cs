@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Builder.State
     /// <summary>
     /// TurnState represents the state for an Agent.  State is composed of 1+ state scopes.
     /// </summary>
-    public interface ITurnState
+    public interface ITurnState : IDisposable
     {
         ConversationState Conversation { get; }
         PrivateConversationState Private { get; }

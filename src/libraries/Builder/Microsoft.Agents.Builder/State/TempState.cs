@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.State
         private const string AuthTokenKey = "authTokens";
 
         public static readonly string ScopeName = "temp";
-        private readonly Dictionary<string, object> _state = [];
+        private Dictionary<string, object> _state = [];
 
         public string Name => ScopeName;
 
@@ -108,6 +108,16 @@ namespace Microsoft.Agents.Builder.State
         public Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            foreach (var state in _state)
+            {
+                _state[state.Key] = null;
+            }
+            _state?.Clear();
+            GC.SuppressFinalize(this);
         }
     }
 }

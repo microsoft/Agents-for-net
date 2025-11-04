@@ -17,6 +17,7 @@ namespace Microsoft.Agents.Builder.State
     public class TurnState : ITurnState
     {
         private readonly Dictionary<string, IAgentState> _scopes = [];
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TurnState"/> class.
@@ -65,24 +66,28 @@ namespace Microsoft.Agents.Builder.State
 
         public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetValue));
             var (scope, property) = GetScopeAndPath(name);
             return GetScope(scope).GetValue(property, defaultValueFactory);
         }
 
         public virtual void SetValue(string path, object value)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SetValue));
             var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).SetValue(property, value);
         }
 
         public virtual void DeleteValue(string path)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteValue));
             var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).DeleteValue(property);
         }
 
         public IAgentState GetScope(string scope)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetScope));
             if (!_scopes.TryGetValue(scope, out IAgentState value))
             {
                 throw new ArgumentException($"Scope '{scope}' not found");
@@ -92,6 +97,8 @@ namespace Microsoft.Agents.Builder.State
 
         public T GetScope<T>()
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetScope));
+
             if (TryGetScope<T>(out var scope))
             {
                 return scope;
@@ -101,6 +108,8 @@ namespace Microsoft.Agents.Builder.State
 
         public bool TryGetScope<T>(out T value)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(TryGetScope));
+
             foreach (var scope in _scopes)
             {
                 if (scope.Value is T agentState)
@@ -116,6 +125,7 @@ namespace Microsoft.Agents.Builder.State
 
         public TurnState Add(IAgentState agentState)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(Add));
             AssertionHelpers.ThrowIfNull(agentState, nameof(agentState));
             _scopes.Add(agentState.Name, agentState);
             return this;
@@ -131,12 +141,14 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task LoadStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(LoadStateAsync));
             var tasks = _scopes.Select(bs => bs.Value.LoadAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         public void ClearState(string scope)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(ClearState));
             GetScope(scope).ClearState();
         }
 
@@ -150,6 +162,7 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SaveStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SaveStateAsync));
             var tasks = _scopes.Select(kv => kv.Value.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
@@ -162,6 +175,28 @@ namespace Microsoft.Agents.Builder.State
                 return (TempState.ScopeName, name);
             }
             return (name[..scopeEnd], name[(scopeEnd + 1)..]);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            foreach (var scope in _scopes)
+            {
+                scope.Value.Dispose();
+                _scopes[scope.Key] = null;
+            }
+
+            _disposed = true;
         }
     }
 }

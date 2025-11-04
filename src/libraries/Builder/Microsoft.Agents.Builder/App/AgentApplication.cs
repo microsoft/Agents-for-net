@@ -801,7 +801,7 @@ namespace Microsoft.Agents.Builder.App
                 }
 
                 // Load turn state
-                ITurnState turnState = Options.TurnStateFactory!();
+                using ITurnState turnState = Options.TurnStateFactory!();
                 await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 try

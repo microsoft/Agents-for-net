@@ -21,6 +21,7 @@ namespace Microsoft.Agents.Builder.State
     {
         private readonly IStorage _storage;
         private CachedAgentState _cachedAgentState;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AgentState"/> class.
@@ -62,6 +63,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public bool HasValue(string name)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(HasValue));
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
@@ -74,6 +76,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public void DeleteValue(string name)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteValue));
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
@@ -85,6 +88,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetValue));
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
@@ -120,6 +124,7 @@ namespace Microsoft.Agents.Builder.State
 
         public bool TryGetValue<T>(string name, out T result)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(TryGetValue));
             if (!IsLoaded())
             {
                 result = default;
@@ -139,6 +144,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public void SetValue<T>(string name, T value)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SetValue));
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
@@ -152,12 +158,14 @@ namespace Microsoft.Agents.Builder.State
         /// </summary>
         public bool IsLoaded()
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(IsLoaded));
             return _cachedAgentState != null;
         }
 
         /// <inheritdoc/>
         public virtual async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(LoadAsync));
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var storageKey = GetStorageKey(turnContext);
@@ -198,6 +206,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SaveChangesAsync));
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var cachedState = GetCachedState();
@@ -217,6 +226,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public virtual void ClearState()
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(ClearState));
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
@@ -229,6 +239,7 @@ namespace Microsoft.Agents.Builder.State
         /// <inheritdoc/>
         public virtual async Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteStateAsync));
             if (IsLoaded())
             {
                 ClearState();
@@ -254,6 +265,7 @@ namespace Microsoft.Agents.Builder.State
         /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
         protected T GetPropertyValue<T>(string propertyName)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(GetPropertyValue));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             if (!IsLoaded())
@@ -296,6 +308,7 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         protected void DeletePropertyValue(string propertyName)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeletePropertyValue));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             var cachedState = GetCachedState();
@@ -310,6 +323,7 @@ namespace Microsoft.Agents.Builder.State
         /// <returns>A task that represents the work queued to execute.</returns>
         protected void SetPropertyValue(string propertyName, object value)
         {
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SetPropertyValue));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
             var cachedState = GetCachedState();
@@ -327,10 +341,29 @@ namespace Microsoft.Agents.Builder.State
             return _cachedAgentState;
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _cachedAgentState?.Dispose();
+            _cachedAgentState = null;
+
+            _disposed = true;
+        }
+
         /// <summary>
         /// Internal cached Agent state.
         /// </summary>
-        internal class CachedAgentState
+        internal class CachedAgentState : IDisposable
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="CachedAgentState"/> class.
@@ -370,6 +403,15 @@ namespace Microsoft.Agents.Builder.State
             {
                 State = new Dictionary<string, object>();
                 Hash = string.Empty;
+            }
+
+            public void Dispose()
+            {
+                foreach (var state in State)
+                {
+                    State[state.Key] = null;
+                }
+                State.Clear();
             }
         }
 

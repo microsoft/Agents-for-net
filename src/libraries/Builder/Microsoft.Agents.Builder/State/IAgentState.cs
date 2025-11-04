@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Builder.State
     /// You can define additional scopes for your Agent.
     /// </remarks>
     /// <seealso cref="IStorage"/>
-    public interface IAgentState
+    public interface IAgentState : IDisposable
     {
         /// <summary>
         /// The scope name of the state.
