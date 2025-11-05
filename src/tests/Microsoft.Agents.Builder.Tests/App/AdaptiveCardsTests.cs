@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Tests.App
     public class AdaptiveCardsTests
     {
         [Fact]
-        public async Task Test_OnActionExecute_Verb()
+        public async Task Test_OnActionExecute_Success()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -73,12 +73,15 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.Equal("invokeResponse", activitiesToSend[0].Type);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(200, invokeResponse.Status);
             Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
         }
 
         [Fact]
-        public async Task Test_OnActionExecute_Verb_NotHit()
+        public async Task Test_OnActionExecute_Verb_NotMatched()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -104,14 +107,6 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             });
-            var turnContext2 = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "application/search",
-                Conversation = new() { Id = "conversationId" },
-                From = new() { Id = "fromId" },
-                ChannelId = "channelId"
-            });
             var adaptiveCardInvokeResponseMock = new Mock<AdaptiveCardInvokeResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
 
@@ -127,20 +122,34 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             app.AdaptiveCards.OnActionExecute("test-verb", handler);
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
-            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
+            // The Activity is just ignored since it didn't match the verb.
             Assert.Null(activitiesToSend);
         }
 
         [Fact]
-        public async Task Test_OnActionExecute_RouteSelector_ActivityNotMatched()
+        public async Task Test_OnActionExecute_UnexpectedAction()
         {
-            var adapter = new SimpleAdapter();
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
                 Type = ActivityTypes.Invoke,
-                Name = "application/search",
+                Name = "adaptiveCard/action",
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                {
+                    action = new
+                    {
+                        type = "Not.Action.Execute",
+                        verb = "not-test-verb"
+                    }
+                }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -164,10 +173,69 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionExecute(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal("Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: invoke", exception.Message);
+            Assert.Single(activitiesToSend);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(400, invokeResponse.Status);
+            Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
+            var acResponse = (AdaptiveCardInvokeResponse)invokeResponse.Body;
+            Assert.Equal("application/vnd.microsoft.error", acResponse.Type);
+            Assert.Equal("NotSupported", ((Error)acResponse.Value).Code);
+        }
+
+        [Fact]
+        public async Task Test_OnActionExecute_NullAction()
+        {
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
+            {
+                activitiesToSend = arg;
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+            var adaptiveCardInvokeResponseMock = new Mock<AdaptiveCardInvokeResponse>();
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+            });
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
+            {
+                return Task.FromResult(true);
+            };
+            ActionExecuteHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            {
+                return Task.FromResult(adaptiveCardInvokeResponseMock.Object);
+            };
+
+            // Act
+            app.AdaptiveCards.OnActionExecute(routeSelector, handler);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Single(activitiesToSend);
+            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(400, invokeResponse.Status);
+            Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
+            var acResponse = (AdaptiveCardInvokeResponse)invokeResponse.Body;
+            Assert.Equal("application/vnd.microsoft.error", acResponse.Type);
+            Assert.Equal("BadRequest", ((Error)acResponse.Value).Code);
         }
 
         [Fact]
@@ -497,7 +565,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Single(activitiesToSend);
             Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(400, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
+            Assert.Equal(400, invokeResponse.Status);
+            var acResponse = (AdaptiveCardInvokeResponse)invokeResponse.Body;
+            Assert.Equal("application/vnd.microsoft.error", acResponse.Type);
+            Assert.Equal("BadRequest", ((Error)acResponse.Value).Code);
         }
 
         [Fact]

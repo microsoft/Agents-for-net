@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
@@ -45,7 +47,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
+        /// Adds a route to the application for handling Adaptive Card Action.Execute events that will match on the verb using an exact string comparison.
         /// </summary>
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
@@ -59,7 +61,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
+        /// Adds a route to the application for handling Adaptive Card Action.Execute events that will match on the verb using a Regex pattern.
         /// </summary>
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
@@ -82,22 +84,17 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+
+            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
             {
-                AdaptiveCardInvokeValue? invokeValue;
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    || (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) == null
-                    || invokeValue.Action == null
-                    || !string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE))
+                if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
                 {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: {turnContext.Activity.Type}");
+                    response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
                 }
 
-                AdaptiveCardInvokeResponse adaptiveCardInvokeResponse = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
-                var activity = Activity.CreateInvokeResponseActivity(adaptiveCardInvokeResponse);
+                var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
                 await turnContext.SendActivityAsync(activity, cancellationToken);
-            };
+            }
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
             return _app;
         }
@@ -399,17 +396,14 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 
         private static RouteSelector CreateActionExecuteSelector(Func<string, bool> isMatch)
         {
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
+            Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                AdaptiveCardInvokeValue? invokeValue;
+                AdaptiveCardInvokeValue invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value);
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    && (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) != null
-                    && invokeValue.Action != null
-                    && string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE)
                     && isMatch(invokeValue.Action.Verb));
-            };
+            }
             return routeSelector;
         }
 

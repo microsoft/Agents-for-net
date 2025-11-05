@@ -138,5 +138,41 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             errorResponse = null;
             return true;
         }
+
+        public static bool TryValidateActionInvokeValue(IActivity activity, string exepctedAction, out AdaptiveCardInvokeValue actionInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        {
+            actionInvokeValue = null;
+
+            if (activity.Value == null)
+            {
+                errorResponse = BadRequest("Missing value property for Invoke Action");
+                return false;
+            }
+
+            try
+            {
+                actionInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(activity.Value);
+            }
+            catch
+            {
+                errorResponse = BadRequest("Value property is not a properly formed Invoke Action");
+                return false;
+            }
+
+            if (actionInvokeValue.Action == null)
+            {
+                errorResponse = BadRequest("Missing action property");
+                return false;
+            }
+
+            if (actionInvokeValue.Action.Type != exepctedAction)
+            {
+                errorResponse = NotSupported($"The Invoke Action '{actionInvokeValue.Action.Type}' was not expected.");
+                return false;
+            }
+
+            errorResponse = null;
+            return true;
+        }
     }
 }
