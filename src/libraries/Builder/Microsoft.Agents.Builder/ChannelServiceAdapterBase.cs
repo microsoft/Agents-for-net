@@ -6,6 +6,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
@@ -64,6 +65,11 @@ namespace Microsoft.Agents.Builder
                 {
                     if (!await HostResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                        }
+
                         // Respond via ConnectorClient
                         if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
                         {
@@ -202,7 +208,6 @@ namespace Microsoft.Agents.Builder
 
             ValidateContinuationActivity(continuationActivity);
 
-            audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
             // Create a turn context and clients
@@ -211,7 +216,6 @@ namespace Microsoft.Agents.Builder
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
-                audience,
                 useAnonymous: useAnonymousAuthCallback,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
