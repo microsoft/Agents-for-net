@@ -206,6 +206,11 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("ProcessProactive: Activity='{Activity}'", ProtocolJsonSerializer.ToJson(continuationActivity));
+            }
+
             ValidateContinuationActivity(continuationActivity);
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
@@ -231,7 +236,10 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            Logger.LogInformation($"ProcessActivityAsync");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+            }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
             {

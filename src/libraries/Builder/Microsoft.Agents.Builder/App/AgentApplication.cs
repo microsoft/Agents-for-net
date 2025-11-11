@@ -77,8 +77,6 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
 
-        public AgenticAuthorization AgenticAuthorization { get; }
-
         /// <summary>
         /// The application's configured options.
         /// </summary>
