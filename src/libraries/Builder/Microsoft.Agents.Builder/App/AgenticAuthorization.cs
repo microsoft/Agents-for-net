@@ -28,11 +28,18 @@ namespace Microsoft.Agents.Builder.App
             return activity.IsAgenticRequest();
         }
 
-        public static string GetAgentInstanceId(ITurnContext turnContext)
+        public static string GetAgenticTenantId(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
-            return turnContext.Activity.GetAgentInstanceId();
+            return turnContext.Activity.GetAgenticTenantId();
+        }
+
+        public static string GetAgenticInstanceId(ITurnContext turnContext)
+        {
+            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+            AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
+            return turnContext.Activity.GetAgenticInstanceId();
         }
 
         public static string GetAgenticUser(ITurnContext turnContext)
@@ -58,7 +65,7 @@ namespace Microsoft.Agents.Builder.App
             var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
-                return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgentInstanceId(turnContext), cancellationToken);
+                return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgenticTenantId(turnContext), GetAgenticInstanceId(turnContext), cancellationToken);
             }
 
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
@@ -75,7 +82,7 @@ namespace Microsoft.Agents.Builder.App
             var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
-                return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgentInstanceId(turnContext), GetAgenticUser(turnContext), scopes, cancellationToken);
+                return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgenticTenantId(turnContext), GetAgenticInstanceId(turnContext), GetAgenticUser(turnContext), scopes, cancellationToken);
             }
 
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
