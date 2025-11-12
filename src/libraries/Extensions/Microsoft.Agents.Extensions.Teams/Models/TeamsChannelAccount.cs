@@ -30,14 +30,25 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <param name="userPrincipalName">Unique user principal name.</param>
         /// <param name="tenantId">TenantId of the user.</param>
         /// <param name="userRole">UserRole of the user.</param>
-        public TeamsChannelAccount(string id = default, string name = default, string givenName = default, string surname = default, string email = default, string userPrincipalName = default, string tenantId = default, string userRole = default)
-            : base(id, name)
+        /// <param name="agenticUserId"></param>
+        /// <param name="agenticAppId"></param>
+        public TeamsChannelAccount(
+            string id = default, 
+            string name = default, 
+            string givenName = default, 
+            string surname = default, 
+            string email = default, 
+            string userPrincipalName = default, 
+            string tenantId = default, 
+            string userRole = default, 
+            string agenticUserId = default, 
+            string agenticAppId = default)
+            : base(id, name, tenantId: tenantId, agenticUserId: agenticUserId, agenticAppId: agenticAppId)
         {
             GivenName = givenName;
             Surname = surname;
             Email = email;
             UserPrincipalName = userPrincipalName;
-            TenantId = tenantId;
             UserRole = userRole;
         }
 
@@ -85,12 +96,6 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// </summary>
         /// <value>The user role.</value>
         public string UserRole { get; set; }
-
-        /// <summary>
-        /// Gets or sets the TenantId.
-        /// </summary>
-        /// <value>The tenant ID.</value>
-        public string TenantId { get; set; }
 
         /// <summary>
         ///  List of membership sources associated with the channel account.

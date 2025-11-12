@@ -18,6 +18,11 @@ namespace Microsoft.Agents.Connector.RestClients
 {
     internal class ConversationsRestClient(IRestTransport transport) : IConversations
     {
+        /// <summary>
+        /// Gets the maximum allowed length for an APX conversation ID.
+        /// </summary>
+        public int MaxApxConversationIdLength { get; set; } = 150;
+
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
@@ -99,10 +104,12 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateSendToConversationRequest(string conversationId, IActivity body)
         {
+            var convId = conversationId.Length > 325 ? conversationId[..325] : conversationId;
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{convId}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -244,10 +251,22 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
         {
+            var convId = string.Empty;
+            // Truncate conversationId for Teams and Agentic roles to 150 characters
+            if ((body?.ChannelId?.Channel == Channels.Msteams ||
+                body?.ChannelId?.Channel == Channels.Agents)
+                && (body?.From?.Role == RoleTypes.AgenticIdentity
+                || body?.From?.Role == RoleTypes.AgenticUser))
+            {
+                convId = conversationId.Length > MaxApxConversationIdLength ? conversationId[..MaxApxConversationIdLength] : conversationId;
+            }
+            else
+                convId = conversationId;
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{convId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)

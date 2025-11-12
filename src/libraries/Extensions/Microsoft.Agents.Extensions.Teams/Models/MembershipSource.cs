@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <summary>
         /// The tenant ID for the user (if applicable).
         /// </summary>
-        public string? TenantId { get; set; }
+        public string TenantId { get; set; }
     }
 }
+

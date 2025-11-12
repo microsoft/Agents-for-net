@@ -105,14 +105,18 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 // An exchangeable token needs to be exchanged.
-                if (!token.IsExchangeable)
+                if (!turnContext.IsAgenticRequest())
                 {
-                    var diff = token.Expiration - DateTimeOffset.UtcNow;
-                    if (diff.HasValue && diff?.TotalMinutes >= 5)
+                    if (!token.IsExchangeable)
                     {
-                        return token.Token;
+                        var diff = token.Expiration - DateTimeOffset.UtcNow;
+                        if (diff.HasValue && diff?.TotalMinutes >= 5)
+                        {
+                            return token.Token;
+                        }
                     }
                 }
+
 
                 // Get a new token if near expiration, or it's an exchangeable token.
                 var handler = _dispatcher.Get(handlerName);

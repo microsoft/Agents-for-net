@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -412,7 +412,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -829,7 +829,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -1036,7 +1036,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         private static TurnContext MockTurnContext()
