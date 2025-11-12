@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Authentication
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)
-                ? $"{AgentClaims.GetOutgoingAppId(identity)}"
+                ? $"api://{AgentClaims.GetOutgoingAppId(identity)}"
                 : AuthenticationConstants.BotFrameworkScope;
         }
 
@@ -193,15 +193,31 @@ namespace Microsoft.Agents.Authentication
             return identity != null && !identity.IsAuthenticated && !identity.Claims.Any();
         }
 
-        public static ClaimsIdentity CreateIdentity(string clientId, bool anonymous = false)
+        /// <summary>
+        /// Creates an ingress Agent ClaimsIdentity.
+        /// </summary>
+        /// <param name="audience">The aud of the claim.  Typically the ClientId of the Agent.</param>
+        /// <param name="anonymous"></param>
+        /// <param name="appId">The appId of the sender. Not supplying the appId will work correctly against Azure Bot Service, but not to another Agent.</param>
+        /// <returns></returns>
+        public static ClaimsIdentity CreateIdentity(string audience, bool anonymous = false, string appId = null)
         {
-            return anonymous
-                ? new ClaimsIdentity()
-                : new ClaimsIdentity(
-                [
-                    new(AuthenticationConstants.AudienceClaim, clientId),
-                    new(AuthenticationConstants.AppIdClaim, clientId),
-                ]);
+            if (anonymous)
+            {
+                return new ClaimsIdentity();
+            }
+
+            IEnumerable<Claim> claims = [
+                    new(AuthenticationConstants.AudienceClaim, audience),
+                    new(AuthenticationConstants.VersionClaim, "1.0")
+                ];
+
+            if (!string.IsNullOrEmpty(appId))
+            {
+                claims = claims.Append(new(AuthenticationConstants.AppIdClaim, appId));
+            }
+
+            return new ClaimsIdentity(claims);
         }
     }
 }

@@ -211,7 +211,7 @@
     <comment>Raised when the call get an Agentic token provider returns null.</comment>
   </data>
   <data name="AgenticTokenProviderFailed" xml:space="preserve">
-    <value>Unable to get Agentic token for InstanceId '{0}', UPN '{1}', Role '{2}'</value>
+    <value>Unable to get Agentic token for Tenant '{0}', InstanceId '{1}', UPN '{2}', Role '{3}'</value>
     <comment>Raised when getting a token for Agentic responses.</comment>
   </data>
   <data name="NotAnAgenticRequest" xml:space="preserve">

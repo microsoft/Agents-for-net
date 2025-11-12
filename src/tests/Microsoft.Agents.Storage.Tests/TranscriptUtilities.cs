@@ -49,6 +49,8 @@ namespace Microsoft.Agents.Storage.Tests
             var transcriptsRootFolder = TranscriptUtilities.EnsureTranscriptsDownload();
             var path = Path.Combine(transcriptsRootFolder, relativePath);
 
+            EnsurePathIsSafe(transcriptsRootFolder, path);
+
             // Look for .chat files first and use Chatdown tool to generate .transcripts
             // If .chat file does not exists, try .transcript instead. Throw an exception if neither .chat nor .transcript file is found.
             if (!File.Exists(path))
@@ -58,6 +60,7 @@ namespace Microsoft.Agents.Storage.Tests
 #else
                 path = Path.Combine(transcriptsRootFolder, relativePath.Replace(".transcript", ".chat"));
 #endif
+                EnsurePathIsSafe(transcriptsRootFolder, path);
             }
 
             if (!File.Exists(path))
@@ -223,6 +226,20 @@ namespace Microsoft.Agents.Storage.Tests
             }
 
             return content;
+        }
+
+        private static void EnsurePathIsSafe(string root, string targetPath)
+        {
+            var fullRoot = Path.GetFullPath(root);
+            var fullTarget = Path.GetFullPath(targetPath);
+
+            // Manual relative path check for .NET Framework compatibility
+            // This works for both .NET Framework and .NET Core/.NET
+            if (!fullTarget.StartsWith(fullRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(fullTarget, fullRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException($"Access to path '{targetPath}' is denied.");
+            }
         }
     }
 }

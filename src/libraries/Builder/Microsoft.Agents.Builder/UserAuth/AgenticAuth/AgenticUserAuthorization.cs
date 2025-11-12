@@ -84,7 +84,8 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             }
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
-                App.AgenticAuthorization.GetAgentInstanceId(turnContext),
+                turnContext.Activity.GetAgenticTenantId(),
+                turnContext.Activity.GetAgenticInstanceId(),
                 App.AgenticAuthorization.GetAgenticUser(turnContext),
                 exchangeScopes ?? _a365AuthSettings.Scopes,
                 cancellationToken).ConfigureAwait(false);

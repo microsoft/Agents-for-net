@@ -1,19 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using System.Text.Json.Nodes;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Storage.CosmosDb
 {
@@ -41,44 +42,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <param name="cosmosDbStorageOptions">Cosmos DB partitioned storage configuration options.</param>
         public CosmosDbPartitionedStorage(CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = null)
         {
-            AssertionHelpers.ThrowIfNull(cosmosDbStorageOptions, nameof(cosmosDbStorageOptions));
-
-            if (cosmosDbStorageOptions.CosmosDbEndpoint == null)
-            {
-                throw new ArgumentException($"Service EndPoint for CosmosDB is required.", nameof(cosmosDbStorageOptions));
-            }
-
-            if (string.IsNullOrEmpty(cosmosDbStorageOptions.AuthKey) && cosmosDbStorageOptions.TokenCredential == null)
-            {
-                throw new ArgumentException("AuthKey or TokenCredential for CosmosDB is required.", nameof(cosmosDbStorageOptions));
-            }
-
-            if (string.IsNullOrEmpty(cosmosDbStorageOptions.DatabaseId))
-            {
-                throw new ArgumentException("DatabaseId is required.", nameof(cosmosDbStorageOptions));
-            }
-
-            if (string.IsNullOrEmpty(cosmosDbStorageOptions.ContainerId))
-            {
-                throw new ArgumentException("ContainerId is required.", nameof(cosmosDbStorageOptions));
-            }
-
-            if (!string.IsNullOrWhiteSpace(cosmosDbStorageOptions.KeySuffix))
-            {
-                if (cosmosDbStorageOptions.CompatibilityMode)
-                {
-                    throw new ArgumentException($"CompatibilityMode cannot be 'true' while using a KeySuffix.", nameof(cosmosDbStorageOptions));
-                }
-
-                // In order to reduce key complexity, we do not allow invalid characters in a KeySuffix
-                // If the KeySuffix has invalid characters, the EscapeKey will not match
-                var suffixEscaped = CosmosDbKeyEscape.EscapeKey(cosmosDbStorageOptions.KeySuffix);
-                if (!cosmosDbStorageOptions.KeySuffix.Equals(suffixEscaped, StringComparison.Ordinal))
-                {
-                    throw new ArgumentException($"Cannot use invalid Row Key characters: {cosmosDbStorageOptions.KeySuffix}", nameof(cosmosDbStorageOptions));
-                }
-            }
-
+            ValidateOptions(cosmosDbStorageOptions);
             _cosmosDbStorageOptions = cosmosDbStorageOptions;
             _serializerOptions = jsonSerializerOptions ?? DefaultJsonSerializerOptions;
         }
@@ -91,9 +55,11 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <param name="cosmosDbStorageOptions">Cosmos DB partitioned storage configuration options.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public CosmosDbPartitionedStorage(CosmosClient client, CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, JsonSerializerOptions jsonSerializerOptions = default)
-            : this(cosmosDbStorageOptions, jsonSerializerOptions)
         {
+            ValidateOptions(cosmosDbStorageOptions, validateClientRelated: client == null);
             _client = client;
+            _cosmosDbStorageOptions = cosmosDbStorageOptions;
+            _serializerOptions = jsonSerializerOptions ?? DefaultJsonSerializerOptions;
         }
 
         /// <inheritdoc/>
@@ -377,7 +343,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                             _cosmosDbStorageOptions.AuthKey,
                             cosmosClientOptions
                         );
-                    }                  
+                    }
                 }
 
                 if (_container == null)
@@ -412,6 +378,47 @@ namespace Microsoft.Agents.Storage.CosmosDb
                             await CreateContainerIfNotExistsAsync().ConfigureAwait(false);
                         }
                     }
+                }
+            }
+        }
+
+        private static void ValidateOptions(CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, bool validateClientRelated = true)
+        {
+            AssertionHelpers.ThrowIfNull(cosmosDbStorageOptions, nameof(cosmosDbStorageOptions));
+
+            if (validateClientRelated && cosmosDbStorageOptions.CosmosDbEndpoint == null)
+            {
+                throw new ArgumentException($"Service EndPoint for CosmosDB is required.", nameof(cosmosDbStorageOptions));
+            }
+
+            if (validateClientRelated && string.IsNullOrEmpty(cosmosDbStorageOptions.AuthKey) && cosmosDbStorageOptions.TokenCredential == null)
+            {
+                throw new ArgumentException("AuthKey or TokenCredential for CosmosDB is required.", nameof(cosmosDbStorageOptions));
+            }
+
+            if (string.IsNullOrEmpty(cosmosDbStorageOptions.DatabaseId))
+            {
+                throw new ArgumentException("DatabaseId is required.", nameof(cosmosDbStorageOptions));
+            }
+
+            if (string.IsNullOrEmpty(cosmosDbStorageOptions.ContainerId))
+            {
+                throw new ArgumentException("ContainerId is required.", nameof(cosmosDbStorageOptions));
+            }
+
+            if (!string.IsNullOrWhiteSpace(cosmosDbStorageOptions.KeySuffix))
+            {
+                if (cosmosDbStorageOptions.CompatibilityMode)
+                {
+                    throw new ArgumentException($"CompatibilityMode cannot be 'true' while using a KeySuffix.", nameof(cosmosDbStorageOptions));
+                }
+
+                // In order to reduce key complexity, we do not allow invalid characters in a KeySuffix
+                // If the KeySuffix has invalid characters, the EscapeKey will not match
+                var suffixEscaped = CosmosDbKeyEscape.EscapeKey(cosmosDbStorageOptions.KeySuffix);
+                if (!cosmosDbStorageOptions.KeySuffix.Equals(suffixEscaped, StringComparison.Ordinal))
+                {
+                    throw new ArgumentException($"Cannot use invalid Row Key characters: {cosmosDbStorageOptions.KeySuffix}", nameof(cosmosDbStorageOptions));
                 }
             }
         }

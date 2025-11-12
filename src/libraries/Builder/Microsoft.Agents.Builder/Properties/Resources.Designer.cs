@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to get Agentic token for InstanceId &apos;{0}&apos;, UPN &apos;{1}&apos;, Role &apos;{2}&apos;.
+        ///   Looks up a localized string similar to Unable to get Agentic token for Tenant &apos;{0}&apos;, InstanceId &apos;{1}&apos;, UPN &apos;{2}&apos;, Role &apos;{3}&apos;.
         /// </summary>
         internal static string AgenticTokenProviderFailed {
             get {
