@@ -89,8 +89,16 @@ public class HeaderPropagationContext()
 #endif
                     break;
                 case HeaderPropagationEntryAction.Append when headerExists:
-                    StringValues newValue = requestHeader.Concat(header.Value).ToArray();
-                    result[header.Key] = newValue;
+                    if (string.Equals(header.Key, "user-agent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Special handling for User-Agent to concatenate values with a space.
+                        result[header.Key] = new StringValues(string.Join(" ", [.. requestHeader, header.Value]));
+                    }
+                    else
+                    {
+                        // For other headers, use default concat which separate the list with a comma.
+                        result[header.Key] = requestHeader.Concat(header.Value).ToArray();
+                    }
                     break;
                 case HeaderPropagationEntryAction.Propagate when headerExists:
                     result[header.Key] = requestHeader;

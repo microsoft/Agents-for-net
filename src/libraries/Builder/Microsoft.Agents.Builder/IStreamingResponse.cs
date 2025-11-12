@@ -8,6 +8,16 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
+    public enum StreamingResponseResult
+    {
+        Success,
+        NotStarted,
+        AlreadyEnded,
+        UserCancelled,
+        Timeout,
+        Error
+    };
+
     public interface IStreamingResponse
     {
         /// <summary>
@@ -61,10 +71,29 @@ namespace Microsoft.Agents.Builder
         List<ClientCitation>? Citations { get; }
 
         /// <summary>
+        /// Adds a citation for the response.
+        /// </summary>
+        /// <param name="citation"></param>
+        void AddCitation(ClientCitation citation);
+
+        /// <summary>
+        /// Adds a citation for the response.
+        /// </summary>
+        /// <param name="citation"></param>
+        /// <param name="citationPosition"></param>
+        void AddCitation(Citation citation, int citationPosition);
+
+        /// <summary>
         ///  Sets the citations for the full message.
         /// </summary>
         /// <param name="citations">Citations to be included in the message.</param>
         void AddCitations(IList<Citation> citations);
+
+        /// <summary>
+        ///  Sets the citations for the full message.
+        /// </summary>
+        /// <param name="citations">Citations to be included in the message.</param>
+        void AddCitations(IList<ClientCitation> citations);
 
         /// <summary>
         /// Ends the stream by sending the final message to the client.
@@ -73,9 +102,11 @@ namespace Microsoft.Agents.Builder
         /// Since the messages are sent on an interval, this call will block until all have been sent
         /// before sending the final Message.
         /// </remarks>
-        /// <returns>A Task representing the async operation</returns>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        Task EndStreamAsync(CancellationToken cancellationToken = default);
+        /// <returns>
+        /// A Task representing the async operation. The result indicates the outcome of ending the stream,
+        /// such as Success, AlreadyEnded, Timeout, or Error.
+        /// </returns>
+        Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default);
 
         bool IsStreamStarted();
 

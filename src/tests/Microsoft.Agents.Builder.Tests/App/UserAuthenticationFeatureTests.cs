@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -412,7 +412,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -829,7 +829,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         [Fact]
@@ -898,7 +898,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new TokenOrSignInResourceResponse() { TokenResponse = new TokenResponse() { Token = "exchangeableToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true } }));
             userTokenClient
-                .Setup(c => c.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new TokenResponse() { Token = "exchangeableToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true }));
 
             // "oboConnection" provider
@@ -1036,7 +1036,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
         private static TurnContext MockTurnContext()

@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Connector.Tests
         private static readonly Uri Endpoint = new("http://localhost");
         private const string UserId = "user-id";
         private const string ConnectionName = "connection-name";
-        private const string ChannelId = "channel-id";
+        private const string ChannelId = "channel-id:subchannel-id";
         private const string Code = "code";
         private const string Include = "include";
         private readonly string[] AadResourceUrls = ["resource-url"];
@@ -483,12 +483,12 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public async Task TokenExchangeable()
+        public async Task TokenExchangeableV1()
         {
             var httpTokenResponse = new TokenResponse
             {
                 // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
-                Token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDcwNTU2NDksImlhdCI6MTc0NzA1NTY0OX0.fAOK0HU59CgcA6SiU6feDdUmG2ZC5Nc8RzHlOPjfgWk"
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ2ZXIiOiIxLjAiLCJhcHBpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9."
             };
 
             var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
@@ -505,6 +505,148 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.True(tokenResponse.IsExchangeable);
         }
 
+        [Fact]
+        public async Task TokenExchangeableV2()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ2ZXIiOiIyLjAiLCJhenAiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ."
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.True(tokenResponse.IsExchangeable);
+        }
+
+        [Fact]
+        public async Task GetTokenAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request,ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            var client = UseClient();
+
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
+            Assert.True(sendCalled);
+        }
+
+        [Fact]
+        public async Task SignOutUserAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            var client = UseClient();
+
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
+            Assert.True(sendCalled);
+        }
+
+        [Fact]
+        public async Task GetTokenStatusAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+            var client = UseClient();
+
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetTokenStatusAsync(UserId, ChannelId, null, CancellationToken.None));
+            Assert.True(sendCalled);
+        }
+
+        [Fact]
+        public async Task GetAadTokensAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+            var client = UseClient();
+
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetAadTokensAsync(UserId, ConnectionName, null, ChannelId, CancellationToken.None));
+            Assert.True(sendCalled);
+        }
+
+        [Fact]
+        public async Task ExchangeTokenAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+            var client = UseClient();
+
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, new TokenExchangeRequest(), CancellationToken.None));
+            Assert.True(sendCalled);
+        }
+
+        [Fact]
+        public async Task GetTokenOrSignInResourceAsync_ShouldUseParentChannel()
+        {
+            var sendCalled = false;
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
+                {
+                    sendCalled = true;
+                    Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+            var client = UseClient();
+
+            await client.GetTokenOrSignInResourceAsync(ConnectionName, new Activity() { From = new ChannelAccount() { Id = UserId }, ChannelId = ChannelId }, null, cancellationToken: CancellationToken.None);
+            Assert.True(sendCalled);
+        }
 
         private static RestUserTokenClient UseClient()
         {

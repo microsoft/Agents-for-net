@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Core;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
@@ -141,9 +142,16 @@ namespace Microsoft.Agents.Connector.Tests
 
         private class MockTokenAccess : IAccessTokenProvider
         {
+            public ImmutableConnectionSettings ConnectionSettings => throw new NotImplementedException();
+
             public Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
             {
                 return Task.FromResult(Token);
+            }
+
+            public TokenCredential GetTokenCredential()
+            {
+                throw new NotImplementedException();
             }
         }
 

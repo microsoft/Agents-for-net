@@ -5,8 +5,17 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Microsoft.Agents.Authentication
 {
+    /// <summary>
+    /// Defines a provider for retrieving X.509 certificates.
+    /// </summary>
     public interface ICertificateProvider
     {
-        X509Certificate2 GetCertificate();        
+        /// <summary>
+        /// Gets an <see cref="X509Certificate2"/> instance.
+        /// </summary>
+        /// <returns>
+        /// An X.509 certificate.
+        /// </returns>
+        X509Certificate2 GetCertificate();
     }
 }

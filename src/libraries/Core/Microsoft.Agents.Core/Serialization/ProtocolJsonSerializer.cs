@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -19,11 +20,25 @@ namespace Microsoft.Agents.Core.Serialization
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
+        /// <summary>
+        /// Provides a way to turn off the {channelId}:{product} notation.  If false,
+        /// ChannelId.ToString() is just the {channelId} value.  However, serialization of the 
+        /// ProductInfo Entity is still accounted for.  ChannelId.SubChannel is still populated
+        /// with the ProductInfo.Id value in any case.
+        /// It is not recommended to set false without guidance.
+        /// </summary>
+        public static bool ChannelIdIncludesProduct { get; set; } = true;
+
+        /// <summary>
+        /// Maintains a mapping of entity type names to their corresponding Type objects.
+        /// </summary>
+        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
-            SerializationInitAttribute.InitSerialization();
+            SerializationInitAssemblyAttribute.InitSerialization();
         }
 
         private static JsonSerializerOptions CreateConnectorOptions()
@@ -67,6 +82,11 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
+        public static void AddEntityType(string entityTypeName, Type entityType)
+        {
+            EntityTypes[entityTypeName] = entityType;
+        }
+
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
         {
             options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
@@ -76,7 +96,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
             //options.UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode;
 
-            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            //options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());

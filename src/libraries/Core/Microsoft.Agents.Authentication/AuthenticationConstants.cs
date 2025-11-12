@@ -4,10 +4,10 @@
 namespace Microsoft.Agents.Authentication
 {
     /// <summary>
-    /// Values and Constants used for Authentication and Authorization by the Activity Protocol.
+    /// Values and constants used for authentication and authorization by the activity protocol.
     /// </summary>
     public static class AuthenticationConstants
-    {        
+    {
         /// <summary>
         /// Bot Framework OAuth scope to request.
         /// </summary>
@@ -65,15 +65,12 @@ namespace Microsoft.Agents.Authentication
         /// Authorized party - the party to which the ID Token was issued.
         /// This claim follows the general format set forth in the OpenID Spec. http://openid.net/specs/openid-connect-core-1_0.html#IDToken.
         /// </remarks>
-                
         public const string AuthorizedParty = "azp";
 
         /// <summary>
         /// Audience Claim. 
         /// </summary>
         /// <remarks>
-        /// From RFC 7519.
-        ///     https://tools.ietf.org/html/rfc7519#section-4.1.3
         /// The "aud" (audience) claim identifies the recipients that the JWT is
         /// intended for. Each principal intended to process the JWT MUST
         /// identify itself with a value in the audience claim. If the principal
@@ -85,8 +82,9 @@ namespace Microsoft.Agents.Authentication
         /// single case-sensitive string containing a StringOrURI value. The
         /// interpretation of audience values is generally application specific.
         /// Use of this claim is OPTIONAL.
+        /// 
+        /// For more details, see <a href="https://tools.ietf.org/html/rfc7519#section-4.1.3">RFC 7519 Section 4.1.3</a>.
         /// </remarks>
-       
         public const string AudienceClaim = "aud";
 
         /// <summary>
@@ -105,8 +103,21 @@ namespace Microsoft.Agents.Authentication
         public const string AppIdClaim = "appid";
 
         /// <summary>
+        /// App ID claim name. As used in Microsoft AAD 2.0 tokens.
+        /// </summary>
+        public const string AzpClaim = "azp";
+
+        /// <summary>
         /// Tenant Id claim name. As used in Microsoft AAD tokens.
         /// </summary>
         public const string TenantIdClaim = "tid";
+
+        public const string ApxLocalScope = "c16e153d-5d2b-4c21-b7f4-b05ee5d516f1/.default";
+        public const string ApxDevScope = "0d94caae-b412-4943-8a68-83135ad6d35f/.default";
+        public const string ApxProductionScope = "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default";
+        public const string ApxGCCScope = "c9475445-9789-4fef-9ec5-cde4a9bcd446/.default";
+        public const string ApxGCCHScope = "6f669b9e-7701-4e2b-b624-82c9207fde26/.default";
+        public const string ApxDoDScope = "0a069c81-8c7c-4712-886b-9c542d673ffb/.default";
+        public const string ApxGallatinScope = "bd004c8e-5acf-4c48-8570-4e7d46b2f63b/.default";
     }
 }

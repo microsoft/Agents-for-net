@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -49,8 +50,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAgentCore<TAdapter>(builder);
 
-            // Add the Agent 
-            builder.Services.AddTransient<IAgent, TAgent>();
+            // Add the IAgent 
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IAgent)))
+            {
+                // There can only be one IAgent.
+                builder.Services.AddTransient<IAgent, TAgent>();
+            }
+
+            // Add the TAgent (required for multi agent registrations)
+            if (!builder.Services.Any(x => x.ServiceType == typeof(TAgent)))
+            {
+                // There can only be one TAgent.
+                builder.Services.AddTransient<TAgent>();
+            }
 
             return builder;
         }
@@ -145,7 +157,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="async"></param>
         public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
         {
-            AddAsyncCloudAdapterSupport(services);
+            AddAsyncAdapterSupport(services);
 
             services.AddSingleton<CloudAdapter, T>();
             services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
@@ -193,17 +205,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        private static void AddAsyncCloudAdapterSupport(this IServiceCollection services)
+        public static void AddAsyncAdapterSupport(this IServiceCollection services)
         {
-            // Activity specific BackgroundService for processing authenticated activities.
-            services.AddHostedService<HostedActivityService>();
-            // Generic BackgroundService for processing tasks.
-            services.AddHostedService<HostedTaskService>();
+            if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
+            {
+                // Activity specific BackgroundService for processing authenticated activities.
+                services.AddHostedService<HostedActivityService>();
+                // Generic BackgroundService for processing tasks.
+                services.AddHostedService<HostedTaskService>();
 
-            // BackgroundTaskQueue and ActivityTaskQueue are the entry points for
-            // the enqueueing activities or tasks to be processed by the BackgroundService.
-            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
-            services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
+                // BackgroundTaskQueue and ActivityTaskQueue are the entry points for
+                // the enqueueing activities or tasks to be processed by the BackgroundService.
+                services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+                services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
+            }
         }
     }
 }

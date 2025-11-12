@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.TestUtils
             // Arrange
             var state = new TurnState();
             IActivity activity = turnContext.Activity;
-            string channelId = activity.ChannelId;
+            string? channelId = activity.ChannelId;
             string botId = activity.Recipient.Id;
             string conversationId = activity.Conversation.Id;
             string userId = activity.From.Id;

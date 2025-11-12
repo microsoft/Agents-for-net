@@ -12,17 +12,8 @@ using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
 
-#if MANUAL_SIGNIN
-using Microsoft.Agents.Authentication;
-using System.Security.Claims;
-using Microsoft.Agents.Core;
-#endif
-
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
-#if MANUAL_SIGNIN
-    public delegate Task AuthorizationSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, IActivity initiatingActivity, CancellationToken cancellationToken);
-#endif
     public delegate Task AuthorizationFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken);
 
     /// <summary>
@@ -45,15 +36,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
         private readonly Dictionary<string, TokenResponse> _authTokens = [];
-
-#if MANUAL_SIGNIN
-        private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";
-
-        /// <summary>
-        /// Callback when user sign in success
-        /// </summary>
-        private AuthorizationSuccess _userSignInSuccessHandler;
-#endif
 
         /// <summary>
         /// Callback when user sign in fail
@@ -89,10 +71,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             {
                 throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationDefaultHandlerNotFound, null, DefaultHandlerName);
             }
-
-#if MANUAL_SIGNIN
-            AddManualSignInCompletionHandler();
-#endif
         }
 
         [Obsolete("Use Task<string> GetTurnTokenAsync(ITurnContext, string) instead")]
@@ -127,14 +105,18 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 // An exchangeable token needs to be exchanged.
-                if (!token.IsExchangeable)
+                if (!turnContext.IsAgenticRequest())
                 {
-                    var diff = token.Expiration - DateTimeOffset.UtcNow;
-                    if (diff.HasValue && diff?.TotalMinutes >= 5)
+                    if (!token.IsExchangeable)
                     {
-                        return token.Token;
+                        var diff = token.Expiration - DateTimeOffset.UtcNow;
+                        if (diff.HasValue && diff?.TotalMinutes >= 5)
+                        {
+                            return token.Token;
+                        }
                     }
                 }
+
 
                 // Get a new token if near expiration, or it's an exchangeable token.
                 var handler = _dispatcher.Get(handlerName);
@@ -153,102 +135,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return null;
         }
 
-#if MANUAL_SIGNIN
-        /// <summary>
-        /// Acquire a token with OAuth.  <see cref="OnUserSignInSuccess(Func{ITurnContext, ITurnState, string, string, CancellationToken, Task})"/> and
-        /// <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/> should
-        /// be set to handle continuation.  Those handlers will be called with a token is acquired.
-        /// </summary>
-        /// <param name="turnContext"> The turn context.</param>
-        /// <param name="turnState"></param>
-        /// <param name="handlerName">The name of the authorization setting.</param>
-        /// <param name="exchangeConnection"></param>
-        /// <param name="exchangeScopes"></param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <exception cref="System.InvalidOperationException">If a flow is already active.</exception>
-        public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-            AssertionHelpers.ThrowIfNull(turnState, nameof(turnState));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(handlerName, nameof(handlerName));
-
-            // Handle the case where we already have a token for this handler and the Agent is calling this again.
-            var existingCachedToken = await GetTurnTokenAsync(turnContext, turnState, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (existingCachedToken != null)
-            {
-                // call the handler directly
-                if (_userSignInSuccessHandler != null)
-                {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, existingCachedToken, turnContext.Activity, cancellationToken).ConfigureAwait(false);
-                }
-                return;
-            }
-
-            // Only one active flow allowed
-            var signInState = GetSignInState(turnState);
-            if (signInState.IsActive())
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationAlreadyActive, null, signInState.ActiveHandler);
-            }
-
-            // Start flow or get token
-            SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, true, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
-
-            if (response.Status == SignInStatus.Pending)
-            {
-                signInState.ActiveHandler = handlerName;
-                signInState.PassedOBOConnectionName = exchangeConnection;
-                signInState.PassedOBOScopes = exchangeScopes;
-
-                // This indicates this is a manual flow.  The ManualContext.Response will be set at completion.
-                signInState.ManualContext = new ManualContext() { HandlerName = handlerName, InitiatingActivity = turnContext.Activity };
-
-                // This Activity will be used to trigger the handler added by `OnSignInComplete`.
-                // This is routed like any other Activity.
-                signInState.ContinuationActivity = new Activity()
-                {
-                    Type = ActivityTypes.Event,
-                    Name = SignInCompletionEventName,
-                    ServiceUrl = turnContext.Activity.ServiceUrl,
-                    ChannelId = turnContext.Activity.ChannelId,
-                    ChannelData = turnContext.Activity.ChannelData,
-                    Value = signInState.ManualContext
-                };
-                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true);
-
-                return;
-            }
-
-            if (response.Status == SignInStatus.Error)
-            {
-                DeleteSignInState(turnState);
-
-                if (_userSignInFailureHandler != null)
-                {
-                    await _userSignInFailureHandler(turnContext, turnState, handlerName, response, turnContext.Activity, cancellationToken).ConfigureAwait(false);
-                    return;
-                }
-                else
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationFailed, response.Error, handlerName);
-                }
-            }
-
-            // Call the handler immediately if we get a token back (user already signed in).
-            if (response.Status == SignInStatus.Complete)
-            {
-                DeleteSignInState(turnState);
-                CacheToken(handlerName, response);
-
-                // call the handler directly
-                if (_userSignInSuccessHandler != null)
-                {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.TokenResponse.Token, turnContext.Activity, cancellationToken).ConfigureAwait(false);
-                }
-            }
-        }
-#endif
-
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
         {
             var flow = flowName ?? DefaultHandlerName;
@@ -256,21 +142,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             DeleteSignInState(turnState);
             await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
         }
-
-#if MANUAL_SIGNIN
-        /// <summary>
-        /// The handler function is called when the user has successfully signed in
-        /// </summary>
-        /// <remarks>
-        /// This is only used for manual user authorization.  The Auto Sign In will continue the turn with the original user message.
-        /// </remarks>
-        /// <param name="handler">The handler function to call when the user has successfully signed in</param>
-        /// <returns>The class itself for chaining purpose</returns>
-        public void OnUserSignInSuccess(AuthorizationSuccess handler)
-        {
-            _userSignInSuccessHandler = handler;
-        }
-#endif
 
         /// <summary>
         /// The handler function is called when the user sign in flow fails
@@ -352,23 +223,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     DeleteSignInState(turnState);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-#if MANUAL_SIGNIN
-                    // Handle manual signin error callback
-                    if (signInState.ManualContext != null)
-                    {
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                        // This will execute OnUserSignInFailure in a new TurnContext.  This is for manual sign in only.
-                        // This could be optimized to execute the OnUserSignInFailure directly if the we're not currently
-                        // handling an Invoke.
-                        signInState.ManualContext.Response = response;
-                        signInState.ContinuationActivity.Value = signInState.ManualContext;
-
-                        await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInState.ContinuationActivity, _app, cancellationToken).ConfigureAwait(false);
-                        return false;
-                    }
-#endif
-
                     if (_userSignInFailureHandler != null)
                     {
                         await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, signInState.ContinuationActivity, cancellationToken).ConfigureAwait(false);
@@ -388,26 +242,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                     if (signInState.ContinuationActivity != null)
                     {
-#if MANUAL_SIGNIN
-                        if (signInState.ManualContext != null)
-                        {
-                            // Continue a manual sign in completion.
-                            // Since we could be handling an Invoke in this turn, we need to continue the conversation in a different
-                            // turn with the SignInCompletion Event.  This is because Teams has expectation for Invoke response times
-                            // an a the OnSignInSuccess/Fail handling by the Agent could exceed that.  Also, this is all executing prior
-                            // to other Application routes having been run (ex. before/after turn).
-                            // This is handled by the route added in AddManualSignInCompletionHandler().
-                            //
-                            // Note:  This should be optimized to only do this if the current TurnContext.Activity is Invoke.  Otherwise,
-                            // the OnUserSignInSuccess can be called directly?
-                            signInState.ManualContext.Response = response;
-                            signInState.ContinuationActivity.Value = signInState.ManualContext;
-                            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInState.ContinuationActivity, _app, cancellationToken).ConfigureAwait(false);
-                            return false;
-                        }
-#endif
-
                         // If the current activity matches the one used to trigger sign in, then
                         // this is because the user received a token that didn't involve a multi-turn
                         // flow.  No further action needed.
@@ -416,7 +250,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInState.ContinuationActivity, _app, cancellationToken).ConfigureAwait(false);
+                            await _app.Options.Adapter.ProcessProactiveAsync(
+                                turnContext.Identity, 
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
+                                _app, 
+                                cancellationToken).ConfigureAwait(false);
                             return false;
                         }
                     }
@@ -427,47 +265,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             // AgentApplication will perform normal ITurnContext.Activity routing to Agent.
             return true;
         }
-
-#if MANUAL_SIGNIN
-        // For manual sign in (SignInUserAsync), an Event is sent proactively to get the
-        // OnSignInSuccess and OnSignInFailure into a non-Invoke TurnContext.
-        private void AddManualSignInCompletionHandler()
-        {
-            static Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, SignInCompletionEventName)
-            );
-
-            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-            {
-                var manualContext = ProtocolJsonSerializer.ToObject<ManualContext>(turnContext.Activity.Value);
-                if (manualContext.Response.Status == SignInStatus.Complete && _userSignInSuccessHandler != null)
-                {
-                    CacheToken(manualContext.HandlerName, manualContext.Response);
-                    await _userSignInSuccessHandler(
-                        turnContext,
-                        turnState,
-                        manualContext.HandlerName,
-                        manualContext.Response.TokenResponse.Token,
-                        manualContext.InitiatingActivity,
-                        cancellationToken).ConfigureAwait(false);
-                }
-                else if (_userSignInFailureHandler != null)
-                {
-                    await _userSignInFailureHandler(
-                        turnContext,
-                        turnState,
-                        manualContext.HandlerName,
-                        manualContext.Response,
-                        manualContext.InitiatingActivity,
-                        cancellationToken).ConfigureAwait(false);
-                }
-            }
-
-            _app.AddRoute(routeSelector, routeHandler);
-        }
-#endif
 
         /// <summary>
         /// Set token in state
@@ -499,15 +296,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         }
     }
 
-#if MANUAL_SIGNIN
-    public class ManualContext
-    {
-        public string HandlerName { get; set; }
-        public SignInResponse Response { get; set; }
-        public IActivity InitiatingActivity { get; set; }
-    }
-#endif
-
     class SignInState
     {
         public bool IsActive() => !string.IsNullOrEmpty(ActiveHandler);
@@ -515,9 +303,5 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public IActivity ContinuationActivity { get; set; }
         public string RuntimeOBOConnectionName { get; set; }
         public IList<string> RuntimeOBOScopes { get; set; }
-
-#if MANUAL_SIGNIN
-        public ManualContext ManualContext { get; set; }
-#endif
     }
 }

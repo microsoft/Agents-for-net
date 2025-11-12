@@ -14,15 +14,25 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
         {
+            AddRoute(selector, handler, false, isInvokeRoute, rank, autoSignInHandlers);
+        }
+
+        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isAgenticRoute, bool isInvokeRoute, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
+        {
             try
             {
                 rwl.AcquireWriterLock(1000);
-                routes.Add(new RouteEntry() { Rank = rank, Route = new(selector, handler, isInvokeRoute, autoSignInHandlers), IsInvokeRoute = isInvokeRoute });
+                routes.Add(new RouteEntry(rank, new(selector, handler, isInvokeRoute, isAgenticRoute, autoSignInHandlers)));
 
-                // Invoke selectors are first.
-                // Invoke Activities from Teams need to be responded to in less than 5 seconds and the selectors are async
-                // which could incur delays, so we need to limit this possibility.
-                routes = [.. routes.OrderByDescending(entry => entry.IsInvokeRoute).ThenBy(entry => entry.Rank)];
+                // Ordered by:
+                //    Agentic + Invoke
+                //    Invoke
+                //    Agentic
+                //    Other
+                // Then by Rank
+                routes = [.. routes
+                    .OrderByDescending(entry => entry.Type)
+                    .ThenBy(entry => entry.Rank)];
             }
             finally
             {
@@ -44,10 +54,28 @@ namespace Microsoft.Agents.Builder.App
         }
     }
 
+    enum RouteEntryType
+    {
+        Other = 0,
+        Agentic = 1,
+        Invoke = 2,
+        AgenticInvoke = 3
+    }
+
     class RouteEntry
     {
-        public ushort Rank;
-        public Route Route;
-        public bool IsInvokeRoute;
+        public RouteEntry(ushort rank, Route route) 
+        { 
+            Rank = rank;
+            Route = route;
+            if (route.IsInvokeRoute)
+                Type = RouteEntryType.Invoke;
+            if (route.IsAgenticRoute)
+                Type |= RouteEntryType.Agentic;
+        }
+
+        public ushort Rank { get; private set; }
+        public Route Route { get; private set; }
+        public RouteEntryType Type { get; private set; }
     }
 }

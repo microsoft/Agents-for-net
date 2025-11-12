@@ -69,11 +69,9 @@ Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
 
 1. Select **Test in WebChat** on the Azure Bot
 
-## Running this Agent in Teams
+## Running this Agent in Teams or M365
 
-1. There are two version of the manifest provided.  One for M365 Copilot and one for Teams.
-   1. Copy the desired version to `manifest.json`.  This will typically be `teams-manifest.json` for Teams.
-1. Manually update the manifest.json
+1. Update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
      - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
      - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
@@ -81,12 +79,27 @@ Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
      - `manifest.json`
      - `outline.png`
      - `color.png`
-1. Upload the `manifest.zip` to Teams
-   - Select **Developer Portal** in the Teams left sidebar
-   - Select **Apps** (top row)
-   - Select **Import app**, and select the manifest.zip
 
-1. Select **Preview in Teams** in the upper right corner
+1. Your Azure Bot should have the **Microsoft Teams** channel added under **Channels**.
+
+1. Navigate to the Microsoft Admin Portal (MAC). Under **Settings** and **Integrated Apps,** select **Upload Custom App**.
+
+1. Select the `manifest.zip` created in the previous step. 
+
+1. After a short period of time, the agent shows up in Microsoft Teams and Microsoft 365 Copilot.
+
+1. ## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

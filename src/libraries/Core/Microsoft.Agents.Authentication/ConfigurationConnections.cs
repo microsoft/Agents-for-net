@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,7 +22,7 @@ namespace Microsoft.Agents.Authentication
     /// <summary>
     /// A IConfiguration based IConnections.
     /// </summary>
-    /// <remarks>
+    /// <code>
     /// "Connections": {
     ///   "ServiceConnection": {
     ///     "Settings": {
@@ -32,8 +33,9 @@ namespace Microsoft.Agents.Authentication
     ///    "ServiceUrl": "*",
     ///    "Connection": "ServiceConnection"
     /// }
-    /// 
-    /// The type indicated must have the constructor: (IServiceProvider systemServiceProvider, IConfigurationSection configurationSection).
+    /// </code>
+    /// <remarks>
+    /// The type indicated must have the constructor:<c>(IServiceProvider systemServiceProvider, IConfigurationSection configurationSection)</c>.
     /// The 'configurationSection' argument is the 'Settings' portion of the connection.
     /// 
     /// If 'ConnectionsMap' is not specified, the first Connection is used as the default.
@@ -64,13 +66,13 @@ namespace Microsoft.Agents.Authentication
             _map = configuration
                 .GetSection(mapKey)
                 .Get<List<ConnectionMapItem>>() ?? [];
-            
+
             if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map found in configuration.");
                 if (_connections.Count == 1)
                 {
-                    _map.Add(new ConnectionMapItem() {  ServiceUrl = "*", Connection = _connections.First().Key });
+                    _map.Add(new ConnectionMapItem() { ServiceUrl = "*", Connection = _connections.First().Key });
                 }
             }
 
@@ -105,7 +107,7 @@ namespace Microsoft.Agents.Authentication
             }
 
             _map = connectionMapItems == null ? [] : [.. connectionMapItems];
-            
+
             if (_map.Count == 0)
             {
                 _logger.LogWarning("No connections map provided");
@@ -124,6 +126,12 @@ namespace Microsoft.Agents.Authentication
             return GetConnectionInstance(name);
         }
 
+        /// <summary>
+        /// Tries to get a connection by name. 
+        /// </summary>
+        /// <param name="name">Name of the connection.</param>
+        /// <param name="connection">Access token provider for the named connection.</param>
+        /// <returns>Returns <c>true</c> if successful; otherwise <c>false</c>.</returns>
         public bool TryGetConnection(string name, out IAccessTokenProvider connection)
         {
             if (!_connections.TryGetValue(name, out ConnectionDefinition definition))
@@ -159,10 +167,29 @@ namespace Microsoft.Agents.Authentication
             return GetConnectionInstance(_connections.FirstOrDefault().Value);
         }
 
+        /// <inheritdoc/>
+        public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, IActivity activity)
+        {
+            var connection = GetTokenProvider(claimsIdentity, activity.ServiceUrl);
+
+            // This is for if the Agentic BlueprintId is not the same as the AppId
+            if (connection != null 
+                && (RoleTypes.AgenticIdentity.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)
+                || RoleTypes.AgenticUser.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (!string.IsNullOrEmpty(connection.ConnectionSettings?.AlternateBlueprintConnectionName))
+                {
+                    connection = GetConnection(connection.ConnectionSettings.AlternateBlueprintConnectionName);
+                }
+            }
+
+            return connection;
+        }
+
         /// <summary>
         /// Finds a connection based on a map.
         /// </summary>
-        /// <remarks>
+        /// <code>
         /// "ConnectionsMap":
         /// [
         ///    {
@@ -171,7 +198,8 @@ namespace Microsoft.Agents.Authentication
         ///       "Connection": "ServiceConnection"
         ///    }
         /// ]
-        /// 
+        /// </code>
+        /// <remarks>
         /// ServiceUrl is:  A regex to match with, or "*" for any serviceUrl value.
         /// Connection is: A name in the 'Connections'.
         /// </remarks>        

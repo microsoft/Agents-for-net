@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
@@ -13,6 +15,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     public class ActivityWithClaims
     {
+        public IChannelAdapter ChannelAdapter { get; set; }
+
         /// <summary>
         /// Optional: Defaults to IAgent
         /// </summary>
@@ -34,7 +38,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// Invoked when ProcessActivity is done.  Ignored if IsProactive.
         /// </summary>
-        public Action<InvokeResponse> OnComplete { get; set; }
+        public Func<InvokeResponse, Task> OnComplete { get; set; }
 
         /// <summary>
         /// Headers used for the current <see cref="Activity"/> request.

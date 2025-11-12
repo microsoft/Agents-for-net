@@ -21,7 +21,8 @@ namespace Microsoft.Agents.Builder.Tests
         private readonly ConversationReference _reference = new ConversationReference
         {
             Conversation = new ConversationAccount(id: "conversation-id"),
-            ActivityId = "activity-id"
+            ActivityId = "activity-id",
+            ServiceUrl = "http://mybot.com"
         };
 
         private readonly Activity _activity = new Activity
@@ -368,7 +369,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var mockUserTokenClient = new Mock<IUserTokenClient>();
             mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<ChannelId>(s => s.Channel == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();

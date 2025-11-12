@@ -23,6 +23,7 @@ namespace Microsoft.Agents.Authentication
                 Authority = msalConfigurationSection.GetValue<string>("AuthorityEndpoint", null);
                 TenantId = msalConfigurationSection.GetValue<string>("TenantId", null);
                 Scopes = msalConfigurationSection.GetSection("Scopes")?.Get<List<string>>();
+                AlternateBlueprintConnectionName = msalConfigurationSection.GetValue<string>("AlternateBlueprintConnectionName", null);
             }
             else
             {
@@ -52,6 +53,14 @@ namespace Microsoft.Agents.Authentication
         /// </summary>
         public string TenantId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// List of scopes to use for the connection.
+        /// </summary>
         public List<string> Scopes { get; set; } = [];
+
+        /// <summary>
+        /// Alternate Agentic Blueprint connection
+        /// </summary>
+        public string AlternateBlueprintConnectionName { get; set; }
     }
 }

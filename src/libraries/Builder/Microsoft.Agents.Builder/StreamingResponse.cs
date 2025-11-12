@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,9 +26,6 @@ namespace Microsoft.Agents.Builder
     ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
     /// </summary>
     /// <remarks>
-    /// Teams channels require that <see cref="QueueInformativeUpdateAsync"/> is called before calling <see cref="QueueTextChunk"/>.
-    /// </remarks>
-    /// <remarks>
     /// Only Teams and WebChat support streaming messages.  However, channels that do not support
     /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
     /// </remarks>
@@ -42,15 +40,18 @@ namespace Microsoft.Agents.Builder
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
+        // Teams failed to accept streaming messages. 
+        private const string BadArgument = "BadArgument";
+        private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
         private int _nextSequence = 1;
         private bool _ended = false;
         private Timer _timer;
         private bool _messageUpdated = false;
-        private bool _informativeSent = false;
         private bool _isTeamsChannel;
-        private bool _cancelled;
+        private bool _canceled;
+        private bool _userCanceled;
 
         // Queue for outgoing activities
         private readonly List<Func<IActivity>> _queue = [];
@@ -127,8 +128,30 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
+        /// Adds a citation to the collection at the specified position.
+        /// </summary>
+        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL.</remarks>
+        /// <param name="citation">The citation to add. Must not be <see langword="null"/>.</param>
+        /// <param name="citationPosition">The position of the citation in the collection. Must be a non-negative integer.</param>
+        public void AddCitation(Citation citation, int citationPosition)
+        {
+            Citations ??= [];
+            Citations.Add(new ClientCitation()
+            {
+                Position = citationPosition,
+                Appearance = new ClientCitationAppearance()
+                {
+                    Name = citation.Title ?? $"Document #{citationPosition}",
+                    Abstract = CitationUtils.Snippet(citation.Content, 480),
+                    Url = citation.Url
+                }
+            });
+        }
+
+        /// <summary>
         ///  Sets the citations for the full message.
         /// </summary>
+        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL. Citations are numbed in the order they appear on the list.</remarks>
         /// <param name="citations">Citations to be included in the message.</param>
         public void AddCitations(IList<Citation> citations)
         {
@@ -140,20 +163,41 @@ namespace Microsoft.Agents.Builder
 
                 foreach (Citation citation in citations)
                 {
-                    string abs = CitationUtils.Snippet(citation.Content, 480);
-
                     Citations.Add(new ClientCitation()
                     {
                         Position = currPos + 1,
                         Appearance = new ClientCitationAppearance()
                         {
-                            Name = citation.Title ?? $"Document #${currPos + 1}",
-                            Abstract = abs,
+                            Name = citation.Title ?? $"Document #{currPos + 1}",
+                            Abstract = CitationUtils.Snippet(citation.Content, 480),
                             Url = citation.Url
                         }
                     });
                     currPos++;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Adds a ClientCitation to the Citations list.
+        /// </summary>
+        /// <param name="citation">ClientCitation to add to the stream</param>
+        public void AddCitation(ClientCitation citation)
+        {
+            Citations ??= [];
+            Citations.Add(citation);
+        }
+
+        /// <summary>
+        /// Adds multiple ClientCitations to the Citations list.
+        /// </summary>
+        /// <param name="citations">The ClientCitations to add.</param>
+        public void AddCitations(IList<ClientCitation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= [];
+                Citations.AddRange(citations);
             }
         }
 
@@ -178,8 +222,6 @@ namespace Microsoft.Agents.Builder
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
-
-                _informativeSent = true;
 
                 queueFunc = () =>
                 {
@@ -215,7 +257,7 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public void QueueTextChunk(string text)
         {
-            if (string.IsNullOrEmpty(text) || _cancelled)
+            if (string.IsNullOrEmpty(text) || _canceled)
             {
                 return;
             }
@@ -227,11 +269,6 @@ namespace Microsoft.Agents.Builder
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
-                if (!_informativeSent && _isTeamsChannel)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsRequiresInformativeFirst, null);
-                }
-
                 // buffer all chunks
                 Message += text;
 
@@ -240,7 +277,9 @@ namespace Microsoft.Agents.Builder
 
                 _messageUpdated = true;
 
-                StartStream();
+                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+                // and we're just now starting the stream.  It uses Interval after the first stream message.
+                StartStream(250);
             }
         }
 
@@ -251,9 +290,8 @@ namespace Microsoft.Agents.Builder
         /// Since the messages are sent on an interval, this call will block until all have been sent
         /// before sending the final Message.
         /// </remarks>
-        /// <returns>A Task representing the async operation</returns>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task EndStreamAsync(CancellationToken cancellationToken = default)
+        /// <returns>StreamingResponseResult with the result of the streaming response.</returns>
+        public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
@@ -261,7 +299,7 @@ namespace Microsoft.Agents.Builder
                 {
                     if (_ended)
                     {
-                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
+                        return StreamingResponseResult.AlreadyEnded;
                     }
 
                     _ended = true;
@@ -272,6 +310,8 @@ namespace Microsoft.Agents.Builder
                 {
                     await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
+
+                return StreamingResponseResult.Success;
             }
             else
             {
@@ -279,35 +319,48 @@ namespace Microsoft.Agents.Builder
                 {
                     if (_ended)
                     {
-                        return;
+                        return StreamingResponseResult.AlreadyEnded;
                     }
 
                     _ended = true;
 
-                    if (UpdatesSent() == 0 || _cancelled)
+                    if (_canceled)
                     {
-                        // nothing was queued.  nothing to "end".
-                        return;
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                    }
+
+                    if (!IsStreamStarted())
+                    {
+                        return StreamingResponseResult.NotStarted;
                     }
                 }
 
-                if (IsStreamStarted())
+                StreamingResponseResult result = StreamingResponseResult.Success;
+
+                // Wait for queue items to be sent per Interval
+                try
                 {
-                    // Wait for queue items to be sent per Interval
-                    try
+                    if (!_queueEmpty.WaitOne(EndStreamTimeout))
                     {
-                        _queueEmpty.WaitOne(EndStreamTimeout);
+                        result = StreamingResponseResult.Timeout;
                     }
-                    catch (AbandonedMutexException)
+
+                    if (_canceled)
                     {
-                        StopStream();
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
                     }
+                }
+                catch (AbandonedMutexException)
+                {
+                    StopStream();
                 }
 
                 if (UpdatesSent() > 0 || FinalMessage != null)
                 {
                     await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
+
+                return result;
             }
         }
 
@@ -339,19 +392,20 @@ namespace Microsoft.Agents.Builder
             }
 
             // Add in Generated by AI
-            if (EnableGeneratedByAILabel == true)
+            List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
+            if((bool)EnableGeneratedByAILabel || currCitations != null)
             {
-                AIEntity entity = new();
-                if (Citations != null && Citations.Count > 0)
+                AIEntity entity = new()
                 {
-                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-                    if (currCitations != null && currCitations.Count > 0)
-                    {
-                        entity.Citation = currCitations;
-                    }
+                    Citation = currCitations,
+                    UsageInfo = SensitivityLabel
+                };
+
+                if (EnableGeneratedByAILabel == true)
+                {
+                    entity.AdditionalType.Add(AIEntity.AdditionalTypeAIGeneratedContent);
                 }
 
-                entity.UsageInfo = this.SensitivityLabel;
                 activity.Entities.Add(entity);
             }
 
@@ -378,7 +432,8 @@ namespace Microsoft.Agents.Builder
                 FinalMessage = null;
                 _nextSequence = 1;
                 StreamId = null;
-                _cancelled = false;
+                _canceled = false;
+                _userCanceled = false;
             }
         }
 
@@ -447,9 +502,14 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
-            _isTeamsChannel = string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase);
+            _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
 
-            if (_isTeamsChannel)
+            if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
+            {
+                // No point in streaming for ExpectReplies.  Treat as non-streaming channel.
+                IsStreamingChannel = false;
+            }
+            else if (_isTeamsChannel)
             {
                 // Teams MUST use the Activity.Id returned from the first Informative message for
                 // subsequent intermediate messages.  Do not set StreamId here.
@@ -457,7 +517,7 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (string.Equals(turnContext.Activity.ChannelId, Channels.Webchat, StringComparison.OrdinalIgnoreCase))
+            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
@@ -465,11 +525,16 @@ namespace Microsoft.Agents.Builder
                 // WebChat will use whatever StreamId is created.
                 StreamId = Guid.NewGuid().ToString();
             }
-            else
+            else if (string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
                 // Support streaming for DeliveryMode.Stream
-                IsStreamingChannel = string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase);
+                IsStreamingChannel = true;
                 Interval = 100;
+                StreamId = Guid.NewGuid().ToString();
+            }
+            else
+            {
+                IsStreamingChannel = false;
             }
         }
 
@@ -478,11 +543,11 @@ namespace Microsoft.Agents.Builder
             return _timer != null;
         }
 
-        private void StartStream()
+        private void StartStream(int interval = 0)
         {
             if (_timer == null && IsStreamingChannel)
             {
-                _timer = new Timer(SendIntermediateMessage, null, Interval, System.Threading.Timeout.Infinite);
+                _timer = new Timer(SendIntermediateMessage, null, interval == 0 ? Interval : interval, System.Threading.Timeout.Infinite);
             }
         }
 
@@ -509,23 +574,28 @@ namespace Microsoft.Agents.Builder
                     activity = _queue[0]();
                     _queue.RemoveAt(0);
 
-                    // Limit intermediate message to the interval
-                    _timer.Change(Interval, System.Threading.Timeout.Infinite);
+                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
+                    // longer than the Interval. MSAL can take longer than the interval in some cases,
+                    // which case out of sequence messages.
+                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
                 else if (_ended)
                 {
                     _queueEmpty.Set();
                     StopStream();
+                    return;
                 }
                 else
                 {
                     // Nothing is in the queue, and not ending, so chances are
                     // the chunking is slow.  We can speed up the interval to
                     // pick up the next chunk faster.
-                    _timer.Change(200, System.Threading.Timeout.Infinite);
+                    _timer.Change(200, Timeout.Infinite);
+                    return;
                 }
             }
 
+            // Looks a bit odd, but can't call await inside a lock.
             await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -546,6 +616,9 @@ namespace Microsoft.Agents.Builder
                     {
                         StreamId = response.Id;
                     }
+
+                    // Restart the timer with normal Interval (if running)
+                    _timer?.Change(Interval, Timeout.Infinite);
                 }
                 catch (Exception ex)
                 {
@@ -553,18 +626,53 @@ namespace Microsoft.Agents.Builder
                     // from the Timer thread and will crash the app.  A more elegant 
                     // solution would be to get it back to the calling thread.
 
+                    bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        // User canceled?
+                        if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                         {
-                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
+
+                            _userCanceled = true;
+                        }
+                        // Stream not allowed?
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
+                        else if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
+                            errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                            System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+
+                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
+                            CanceledStream = false;
+                        }
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+                        else
+                        {
+                            var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
+
+                            _context?.Adapter?.Logger?.LogWarning(
+                                "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
+                                ex.Message,
+                                errorMessage);
+
+                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
+                        }
+
+                        if (CanceledStream)
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
                         }
                     }
 
                     lock (this)
                     {
                         StopStream();
-                        _cancelled = true;
+                        _canceled = CanceledStream;
+                        _queueEmpty.Set();
                     }
                 }
             }

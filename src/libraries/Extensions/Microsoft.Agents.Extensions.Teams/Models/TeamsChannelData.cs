@@ -105,6 +105,21 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public IList<OnBehalfOf> OnBehalfOf { get; set; }
 
         /// <summary>
+        /// List of teams that the channel is shared with.
+        /// </summary>
+        public IList<TeamInfo>? SharedWithTeams { get; set; }
+
+        /// <summary>
+        /// List of teams that the channel was unshared from.
+        /// </summary>
+        public IList<TeamInfo>? UnsharedFromTeams { get; set; }
+
+        /// <summary>
+        /// Information about the source of a member that was added or removed from a shared channel.
+        /// </summary>
+        public MembershipSource? MembershipSource { get; set; }
+
+        /// <summary>
         /// Gets or sets properties that are not otherwise defined by the <see cref="TeamsChannelData"/> type but that
         /// might appear in the REST JSON object.
         /// </summary>

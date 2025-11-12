@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -44,14 +45,13 @@ namespace Microsoft.Agents.Builder
         IChannelAdapter Use(IMiddleware middleware);
 
         /// <summary>
-        /// Creates a conversation on the specified channel.
+        /// Creates a conversation on the specified channel and executes a turn with the proper context for the new conversation.
         /// </summary>
-        /// <param name="agentAppId">TThe application ID of the Agent.</param>
-        /// <param name="channelId">The ID for the channel.</param>
+        /// <param name="agentAppId">The application ID of the Agent. For example, <c>AgentClaims.GetAppId(ITurnContext.Identity)"</c></param>
+        /// <param name="channelId">The ID for the channel. See <see cref="Channels"/></param>
         /// <param name="serviceUrl">The channel's service URL endpoint.</param>
-        /// <param name="audience">The audience for the connector.</param>
-        /// <param name="conversationParameters">The conversation information to use to
-        /// create the conversation.</param>
+        /// <param name="audience">The audience for the connector. For example, <c>AgentClaims.GetTokenAudience(ITurnContext.Identity)</c></param>
+        /// <param name="conversationParameters">The conversation information to used to create the conversation.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Builder
         /// and the user's account information on that channel.
         /// Most channels only support initiating a direct message (non-group) conversation.
         /// <para>The adapter attempts to create a new conversation on the channel, and
-        /// then sends a <c>conversationUpdate</c> Activity through its middleware pipeline
+        /// then sends a <c>ActivityEventNames.CreateConversation</c> Event Activity through its pipeline
         /// to the <paramref name="callback"/> method.</para>
         /// <para>If the conversation is established with the
         /// specified users, the ID of the activity's <see cref="Activity.Conversation"/>
@@ -68,85 +68,94 @@ namespace Microsoft.Agents.Builder
         Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Sends a proactive message to a conversation.
+        /// Continues a conversation in a new Turn.  This is typically used for proactive interactions.
         /// </summary>
-        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
-        /// <param name="continuationActivity">An <see cref="Activity"/> with the appropriate <see cref="ConversationReference"/> with which to continue the conversation.</param>
+        /// <param name="agentId">The application ID of the Agent.</param>
+        /// <param name="reference">A reference to the conversation to continue.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
-        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// <para>Using this overload will only work against Azure Bot Service and Agentic.  For proactive to other agents (including Copilot Studio), use 
+        /// <see cref="ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)"/>.  Use <see cref="Microsoft.Agents.Authentication.AgentClaims.CreateIdentity(string, bool, string)"/>
+        /// to create a ClaimsIdentity with both the audience (your agents ClientId) and appId (the other agents ClientId).</para>
+        /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)")]
+        Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Sends a proactive message to a conversation.
-        /// </summary>
-        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
-        /// <param name="continuationActivity">An <see cref="Activity"/> with the appropriate <see cref="ConversationReference"/> with which to continue the conversation.</param>
-        /// <param name="audience">A value signifying the recipient of the proactive message.</param>
-        /// <param name="callback">The method to call for the resulting Agent turn.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
-        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Sends a proactive message to a conversation.
+        /// Continues a conversation in a new Turn.  This is typically used for proactive interactions.
         /// </summary>
         /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
         /// <param name="reference">A reference to the conversation to continue.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// </remarks>
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Sends a proactive message to a conversation.
-        /// </summary>
-        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
-        /// <param name="reference">A reference to the conversation to continue.</param>
-        /// <param name="audience">A value signifying the recipient of the proactive message.</param>
-        /// <param name="callback">The method to call for the resulting Agent turn.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
-        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Sends a proactive message to a conversation.
+        /// Continues a conversation in a new Turn.  This is typically used for proactive interactions.
         /// </summary>
         /// <param name="agentId">The application ID of the Agent.</param>
         /// <param name="continuationActivity">An <see cref="Activity"/> with the appropriate <see cref="ConversationReference"/> with which to continue the conversation.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// <para>Using this overload will only work against Azure Bot Service and Agentic.  For proactive to other agents (including Copilot Studio), use 
+        /// <see cref="ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/>.  Use <see cref="Microsoft.Agents.Authentication.AgentClaims.CreateIdentity(string, bool, string)"/>
+        /// to create a ClaimsIdentity with both the audience (your agents ClientId) and appId (the other agents ClientId).</para>
+        /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)")]
         Task ContinueConversationAsync(string agentId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Sends a proactive message to a conversation.
+        /// Sends a proactive message to a conversation.  See <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.
         /// </summary>
-        /// <param name="agentId">The application ID of the Agent.</param>
-        /// <param name="reference">A reference to the conversation to continue.</param>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="continuationActivity">An <see cref="Activity"/> with the appropriate <see cref="ConversationReference"/> with which to continue the conversation.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <remarks>Call this method to proactively send a message to a conversation.
-        /// Most _channels require a user to initiate a conversation with an Agent
-        /// before the Agent can send activities to the user.</remarks>
-        Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// </remarks>
+        [Obsolete("This method will be removed in future versions of the SDK")]
+        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Continues a conversation in a new Turn.  This is typically used for proactive interactions.
+        /// </summary>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="reference">A reference to the conversation to continue.</param>
+        /// <param name="audience">A value signifying the recipient of the proactive message.  This overrides the default use of ClaimsIdentity for the audience.</param>
+        /// <param name="callback">The method to call for the resulting Agent turn.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// </remarks>
+        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Continues a conversation in a new Turn.  This is typically used for proactive interactions.
+        /// </summary>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="continuationActivity">An <see cref="Activity"/> with the appropriate <see cref="ConversationReference"/> with which to continue the conversation.</param>
+        /// <param name="audience">A value signifying the recipient of the proactive message.</param>
+        /// <param name="callback">The method to call for the resulting Agent turn.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <remarks>
+        /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// </remarks>
+        [Obsolete("This method will be removed in future versions of the SDK. Use ProcessProactiveAsync instead.")]
+        Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
         /// When overridden in a derived class, replaces an existing activity in the
@@ -189,14 +198,58 @@ namespace Microsoft.Agents.Builder
         Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
-        /// The implementation for continue conversation.
+        /// Executes a new turn pipeline in the context of the conversation of an Activity.
         /// </summary>
-        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
-        /// <param name="continuationActivity">The continuation <see cref="Activity"/> used to create the <see cref="ITurnContext" />.</param>
-        /// <param name="audience">The audience for the call.</param>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.  This should be the Identity needed for the Turn.</param>
+        /// <param name="continuationActivity">The continuation <see cref="Activity"/> used to create the <see cref="ITurnContext"/>.  This is not the Activity sent to the conversation.</param>
+        /// <param name="audience">The audience for the call.  If null, audience is used from <c>claimsIdentity</c>.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <remarks>
+        /// <para>A Turn, and the TurnContext, are in the context of an Activity.  Normally this is from Activities arriving via an endpoint (api/messages) which 
+        /// are handled in <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/>.  Proactive is an Agent initiated 
+        /// Turn, typically for a different conversation.</para>
+        /// <para>The <c>continuationActivity</c> argument is used to "seed" the TurnContext created by the pipeline.  It is not the Activity sent to the conversation.  This
+        /// is normally acquired by <see cref="ConversationReference.GetContinuationActivity()"/>.  This Activity becomes <see cref="ITurnContext.Activity"/> within 
+        /// <c>AgentCallbackHandler</c>. The <c>GetContinuationActivity</c> methods creates a <c>ContinueConversation</c> Event Activity with <c>Activity.Conversation</c>, <c>Activity.From</c>, 
+        /// and <c>Activity.Recipient</c> from the <c>ConversationReference</c>.
+        /// </para>
+        /// <para>
+        /// As for ProcessActivity, the pipeline will call <see cref="AgentCallbackHandler"/> with the expected TurnContext.  Actions are performed in this callback as would
+        /// for any other turn, relative to <c>continuationActivity.Conversation</c>.  For example, <see cref="ITurnContext.SendActivityAsync(IActivity, CancellationToken)"/>.  State is supported by loading the desired state
+        /// manually.
+        /// </para>
+        /// <para>For example, from an AgentApplication <c>RouteHandler</c>, sending messages to another conversation would be the following. The variable <c>proactiveReference</c> (below) is a previously saved <c>ConversationReference</c> which is typically
+        /// acquired by using <c>ITurnContext.Activity.GetConversationReference()</c> from a previous turn for a conversation.</para>
+        /// <code>
+        /// Task OnSendProactiveAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        /// {
+        ///     await context.Adapter.ProcessProactiveAsync(
+        ///         turnContext.Identity,
+        ///         proactiveReference.GetContinuationActivity(),
+        ///         null,
+        ///         async(proactiveContext, proactiveCt) =>
+        ///         {
+        ///            // Middleware will have been executed
+        ///            
+        ///            // TurnState must be manually loaded and saved.
+        ///            var turnState = Options.TurnStateFactory();
+        ///            await turnState.LoadStateAsync(proactiveContext, cancellationToken: proactiveCt);
+        ///
+        ///            // State is relative to the proactive conversation and user.
+        ///            turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
+        ///            
+        ///            // Perform actions as you would for any other turn.
+        ///            await proactiveContext.SendActivityAsync($"Proactive Conversation: {context.Activity.Text}", cancellationToken: proactiveCt);
+        ///
+        ///            await turnState.SaveStateAsync(proactiveContext, cancellationToken: proactiveCt);
+        ///         },
+        ///         cancellationToken);
+        /// }
+        /// </code>
+        /// </remarks>
         Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
+
         Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null);
 
         /// <summary>
@@ -211,5 +264,10 @@ namespace Microsoft.Agents.Builder
         /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
+        
+        /// <summary>
+        /// Channel Adapter Logger
+        /// </summary>
+        ILogger? Logger { get; set; }
     }
 }
