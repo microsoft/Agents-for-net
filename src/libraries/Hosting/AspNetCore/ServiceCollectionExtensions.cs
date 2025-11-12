@@ -194,10 +194,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TAdapter : CloudAdapter
         {
             // Add Connections object to access configured token connections.
-            builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IConnections)))
+            {
+                builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
+            }
 
             // Add factory for ConnectorClient and UserTokenClient creation
-            builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IChannelServiceClientFactory)))
+            {
+                builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            }
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             AddCloudAdapter<TAdapter>(builder.Services);

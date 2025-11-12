@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AutoSignIn;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Authentication.Msal;
