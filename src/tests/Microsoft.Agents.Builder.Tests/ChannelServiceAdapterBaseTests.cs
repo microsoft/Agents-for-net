@@ -374,10 +374,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateMockConnectorClient().Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             return mockChannelServiceClientFactory;

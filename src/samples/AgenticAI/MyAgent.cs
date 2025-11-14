@@ -15,16 +15,17 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // Register a route for Agentic-only Messages.
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
+        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic", "me"]);
 
         // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["me"]);
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
+        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
+        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, AAU token len={aauToken.Length}, Me token len={meToken.Length}", cancellationToken: cancellationToken);
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

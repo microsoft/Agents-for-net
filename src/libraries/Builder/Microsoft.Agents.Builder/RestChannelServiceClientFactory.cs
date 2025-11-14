@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc />
-        public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken = default, IList<string> scopes = null, bool useAnonymous = false)
+        public Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(serviceUrl, nameof(serviceUrl));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(audience, nameof(audience));
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder
             if (!turnContext.Activity.IsAgenticRequest())
             {
                 // Non agentic, so use legacy tokens
-                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
+                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), scopes, useAnonymous, cancellationToken);
             }
 
             // Use an Agentic token for the ConnectorClient
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder
                                 turnContext.Activity.GetAgenticTenantId(),
                                 turnContext.Activity.GetAgenticInstanceId(),
                                 turnContext.Activity.GetAgenticUser(),
-                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
+                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope],
                                 cancellationToken);
                         }
                         catch (Exception ex)
@@ -151,12 +151,12 @@ namespace Microsoft.Agents.Builder
                                 ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                     }
                 },
-                typeof(RestChannelServiceClientFactory).FullName, 
+                typeof(RestChannelServiceClientFactory).FullName,
                 maxApxConversationIdLength: _iMaxApxConversationIdLength));
         }
 
         /// <inheritdoc />
-        public Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false)
+        public Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
 
@@ -178,6 +178,59 @@ namespace Microsoft.Agents.Builder
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
                                 ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                    }
+                },
+                typeof(RestChannelServiceClientFactory).FullName,
+                _logger));
+        }
+
+        public Task<IUserTokenClient> CreateUserTokenClientAsync(ITurnContext turnContext, bool useAnonymous = false, CancellationToken cancellationToken = default)
+        {
+            if (!turnContext.Activity.IsAgenticRequest())
+            {
+                return CreateUserTokenClientAsync(turnContext.Identity, useAnonymous, cancellationToken);
+            }
+
+            var appId = AgentClaims.GetAppId(turnContext.Identity) ?? Guid.Empty.ToString();
+
+            return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
+                appId,
+                new Uri(_tokenServiceEndpoint),
+                _httpClientFactory,
+                () =>
+                {
+                    var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                    if (connection is IAgenticTokenProvider agenticTokenProvider)
+                    {
+                        try
+                        {
+                            if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+                            {
+                                return agenticTokenProvider.GetAgenticInstanceTokenAsync(
+                                    turnContext.Activity.GetAgenticTenantId(),
+                                    turnContext.Activity.GetAgenticInstanceId(),
+                                    cancellationToken);
+                            }
+
+                            return agenticTokenProvider.GetAgenticUserTokenAsync(
+                                turnContext.Activity.GetAgenticTenantId(),
+                                turnContext.Activity.GetAgenticInstanceId(),
+                                turnContext.Activity.GetAgenticUser(),
+                                [$"{_tokenServiceAudience}/.default"],
+                                cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            // have to do it this way b/c of the lambda expression. 
+                            throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                    ErrorHelper.AgenticTokenProviderFailed, ex, turnContext.Activity.GetAgenticTenantId(), turnContext.Activity.GetAgenticInstanceId(), turnContext.Activity.GetAgenticUser(), turnContext.Activity.Recipient.Role);
+                        }
+                    }
+                    else
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,

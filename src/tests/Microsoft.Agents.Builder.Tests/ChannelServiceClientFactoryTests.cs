@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", cancellationToken: CancellationToken.None);
                 await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
             }
             catch (Exception e)
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.Tests
             try
             {
 
-                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", cancellationToken: CancellationToken.None);
                 await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
             }
             catch (Exception e)
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None);
                 await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
             }
             catch (Exception e)
@@ -120,10 +120,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);
 
-            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", audience, CancellationToken.None, useAnonymous: true);
+            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", audience, cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
         }
 
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None);
+                IConnectorClient v = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", cancellationToken: CancellationToken.None);
                 await v.Conversations.SendToConversationAsync(traceActivity, CancellationToken.None);
             }
             catch (Exception e)
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None);
                 await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
             }
             catch (Exception e)
@@ -197,10 +197,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
 
-            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
+            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
             Assert.Equal(new Uri(AuthenticationConstants.BotFrameworkOAuthUrl).ToString(), ((RestUserTokenClient)tokeClient).BaseUri.ToString());
         }
@@ -235,10 +235,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
 
-            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
+            var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
             Assert.Equal("https://test.token.endpoint/", ((RestUserTokenClient)tokeClient).BaseUri.ToString());
         }

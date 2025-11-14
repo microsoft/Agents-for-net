@@ -38,10 +38,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -111,10 +111,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -194,10 +194,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -268,10 +268,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -339,10 +339,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -418,10 +418,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -512,10 +512,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -598,10 +598,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);
@@ -695,10 +695,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockConnector.Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             var adapter = new TestCloudAdapter(mockChannelServiceClientFactory.Object);

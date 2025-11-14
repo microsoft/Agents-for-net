@@ -276,7 +276,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var clientFactory = turnContext.Services.Get<IChannelServiceClientFactory>();
             if (clientFactory != null)
             {
-                return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false);
+                return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             throw new NotSupportedException("OAuthFlow: IChannelServiceClientFactory is not supported. Was an IChannelServiceClientFactory registered?");
         }
