@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public static class TurnContextExtensions
     {
-        public static IDictionary<string, string> GetTurnTokens(this TurnContext turnContext)
+        public static IDictionary<string, string> GetTurnTokens(this ITurnContext turnContext)
         {
             var userAuth = turnContext.Services.Get<UserAuthorization>();
             if (userAuth == null)
@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.App
             return userAuth.GetTurnTokens();
         }
 
-        public static Task<string> GetTurnTokenAsyc(this TurnContext turnContext, string handlerName = null, CancellationToken cancellationToken = default)
+        public static Task<string> GetTurnTokenAsync(this ITurnContext turnContext, string handlerName = null, CancellationToken cancellationToken = default)
         {
             var userAuth = turnContext.Services.Get<UserAuthorization>();
             if (userAuth == null)
