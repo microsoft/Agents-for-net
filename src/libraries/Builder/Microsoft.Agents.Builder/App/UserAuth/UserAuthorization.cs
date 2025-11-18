@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using System.Linq;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -35,7 +36,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         private readonly IUserAuthorizationDispatcher _dispatcher;
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
-        private readonly Dictionary<string, TokenResponse> _authTokens = [];
+        private readonly List<HandlerToken> _authTokens = [];
 
         /// <summary>
         /// Callback when user sign in fail
@@ -76,7 +77,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         [Obsolete("Use Task<string> GetTurnTokenAsync(ITurnContext, string) instead")]
         public string GetTurnToken(string handlerName)
         {
-            return _authTokens.TryGetValue(handlerName, out var token) ? token.Token : default;
+           return _authTokens.Find(ht => ht.Handler.Equals(handlerName))?.TokenResponse.Token;
         }
 
         /// <summary>
@@ -100,30 +101,41 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
-            handlerName ??= DefaultHandlerName;
-
-            if (_authTokens.TryGetValue(handlerName, out var token))
+            if (_authTokens == null || _authTokens.Count == 0)
             {
-                // An exchangeable token needs to be exchanged.
-                if (!turnContext.IsAgenticRequest())
+                return null;
+            }
+
+            TokenResponse token;
+            if (string.IsNullOrEmpty(handlerName))
+            {
+                // Cached turn tokens are stored in the order of addition (the order on the route).
+                // If no handler name is provided, return the first.
+                token = _authTokens[0].TokenResponse;
+            }
+            else
+            {
+                token = _authTokens.Find(ht => ht.Handler.Equals(handlerName))?.TokenResponse;
+            }
+
+            if (token != null)
+            {
+                // Return a non-expired non-exchangeable token.
+                if (!turnContext.IsAgenticRequest() && !token.IsExchangeable)
                 {
-                    if (!token.IsExchangeable)
+                    var diff = token.Expiration - DateTimeOffset.UtcNow;
+                    if (diff.HasValue && diff?.TotalMinutes >= 5)
                     {
-                        var diff = token.Expiration - DateTimeOffset.UtcNow;
-                        if (diff.HasValue && diff?.TotalMinutes >= 5)
-                        {
-                            return token.Token;
-                        }
+                        return token.Token;
                     }
                 }
 
-
-                // Get a new token if near expiration, or it's an exchangeable token.
+                // Refresh an exchangeable or expired token
                 var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
-                    _authTokens[handlerName] = response;
+                    CacheToken(handlerName, response);
                     return response.Token;
                 }
 
@@ -133,6 +145,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             }
 
             return null;
+        }
+
+        public IDictionary<string,string> GetTurnTokens()
+        {
+            return (IDictionary<string, string>)_authTokens.Select(ht => new KeyValuePair<string, string>(ht.Handler, ht.TokenResponse.Token));
         }
 
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
@@ -266,23 +283,25 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return true;
         }
 
-        /// <summary>
-        /// Set token in state
-        /// </summary>
-        /// <param name="name">The name of token</param>
-        /// <param name="response">The value of token</param>
-        private void CacheToken(string name, SignInResponse response)
+        private void CacheToken(string name, SignInResponse signInResponse)
         {
-            _authTokens[name] = response.TokenResponse;
+            CacheToken(name, signInResponse.TokenResponse);
         }
 
-        /// <summary>
-        /// Delete token from turn state
-        /// </summary>
-        /// <param name="name">The name of token</param>
+        private void CacheToken(string name, TokenResponse tokenResponse)
+        {
+            var existing = _authTokens.Find(ht => ht.Handler.Equals(name));
+            if (existing != null)
+            {
+                existing.TokenResponse = tokenResponse;
+                return;
+            }
+            _authTokens.Add(new HandlerToken() { Handler = name, TokenResponse = tokenResponse });
+        }
+
         private void DeleteCachedToken(string name)
         {
-            _authTokens.Remove(name);
+            _authTokens.RemoveAll(ht => ht.Handler.Equals(name));
         }
 
         private static SignInState GetSignInState(ITurnState turnState)
@@ -303,5 +322,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public IActivity ContinuationActivity { get; set; }
         public string RuntimeOBOConnectionName { get; set; }
         public IList<string> RuntimeOBOScopes { get; set; }
+    }
+
+    class HandlerToken
+    {
+        public string Handler { get; set; }
+        public TokenResponse TokenResponse { get; set; }
     }
 }
