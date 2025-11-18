@@ -32,7 +32,6 @@
     <!-- Force Microsoft.Bcl.AsyncInterfaces to a newer version. Since Microsoft.Azure.Cosmos has 1.1.1 version, which causes MSB3277 warnings. -->
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
 	<PackageReference Include="Azure.Storage.Blobs" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" />
   </ItemGroup>
 
   <ItemGroup>
