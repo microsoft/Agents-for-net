@@ -777,6 +777,11 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+
             try
             {
                 // Start typing timer if configured
