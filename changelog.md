@@ -1,6 +1,6 @@
 # Microsoft 365 Agents SDK for .NET - Release Notes v1.3.0
 
-**Release Date:** October 22, 2025  
+**Release Date:** November 15, 2025  
 **Previous Version:** 1.2.0 (Released August 18, 2025)
 
 ## 🎉 What's New in 1.3.0
@@ -42,6 +42,9 @@ This release introduces first-class A2A hosting (preview), and Copilot Studio Co
 - Moved the repository to .NET SDK 8.0.414 to align with the latest LTS servicing updates. ([#439](https://github.com/microsoft/Agents-for-net/pull/439), [#481](https://github.com/microsoft/Agents-for-net/pull/481))
 
 ## 🔐 Authentication & Security Enhancements
+
+- Add support for Entra Agent ID Preview
+- Improved Multi-tenant detction for authenticaiton token support this will attempt to create a tenant specifice token for User Autheitcation and AgentID scenarios when the authority associated with current Agent identity is using the /common authority.5
 
 ## 🐛 Bug Fixes & Maintenance
 
