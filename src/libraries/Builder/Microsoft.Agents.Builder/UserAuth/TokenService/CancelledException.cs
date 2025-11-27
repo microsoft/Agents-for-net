@@ -6,9 +6,9 @@ using System;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Represents an exception that is thrown when a user explicitly cancels an operation.
+    /// Represents an exception that indicates an operation was cancelled programmatically.
     /// </summary>
-    internal class UserCancelledException : CancelledException
+    internal class CancelledException : Exception
     {
     }
 }

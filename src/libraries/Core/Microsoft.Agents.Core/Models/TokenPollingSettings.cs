@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
     /// Helps provide polling for token details.
     /// </summary>
+    [Obsolete("No longer used")]
     public class TokenPollingSettings
     {
         /// <summary>

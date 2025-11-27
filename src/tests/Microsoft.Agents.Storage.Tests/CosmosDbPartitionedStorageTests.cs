@@ -225,8 +225,6 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
-
             var changes = new Dictionary<string, object>
             {
                 { "key1", new CosmosDbPartitionedStorage.DocumentStoreItem() },
@@ -270,8 +268,6 @@ namespace Microsoft.Agents.Storage.Tests
         public async Task WriteAsync_ShouldCallUpsertItemAsync()
         {
             InitStorage();
-
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
 
             var changes = new Dictionary<string, DocumentStoreItem>
             {
@@ -375,6 +371,18 @@ namespace Microsoft.Agents.Storage.Tests
                 .Returns(_container.Object);
             _container.Setup(e => e.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(containerResponse.Object);
+            _container.Setup(e => e.CreateItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CosmosDbPartitionedStorage.DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CosmosDbPartitionedStorage.DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
 
             var options = storageOptions ?? new CosmosDbPartitionedStorageOptions
             {

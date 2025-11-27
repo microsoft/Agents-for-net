@@ -6,9 +6,9 @@ using System;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Represents an exception that is thrown when a user explicitly cancels an operation.
+    /// Represents an exception that is thrown when user consent is required to proceed with the authorization flow.
     /// </summary>
-    internal class UserCancelledException : CancelledException
+    public class ConsentRequiredException : Exception
     {
     }
 }

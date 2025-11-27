@@ -151,56 +151,6 @@ namespace Microsoft.Agents.Model.Tests
         }
         
         [Fact]
-        public void TokenExchangeStateInitsWithNoArgs()
-        {
-            var tokenExchangeState = new TokenExchangeState();
-
-            Assert.NotNull(tokenExchangeState);
-            Assert.IsType<TokenExchangeState>(tokenExchangeState);
-        }
-
-        [Fact]
-        public void TokenPollingSettingsInits()
-        {
-            var timeout = 1000;
-            var interval = 600000;
-
-            var tokenPollingSettings = new TokenPollingSettings()
-            {
-                Timeout = timeout,
-                Interval = interval,
-            };
-
-            Assert.NotNull(tokenPollingSettings);
-            Assert.IsType<TokenPollingSettings>(tokenPollingSettings);
-            Assert.Equal(timeout, tokenPollingSettings.Timeout);
-            Assert.Equal(interval, tokenPollingSettings.Interval);
-        }
-
-        [Fact]
-        public void TokenRequestInits()
-        {
-            var provider = "provider";
-            var settings = new Dictionary<string, object>() { { "key", "value" } };
-
-            var tokenRequest = new TokenRequest(provider, settings);
-
-            Assert.NotNull(tokenRequest);
-            Assert.IsType<TokenRequest>(tokenRequest);
-            Assert.Equal(provider, tokenRequest.Provider);
-            Assert.Equal(settings, tokenRequest.Settings);
-        }
-        
-        [Fact]
-        public void TokenRequestInitsWithNoArgs()
-        {
-            var tokenRequest = new TokenRequest();
-
-            Assert.NotNull(tokenRequest);
-            Assert.IsType<TokenRequest>(tokenRequest);
-        }
-
-        [Fact]
         public void TokenResponseInits()
         {
             var channelId = "channelId";

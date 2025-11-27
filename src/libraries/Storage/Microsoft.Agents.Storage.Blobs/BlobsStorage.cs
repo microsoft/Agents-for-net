@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Storage.Blobs
     /// property value to the blob's ETag upon read. Afterward, an <see cref="BlobRequestConditions"/> with the ETag value
     /// will be generated during Write. New entities start with a null ETag.
     /// </remarks>
-    public class BlobsStorage : IStorage
+    public class BlobsStorage : IStorageExt
     {
         private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
@@ -167,14 +167,22 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <inheritdoc/>
-        public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        {
+            return WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
+        }
+
+        public async Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
+            writeOptions ??= new StorageWriteOptions();
+
+            var results = new Dictionary<string, IStoreItem>(changes.Count);
             if (changes.Count == 0)
             {
                 // No-op for no changes.
-                return;
+                return results;
             }
 
             // this should only happen once - assuming this is a singleton
@@ -189,9 +197,18 @@ namespace Microsoft.Agents.Storage.Blobs
                 var storeItem = newValue as IStoreItem;
 
                 // "*" eTag in IStoreItem converts to null condition for AccessCondition
-                var accessCondition = (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != "*")
+                BlobRequestConditions accessCondition;
+
+                if (writeOptions.IfNotExists)
+                {
+                    accessCondition = new BlobRequestConditions() { IfNoneMatch = new ETag("*") };
+                }
+                else
+                {
+                    accessCondition = (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != "*")
                     ? new BlobRequestConditions() { IfMatch = new ETag(storeItem?.ETag) }
                     : null;
+                }
 
                 var blobName = GetBlobName(keyValuePair.Key);
                 var blobReference = _containerClient.GetBlobClient(blobName);
@@ -212,30 +229,37 @@ namespace Microsoft.Agents.Storage.Blobs
                         var blobHttpHeaders = new BlobHttpHeaders();
                         blobHttpHeaders.ContentType = "application/json";
 
-                        await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+                        var response = await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+
+                        results[keyValuePair.Key] = new WriteResult() { ETag = response.Value.ETag.ToString() };
                     }
                 }
                 catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.BadRequest
-                && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
+                    when (ex.Status == (int)HttpStatusCode.BadRequest
+                    && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
                 {
                     throw new InvalidOperationException(
                         $"An error occurred while trying to write an object. The underlying '{BlobErrorCode.InvalidBlockList}' error is commonly caused due to concurrently uploading an object larger than 128MB in size.",
                         ex);
                 }
-                catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
                 {
-                    throw new EtagException($"Etag conflict: {ex.Message}");
+                    throw new EtagException($"Unable to write '{keyValuePair.Key}' due to an ETag conflict.");
+                }
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.Conflict)
+                {
+                    throw new ItemExistsException($"Unable to write '{keyValuePair.Key}' because it already exists.");
                 }
             }
+
+            return results;
         }
 
         //<inheritdoc/>
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-            
+
             Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)
             {
