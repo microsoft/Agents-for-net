@@ -4,7 +4,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Cards;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 

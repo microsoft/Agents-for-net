@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Globalization;
 using System.Text.Json.Serialization;
@@ -68,10 +69,8 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>Continuation activity.</returns>
         public Activity GetContinuationActivity()
         {
-            return new Activity()
+            return new EventActivity(ActivityEventNames.ContinueConversation)
             {
-                Type = ActivityTypes.Event,
-                Name = ActivityEventNames.ContinueConversation.ToString(),
                 Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,
                 Locale = Locale,

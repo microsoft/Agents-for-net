@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;

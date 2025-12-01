@@ -17,6 +17,7 @@ using Azure.Identity;
 using Microsoft.Agents.Extensions.Teams.AI.Augmentations;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
 {
@@ -311,13 +312,13 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
             var channelAdapterMock = new Mock<IChannelAdapter>();
 
             // Arrange
-            ITurnContext turnContext = new TurnContext(channelAdapterMock.Object, new Activity(
-                text: "hello",
-                channelId: "channelId",
-                recipient: new() { Id = "recipientId" },
-                conversation: new() { Id = "conversationId" },
-                from: new() { Id = "fromId" }
-            ));
+            ITurnContext turnContext = new TurnContext(channelAdapterMock.Object, new MessageActivity(text: "hello")
+            {
+                ChannelId = "channelId",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" }
+            });
             var streamer = new Mock<IStreamingResponse>();
             var state = new TurnState();
             await state.LoadStateAsync(turnContext);

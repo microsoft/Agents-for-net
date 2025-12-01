@@ -1,6 +1,6 @@
 ﻿using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Storage;
 using Moq;
 using Record = Microsoft.Agents.Extensions.Teams.AI.State.Record;
@@ -50,13 +50,13 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.TestUtils
         {
             // Create a mock adapter
             var mockAdapter = new Mock<IChannelAdapter>();
-            return new TurnContext(mockAdapter.Object, new Activity(
-                text: "hello",
-                channelId: "channelId",
-                recipient: new() { Id = "recipientId" },
-                conversation: new() { Id = "conversationId" },
-                from: new() { Id = "fromId" }
-            ));
+            return new TurnContext(mockAdapter.Object, new MessageActivity("hello")
+            {
+                ChannelId = "channelId",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" }
+            });
         }
     }
 }

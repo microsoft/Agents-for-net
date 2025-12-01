@@ -11,6 +11,7 @@ using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -295,7 +296,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 if ((int)activity.Value == 2)
                 {
-                    promptContext.Recognized.Value = MessageFactory.Text(activity.Value.ToString());
+                    promptContext.Recognized.Value = new MessageActivity(activity.Value.ToString());
                     return true;
                 }
             }

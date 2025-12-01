@@ -6,7 +6,8 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Concurrent;
@@ -253,8 +254,8 @@ namespace Microsoft.Agents.Builder.App
                         (
                             (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                             && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersAdded != null
-                            && context.Activity.MembersAdded.Count > 0
+                            && context.Activity is IConversationUpdateActivity { MembersAdded: not null }
+                            && context.Activity is IConversationUpdateActivity { MembersAdded.Count: > 0 }
                         );
                         break;
                     }
@@ -264,8 +265,8 @@ namespace Microsoft.Agents.Builder.App
                         (
                             (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                             && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersRemoved != null
-                            && context.Activity.MembersRemoved.Count > 0
+                            && context.Activity is IConversationUpdateActivity { MembersRemoved: not null }
+                            && context.Activity is IConversationUpdateActivity { MembersRemoved.Count: > 0 }
                         );
                         break;
                     }
@@ -356,8 +357,8 @@ namespace Microsoft.Agents.Builder.App
                 (
                     (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                     && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
-                    && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
+                    && (context.Activity as IMessageActivity).Text != null
+                    && (context.Activity as IMessageActivity).Text.Equals(text, StringComparison.OrdinalIgnoreCase)
                 );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -390,8 +391,8 @@ namespace Microsoft.Agents.Builder.App
                 (
                     (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                     && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
-                    && textPattern.IsMatch(context.Activity.Text)
+                    && (context.Activity as IMessageActivity).Text != null
+                    && textPattern.IsMatch((context.Activity as IMessageActivity).Text)
                 );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -485,8 +486,8 @@ namespace Microsoft.Agents.Builder.App
                 (
                     (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                     && context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity?.Name != null
-                    && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
+                    && (context.Activity as IEventActivity).Name != null
+                    && (context.Activity as IEventActivity).Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
                 );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -512,8 +513,8 @@ namespace Microsoft.Agents.Builder.App
                 (
                     (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                     && context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity?.Name != null
-                    && namePattern.IsMatch(context.Activity.Name)
+                    && (context.Activity as IEventActivity).Name != null
+                    && namePattern.IsMatch((context.Activity as IEventActivity).Name)
                 );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -560,8 +561,8 @@ namespace Microsoft.Agents.Builder.App
             (
                 (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                 && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsAdded != null
-                && context.Activity.ReactionsAdded.Count > 0
+                && (context.Activity as IMessageReactionActivity).ReactionsAdded != null
+                && (context.Activity as IMessageReactionActivity).ReactionsAdded.Count > 0
             );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -584,8 +585,8 @@ namespace Microsoft.Agents.Builder.App
             (
                 (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                 && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsRemoved != null
-                && context.Activity.ReactionsRemoved.Count > 0
+                && (context.Activity as IMessageReactionActivity).ReactionsRemoved != null
+                && (context.Activity as IMessageReactionActivity).ReactionsRemoved.Count > 0
             );
 
             AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
@@ -608,15 +609,15 @@ namespace Microsoft.Agents.Builder.App
             (
                 (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
                 && context.Activity.IsType(ActivityTypes.Invoke)
-                && string.Equals(context.Activity?.Name, "handoff/action")
+                && string.Equals((context.Activity as IInvokeActivity)?.Name, "handoff/action")
             );
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                string token = turnContext.Activity.Value.GetType().GetProperty("Continuation").GetValue(turnContext.Activity.Value) as string ?? "";
+                var activity = turnContext.Activity as IInvokeActivity;
+                string token = activity.Value.GetType().GetProperty("Continuation").GetValue(activity.Value) as string ?? "";
                 await handler(turnContext, turnState, token, cancellationToken);
 
-                var activity = Activity.CreateInvokeResponseActivity();
-                await turnContext.SendActivityAsync(activity, cancellationToken);
+                await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
             }
 
             AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
@@ -638,20 +639,20 @@ namespace Microsoft.Agents.Builder.App
 
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
             {
-                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
+                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>((context.Activity as IInvokeActivity).Value);
                 string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
                 return Task.FromResult
                 (
                     (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
-                    && context.Activity.Type == ActivityTypes.Invoke
-                    && context.Activity.Name == "message/submitAction"
+                    && context.Activity.IsType(ActivityTypes.Invoke)
+                    && (context.Activity as IInvokeActivity).Name == "message/submitAction"
                     && actionName == "feedback"
                 );
             }
 
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value)!;
+                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>((turnContext.Activity as IInvokeActivity).Value)!;
                 feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
 
                 await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
@@ -659,8 +660,7 @@ namespace Microsoft.Agents.Builder.App
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
                 }
             }
 
@@ -794,7 +794,7 @@ namespace Microsoft.Agents.Builder.App
                     }
                     else if (Options.RemoveRecipientMention)
                     {
-                        turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
+                        turnContext.Activity.RemoveRecipientMention();
                     }
                 }
 

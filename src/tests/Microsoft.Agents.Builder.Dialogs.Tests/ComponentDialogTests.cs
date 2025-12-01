@@ -15,6 +15,7 @@ using Moq;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -79,7 +80,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{value}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{value}'."), cancellationToken);
                 }
             })
             .Send("Hi")
@@ -117,7 +118,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{value}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{value}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -157,7 +158,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{value}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{value}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -197,7 +198,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{value}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{value}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -289,7 +290,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Done"), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity("Done"), cancellationToken);
                 }
             })
             .Send("Hi")
@@ -362,12 +363,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
                 if (results.Status == DialogTurnStatus.Cancelled)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Component dialog cancelled (result value is {results.Result?.ToString()})."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Component dialog cancelled (result value is {results.Result?.ToString()})."), cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var value = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{value}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{value}'."), cancellationToken);
                 }
             });
             return testFlow;
@@ -385,7 +386,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
         private static async Task<DialogTurnResult> WaterfallStep1(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            return await stepContext.PromptAsync("number", new PromptOptions { Prompt = MessageFactory.Text("Enter a number.") }, cancellationToken);
+            return await stepContext.PromptAsync("number", new PromptOptions { Prompt = new MessageActivity("Enter a number.") }, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> WaterfallStep2(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -393,10 +394,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             if (stepContext.Values != null)
             {
                 var numberResult = (int)stepContext.Result;
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Thanks for '{numberResult}'"), cancellationToken);
+                await stepContext.Context.SendActivityAsync(new MessageActivity($"Thanks for '{numberResult}'"), cancellationToken);
             }
 
-            return await stepContext.PromptAsync("number", new PromptOptions { Prompt = MessageFactory.Text("Enter another number.") }, cancellationToken);
+            return await stepContext.PromptAsync("number", new PromptOptions { Prompt = new MessageActivity("Enter another number.") }, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> WaterfallStep3(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -404,7 +405,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             if (stepContext.Values != null)
             {
                 var numberResult = (int)stepContext.Result;
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Got '{numberResult}'."), cancellationToken);
+                await stepContext.Context.SendActivityAsync(new MessageActivity($"Got '{numberResult}'."), cancellationToken);
             }
 
             return await stepContext.BeginDialogAsync("TestComponentDialog", null, cancellationToken);

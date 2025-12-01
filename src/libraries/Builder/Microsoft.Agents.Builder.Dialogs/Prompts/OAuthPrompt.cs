@@ -11,6 +11,7 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
@@ -284,7 +285,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         private static bool IsTokenResponseEvent(ITurnContext turnContext)
         {
             var activity = turnContext.Activity;
-            return activity.Type == ActivityTypes.Event && activity.Name == SignInConstants.TokenResponseEventName;
+            return activity.Type == ActivityTypes.Event && (activity as IEventActivity).Name == SignInConstants.TokenResponseEventName;
         }
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)

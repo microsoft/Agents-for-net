@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Core.Validation
 {
@@ -62,11 +62,14 @@ namespace Microsoft.Agents.Core.Validation
                 return false;
             }
 
+            /*
+             * !!!
             if (activity.IsNamedType() && string.IsNullOrEmpty(activity.Name))
             {
                 System.Diagnostics.Trace.WriteLine("A5001,A5401,A6310,A6411: Event, Invoke, Command, and CommandResult activities MUST contain a `name` field");
                 return false;
             }
+            */
 
             return true;
         }

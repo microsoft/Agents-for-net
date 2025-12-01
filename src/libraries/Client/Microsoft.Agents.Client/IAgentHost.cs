@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Collections.Generic;
 using System.Threading;

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Threading.Tasks;
@@ -33,9 +33,9 @@ namespace Microsoft.Agents.Storage.Transcript
             }
             else
             {
-                if (System.Diagnostics.Debugger.IsAttached && activity.Type == ActivityTypes.Message)
+                if (System.Diagnostics.Debugger.IsAttached && activity is IMessageActivity message)
                 {
-                    System.Diagnostics.Trace.TraceInformation($"{activity.From.Name ?? activity.From.Id ?? activity.From.Role} [{activity.Type}] {activity.Text}");
+                    System.Diagnostics.Trace.TraceInformation($"{activity.From.Name ?? activity.From.Id ?? activity.From.Role} [{activity.Type}] {message.Text}");
                 }
                 else
                 {

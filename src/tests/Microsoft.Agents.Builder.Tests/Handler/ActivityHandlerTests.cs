@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMessageActivity()
         {
             // Arrange
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -69,7 +70,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestEndOfConversationActivity()
         {
             // Arrange
-            var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "some value" };
+            var activity = new EndOfConversationActivity { Value = "some value" };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -117,9 +118,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberAdded1()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "b" },
@@ -141,9 +141,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberAdded2()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "a" },
@@ -167,9 +166,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberAdded3()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "a" },
@@ -194,9 +192,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberRemoved1()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "c" },
@@ -218,9 +215,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberRemoved2()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "a" },
@@ -244,9 +240,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberRemoved3()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "a" },
@@ -271,9 +266,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberAddedJustTheBot()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
                     new ChannelAccount { Id = "b" },
@@ -295,9 +289,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestMemberRemovedJustTheBot()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new ConversationUpdateActivity
             {
-                Type = ActivityTypes.ConversationUpdate,
                 MembersRemoved =
                 [
                     new ChannelAccount { Id = "c" },
@@ -323,9 +316,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // sends separate activities each with a single add and a single remove.
 
             // Arrange
-            var activity = new Activity
+            var activity = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsAdded =
                 [
                     new MessageReaction("sad"),
@@ -352,11 +344,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestTokenResponseEventAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Event,
-                Name = SignInConstants.TokenResponseEventName,
-            };
+            var activity = new EventActivity(SignInConstants.TokenResponseEventName);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -373,11 +361,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestEventAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Event,
-                Name = "some.random.event",
-            };
+            var activity = new EventActivity("some.random.event");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -394,12 +378,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInvokeAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "some.random.invoke",
-            };
-
+            var activity = new InvokeActivity("some.random.invoke");
             var adapter = new TestInvokeAdapter();
             var turnContext = new TurnContext(adapter, activity);
 
@@ -417,11 +396,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestSignInInvokeAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = SignInConstants.VerifyStateOperationName,
-            };
+            var activity = new InvokeActivity(SignInConstants.VerifyStateOperationName);
             var turnContext = new TurnContext(new TestInvokeAdapter(), activity);
 
             // Act
@@ -438,11 +413,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInvokeShouldNotMatchAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "should.not.match",
-            };
+            var activity = new InvokeActivity("should.not.match");
             var adapter = new TestInvokeAdapter();
             var turnContext = new TurnContext(adapter, activity);
 
@@ -480,11 +451,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInstallationUpdateAddAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.InstallationUpdate,
-                Action = "add"
-            };
+            var activity = new InstallationUpdateActivity("add");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -501,11 +468,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInstallationUpdateAddUpgradeAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.InstallationUpdate,
-                Action = "add-upgrade"
-            };
+            var activity = new InstallationUpdateActivity("add-upgrade");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -522,11 +485,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInstallationUpdateRemoveAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.InstallationUpdate,
-                Action = "remove"
-            };
+            var activity = new InstallationUpdateActivity("remove");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -543,11 +502,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestInstallationUpdateRemoveUpgradeAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.InstallationUpdate,
-                Action = "remove-upgrade"
-            };
+            var activity = new InstallationUpdateActivity("remove-upgrade");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -566,9 +521,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var value = new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "Action.Execute" } };
 
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "adaptiveCard/action",
                 Value = value
             };
@@ -589,10 +543,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestCommandActivityType()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new CommandActivity("application/test")
             {
-                Type = ActivityTypes.Command,
-                Name = "application/test",
                 Value = new CommandValue<object> { CommandId = "Test", Data = new { test = true } }
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);

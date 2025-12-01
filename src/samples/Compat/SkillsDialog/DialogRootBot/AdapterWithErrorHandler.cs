@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
@@ -54,7 +55,7 @@ namespace DialogRootBot
             {
                 // Send a message to the user.
                 var errorMessageText = "The bot encountered an error or bug.";
-                var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput);
+                var errorMessage = new MessageActivity(errorMessageText, errorMessageText, InputHints.IgnoringInput);
                 await turnContext.SendActivityAsync(errorMessage);
             }
             catch (Exception ex)

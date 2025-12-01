@@ -6,6 +6,8 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Connector;

@@ -13,8 +13,10 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
@@ -551,7 +553,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             private static async Task CallSendMessageToTeamsChannelAsync(ITurnContext turnContext)
             {
-                var message = MessageFactory.Text("hi");
+                var message = new MessageActivity("hi");
                 var channelId = Channels.Msteams;
                 var appId = "app-id";
                 var cancelToken = new CancellationToken();

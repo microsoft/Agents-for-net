@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client.Compat;
 using System.IO;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client.Tests
 {

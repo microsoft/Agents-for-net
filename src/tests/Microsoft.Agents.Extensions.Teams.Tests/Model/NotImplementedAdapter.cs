@@ -1,5 +1,6 @@
 ﻿using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

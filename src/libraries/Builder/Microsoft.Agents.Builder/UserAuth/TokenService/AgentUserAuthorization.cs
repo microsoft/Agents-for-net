@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
@@ -165,7 +166,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             if (tokenResponse == null)
             {
-                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
+                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext, out _))
                 {
                     state.ContinueCount++;
                     if (state.ContinueCount >= _settings.InvalidSignInRetryMax)

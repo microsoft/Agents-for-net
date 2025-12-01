@@ -5,7 +5,7 @@ using System.Globalization;
 using CsvHelper.Configuration;
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Extensions.AI;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 #nullable disable
 

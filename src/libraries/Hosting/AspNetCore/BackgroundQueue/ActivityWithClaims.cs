@@ -3,6 +3,7 @@
 //
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;

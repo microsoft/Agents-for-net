@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -230,7 +231,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     }
 
                     await turnContext.SendActivitiesAsync(
-                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
+                        _options.SignInFailedMessage == null ? [new MessageActivity("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
                         cancellationToken).ConfigureAwait(false);
                     return false;
                 }

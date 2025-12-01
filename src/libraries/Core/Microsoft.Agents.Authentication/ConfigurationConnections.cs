@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

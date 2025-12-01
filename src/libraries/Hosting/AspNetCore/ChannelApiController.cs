@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

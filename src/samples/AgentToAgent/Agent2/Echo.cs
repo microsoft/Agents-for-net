@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -26,7 +27,7 @@ public class Echo : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hi! This is Echo."), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity("Hi! This is Echo."), cancellationToken);
             }
         }
     }
@@ -40,7 +41,7 @@ public class Echo : AgentApplication
         {
             // Send End of conversation at the end.
             result.Messages.Add(turnContext.Activity.Text);
-            await turnContext.SendActivityAsync(MessageFactory.Text("Ending conversation..."), cancellationToken);
+            await turnContext.SendActivityAsync(new MessageActivity("Ending conversation..."), cancellationToken);
             var endOfConversation = Activity.CreateEndOfConversationActivity();
             endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
             endOfConversation.Value = result;
@@ -52,9 +53,9 @@ public class Echo : AgentApplication
         else
         {
             result.Messages.Add(turnContext.Activity.Text);
-            await turnContext.SendActivityAsync(MessageFactory.Text(turnContext.Activity.Text), cancellationToken);
+            await turnContext.SendActivityAsync(new MessageActivity(turnContext.Activity.Text), cancellationToken);
             var messageText = "Say \"end\" and I'll end the conversation.";
-            await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
+            await turnContext.SendActivityAsync(new MessageActivity(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
         }
     }
 

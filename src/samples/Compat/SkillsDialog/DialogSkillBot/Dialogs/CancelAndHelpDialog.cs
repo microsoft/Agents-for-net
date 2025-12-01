@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,13 +40,13 @@ namespace DialogSkillBot.Dialogs
                 {
                     case "help":
                     case "?":
-                        var helpMessage = MessageFactory.Text(HelpMsgText, HelpMsgText, InputHints.ExpectingInput);
+                        var helpMessage = new MessageActivity(HelpMsgText, HelpMsgText, InputHints.ExpectingInput);
                         await innerDc.Context.SendActivityAsync(helpMessage, cancellationToken);
                         return new DialogTurnResult(DialogTurnStatus.Waiting);
 
                     case "cancel":
                     case "quit":
-                        var cancelMessage = MessageFactory.Text(CancelMsgText, CancelMsgText, InputHints.IgnoringInput);
+                        var cancelMessage = new MessageActivity(CancelMsgText, CancelMsgText, InputHints.IgnoringInput);
                         await innerDc.Context.SendActivityAsync(cancelMessage, cancellationToken);
                         return await innerDc.CancelAllDialogsAsync(true, cancellationToken: cancellationToken);
                 }

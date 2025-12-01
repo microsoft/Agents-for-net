@@ -7,9 +7,9 @@ using System.Threading;
 using System;
 using System.Threading.Channels;
 using System.Collections.Concurrent;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {

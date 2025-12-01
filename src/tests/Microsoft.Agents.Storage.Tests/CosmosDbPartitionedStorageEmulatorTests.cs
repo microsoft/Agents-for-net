@@ -215,12 +215,12 @@ namespace Microsoft.Agents.Storage.Tests
                 var result = promptContext.Recognized.Value;
                 if (result.Length > 3)
                 {
-                    var succeededMessage = MessageFactory.Text($"You got it at the {promptContext.AttemptCount}th try!");
+                    var succeededMessage = new MessageActivity($"You got it at the {promptContext.AttemptCount}th try!");
                     await promptContext.Context.SendActivityAsync(succeededMessage, cancellationToken);
                     return true;
                 }
 
-                var reply = MessageFactory.Text($"Please send a name that is longer than 3 characters. {promptContext.AttemptCount}");
+                var reply = new MessageActivity($"Please send a name that is longer than 3 characters. {promptContext.AttemptCount}");
                 await promptContext.Context.SendActivityAsync(reply, cancellationToken);
 
                 return false;
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Storage.Tests
                     async (stepContext, ct) =>
                     {
                         Assert.Equal(typeof(int), stepContext.ActiveDialog.State["stepIndex"].GetType());
-                        return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("Please type your name.") }, ct);
+                        return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("Please type your name.") }, ct);
                     },
                     async (stepContext, ct) =>
                     {

@@ -12,6 +12,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -117,7 +118,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -159,7 +160,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -214,7 +215,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (int)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -257,7 +258,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (float)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -298,7 +299,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (long)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -339,7 +340,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -380,7 +381,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -421,7 +422,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -462,7 +463,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -503,7 +504,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -624,7 +625,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (double)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -665,7 +666,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (decimal)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -706,7 +707,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var numberResult = (decimal)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the number '{numberResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the number '{numberResult}'."), cancellationToken);
                 }
             })
             .Send("hello")

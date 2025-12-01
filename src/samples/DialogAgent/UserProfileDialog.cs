@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -53,7 +54,7 @@ public class UserProfileDialog : ComponentDialog
         return await stepContext.PromptAsync(nameof(ChoicePrompt),
             new PromptOptions
             {
-                Prompt = MessageFactory.Text("Please enter your mode of transport."),
+                Prompt = new MessageActivity("Please enter your mode of transport."),
                 Choices = ChoiceFactory.ToChoices(new List<string> { "Car", "Bus", "Bicycle" }),
             }, cancellationToken);
     }
@@ -62,7 +63,7 @@ public class UserProfileDialog : ComponentDialog
     {
         stepContext.Values["transport"] = ((FoundChoice)stepContext.Result).Value;
 
-        return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("Please enter your name.") }, cancellationToken);
+        return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("Please enter your name.") }, cancellationToken);
     }
 
     private async Task<DialogTurnResult> NameConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -70,10 +71,10 @@ public class UserProfileDialog : ComponentDialog
         stepContext.Values["name"] = (string)stepContext.Result;
 
         // We can send messages to the user at any point in the WaterfallStep.
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Thanks {stepContext.Result}."), cancellationToken);
+        await stepContext.Context.SendActivityAsync(new MessageActivity($"Thanks {stepContext.Result}."), cancellationToken);
 
         // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
-        return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions { Prompt = MessageFactory.Text("Would you like to give your age?") }, cancellationToken);
+        return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions { Prompt = new MessageActivity("Would you like to give your age?") }, cancellationToken);
     }
 
     private async Task<DialogTurnResult> AgeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -84,8 +85,8 @@ public class UserProfileDialog : ComponentDialog
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
             var promptOptions = new PromptOptions
             {
-                Prompt = MessageFactory.Text("Please enter your age."),
-                RetryPrompt = MessageFactory.Text("The value entered must be greater than 0 and less than 150."),
+                Prompt = new MessageActivity("Please enter your age."),
+                RetryPrompt = new MessageActivity("The value entered must be greater than 0 and less than 150."),
             };
 
             return await stepContext.PromptAsync(nameof(NumberPrompt<int>), promptOptions, cancellationToken);
@@ -104,12 +105,12 @@ public class UserProfileDialog : ComponentDialog
         var msg = (int)stepContext.Values["age"] == -1 ? "No age given." : $"I have your age as {stepContext.Values["age"]}.";
 
         // We can send messages to the user at any point in the WaterfallStep.
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text(msg), cancellationToken);
+        await stepContext.Context.SendActivityAsync(new MessageActivity(msg), cancellationToken);
 
         if (stepContext.Context.Activity.ChannelId == Channels.Msteams)
         {
             // This attachment prompt example is not designed to work for Teams attachments, so skip it in this case
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Skipping attachment prompt in Teams channel..."), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("Skipping attachment prompt in Teams channel..."), cancellationToken);
             return await stepContext.NextAsync(null, cancellationToken);
         }
         else
@@ -117,8 +118,8 @@ public class UserProfileDialog : ComponentDialog
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
             var promptOptions = new PromptOptions
             {
-                Prompt = MessageFactory.Text("Please attach a profile picture (or type any message to skip)."),
-                RetryPrompt = MessageFactory.Text("The attachment must be a jpeg/png image file."),
+                Prompt = new MessageActivity("Please attach a profile picture (or type any message to skip)."),
+                RetryPrompt = new MessageActivity("The attachment must be a jpeg/png image file."),
             };
 
             return await stepContext.PromptAsync(nameof(AttachmentPrompt), promptOptions, cancellationToken);
@@ -143,7 +144,7 @@ public class UserProfileDialog : ComponentDialog
 
         msg += ".";
 
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text(msg), cancellationToken);
+        await stepContext.Context.SendActivityAsync(new MessageActivity(msg), cancellationToken);
 
         if (_userProfile.Picture != null)
         {
@@ -153,12 +154,12 @@ public class UserProfileDialog : ComponentDialog
             }
             catch
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("A profile picture was saved but could not be displayed here."), cancellationToken);
+                await stepContext.Context.SendActivityAsync(new MessageActivity("A profile picture was saved but could not be displayed here."), cancellationToken);
             }
         }
 
         // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
-        return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions { Prompt = MessageFactory.Text("Is this ok?") }, cancellationToken);
+        return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions { Prompt = new MessageActivity("Is this ok?") }, cancellationToken);
     }
 
     private async Task<DialogTurnResult> ConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -174,7 +175,7 @@ public class UserProfileDialog : ComponentDialog
             msg += $" Your profile will not be kept.";
         }
 
-        await stepContext.Context.SendActivityAsync(MessageFactory.Text(msg), cancellationToken);
+        await stepContext.Context.SendActivityAsync(new MessageActivity(msg), cancellationToken);
 
         // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is the end.
         return await stepContext.EndDialogAsync(result: _userProfile, cancellationToken: cancellationToken);

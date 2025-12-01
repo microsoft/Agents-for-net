@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Reflection;
@@ -43,12 +44,12 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void TurnContext_ShouldBeClonedCorrectly()
         {
-            var context1 = new TurnContext(new SimpleAdapter(), new Activity() { Text = "one" });
+            var context1 = new TurnContext(new SimpleAdapter(), new MessageActivity() { Text = "one" });
             context1.StackState.Set("x", "test");
             context1.OnSendActivities((context, activities, next) => next());
             context1.OnDeleteActivity((context, activity, next) => next());
             context1.OnUpdateActivity((context, activity, next) => next());
-            var ccontext2 = new TurnContext(context1, new Activity() { Text = "two" });
+            var ccontext2 = new TurnContext(context1, new MessageActivity() { Text = "two" });
             Assert.Equal("one", context1.Activity.Text);
             Assert.Equal("two", ccontext2.Activity.Text);
             Assert.Equal(context1.Adapter, ccontext2.Adapter);
@@ -327,9 +328,9 @@ namespace Microsoft.Agents.Builder.Tests
             }
 
             var adapter = new SimpleAdapter(ValidateUpdate);
-            var context = new TurnContext(adapter, new Activity(conversation: new ConversationAccount(id: CONVERSATION_ID)));
+            var context = new TurnContext(adapter, new Activity(ActivityTypes.Message, conversation: new ConversationAccount(id: CONVERSATION_ID)));
 
-            var message = MessageFactory.Text("test text");
+            var message = new MessageActivity("test text");
 
             message.Id = ACTIVITY_ID;
 

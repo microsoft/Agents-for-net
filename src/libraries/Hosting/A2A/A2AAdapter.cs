@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;

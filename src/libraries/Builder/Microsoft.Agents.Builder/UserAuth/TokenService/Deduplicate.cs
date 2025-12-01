@@ -10,6 +10,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
@@ -70,14 +72,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             // Teams
             if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
-                && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(SignInConstants.TokenExchangeOperationName, (turnContext.Activity as IInvokeActivity)?.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             // SharePoint
             if (turnContext.Activity.ChannelId.IsParentChannel(Channels.M365)
-                && string.Equals(SignInConstants.SharePointTokenExchange, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(SignInConstants.SharePointTokenExchange, (turnContext.Activity as IInvokeActivity)?.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -90,7 +92,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static async Task<bool> IsTokenExchangeableAsync(ITurnContext turnContext, string connectionName, IStorage storage, CancellationToken cancellationToken)
         {
             TokenResponse tokenExchangeResponse = null;
-            var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
+            var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>((turnContext.Activity as IInvokeActivity)?.Value);
 
             try
             {
@@ -125,9 +127,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 };
 
                 await turnContext.SendActivityAsync(
-                    new Activity
+                    new InvokeResponseActivity
                     {
-                        Type = ActivityTypes.InvokeResponse,
                         Value = new InvokeResponse
                         {
                             Status = isConsentRequired ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.BadRequest,
@@ -150,7 +151,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         // true if the Invoke is a duplicate
         private static async Task<bool> IsDuplicateTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
-            var id = turnContext.Activity.Value.ToJsonElements()["id"].ToString();
+            var id = (turnContext.Activity as IInvokeActivity)?.Value.ToJsonElements()["id"].ToString();
 
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
@@ -172,14 +173,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
                 // Send 200 invoke response.
                 await turnContext.SendActivityAsync(
-                    new Activity
-                    {
-                        Type = ActivityTypes.InvokeResponse,
-                        Value = new InvokeResponse
-                        {
-                            Status = (int)HttpStatusCode.OK,
-                        },
-                    }, 
+                    new InvokeResponseActivity(),
                     cancellationToken).ConfigureAwait(false);
                 return true;
             }

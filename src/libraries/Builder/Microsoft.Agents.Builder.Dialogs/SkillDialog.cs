@@ -5,8 +5,11 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Linq;
@@ -107,7 +110,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             if (dc.Context.Activity.Type == ActivityTypes.EndOfConversation)
             {
                 await DialogOptions.AgentHost.DeleteConversationAsync(dc.Context, skillConversationId, cancellationToken).ConfigureAwait(false);
-                return await dc.EndDialogAsync(dc.Context.Activity.Value, cancellationToken).ConfigureAwait(false);
+                return await dc.EndDialogAsync((dc.Context.Activity as IEndOfConversationActivity).Value, cancellationToken).ConfigureAwait(false);
             }
 
             // Create deep clone of the original activity to avoid altering it before forwarding it.
@@ -136,8 +139,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         public override async Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             // Create and send an envent to the skill so it can resume the dialog.
-            var repromptEvent = Activity.CreateEventActivity();
-            repromptEvent.Name = DialogEvents.RepromptDialog;
+            var repromptEvent = new EventActivity(DialogEvents.RepromptDialog);
 
             // Apply conversation reference and common properties from incoming activity before sending.
             repromptEvent.ApplyConversationReference(turnContext.Activity.GetConversationReference(), true);
@@ -178,12 +180,12 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Send of of conversation to the skill if the dialog has been cancelled. 
             if (reason == DialogReason.CancelCalled || reason == DialogReason.ReplaceCalled)
             {
-                var activity = (Activity)Activity.CreateEndOfConversationActivity();
+                var activity = new EndOfConversationActivity();
 
                 // Apply conversation reference and common properties from incoming activity before sending.
                 activity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), true);
                 activity.ChannelData = turnContext.Activity.ChannelData;
-                activity.Properties = turnContext.Activity.Properties;
+                //!!!activity.Properties = turnContext.Activity.Properties;
 
                 var skillConversationId = (string)instance.State[SkillConversationIdStateKey];
 
@@ -229,7 +231,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             return dialogArgs;
         }
 
-        private async Task<IActivity> SendToSkillAsync(ITurnContext context, IActivity activity, string skillConversationId, CancellationToken cancellationToken)
+        private async Task<IEndOfConversationActivity> SendToSkillAsync(ITurnContext context, IActivity activity, string skillConversationId, CancellationToken cancellationToken)
         {
             if (activity.Type == ActivityTypes.Invoke)
             {
@@ -250,7 +252,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 throw new HttpRequestException($"Error invoking the skill id: \"{DialogOptions.Skill}\" (status is {response.Status}). \r\n {response.Body}");
             }
 
-            IActivity eocActivity = null;
+            IEndOfConversationActivity eocActivity = null;
             if (activity.DeliveryMode == DeliveryModes.ExpectReplies && response.Body.Activities != null && response.Body.Activities.Any())
             {
                 // Track sent invoke responses, so more than one is not sent.
@@ -262,7 +264,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                     if (activityFromSkill.Type == ActivityTypes.EndOfConversation)
                     {
                         // Capture the EndOfConversation activity if it was sent from skill
-                        eocActivity = activityFromSkill;
+                        eocActivity = activityFromSkill as IEndOfConversationActivity;
 
                         // The conversation has ended, so cleanup the conversation id.
                         await DialogOptions.AgentHost.DeleteConversationAsync(context, skillConversationId, cancellationToken).ConfigureAwait(false);
@@ -286,7 +288,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                             sentInvokeResponse = true;
 
                             // Ensure the value in the invoke response is of type InvokeResponse (it gets deserialized as JObject by default).
-                            activityFromSkill.Value = ProtocolJsonSerializer.ToObject<InvokeResponse>(activityFromSkill.Value); 
+                            //!!!activityFromSkill.Value = ProtocolJsonSerializer.ToObject<InvokeResponse>(activityFromSkill.Value); 
                         }
 
                         // Send the response back to the channel. 
@@ -317,7 +319,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 return false;
             }
 
-            var oauthCardAttachment = activity.Attachments?.FirstOrDefault(a => a?.ContentType == OAuthCard.ContentType);
+            var oauthCardAttachment = (activity as IMessageActivity)?.Attachments?.FirstOrDefault(a => a?.ContentType == OAuthCard.ContentType);
             if (oauthCardAttachment != null)
             {
                 var oauthCard = ProtocolJsonSerializer.ToObject<OAuthCard>(oauthCardAttachment.Content);
@@ -352,7 +354,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private async Task<bool> SendTokenExchangeInvokeToSkillAsync(IActivity incomingActivity, string id, string connectionName, string token, CancellationToken cancellationToken)
         {
-            var activity = incomingActivity.CreateReply();
+            var activity = Activity.CreateReply(incomingActivity, () => new InvokeActivity());
             activity.Type = ActivityTypes.Invoke;
             activity.Name = SignInConstants.TokenExchangeOperationName;
             activity.Value = new TokenExchangeInvokeRequest

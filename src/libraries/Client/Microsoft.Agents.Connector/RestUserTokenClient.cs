@@ -14,6 +14,8 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Connector
 {

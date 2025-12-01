@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Core.Serialization
 
                 // if the assembly has types that are based on entities (e.g. derived from Entity) iterate over those entities and add them to the EntityTypes dictionary
                 var entityTypes = type.Assembly.GetTypes()
-                    .Where(t => t.IsSubclassOf(typeof(Models.Entity)))
+                    .Where(t => t.IsSubclassOf(typeof(Models.Entities.Entity)))
                     .ToList();
 
                 foreach (var entityType in entityTypes)

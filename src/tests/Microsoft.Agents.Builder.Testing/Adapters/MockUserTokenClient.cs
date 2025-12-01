@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System;
 using System.Linq;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Testing.Adapters
 {

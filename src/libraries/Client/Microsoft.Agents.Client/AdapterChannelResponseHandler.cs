@@ -13,6 +13,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client
 {
@@ -73,10 +74,8 @@ namespace Microsoft.Agents.Client
 
             // Need to get this over to the calling Agents identity.  We will do it by packaging it in a custom event
             // and the AgentApplication will need to route to a handler.  See AgentResponsesExtension.OnAgentReply.
-            var eventActivity = new Activity()
+            var eventActivity = new EventActivity(ChannelReplyEventName)
             {
-                Type = ActivityTypes.Event,
-                Name = ChannelReplyEventName,
                 Value = new ChannelReply() { ChannelConversationReference = conversationReference, Activity = activity },
             };
             eventActivity.ApplyConversationReference(conversationReference.ConversationReference, isIncoming: true);

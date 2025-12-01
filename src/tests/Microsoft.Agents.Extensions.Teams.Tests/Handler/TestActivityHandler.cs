@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System.Collections.Generic;

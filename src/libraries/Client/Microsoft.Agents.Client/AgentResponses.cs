@@ -9,6 +9,7 @@ using Microsoft.Agents.Core.Serialization;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client
 {
@@ -33,16 +34,21 @@ namespace Microsoft.Agents.Client
         {
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                var channelResponse = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(turnContext.Activity.Value);
+                var channelResponse = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>((turnContext.Activity as IEventActivity)?.Value);
                 await handler(turnContext, turnState, channelResponse.ChannelConversationReference, channelResponse.Activity, cancellationToken).ConfigureAwait(false);
             }
 
             agentApplication.OnActivity(
                 (turnContext, CancellationToken) =>
                 {
-                    var isReply = turnContext.Activity.IsType(ActivityTypes.Event)
-                        && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase);
-                    return Task.FromResult(isReply);
+                    if (turnContext.Activity is not IEventActivity eventActivity)
+                    {
+                        return Task.FromResult(false);
+                    }
+                    else
+                    {
+                        return Task.FromResult(string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, eventActivity.Name, StringComparison.OrdinalIgnoreCase));
+                    }
                 },
                 routeHandler,
                 rank);

@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

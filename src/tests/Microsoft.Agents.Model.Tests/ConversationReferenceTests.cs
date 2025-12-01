@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Xunit;
 
@@ -43,7 +44,7 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void InActivityConversationReferenceSerialize()
         {
-            var activity = new Activity()
+            var activity = new EventActivity("testEvent")
             {
                 RelatesTo = new ConversationReference()
                 {

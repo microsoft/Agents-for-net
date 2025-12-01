@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Tests.Handler
 {
-    public class CommandActivity
+    public class CommandActivityTests
     {
         [Fact]
         public async Task CommandBotTest()

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Cards;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests

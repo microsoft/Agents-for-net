@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
 using System;
-using System.Net.Http; // Added for outbound HTTP call
+using System.Net.Http;
+using Microsoft.Agents.Core.Models.Activities; // Added for outbound HTTP call
 
 namespace OTelAgent;
 
@@ -46,7 +47,7 @@ public class MyAgent : AgentApplication
                         ["member.name"] = member.Name
                     }));
 
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
                 }
             }
 

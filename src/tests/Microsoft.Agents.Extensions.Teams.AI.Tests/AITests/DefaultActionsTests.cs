@@ -11,6 +11,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Extensions.Teams.AI.Moderator;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 {
@@ -39,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             // Arrange
             var logs = new List<string>();
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>(logs);
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
 
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
@@ -63,7 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             // Arrange
             var logs = new List<string>();
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>(logs);
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
 
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
@@ -87,7 +88,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             // Arrange
             var logs = new List<string>();
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>(logs);
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
 
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
@@ -110,7 +111,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
         {
             // Arrange
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>();
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
             
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
@@ -132,7 +133,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
         {
             // Arrange
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>();
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
 
@@ -162,7 +163,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
         {
             // Arrange
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>();
-            var activity = MessageFactory.Text("hello");
+            var activity = new MessageActivity("hello");
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
 

@@ -21,6 +21,9 @@ using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Authentication;
 using System.Security.Claims;
 using System.Net;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -643,7 +646,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         private static Mock<IAgentClient> CreateMockSkillClient(Action<string, IActivity, IActivity,CancellationToken> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
         {
             var mockSkillClient = new Mock<IAgentClient>();
-            var activityList = new ExpectedReplies(expectedReplies ?? new List<IActivity> { MessageFactory.Text("dummy activity") });
+            var activityList = new ExpectedReplies(expectedReplies ?? new List<IActivity> { new MessageActivity("dummy activity") });
 
             if (captureAction != null)
             {

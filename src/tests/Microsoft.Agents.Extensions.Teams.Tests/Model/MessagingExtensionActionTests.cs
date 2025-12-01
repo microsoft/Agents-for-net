@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 #if !NETFRAMEWORK
@@ -23,7 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
             var commandId = "commandId";
             var commandContext = "message";
             var botMessagePreviewAction = "send";
-            var botActivityPreview = new List<Activity>() { new Activity(text: "hi"), new Activity(text: "yo yo yo") };
+            var botActivityPreview = new List<Activity>() { new MessageActivity(text: "hi"), new MessageActivity(text: "yo yo yo") };
             var messagePayload = new MessageActionsPayload("msgId", "1234", "message");
             var state = "secureOAuthState1234";
 

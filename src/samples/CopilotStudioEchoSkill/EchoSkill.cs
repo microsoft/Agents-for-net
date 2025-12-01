@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace CopilotStudioEchoSkill;
 

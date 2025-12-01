@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
@@ -51,7 +52,7 @@ namespace DialogSkillBot
             {
                 // Send a message to the user.
                 var errorMessageText = "The skill encountered an error or bug.";
-                var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput);
+                var errorMessage = new MessageActivity(errorMessageText, errorMessageText, InputHints.IgnoringInput);
                 await turnContext.SendActivityAsync(errorMessage);
             }
             catch (Exception ex)

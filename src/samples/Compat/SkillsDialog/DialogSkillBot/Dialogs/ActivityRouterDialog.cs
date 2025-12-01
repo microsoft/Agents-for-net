@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 
 namespace DialogSkillBot.Dialogs
@@ -39,7 +40,7 @@ namespace DialogSkillBot.Dialogs
 
                 default:
                     // We didn't get an activity type we can handle.
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Unrecognized ActivityType: \"{stepContext.Context.Activity.Type}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"Unrecognized ActivityType: \"{stepContext.Context.Activity.Type}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
                     return new DialogTurnResult(DialogTurnStatus.Complete);
             }
         }
@@ -61,7 +62,7 @@ namespace DialogSkillBot.Dialogs
 
                 default:
                     // We didn't get an event name we can handle.
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Unrecognized EventName: \"{activity.Name}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"Unrecognized EventName: \"{activity.Name}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
                     return new DialogTurnResult(DialogTurnStatus.Complete);
             }
         }
@@ -83,7 +84,7 @@ namespace DialogSkillBot.Dialogs
                 default:
                     // Catch all for unhandled intents.
                     var didntUnderstandMessageText = "Please say \"BookFlight\" or \"GetWeather\"";
-                    var didntUnderstandMessage = MessageFactory.Text(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
+                    var didntUnderstandMessage = new MessageActivity(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
                     await stepContext.Context.SendActivityAsync(didntUnderstandMessage, cancellationToken);
                     break;
             }
@@ -102,7 +103,7 @@ namespace DialogSkillBot.Dialogs
 
             // We haven't implemented the GetWeatherDialog so we just display a TODO message.
             var getWeatherMessageText = $"TODO: get weather for here (lat: {location.Latitude}, long: {location.Longitude}";
-            var getWeatherMessage = MessageFactory.Text(getWeatherMessageText, getWeatherMessageText, InputHints.IgnoringInput);
+            var getWeatherMessage = new MessageActivity(getWeatherMessageText, getWeatherMessageText, InputHints.IgnoringInput);
             await stepContext.Context.SendActivityAsync(getWeatherMessage, cancellationToken);
             return new DialogTurnResult(DialogTurnStatus.Complete);
         }

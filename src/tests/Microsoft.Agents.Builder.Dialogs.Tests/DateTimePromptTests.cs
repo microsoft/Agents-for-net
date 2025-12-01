@@ -16,6 +16,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -51,7 +52,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var resolution = ((IList<DateTimeResolution>)results.Result).First();
-                    var reply = MessageFactory.Text($"Timex:'{resolution.Timex}' Value:'{resolution.Value}'");
+                    var reply = new MessageActivity($"Timex:'{resolution.Timex}' Value:'{resolution.Value}'");
                     await turnContext.SendActivityAsync(reply, cancellationToken);
                 }
             })
@@ -93,7 +94,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var resolutions = (IList<DateTimeResolution>)results.Result;
                     var timexExpressions = resolutions.Select(r => r.Timex).Distinct();
-                    var reply = MessageFactory.Text(string.Join(" ", timexExpressions));
+                    var reply = new MessageActivity(string.Join(" ", timexExpressions));
                     await turnContext.SendActivityAsync(reply, cancellationToken);
                 }
             })
@@ -135,7 +136,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var resolution = ((IList<DateTimeResolution>)results.Result).First();
-                    var reply = MessageFactory.Text($"Timex:'{resolution.Timex}' Value:'{resolution.Value}'");
+                    var reply = new MessageActivity($"Timex:'{resolution.Timex}' Value:'{resolution.Value}'");
                     await turnContext.SendActivityAsync(reply, cancellationToken);
                 }
             })

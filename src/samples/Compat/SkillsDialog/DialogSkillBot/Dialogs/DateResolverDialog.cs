@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,8 +50,8 @@ namespace DialogSkillBot.Dialogs
         {
             var timex = (string)stepContext.Options;
 
-            var promptMessage = MessageFactory.Text(PromptMsgText, PromptMsgText, InputHints.ExpectingInput);
-            var repromptMessage = MessageFactory.Text(RepromptMsgText, RepromptMsgText, InputHints.ExpectingInput);
+            var promptMessage = new MessageActivity(PromptMsgText, PromptMsgText, InputHints.ExpectingInput);
+            var repromptMessage = new MessageActivity(RepromptMsgText, RepromptMsgText, InputHints.ExpectingInput);
 
             if (timex == null)
             {

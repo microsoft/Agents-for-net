@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Agents.Hosting.A2A.Protocol;
@@ -104,7 +105,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         else
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
-            var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
+            var activity = new MessageActivity($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
             multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = activity });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }

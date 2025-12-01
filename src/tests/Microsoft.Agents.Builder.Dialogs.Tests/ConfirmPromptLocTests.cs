@@ -7,13 +7,13 @@ using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Storage;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text;
 using Xunit;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -245,11 +245,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("1"), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("1"), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("0"), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("0"), cancellationToken);
                     }
                 }
             })
@@ -289,11 +289,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("1"), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("1"), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("0"), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("0"), cancellationToken);
                     }
                 }
             })

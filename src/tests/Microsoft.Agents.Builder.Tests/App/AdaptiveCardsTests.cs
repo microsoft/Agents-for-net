@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Moq;
 using System;

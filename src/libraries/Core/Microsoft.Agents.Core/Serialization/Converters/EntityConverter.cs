@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Entities;
 using System;
 using System.Linq;
 using System.Text.Json;

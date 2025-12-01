@@ -11,6 +11,7 @@ using Azure;
 using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models.Activities;
 
 #pragma warning disable CS8604 // Possible null reference argument.
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
@@ -25,7 +26,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var endpoint = "https://test.cognitiveservices.azure.com";
 
             var botAdapterMock = new Mock<IChannelAdapter>();
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Text = "input",
             };
@@ -75,7 +76,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 
             var botAdapterMock = new Mock<IChannelAdapter>();
             // TODO: when TurnState is implemented, get the user input
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Text = "input",
             };
@@ -152,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var endpoint = "https://test.cognitiveservices.azure.com";
 
             var botAdapterMock = new Mock<IChannelAdapter>();
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Text = "input",
             };

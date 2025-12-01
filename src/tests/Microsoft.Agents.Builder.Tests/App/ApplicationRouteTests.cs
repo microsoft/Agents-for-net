@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -168,12 +169,12 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_Route()
         {
             // Arrange
-            var activity1 = MessageFactory.Text("hello.1");
+            var activity1 = new MessageActivity("hello.1");
             activity1.Recipient = new() { Id = "recipientId" };
             activity1.Conversation = new() { Id = "conversationId" };
             activity1.From = new() { Id = "fromId" };
             activity1.ChannelId = "channelId";
-            var activity2 = MessageFactory.Text("hello.2");
+            var activity2 = new MessageActivity("hello.2");
             activity2.Recipient = new() { Id = "recipientId" };
             activity2.Conversation = new() { Id = "conversationId" };
             activity2.From = new() { Id = "fromId" };
@@ -211,7 +212,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_Routes_Are_Called_InOrder()
         {
             // Arrange
-            var activity = MessageFactory.Text("hello.1");
+            var activity = new MessageActivity("hello.1");
             activity.Recipient = new() { Id = "recipientId" };
             activity.Conversation = new() { Id = "conversationId" };
             activity.From = new() { Id = "fromId" };

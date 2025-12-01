@@ -13,6 +13,7 @@ using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 
@@ -96,8 +97,8 @@ namespace DialogRootBot.Dialogs
             var repromptMessageText = "That was not a valid choice, please select a valid skill.";
             var options = new PromptOptions
             {
-                Prompt = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput),
-                RetryPrompt = MessageFactory.Text(repromptMessageText, repromptMessageText, InputHints.ExpectingInput),
+                Prompt = new MessageActivity(messageText, messageText, InputHints.ExpectingInput),
+                RetryPrompt = new MessageActivity(repromptMessageText, repromptMessageText, InputHints.ExpectingInput),
                 Choices = _agentHost.GetAgents().Select(skill => new Choice(skill.Name)).ToList()
             };
 
@@ -118,7 +119,7 @@ namespace DialogRootBot.Dialogs
             var messageText = $"Select an action # to send to **{selectedSkillName}** or just type in a message and it will be forwarded to the skill";
             var options = new PromptOptions
             {
-                Prompt = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput),
+                Prompt = new MessageActivity(messageText, messageText, InputHints.ExpectingInput),
                 Choices = GetSkillActions(selectedSkillName)
             };
 
@@ -175,7 +176,7 @@ namespace DialogRootBot.Dialogs
             {
                 var message = $"Skill \"{activeSkill}\" invocation complete.";
                 message += $" Result: {ProtocolJsonSerializer.ToJson(stepContext.Result)}";
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text(message, message, inputHint: InputHints.IgnoringInput), cancellationToken: cancellationToken);
+                await stepContext.Context.SendActivityAsync(new MessageActivity(message, message, inputHint: InputHints.IgnoringInput), cancellationToken: cancellationToken);
             }
 
             // Clear the skill selected by the user.

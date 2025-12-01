@@ -12,6 +12,7 @@ using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -65,7 +66,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var attachments = results.Result as List<Attachment>;
-                    var content = MessageFactory.Text((string)attachments[0].Content);
+                    var content = new MessageActivity((string)attachments[0].Content);
                     await turnContext.SendActivityAsync(content, cancellationToken);
                 }
             })
@@ -108,7 +109,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var attachments = results.Result as List<Attachment>;
-                    var content = MessageFactory.Text((string)attachments[0].Content);
+                    var content = new MessageActivity((string)attachments[0].Content);
                     await turnContext.SendActivityAsync(content, cancellationToken);
                 }
             })

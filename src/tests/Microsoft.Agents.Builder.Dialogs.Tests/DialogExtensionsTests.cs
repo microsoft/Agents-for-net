@@ -19,6 +19,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Client.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -311,8 +312,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     nameof(TextPrompt),
                     new PromptOptions
                     {
-                        Prompt = MessageFactory.Text("Hello, what is your name?", InputHints.ExpectingInput),
-                        RetryPrompt = MessageFactory.Text("Hello, what is your name again?", InputHints.ExpectingInput)
+                        Prompt = new MessageActivity("Hello, what is your name?", InputHints.ExpectingInput),
+                        RetryPrompt = new MessageActivity("Hello, what is your name again?", InputHints.ExpectingInput)
                     },
                     cancellationToken);
             }

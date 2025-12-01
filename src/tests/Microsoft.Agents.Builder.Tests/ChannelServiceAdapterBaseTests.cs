@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -247,7 +248,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter, new Activity());
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.InvokeResponse, value: "invoke response")
+                new InvokeResponseActivity("invoke response")
             };
 
             //Act
@@ -270,7 +271,10 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "reply activity", replyToId: "replyToId")
+                new MessageActivity("reply activity")
+                {
+                    ReplyToId = "replyToId"
+                }
             };
 
             //Act
@@ -292,7 +296,10 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "message activity")
+                new MessageActivity()
+                {
+                    Value = "message activity"
+                }
             };
 
             //Act

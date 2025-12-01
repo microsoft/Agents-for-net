@@ -8,6 +8,7 @@ using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.IntegrationTests
 {
@@ -48,7 +49,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.IntegrationTests
 
             var botAdapterMock = new Mock<IChannelAdapter>();
             // TODO: when TurnState is implemented, get the user input
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Text = input,
             };

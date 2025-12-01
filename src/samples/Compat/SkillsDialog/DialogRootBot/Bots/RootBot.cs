@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;

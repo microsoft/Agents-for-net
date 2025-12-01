@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

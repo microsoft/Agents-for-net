@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Agents.Builder.Dialogs.Choices;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <value>
         /// The initial prompt to send the user as and <see cref="Activity"/>.
         /// </value>
-        public IActivity Prompt { get; set; }
+        public IMessageActivity Prompt { get; set; }
 
         /// <summary>
         /// Gets or sets the retry prompt to send the user as and <see cref="Activity"/>.
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <value>
         /// The retry prompt to send the user as an <see cref="Activity"/>.
         /// </value>
-        public IActivity RetryPrompt { get; set; }
+        public IMessageActivity RetryPrompt { get; set; }
 
         /// <summary>
         /// Gets or sets a list of choices for the user to choose from, for use with a <see cref="ChoicePrompt"/>.

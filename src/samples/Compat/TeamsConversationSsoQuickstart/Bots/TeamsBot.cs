@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Extensions.Logging;
 
 namespace TeamsConversationSsoQuickstart.Bots
@@ -26,7 +27,7 @@ namespace TeamsConversationSsoQuickstart.Bots
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Welcome to AuthenticationBot. Type anything to get logged in. Type 'logout' to sign-out."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity("Welcome to AuthenticationBot. Type anything to get logged in. Type 'logout' to sign-out."), cancellationToken);
                 }
             }
         }

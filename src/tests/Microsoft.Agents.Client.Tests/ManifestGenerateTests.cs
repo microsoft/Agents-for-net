@@ -13,6 +13,7 @@ using System.Threading;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client.Tests
 {

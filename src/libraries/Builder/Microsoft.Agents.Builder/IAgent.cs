@@ -24,8 +24,6 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <remarks>The <paramref name="turnContext"/> provides information about the
         /// incoming Activity, and other data needed to process the activity.</remarks>
-        /// <seealso cref="ITurnContext"/>
-        /// <seealso cref="ITurnContext.SendActivityAsync(Core.Models.IActivity, CancellationToken)"/>
         Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
     }
 }

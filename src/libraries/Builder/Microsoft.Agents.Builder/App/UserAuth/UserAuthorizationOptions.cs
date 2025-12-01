@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.UserAuth;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,6 +152,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
-            (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];
+            (flowName, response) => [new MessageActivity(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];
     }
 }

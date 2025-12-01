@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using System;
 using System.Collections;
 using System.Reflection;
@@ -79,10 +81,12 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 SetGenericProperty(ref reader, data => value.ChannelData = data, options);
             }
+            /* !!!
             else if (propertyName.Equals(nameof(value.Value)))
             {
                 SetGenericProperty(ref reader, data => value.Value = data, options);
             }
+            */
             else
             {
                 return false;

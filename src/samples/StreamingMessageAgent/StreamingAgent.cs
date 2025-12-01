@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using OpenAI.Chat;
 using System.Collections.Generic;
 using System.Threading;
@@ -45,7 +46,7 @@ public class StreamingAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Say anything and I'll recite poetry."), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity("Say anything and I'll recite poetry."), cancellationToken);
             }
         }
     }

@@ -14,6 +14,8 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -153,11 +155,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };
@@ -182,7 +184,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_Message()
         {
-            await PromptTimeoutEndsDialogTest(MessageFactory.Text("hi"));
+            await PromptTimeoutEndsDialogTest(new MessageActivity("hi"));
         }
 
         [Fact]
@@ -302,11 +304,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };
@@ -372,11 +374,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };
@@ -440,11 +442,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };
@@ -505,11 +507,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };
@@ -701,7 +703,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                   await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = MessageFactory.Text(retryPromptText) }, cancellationToken: cancellationToken);
+                   await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = new MessageActivity(retryPromptText) }, cancellationToken: cancellationToken);
                 }
             };
 
@@ -802,11 +804,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Ended."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Ended."), cancellationToken);
                     }
                 }
             };
@@ -878,11 +880,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if (results.Result is TokenResponse)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Logged in."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Logged in."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Failed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Failed."), cancellationToken);
                     }
                 }
             };

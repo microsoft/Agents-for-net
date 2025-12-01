@@ -16,6 +16,8 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Extensions.SharePoint.Compat;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Extensions.SharePoint
 {

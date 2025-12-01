@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;

@@ -9,6 +9,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -31,7 +32,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 async (stepContext, cancellationToken) =>
                 {
                     var name = (string)stepContext.Result;
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"{name} is a great name!"), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"{name} is a great name!"), cancellationToken);
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };
@@ -82,7 +83,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 }
                 else
                 {
-                    await promptContext.Context.SendActivityAsync(MessageFactory.Text("Please send a name that is longer than 3 characters."), cancellationToken);
+                    await promptContext.Context.SendActivityAsync(new MessageActivity("Please send a name that is longer than 3 characters."), cancellationToken);
                 }
 
                 return false;
@@ -97,7 +98,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 async (stepContext, cancellationToken) =>
                 {
                     var name = (string)stepContext.Result;
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"{name} is a great name!"), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"{name} is a great name!"), cancellationToken);
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };
@@ -144,12 +145,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var result = promptContext.Recognized.Value;
                 if (result.Length > 3)
                 {
-                    var succeededMessage = MessageFactory.Text($"You got it at the {promptContext.AttemptCount}th try!");
+                    var succeededMessage = new MessageActivity($"You got it at the {promptContext.AttemptCount}th try!");
                     await promptContext.Context.SendActivityAsync(succeededMessage, cancellationToken);
                     return true;
                 }
 
-                var reply = MessageFactory.Text($"Please send a name that is longer than 3 characters. {promptContext.AttemptCount}");
+                var reply = new MessageActivity($"Please send a name that is longer than 3 characters. {promptContext.AttemptCount}");
                 await promptContext.Context.SendActivityAsync(reply, cancellationToken);
 
                 return false;
@@ -164,7 +165,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 async (stepContext, cancellationToken) =>
                 {
                     var name = (string)stepContext.Result;
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"{name} is a great name!"), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"{name} is a great name!"), cancellationToken);
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };

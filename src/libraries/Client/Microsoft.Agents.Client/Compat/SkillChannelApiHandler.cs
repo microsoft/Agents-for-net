@@ -16,6 +16,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client.Compat
 {

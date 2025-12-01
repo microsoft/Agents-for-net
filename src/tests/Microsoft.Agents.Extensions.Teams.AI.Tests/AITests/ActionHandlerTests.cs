@@ -9,6 +9,7 @@ using Moq;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 {
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 
             // Arrange
             var instance = new DifferentReturnTypesActions();
-            var turnContext = new TurnContext(mockAdapter.Object, MessageFactory.Text("hello"));
+            var turnContext = new TurnContext(mockAdapter.Object, new MessageActivity("hello"));
             var turnState = new TurnState();
             var actionNames = new[] { "action1", "action2", "action3" };
 
@@ -49,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 
             // Arrange
             var instance = new DifferentParameterAttributesActions<TurnState>();
-            var turnContext = new TurnContext(mockAdapter.Object, MessageFactory.Text("hello"));
+            var turnContext = new TurnContext(mockAdapter.Object, new MessageActivity("hello"));
             var turnState = new TurnState();
             var actionNames = new[] { "action1", "action2", "action3", "action4", "action5", "action6" };
             var entities = new object();
@@ -86,7 +87,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var mockAdapter = new Mock<IChannelAdapter>();
 
             // Arrange
-            var turnContext = new TurnContext(mockAdapter.Object, MessageFactory.Text("hello"));
+            var turnContext = new TurnContext(mockAdapter.Object, new MessageActivity("hello"));
             var turnState = new TurnState();
             var actionName = "action";
             var entities = new object();

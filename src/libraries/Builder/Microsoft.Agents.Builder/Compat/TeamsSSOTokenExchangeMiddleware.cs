@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Compat
 {
@@ -56,7 +58,7 @@ namespace Microsoft.Agents.Builder.Compat
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
             if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
-                && string.Equals(SignInConstants.TokenExchangeOperationName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(SignInConstants.TokenExchangeOperationName, (turnContext.Activity as IInvokeActivity).Name, StringComparison.OrdinalIgnoreCase))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
                 if (!await this.ExchangedTokenAsync(turnContext, cancellationToken).ConfigureAwait(false))
@@ -81,7 +83,7 @@ namespace Microsoft.Agents.Builder.Compat
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
-                ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
+                ETag = ProtocolJsonSerializer.ToJsonElements((turnContext.Activity as IInvokeActivity).Value)["id"].ToString(),
             };
 
             var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };
@@ -109,21 +111,14 @@ namespace Microsoft.Agents.Builder.Compat
         private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
-                new Activity
-                {
-                    Type = ActivityTypes.InvokeResponse,
-                    Value = new InvokeResponse
-                    {
-                        Status = (int)httpStatusCode,
-                        Body = body,
-                    },
-                }, cancellationToken).ConfigureAwait(false);
+                new InvokeResponseActivity(body, (int)httpStatusCode),
+                cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse tokenExchangeResponse = null;
-            var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
+            var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>((turnContext.Activity as IInvokeActivity).Value);
 
             try
             {
@@ -179,7 +174,7 @@ namespace Microsoft.Agents.Builder.Compat
                 var channelId = activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
-                var value = activity.Value.ToJsonElements();
+                var value = (activity as IInvokeActivity).Value.ToJsonElements();
                 if (value == null || !value.TryGetValue("id", out System.Text.Json.JsonElement idValue))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");

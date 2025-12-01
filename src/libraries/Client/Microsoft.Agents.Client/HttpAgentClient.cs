@@ -17,6 +17,7 @@ using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -103,27 +104,22 @@ namespace Microsoft.Agents.Client
 
             await foreach (var received in SendActivityStreamedAsync(agentConversationId, activity, relatesTo, useAnonymous, cancellationToken))
             {
-                if (received is IActivity receivedActivity)
+                if (received is IEndOfConversationActivity receivedActivity)
                 {
-                    if (receivedActivity.Type == ActivityTypes.EndOfConversation)
+                    if (!string.IsNullOrEmpty(receivedActivity.Code) && receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
                     {
-                        if (!string.IsNullOrEmpty(receivedActivity.Code) && receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
-                        {
-                            return new StreamResponse<T>()
-                            {
-                                Status = StreamResponseStatus.Error,
-                                Error = $"eoc:{receivedActivity.Code}",
-                            };
-                        }
-
                         return new StreamResponse<T>()
                         {
-                            Status = StreamResponseStatus.Complete,
-                            Value = ProtocolJsonSerializer.ToObject<T>(receivedActivity.Value)
+                            Status = StreamResponseStatus.Error,
+                            Error = $"eoc:{receivedActivity.Code}",
                         };
                     }
 
-                    handler(receivedActivity);
+                    return new StreamResponse<T>()
+                    {
+                        Status = StreamResponseStatus.Complete,
+                        Value = ProtocolJsonSerializer.ToObject<T>(receivedActivity.Value)
+                    };
                 }
                 else if (received is InvokeResponse invokeResponse)
                 {
@@ -158,6 +154,10 @@ namespace Microsoft.Agents.Client
                             Value = ProtocolJsonSerializer.ToObject<T>(invokeResponse.Body)
                         };
                     }
+                }
+                else
+                {
+                    handler(received as IActivity);
                 }
             }
 
@@ -339,22 +339,6 @@ namespace Microsoft.Agents.Client
             }
 
             return activityClone;
-        }
-
-        private Activity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
-        {
-            return new Activity()
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                Id = Guid.NewGuid().ToString(),
-                ChannelId = turnContext.Activity.ChannelId,
-                DeliveryMode = streamed ? DeliveryModes.Stream : DeliveryModes.Normal,
-                Conversation = new ConversationAccount() { Id = agentConversationId },
-                MembersAdded = [new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Agent }, new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill }],
-                ServiceUrl = _settings.ConnectionSettings.ServiceUrl,
-                Recipient = new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill },
-                From = new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Agent },
-            };
         }
 
         /// <inheritdoc/>

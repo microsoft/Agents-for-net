@@ -11,6 +11,7 @@ using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -92,12 +93,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             private static async Task<DialogTurnResult> ActionOneAsync(WaterfallStepContext context, CancellationToken cancellationToken)
             {
-                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("prompt one") });
+                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("prompt one") });
             }
 
             private static async Task<DialogTurnResult> ActionTwoAsync(WaterfallStepContext context, CancellationToken cancellationToken)
             {
-                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("prompt two") });
+                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("prompt two") });
             }
 
             private static async Task<DialogTurnResult> ReplaceActionAsync(WaterfallStepContext context, CancellationToken cancellationToken)
@@ -114,7 +115,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             private static async Task<DialogTurnResult> ActionThreeAsync(WaterfallStepContext context, CancellationToken cancellationToken)
             {
-                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("prompt three") });
+                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("prompt three") });
             }
 
             private static async Task<DialogTurnResult> LastActionAsync(WaterfallStepContext context, CancellationToken cancellationToken)
@@ -131,7 +132,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
                 public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity("*** WaterfallDialog End ***"), cancellationToken);
                     await base.EndDialogAsync(turnContext, instance, reason, cancellationToken);
                 }
             }
@@ -157,12 +158,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             private static async Task<DialogTurnResult> ActionFourAsync(WaterfallStepContext context, CancellationToken cancellationToken)
             {
-                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("prompt four") });
+                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("prompt four") });
             }
 
             private static async Task<DialogTurnResult> ActionFiveAsync(WaterfallStepContext context, CancellationToken cancellationToken)
             {
-                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = MessageFactory.Text("prompt five") });
+                return await context.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = new MessageActivity("prompt five") });
             }
 
             private static async Task<DialogTurnResult> LastActionAsync(WaterfallStepContext context, CancellationToken cancellationToken)

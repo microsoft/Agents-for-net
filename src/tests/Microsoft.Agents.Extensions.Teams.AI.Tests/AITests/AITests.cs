@@ -13,6 +13,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using Plan = Microsoft.Agents.Extensions.Teams.AI.Planners.Plan;
 using Record = Microsoft.Agents.Extensions.Teams.AI.State.Record;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 {
@@ -113,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var ai = new AISystem(options);
             var botAdapterStub = Mock.Of<IChannelAdapter>();
             var turnContextMock = new TurnContext(botAdapterStub,
-                new Activity
+                new MessageActivity
                 {
                     Text = "user message",
                     Recipient = new() { Id = "recipientId" },
@@ -152,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var ai = new AISystem(options);
             var botAdapterStub = Mock.Of<IChannelAdapter>();
             var turnContextMock = new TurnContext(botAdapterStub,
-                new Activity
+                new MessageActivity
                 {
                     Text = "user message",
                     Recipient = new() { Id = "recipientId" },

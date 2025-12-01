@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Connector;
 using Moq;
 using System.Net.Http;
 using System.Net.Http.Headers;

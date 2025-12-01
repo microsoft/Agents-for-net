@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Recognizers.Text.Choice;
 using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 

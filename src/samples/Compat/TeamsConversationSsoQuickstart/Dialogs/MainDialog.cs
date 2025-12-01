@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -87,7 +89,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
 
                     return await stepContext.PromptAsync(
                         nameof(ConfirmPrompt),
-                        new PromptOptions { Prompt = MessageFactory.Text("Would you like to view your token?") },
+                        new PromptOptions { Prompt = new MessageActivity("Would you like to view your token?") },
                         cancellationToken);
                 }
                 catch (Exception ex)
@@ -100,7 +102,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
                 _logger.LogInformation("Response token is null or empty.");
             }
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Login was not successful please try again."), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("Login was not successful please try again."), cancellationToken);
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
 
@@ -110,7 +112,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
         {
             _logger.LogInformation("DisplayTokenPhase1Async() method called.");
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Thank you."), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("Thank you."), cancellationToken);
 
             var result = (bool)stepContext.Result;
             if (result)
@@ -136,7 +138,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
             var tokenResponse = (TokenResponse)stepContext.Result;
             if (tokenResponse != null)
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Here is your token {tokenResponse.Token}"), cancellationToken);
+                await stepContext.Context.SendActivityAsync(new MessageActivity($"Here is your token {tokenResponse.Token}"), cancellationToken);
             }
 
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);

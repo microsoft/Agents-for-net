@@ -5,6 +5,8 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -60,7 +62,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Set IActivity that will be (optionally) used for the final streaming message.
         /// </summary>
-        public IActivity FinalMessage { get; set; }
+        public IMessageActivity FinalMessage { get; set; }
 
         /// <summary>
         /// Gets the stream ID of the current response.
@@ -225,9 +227,8 @@ namespace Microsoft.Agents.Builder
 
                 queueFunc = () =>
                 {
-                    return new Activity
+                    return new TypingActivity
                     {
-                        Type = ActivityTypes.Typing,
                         Text = text,
                         Entities = [new StreamInfo()
                             {
@@ -366,7 +367,7 @@ namespace Microsoft.Agents.Builder
 
         private IActivity CreateFinalMessage()
         {
-            var activity = FinalMessage ?? new Activity();
+            var activity = FinalMessage ?? new MessageActivity();
 
             activity.Type = ActivityTypes.Message;
             if (FinalMessage == null)
@@ -466,9 +467,8 @@ namespace Microsoft.Agents.Builder
             QueueActivity(() =>
             {
                 // Send typing activity
-                var activity = new Activity
+                var activity = new TypingActivity
                 {
-                    Type = ActivityTypes.Typing,
                     Text = Message,
                     Entities = []
                 };

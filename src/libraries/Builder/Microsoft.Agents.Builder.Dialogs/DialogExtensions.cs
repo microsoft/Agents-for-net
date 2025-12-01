@@ -12,6 +12,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client.Compat;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {

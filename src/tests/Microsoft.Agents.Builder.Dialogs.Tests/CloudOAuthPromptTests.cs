@@ -14,6 +14,9 @@ using Xunit;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -71,9 +74,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn. 
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -144,9 +146,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn. 
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -227,9 +228,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn. 
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -303,9 +303,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn.
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = "from-id" },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -386,9 +385,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn. 
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = magicCode,
@@ -474,10 +472,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 expiration = DateTime.UtcNow + TimeSpan.FromMinutes(5),
             };
 
-            var activity = new Activity
+            var activity = new EventActivity(SignInConstants.TokenResponseEventName)
             {
-                Type = ActivityTypes.Event,
-                Name = SignInConstants.TokenResponseEventName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 ChannelId = channelId,
@@ -559,9 +555,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn. 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
@@ -653,9 +648,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 token = tokenExchangeRequestToken,
             };
 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
@@ -719,9 +713,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             };
 
             // The Activity for the turn.
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 ChannelId = channelId,

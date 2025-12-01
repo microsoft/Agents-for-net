@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Builder.App
         public RouteType RouteType { get; set; }
 
         /// <summary>
-        /// Activity Type, <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
+        /// Activity Type, <see cref="Core.Models.Activities.ActivityTypes"/>
         /// </summary>
         public string Type { get; set; }
 

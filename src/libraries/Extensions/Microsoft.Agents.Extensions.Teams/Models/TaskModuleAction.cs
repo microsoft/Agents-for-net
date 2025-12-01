@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Cards;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;

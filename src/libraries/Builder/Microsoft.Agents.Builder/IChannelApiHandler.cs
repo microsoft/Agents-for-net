@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;

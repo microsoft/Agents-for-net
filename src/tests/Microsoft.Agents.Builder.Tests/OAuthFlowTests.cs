@@ -4,8 +4,10 @@
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Net;
@@ -43,9 +45,8 @@ namespace Microsoft.Agents.Builder.Tests
             //Arrange
             var userId = "user-id";
             var channelId = "channel-id";
-            var activity = new Activity
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 From = new ChannelAccount { Id = userId },
                 ChannelId = channelId,
                 Text = "logout",
@@ -72,18 +73,16 @@ namespace Microsoft.Agents.Builder.Tests
             bool responsesSent = false;
             void ValidateResponses(IActivity[] activities)
             {
-                var activityValue = (InvokeResponse)activities[0].Value;
+                var activityValue = (InvokeResponse)(activities[0] as IInvokeActivity)?.Value;
                 Assert.Equal((int)HttpStatusCode.NotFound, activityValue.Status);
                 responsesSent = true;
             }
 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name= SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
-                Text = "invoke",
             };
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
             var mockUserTokenClient = new Mock<IUserTokenClient>();
@@ -108,18 +107,16 @@ namespace Microsoft.Agents.Builder.Tests
             bool responsesSent = false;
             void ValidateResponses(IActivity[] activities)
             {
-                var activityValue = (InvokeResponse)activities[0].Value;
+                var activityValue = (InvokeResponse)(activities[0] as IInvokeActivity)?.Value;
                 Assert.Equal((int)HttpStatusCode.InternalServerError, activityValue.Status);
                 responsesSent = true;
             }
 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
-                Text = "invoke",
             };
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
 
@@ -138,21 +135,19 @@ namespace Microsoft.Agents.Builder.Tests
             bool responsesSent = false;
             void ValidateResponses(IActivity[] activities)
             {
-                var activityValue = (InvokeResponse)activities[0].Value;
+                var activityValue = (InvokeResponse)(activities[0] as IInvokeActivity)?.Value;
                 var messageBody = (TokenExchangeInvokeResponse)activityValue.Body;
                 Assert.Equal((int)HttpStatusCode.PreconditionFailed, activityValue.Status);
                 Assert.Equal("The Agent is unable to exchange token. Proceed with regular login.", messageBody.FailureDetail);
                 responsesSent = true;
             }
 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = new TokenResponse(Channels.Msteams, _flow.Settings.AzureBotOAuthConnectionName, "token", DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM")),
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
-                Text = "invoke",
             };
 
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);

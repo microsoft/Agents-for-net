@@ -11,6 +11,7 @@ using Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.IntegrationTests
 {
@@ -57,7 +58,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.IntegrationTests
             var model = new AI.Models.OpenAIModel(modelOptions);
 
             var botAdapterMock = new Mock<IChannelAdapter>();
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Text = input,
             };

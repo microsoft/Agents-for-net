@@ -14,6 +14,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -400,8 +401,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             await stepContext.Context.SendActivityAsync("step1");
             return await stepContext.PromptAsync("number", new PromptOptions
             {
-                Prompt = MessageFactory.Text("Enter a number."),
-                RetryPrompt = MessageFactory.Text("It must be a number"),
+                Prompt = new MessageActivity("Enter a number."),
+                RetryPrompt = new MessageActivity("It must be a number"),
             });
         }
 
@@ -418,8 +419,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 "number",
                 new PromptOptions
                 {
-                    Prompt = MessageFactory.Text("Enter a number."),
-                    RetryPrompt = MessageFactory.Text("It must be a number"),
+                    Prompt = new MessageActivity("Enter a number."),
+                    RetryPrompt = new MessageActivity("It must be a number"),
                 });
         }
 
@@ -437,37 +438,37 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
         private static async Task<DialogTurnResult> Waterfall3_Step1(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step1"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step1"), cancellationToken);
             return await stepContext.BeginDialogAsync("test-waterfall-b", null, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> Waterfall3_Step2(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step2"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step2"), cancellationToken);
             return await stepContext.BeginDialogAsync("test-waterfall-c", null, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> Waterfall4_Step1(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step1.1"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step1.1"), cancellationToken);
             return Dialog.EndOfTurn;
         }
 
         private static async Task<DialogTurnResult> Waterfall4_Step2(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step1.2"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step1.2"), cancellationToken);
             return Dialog.EndOfTurn;
         }
 
         private static async Task<DialogTurnResult> Waterfall5_Step1(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step2.1"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step2.1"), cancellationToken);
             return Dialog.EndOfTurn;
         }
 
         private static async Task<DialogTurnResult> Waterfall5_Step2(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("step2.2"), cancellationToken);
+            await stepContext.Context.SendActivityAsync(new MessageActivity("step2.2"), cancellationToken);
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
     }

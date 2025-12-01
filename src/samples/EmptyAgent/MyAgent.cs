@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace EmptyAgent;
 
@@ -24,7 +25,7 @@ public class MyAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
             }
         }
     }

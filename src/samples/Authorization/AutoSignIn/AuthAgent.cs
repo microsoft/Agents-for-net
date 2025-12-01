@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -95,7 +96,7 @@ public class AuthAgent : AgentApplication
                 }
                 sb.AppendLine("");
                 sb.AppendLine("Type anything else to see the agent echo back your message.");
-                await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity(sb.ToString()), cancellationToken);
                 sb.Clear();
             }
         }

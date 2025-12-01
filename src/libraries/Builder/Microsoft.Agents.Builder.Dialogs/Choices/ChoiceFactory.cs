@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -146,7 +148,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
             }
 
             // Return activity with choices as an inline list.
-            return MessageFactory.Text(txtBuilder.ToString(), speak, InputHints.ExpectingInput);
+            return new MessageActivity(txtBuilder.ToString(), speak, InputHints.ExpectingInput);
         }
 
         /// <summary>
@@ -205,7 +207,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
             }
 
             // Return activity with choices as a numbered list.
-            return MessageFactory.Text(txtBuilder.ToString(), speak, InputHints.ExpectingInput);
+            return new MessageActivity(txtBuilder.ToString(), speak, InputHints.ExpectingInput);
         }
 
         /// <summary>

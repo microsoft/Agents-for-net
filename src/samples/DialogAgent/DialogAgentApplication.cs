@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace DialogAgent;
 
@@ -27,7 +28,7 @@ public class DialogAgentApplication : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
             }
         }
     }

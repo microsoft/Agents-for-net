@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts

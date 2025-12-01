@@ -14,6 +14,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -58,11 +59,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -113,11 +114,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -158,11 +159,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -221,11 +222,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -284,11 +285,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -348,11 +349,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })
@@ -408,11 +409,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     if ((bool)results.Result)
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Confirmed."), cancellationToken);
                     }
                     else
                     {
-                        await turnContext.SendActivityAsync(MessageFactory.Text("Not confirmed."), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity("Not confirmed."), cancellationToken);
                     }
                 }
             })

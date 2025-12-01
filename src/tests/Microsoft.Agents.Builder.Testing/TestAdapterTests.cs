@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Security;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace Microsoft.Agents.Builder.Testing
             await Assert.ThrowsAsync<Exception>(() =>
                   new TestFlow(adapter, async (context, cancellationToken) =>
                   {
-                      await context.SendActivityAsync(context.Activity.CreateReply("one"), cancellationToken);
+                      await context.SendActivityAsync(Activity.CreateReply(context.Activity, () => new MessageActivity("one")), cancellationToken);
                   })
                           .Test("foo", (activity) => throw new Exception(uniqueExceptionId))
                           .StartTestAsync());  
@@ -48,7 +49,7 @@ namespace Microsoft.Agents.Builder.Testing
             await Assert.ThrowsAsync<Exception>(() =>
                 new TestFlow(adapter, async (context, cancellationToken) =>
                 {
-                    await context.SendActivityAsync(context.Activity.CreateReply("one"), cancellationToken);
+                    await context.SendActivityAsync(Activity.CreateReply(context.Activity, () => new MessageActivity("one")), cancellationToken);
                 })
                     .Send("foo")
                     .AssertReply(
@@ -72,8 +73,8 @@ namespace Microsoft.Agents.Builder.Testing
             var adapter = new TestAdapter(TestAdapter.CreateConversation("TestAdapter_Say"));
             await new TestFlow(adapter, MyBotLogic)
                 .Test("foo", "echo:foo", "say with string works")
-                .Test("foo", new Activity(ActivityTypes.Message, text: "echo:foo"), "say with activity works")
-                .Test("foo", (activity) => Assert.Equal("echo:foo", activity.Text), "say with validator works")
+                .Test("foo", new MessageActivity("echo:foo"), "say with activity works")
+                .Test("foo", (activity) => Assert.Equal("echo:foo", (activity as IMessageActivity).Text), "say with validator works")
                 .StartTestAsync();
         }
 
@@ -83,8 +84,8 @@ namespace Microsoft.Agents.Builder.Testing
             var adapter = new TestAdapter(TestAdapter.CreateConversation("TestAdapter_SendReply"));
             await new TestFlow(adapter, MyBotLogic)
                 .Send("foo").AssertReply("echo:foo", "send/reply with string works")
-                .Send("foo").AssertReply(new Activity(ActivityTypes.Message, text: "echo:foo"), "send/reply with activity works")
-                .Send("foo").AssertReply((activity) => Assert.Equal("echo:foo", activity.Text), "send/reply with validator works")
+                .Send("foo").AssertReply(new MessageActivity(text: "echo:foo"), "send/reply with activity works")
+                .Send("foo").AssertReply((activity) => Assert.Equal("echo:foo", (activity as IMessageActivity).Text), "send/reply with validator works")
                 .StartTestAsync();
         }
 
@@ -201,19 +202,22 @@ namespace Microsoft.Agents.Builder.Testing
 
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            switch (turnContext.Activity.Text)
+            if (turnContext.Activity is IMessageActivity message)
             {
-                case "count":
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"), cancellationToken);
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("two"), cancellationToken);
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("three"), cancellationToken);
-                    break;
-                case "ignore":
-                    break;
-                default:
-                    await turnContext.SendActivityAsync(
-                        turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"), cancellationToken);
-                    break;
+                switch (message.Text)
+                {
+                    case "count":
+                        await turnContext.SendActivityAsync(Activity.CreateReply(message, () => new MessageActivity("one")), cancellationToken);
+                        await turnContext.SendActivityAsync(Activity.CreateReply(message, () => new MessageActivity("two")), cancellationToken);
+                        await turnContext.SendActivityAsync(Activity.CreateReply(message, () => new MessageActivity("three")), cancellationToken);
+                        break;
+                    case "ignore":
+                        break;
+                    default:
+                        await turnContext.SendActivityAsync(
+                            Activity.CreateReply(message, () => new MessageActivity($"echo:{message.Text}")), cancellationToken);
+                        break;
+                }
             }
         }
     }

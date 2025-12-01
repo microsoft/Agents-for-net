@@ -4,7 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System.Collections.Generic;
 using System.Threading;

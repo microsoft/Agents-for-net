@@ -14,6 +14,8 @@ using Microsoft.Agents.Storage;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -507,7 +509,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     else if (results.Status == DialogTurnStatus.Complete)
                     {
                         var choiceResult = (FoundChoice)results.Result;
-                        await turnContext.SendActivityAsync(MessageFactory.Text($"{choiceResult.Value}"), cancellationToken);
+                        await turnContext.SendActivityAsync(new MessageActivity($"{choiceResult.Value}"), cancellationToken);
                     }
                 })
                 .Send("hello")
@@ -571,7 +573,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             PromptValidator<FoundChoice> validator = async (promptContext, cancellationToken) =>
             {
-                await promptContext.Context.SendActivityAsync(MessageFactory.Text("validator called"), cancellationToken);
+                await promptContext.Context.SendActivityAsync(new MessageActivity("validator called"), cancellationToken);
                 return true;
             };
             var listPrompt = new ChoicePrompt("ChoicePrompt", validator, Culture.English)
@@ -663,7 +665,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var helloLocale = MessageFactory.Text("hello");
+            var helloLocale = new MessageActivity("hello");
             helloLocale.Locale = testCulture;
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
@@ -714,7 +716,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var helloLocale = MessageFactory.Text("hello");
+            var helloLocale = new MessageActivity("hello");
             helloLocale.Locale = activityLocale;
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
@@ -777,7 +779,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 { culture.Locale, new ChoiceFactoryOptions(culture.Separator, culture.InlineOr, culture.InlineOrMore, true) },
             };
 
-            var helloLocale = MessageFactory.Text("hello");
+            var helloLocale = new MessageActivity("hello");
             helloLocale.Locale = culture.Locale;
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>

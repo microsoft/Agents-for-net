@@ -7,6 +7,8 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Cards;
 using System;
 using System.IO;
 using System.Linq;
@@ -82,7 +84,7 @@ public class AttachmentsAgent : AgentApplication
 
         if (turnState.Temp.InputFiles.Any())
         {
-            reply = MessageFactory.Text($"There are {turnState.Temp.InputFiles.Count} attachments.");
+            reply = new MessageActivity($"There are {turnState.Temp.InputFiles.Count} attachments.");
 
             var imageData = Convert.ToBase64String(turnState.Temp.InputFiles[0].Content);
             reply.Attachments = [new Attachment() { Name = turnState.Temp.InputFiles[0].Filename, ContentType = "image/png", ContentUrl = $"data:image/png;base64,{imageData}" }];
@@ -110,17 +112,17 @@ public class AttachmentsAgent : AgentApplication
 
         if (activity.Text.StartsWith('1'))
         {
-            reply = MessageFactory.Text("This is an inline attachment.");
+            reply = new MessageActivity("This is an inline attachment.");
             reply.Attachments = [GetInlineAttachment()];
         }
         else if (activity.Text.StartsWith('2'))
         {
-            reply = MessageFactory.Text("This is an attachment from a HTTP URL.");
+            reply = new MessageActivity("This is an attachment from a HTTP URL.");
             reply.Attachments = [GetInternetAttachment()];
         }
         else if (activity.Text.StartsWith('3'))
         {
-            reply = MessageFactory.Text("This is an uploaded attachment.");
+            reply = new MessageActivity("This is an uploaded attachment.");
 
             // Get the uploaded attachment.
             var uploadedAttachment = await UploadAttachmentAsync(turnContext, activity.ServiceUrl, activity.Conversation.Id, cancellationToken);

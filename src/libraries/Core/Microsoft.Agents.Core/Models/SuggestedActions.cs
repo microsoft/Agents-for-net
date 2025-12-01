@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using Microsoft.Agents.Core.Models.Cards;
 using System;
 using System.Collections.Generic;
 using System.Linq;

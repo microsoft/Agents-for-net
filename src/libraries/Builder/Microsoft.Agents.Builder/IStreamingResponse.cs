@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +25,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Set IActivity that will be (optionally) used for the final streaming message.
         /// </summary>
-        IActivity FinalMessage { get; set; }
+        IMessageActivity FinalMessage { get; set; }
 
         /// <summary>
         /// The interval in milliseconds at which intermediate messages are sent.

@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Compat;
 using Xunit;
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 
 namespace Microsoft.Agents.Builder.Tests
 {

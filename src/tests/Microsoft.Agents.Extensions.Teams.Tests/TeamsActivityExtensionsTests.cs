@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Collections.Generic;
@@ -74,7 +75,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetTeamInfo_ShouldReturnTeamIdFromTypedActivity()
         {
-            IMessageActivity activity = new Activity { ChannelData = new TeamsChannelData { Team = new TeamInfo { Id = "team123" } } };
+            var activity = new MessageActivity { ChannelData = new TeamsChannelData { Team = new TeamInfo { Id = "team123" } } };
 
             var teamId = activity.TeamsGetTeamInfo().Id;
 

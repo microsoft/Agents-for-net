@@ -13,6 +13,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -59,7 +60,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var textResult = (string)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the text '{textResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the text '{textResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -106,7 +107,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         else if (results.Status == DialogTurnStatus.Complete)
                         {
                             var textResult = (string)results.Result;
-                            await turnContext.SendActivityAsync(MessageFactory.Text(textResult), cancellationToken);
+                            await turnContext.SendActivityAsync(new MessageActivity(textResult), cancellationToken);
                         }
                     })
                     .Send("hello")
@@ -144,7 +145,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var value = promptContext.Recognized.Value;
                 if (value.Length <= 3)
                 {
-                    await promptContext.Context.SendActivityAsync(MessageFactory.Text("Make sure the text is greater than three characters."), cancellationToken);
+                    await promptContext.Context.SendActivityAsync(new MessageActivity("Make sure the text is greater than three characters."), cancellationToken);
                     return false;
                 }
                 else
@@ -173,7 +174,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var textResult = (string)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the text '{textResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the text '{textResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -228,7 +229,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var textResult = (string)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the text '{textResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the text '{textResult}'."), cancellationToken);
                 }
             })
             .Send("hello")
@@ -254,7 +255,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var value = promptContext.Recognized.Value;
                 if (value.Length <= 3)
                 {
-                    await promptContext.Context.SendActivityAsync(MessageFactory.Text("The text should be greater than 3 chars."), cancellationToken);
+                    await promptContext.Context.SendActivityAsync(new MessageActivity("The text should be greater than 3 chars."), cancellationToken);
                     return false;
                 }
                 else
@@ -286,7 +287,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
                     var textResult = (string)results.Result;
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bot received the text '{textResult}'."), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity($"Bot received the text '{textResult}'."), cancellationToken);
                 }
             })
             .Send("hello")

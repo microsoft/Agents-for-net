@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder.Dialogs;
-using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 
 namespace TeamsConversationSsoQuickstart.Dialogs
 {
@@ -83,7 +83,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
                     var userTokenClient = innerDc.Context.Services.Get<IUserTokenClient>();
                     await userTokenClient.SignOutUserAsync(innerDc.Context.Activity.From.Id, ConnectionName, innerDc.Context.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
 
-                    await innerDc.Context.SendActivityAsync(MessageFactory.Text("You have been signed out."), cancellationToken);
+                    await innerDc.Context.SendActivityAsync(new MessageActivity("You have been signed out."), cancellationToken);
                     return await innerDc.CancelAllDialogsAsync(cancellationToken);                    
                 }
             }
