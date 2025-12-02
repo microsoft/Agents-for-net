@@ -21,17 +21,20 @@ public class MyAgent : AgentApplication
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        if (turnContext.Activity is IConversationUpdateActivity activity)
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            foreach (ChannelAccount member in activity.MembersAdded)
             {
-                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
+                if (member.Id != activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
+                }
             }
         }
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {(turnContext.Activity as IMessageActivity)!.Text}", cancellationToken: cancellationToken);
     }
 }

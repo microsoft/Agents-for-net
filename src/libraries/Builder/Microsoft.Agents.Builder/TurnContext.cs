@@ -157,9 +157,8 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
 
-            var activityToSend = new Activity()
+            var activityToSend = new MessageActivity()
             {
-                Type = ActivityTypes.Message,
                 Text = textReplyToSend
             };
 

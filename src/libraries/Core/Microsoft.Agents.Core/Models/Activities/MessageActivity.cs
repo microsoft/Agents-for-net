@@ -9,10 +9,11 @@ namespace Microsoft.Agents.Core.Models.Activities
         { 
         }
 
-        public MessageActivity(string text, string ssml = null, string inputHint = null, string textFormat = TextFormatTypes.Plain) : base(ActivityTypes.Message)
+        public MessageActivity(string text = null, string ssml = null, string inputHint = null, string textFormat = TextFormatTypes.Plain, params Attachment[] attachments) : base(ActivityTypes.Message)
         {
             SetTextAndSpeak(this, text, ssml, inputHint);
             TextFormat = textFormat;
+            Attachments = attachments ?? [];
         }
 
         public string AttachmentLayout { get; set; }

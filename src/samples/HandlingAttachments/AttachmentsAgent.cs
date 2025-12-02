@@ -27,16 +27,19 @@ public class AttachmentsAgent : AgentApplication
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (var member in turnContext.Activity.MembersAdded)
+        if (turnContext.Activity is IConversationUpdateActivity convUpdate)
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            foreach (var member in convUpdate.MembersAdded)
             {
-                await turnContext.SendActivityAsync(
-                    $"Welcome to HandlingAttachment Agent." +
-                    $" This bot will introduce you to Attachments." +
-                    $" Please select an option",
-                    cancellationToken: cancellationToken);
-                await DisplayOptionsAsync(turnContext, cancellationToken);
+                if (member.Id != turnContext.Activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(
+                        $"Welcome to HandlingAttachment Agent." +
+                        $" This bot will introduce you to Attachments." +
+                        $" Please select an option",
+                        cancellationToken: cancellationToken);
+                    await DisplayOptionsAsync(turnContext, cancellationToken);
+                }
             }
         }
     }
@@ -78,9 +81,9 @@ public class AttachmentsAgent : AgentApplication
     }
 
     // Given the input from the message, create the response.
-    private static async Task<IActivity?> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private static async Task<IMessageActivity?> ProcessInput(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        IActivity? reply;
+        IMessageActivity? reply;
 
         if (turnState.Temp.InputFiles.Any())
         {
@@ -99,28 +102,28 @@ public class AttachmentsAgent : AgentApplication
     }
 
     // Returns a reply with the requested Attachment
-    private static async Task<IActivity?> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
+    private static async Task<IMessageActivity?> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
     {
         // Look at the user input, and figure out what kind of attachment to send.
 
-        if (string.IsNullOrEmpty(activity.Text))
+        if (turnContext.Activity is not IMessageActivity message || string.IsNullOrEmpty(message.Text))
         {
             return null;
         }
 
-        IActivity? reply = null;
+        IMessageActivity? reply = null;
 
-        if (activity.Text.StartsWith('1'))
+        if (message.Text.StartsWith('1'))
         {
             reply = new MessageActivity("This is an inline attachment.");
             reply.Attachments = [GetInlineAttachment()];
         }
-        else if (activity.Text.StartsWith('2'))
+        else if (message.Text.StartsWith('2'))
         {
             reply = new MessageActivity("This is an attachment from a HTTP URL.");
             reply.Attachments = [GetInternetAttachment()];
         }
-        else if (activity.Text.StartsWith('3'))
+        else if (message.Text.StartsWith('3'))
         {
             reply = new MessageActivity("This is an uploaded attachment.");
 

@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var attachment = new Attachment { Content = "some content", ContentType = "text/plain" };
 
             // Create incoming activity with attachment.
-            var activityWithAttachment = new Activity { Type = ActivityTypes.Message, Attachments = new List<Attachment> { attachment } };
+            var activityWithAttachment = new MessageActivity(attachments: [attachment]);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync();
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please add an attachment." } };
+                    var options = new PromptOptions { Prompt = new MessageActivity("please add an attachment.") };
                     await dc.PromptAsync("AttachmentPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var attachment = new Attachment { Content = "some content", ContentType = "text/plain" };
 
             // Create incoming activity with attachment.
-            var activityWithAttachment = new Activity { Type = ActivityTypes.Message, Attachments = new List<Attachment> { attachment } };
+            var activityWithAttachment = new MessageActivity(attachments: [attachment]);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please add an attachment." } };
+                    var options = new PromptOptions { Prompt = new MessageActivity("please add an attachment.") };
                     await dc.PromptAsync("AttachmentPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)

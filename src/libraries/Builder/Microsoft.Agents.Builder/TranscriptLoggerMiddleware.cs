@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Builder
                     }
 
                     // We should not log ContinueConversation events used by Agents to initialize the middleware.
-                    if (!(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == ActivityEventNames.ContinueConversation))
+                    if (turnContext.Activity is not IEventActivity eventActivity || eventActivity.Name != ActivityEventNames.ContinueConversation)
                     {
                         LogActivity(transcript, CloneActivity(turnContext.Activity));
                     }

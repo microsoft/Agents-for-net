@@ -115,8 +115,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -212,8 +211,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -314,8 +312,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new();
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -408,8 +405,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -513,8 +509,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -586,8 +581,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -619,8 +613,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -657,8 +650,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -692,8 +684,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    var activity = Activity.CreateInvokeResponseActivity(response);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -723,8 +714,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -756,8 +746,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
                 }
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);

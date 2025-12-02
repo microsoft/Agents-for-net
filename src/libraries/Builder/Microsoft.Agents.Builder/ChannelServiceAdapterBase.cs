@@ -289,19 +289,19 @@ namespace Microsoft.Agents.Builder
             return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
-        private static Activity CreateConversationEvent(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
+        private static EventActivity CreateConversationEvent(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
         {
             // Create a conversation update activity to represent the TurnContext.Activity context.
-            var activity = Activity.CreateEventActivity();
-            activity.Name = ActivityEventNames.CreateConversation;
-            activity.ChannelId = channelId;
-            activity.ServiceUrl = serviceUrl;
-            activity.Conversation = new ConversationAccount(id: createConversationResult.Id, tenantId: conversationParameters.TenantId);
-            activity.ChannelData = conversationParameters.ChannelData;
-            activity.Recipient = conversationParameters.Agent;
-            activity.From = conversationParameters.Agent;
-            activity.Value = createConversationResult;
-            return (Activity)activity;
+            return new EventActivity(ActivityEventNames.CreateConversation)
+            {
+                ChannelId = channelId,
+                ServiceUrl = serviceUrl,
+                Conversation = new ConversationAccount(id: createConversationResult.Id, tenantId: conversationParameters.TenantId),
+                ChannelData = conversationParameters.ChannelData,
+                Recipient = conversationParameters.Agent,
+                From = conversationParameters.Agent,
+                Value = createConversationResult
+            };
         }
 
         private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
@@ -326,7 +326,7 @@ namespace Microsoft.Agents.Builder
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
-                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
+                var activityInvokeResponse = turnContext.StackState.Get<InvokeResponseActivity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };

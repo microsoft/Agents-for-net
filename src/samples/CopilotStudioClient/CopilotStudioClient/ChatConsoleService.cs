@@ -24,7 +24,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
         Console.Write("\nagent> ");
         // Attempt to connect to the copilot studio hosted agent here
         // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
-        await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+        await foreach (IActivity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
         {
             System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
             sw.Restart();
@@ -63,33 +63,34 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// <param name="act"></param>
     static void PrintActivity(IActivity act)
     {
-        switch (act.Type)
+        if (act is IMessageActivity message)
         {
-            case "message":
-                if (act.TextFormat == "markdown")
-                {
+            if (message.TextFormat == "markdown")
+            {
 
-                    Console.WriteLine(act.Text);
-                    if (act.SuggestedActions?.Actions.Count > 0)
-                    {
-                        Console.WriteLine("Suggested actions:\n");
-                        act.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
-                    }
-                }
-                else
+                Console.WriteLine(message.Text);
+                if (message.SuggestedActions?.Actions.Count > 0)
                 {
-                    Console.Write($"\n{act.Text}\n");
+                    Console.WriteLine("Suggested actions:\n");
+                    message.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
                 }
-                break;
-            case "typing":
-                Console.Write(".");
-                break;
-            case "event":
-                Console.Write("+");
-                break;
-            default:
-                Console.Write($"[{act.Type}]");
-                break;
+            }
+            else
+            {
+                Console.Write($"\n{message.Text}\n");
+            }
+        }
+        else if (act is ITypingActivity)
+        {
+            Console.Write(".");
+        }
+        else if (act is IEventActivity)
+        {
+            Console.Write("+");
+        }
+        else 
+        {
+            Console.Write($"[{act.Type}]");
         }
     }
 

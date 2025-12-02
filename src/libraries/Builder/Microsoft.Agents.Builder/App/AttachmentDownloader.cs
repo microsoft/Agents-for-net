@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -22,19 +23,19 @@ namespace Microsoft.Agents.Builder.App
 
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams))
+            if (turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams) || turnContext.Activity is not IMessageActivity message)
             {
                 return [];
             }
 
-            if (turnContext.Activity.Attachments == null || turnContext.Activity.Attachments.Count == 0)
+            if (message.Attachments == null || message.Attachments.Count == 0)
             {
                 return [];
             }
 
             List<InputFile> files = [];
 
-            foreach (Attachment attachment in turnContext.Activity.Attachments)
+            foreach (Attachment attachment in message.Attachments)
             {
                 InputFile? file = await DownloadFileAsync(attachment);
                 if (file != null)

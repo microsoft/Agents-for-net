@@ -47,7 +47,7 @@ public class MyAgent : AgentApplication
         _weatherAgent = new WeatherForecastAgent(_kernel, serviceCollection.BuildServiceProvider());
 
         // Invoke the WeatherForecastAgent to process the message
-        WeatherForecastAgentResponse forecastResponse = await _weatherAgent.InvokeAgentAsync(turnContext.Activity.Text, chatHistory);
+        WeatherForecastAgentResponse forecastResponse = await _weatherAgent.InvokeAgentAsync((turnContext.Activity as IMessageActivity)!.Text, chatHistory);
         if (forecastResponse == null)
         {
             turnContext.StreamingResponse.QueueTextChunk("Sorry, I couldn't get the weather forecast at the moment.");
@@ -63,7 +63,7 @@ public class MyAgent : AgentApplication
                 turnContext.StreamingResponse.QueueTextChunk(forecastResponse.Content!);
                 break;
             case WeatherForecastAgentResponseContentType.AdaptiveCard:
-                turnContext.StreamingResponse.FinalMessage = MessageFactory.Attachment(new Attachment()
+                turnContext.StreamingResponse.FinalMessage = new MessageActivity(attachments: new Attachment()
                 {
                     ContentType = "application/vnd.microsoft.card.adaptive",
                     Content = forecastResponse.Content,
@@ -77,11 +77,14 @@ public class MyAgent : AgentApplication
 
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        if (turnContext.Activity is IConversationUpdateActivity conversationUpdateActivity)
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            foreach (ChannelAccount member in conversationUpdateActivity.MembersAdded)
             {
-                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome! I'm here to help with all your weather forecast needs!"), cancellationToken);
+                if (member.Id != conversationUpdateActivity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome! I'm here to help with all your weather forecast needs!"), cancellationToken);
+                }
             }
         }
     }

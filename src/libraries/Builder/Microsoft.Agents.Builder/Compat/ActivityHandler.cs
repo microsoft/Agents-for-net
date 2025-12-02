@@ -98,9 +98,9 @@ namespace Microsoft.Agents.Builder.Compat
                     var invokeResponse = await OnInvokeActivityAsync(new TypedTurnContext<IInvokeActivity>(turnContext), cancellationToken).ConfigureAwait(false);
 
                     // If OnInvokeActivityAsync has already sent an InvokeResponse, do not send another one.
-                    if (invokeResponse != null && turnContext.StackState.Get<Activity>(ChannelAdapter.InvokeResponseKey) == null)
+                    if (invokeResponse != null && turnContext.StackState.Get<InvokeResponseActivity>(ChannelAdapter.InvokeResponseKey) == null)
                     {
-                        await turnContext.SendActivityAsync(new Activity { Value = invokeResponse, Type = ActivityTypes.InvokeResponse }, cancellationToken).ConfigureAwait(false);
+                        await turnContext.SendActivityAsync(new InvokeResponseActivity(invokeResponse), cancellationToken).ConfigureAwait(false);
                     }
 
                     break;

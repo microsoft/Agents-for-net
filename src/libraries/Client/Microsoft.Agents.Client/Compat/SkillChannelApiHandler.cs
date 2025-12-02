@@ -200,6 +200,8 @@ namespace Microsoft.Agents.Client.Compat
             // adapter.ContinueConversation() sends an event activity with ContinueConversation in the name.
             // this warms up the incoming middlewares but once that's done and we hit the custom callback,
             // we need to swap the values back to the ones received from the skill so the bot gets the actual activity.
+
+            /*!!!
             turnContext.Activity.ChannelData = activity.ChannelData;
             turnContext.Activity.Code = activity.Code;
             turnContext.Activity.Entities = activity.Entities;
@@ -213,6 +215,7 @@ namespace Microsoft.Agents.Client.Compat
             turnContext.Activity.Text = activity.Text;
             turnContext.Activity.Type = activity.Type;
             turnContext.Activity.Value = activity.Value;
+            */
         }
 
         private async Task<ChannelConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
@@ -251,7 +254,7 @@ namespace Microsoft.Agents.Client.Compat
                         break;
                     case ActivityTypes.Command:
                     case ActivityTypes.CommandResult:
-                        if (activity.Name.StartsWith("application/", StringComparison.Ordinal))
+                        if ((activity as ICommandActivity).Name.StartsWith("application/", StringComparison.Ordinal))
                         {
                             // Send to channel and capture the resource response for the SendActivityCall so we can return it.
                             resourceResponse = await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);

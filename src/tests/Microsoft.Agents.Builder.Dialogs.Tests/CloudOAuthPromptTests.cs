@@ -163,9 +163,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var sentActivity = adapter.SentActivities.First();
             Assert.Equal(ActivityTypes.Message, sentActivity.Type);
-            Assert.Single(sentActivity.Attachments);
+            Assert.Single((sentActivity as IMessageActivity).Attachments);
 
-            var sentActivityAttachment = sentActivity.Attachments.First();
+            var sentActivityAttachment = (sentActivity as IMessageActivity).Attachments.First();
             Assert.Equal(OAuthCard.ContentType, sentActivityAttachment.ContentType);
             Assert.IsType<OAuthCard>(sentActivityAttachment.Content);
 
@@ -247,9 +247,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var sentActivity = adapter.SentActivities.First();
             Assert.Equal(ActivityTypes.Message, sentActivity.Type);
-            Assert.Single(sentActivity.Attachments);
+            Assert.Single((sentActivity as IMessageActivity).Attachments);
 
-            var sentActivityAttachment = sentActivity.Attachments.First();
+            var sentActivityAttachment = (sentActivity as IMessageActivity).Attachments.First();
             Assert.Equal(SigninCard.ContentType, sentActivityAttachment.ContentType);
             Assert.IsType<SigninCard>(sentActivityAttachment.Content);
 

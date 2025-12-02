@@ -62,15 +62,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
 
             var isMatch = context.Activity.IsType(ActivityTypes.Message);
-
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
-                context.Activity.Name == SignInConstants.VerifyStateOperationName;
-
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
-                context.Activity.Name == SignInConstants.TokenExchangeOperationName;
-
-            isMatch |= context.Activity.IsType(ActivityTypes.Invoke) &&
-                context.Activity.Name == SignInConstants.SignInFailure;
+            if (context.Activity is IInvokeActivity invoke)
+            {
+                isMatch |= invoke.Name == SignInConstants.VerifyStateOperationName;
+                isMatch |= invoke.Name == SignInConstants.TokenExchangeOperationName;
+                isMatch |= invoke.Name == SignInConstants.SignInFailure;
+            }
 
             return isMatch;
         }
