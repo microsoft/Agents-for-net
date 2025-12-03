@@ -117,8 +117,9 @@ namespace Microsoft.Agents.Core.Models.Activities
         [JsonIgnore]
         public string RequestId { get; set; }
 
-        /// <inheritdoc/>
+        //[JsonExtensionData]
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
+
         public ConversationReference RelatesTo { get; set; }
 
         /// <inheritdoc/>
@@ -199,49 +200,6 @@ namespace Microsoft.Agents.Core.Models.Activities
             reply.Conversation = new ConversationAccount(isGroup: activity.Conversation.IsGroup, id: activity.Conversation.Id, name: activity.Conversation.Name);
             reply.Entities = [];
             return reply;
-        }
-
-        /// <summary>
-        /// Indicates whether this activity is of a specified activity type.
-        /// </summary>
-        /// <param name="activityType">The activity type to check for.</param>
-        /// <returns><c>true</c> if this activity is of the specified activity type; otherwise, <c>false</c>.</returns>
-        internal bool IsActivity(string activityType)
-        {
-            /*
-             * NOTE: While it is possible to come up with a fancy looking "one-liner" to solve
-             * this problem, this code is purposefully more verbose due to optimizations.
-             *
-             * This main goal of the optimizations was to make zero allocations because it is called
-             * by all of the .AsXXXActivity methods which are used in a pattern heavily upstream to
-             * "pseudo-cast" the activity based on its type.
-             */
-
-            var type = Type;
-
-            // If there's no type set then we can't tell if it's the type they're looking for
-            if (type == null)
-            {
-                return false;
-            }
-
-            // Check if the full type value starts with the type they're looking for
-            var result = type.StartsWith(activityType, StringComparison.OrdinalIgnoreCase);
-
-            // If the full type value starts with the type they're looking for, then we need to check a little further to check if it's definitely the right type
-            if (result)
-            {
-                // If the lengths are equal, then it's the exact type they're looking for
-                result = type.Length == activityType.Length;
-
-                if (!result)
-                {
-                    // Finally, if the type is longer than the type they're looking for then we need to check if there's a / separator right after the type they're looking for
-                    result = type[activityType.Length] == '/';
-                }
-            }
-
-            return result;
         }
     }
 }

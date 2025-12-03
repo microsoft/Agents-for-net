@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Serialization.Converters;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Agents.Core.Serialization.Converters;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -94,9 +96,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.PropertyNameCaseInsensitive = true;
             options.IncludeFields = true;
             options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
-            //options.UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode;
-
-            //options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());

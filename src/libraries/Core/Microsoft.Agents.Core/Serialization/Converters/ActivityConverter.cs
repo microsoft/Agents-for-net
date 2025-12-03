@@ -13,9 +13,34 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 {
     internal class ActivityConverter : ConnectorConverter<Activity>
     {
+        public override bool CanConvert(Type typeToConvert) =>
+            typeof(Activity).IsAssignableFrom(typeToConvert);
+
         public override Activity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var activity = base.Read(ref reader, typeToConvert, options);
+            var localReader = reader;
+            using var doc = JsonDocument.ParseValue(ref localReader);
+            var typeDiscriminator = doc.RootElement.GetProperty("type").GetString() ?? throw new JsonException("Type discriminator not found.");
+
+            // TODO: Should use Attributes to pick up a list of Activity subclasses
+            // TODO: Handoff is a bit different (but doesn't have to be).  See Initiation vs Status.  May just collapse back to a single IHandoffActivity instead.
+            var toType = typeDiscriminator switch
+            {
+                ActivityTypes.Command => typeof(CommandActivity),
+                ActivityTypes.CommandResult => typeof(CommandResultActivity),
+                ActivityTypes.ConversationUpdate => typeof(ConversationUpdateActivity),
+                ActivityTypes.EndOfConversation => typeof(EndOfConversationActivity),
+                ActivityTypes.Event => typeof(EventActivity),
+                ActivityTypes.InstallationUpdate => typeof(InstallationUpdateActivity),
+                ActivityTypes.Invoke => typeof(InvokeActivity),
+                ActivityTypes.Message => typeof(MessageActivity),
+                ActivityTypes.MessageReaction => typeof(MessageReactionActivity),
+                ActivityTypes.Trace => typeof(TraceActivity),
+                ActivityTypes.Typing => typeof(TypingActivity),
+                _ => typeToConvert
+            };
+
+            var activity = base.Read(ref reader, toType, options);
 
             var productInfo = activity.GetProductInfoEntity();
             if (productInfo != null)

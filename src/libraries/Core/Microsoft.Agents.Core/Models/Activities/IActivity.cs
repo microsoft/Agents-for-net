@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core.Models.Entities;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Microsoft.Agents.Core.Models.Activities
 {
@@ -132,6 +133,8 @@ namespace Microsoft.Agents.Core.Models.Activities
         string Type { get; set; }
 
         string RequestId { get; set; }
+
+        IDictionary<string, JsonElement> Properties { get; set; }
 
         /// <summary>
         /// Updates this Activity with the delivery information from an existing <see cref="ConversationReference"/>.

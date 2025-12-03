@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             public bool IsTargetActivityType(string activityType)
             {
-                return IsActivity(activityType);
+                return IsType(activityType);
             }
         }
     }

@@ -24,15 +24,15 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 throw new JsonException($"JSON is not at the start of {typeToConvert.FullName}!");
             }
 
-            var value = new T();
+            var value = Activator.CreateInstance(typeToConvert);
 
-            var propertyMetadataMap = GetJsonPropertyMetadata(typeof(T), options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
+            var propertyMetadataMap = GetJsonPropertyMetadata(typeToConvert, options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
 
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
-                    return value;
+                    return (T)value;
                 }
 
                 if (reader.TokenType == JsonTokenType.PropertyName)
@@ -41,11 +41,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
                     if (propertyMetadataMap.TryGetValue(propertyName, out var entry))
                     {
-                        ReadProperty(ref reader, value, propertyName, options, entry.Property);
+                        ReadProperty(ref reader, (T)value, propertyName, options, entry.Property);
                     }
                     else
                     {
-                        ReadExtensionData(ref reader, value, propertyName, options);
+                        ReadExtensionData(ref reader, (T)value, propertyName, options);
                     }
                 }
             }
