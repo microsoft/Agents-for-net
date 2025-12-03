@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 
             if (string.IsNullOrEmpty(searchInvokeValue.QueryText))
             {
-                missingField = missingField == null ? "queryText" : ", queryText";
+                missingField = missingField == null ? "queryText" : $"{missingField}, queryText";
             }
 
             if (missingField != null)
@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             return true;
         }
 
-        public static bool TryValidateActionInvokeValue(IActivity activity, string exepctedAction, out AdaptiveCardInvokeValue actionInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        public static bool TryValidateActionInvokeValue(IActivity activity, string expectedAction, out AdaptiveCardInvokeValue actionInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
         {
             actionInvokeValue = null;
 
@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 return false;
             }
 
-            if (actionInvokeValue.Action.Type != exepctedAction)
+            if (actionInvokeValue.Action.Type != expectedAction)
             {
                 errorResponse = NotSupported($"The Invoke Action '{actionInvokeValue.Action.Type}' was not expected.");
                 return false;
