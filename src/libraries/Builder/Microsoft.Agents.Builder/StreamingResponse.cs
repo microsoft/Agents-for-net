@@ -511,11 +511,20 @@ namespace Microsoft.Agents.Builder
             }
             else if (_isTeamsChannel)
             {
-                // Teams MUST use the Activity.Id returned from the first Informative message for
-                // subsequent intermediate messages.  Do not set StreamId here.
+                if (turnContext.Activity.IsAgenticRequest())
+                {
+                    // Agentic requests do not support streaming responses at this time.
+                    // TODO : Enable streaming for agentic requests when supported.
+                    IsStreamingChannel = false;
+                }
+                else
+                {
+                    // Teams MUST use the Activity.Id returned from the first Informative message for
+                    // subsequent intermediate messages.  Do not set StreamId here.
 
-                Interval = 1000;
-                IsStreamingChannel = true;
+                    Interval = 1000;
+                    IsStreamingChannel = true;
+                }
             }
             else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
