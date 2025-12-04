@@ -5,9 +5,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Storage;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -246,6 +244,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         // Throws:
         //    ErrorResponseException
         //    UserCancelledException
+        //    ConsentRequiredException - caller should noop if no specific action required.
         private async Task<TokenResponse> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse result = null;
@@ -353,6 +352,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                     ConnectionName = _settings.AzureBotOAuthConnectionName,
                                     FailureDetail = ex.Message,
                                 }, cancellationToken).ConfigureAwait(false);
+
                             throw;
                         }
                     }
@@ -366,8 +366,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             {
                                 Id = tokenExchangeRequest.Id,
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
-                                FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
+                                FailureDetail = Error.ConsentRequiredCode,
                             }, cancellationToken).ConfigureAwait(false);
+
+                        throw new ConsentRequiredException();
                     }
                     else
                     {

@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Storage.Tests
 
         private BlobsStorage _storage;
         private readonly Mock<BlobClient> _client = new Mock<BlobClient>();
-        
+
         [Fact]
         public void ConstructorValidation()
         {
@@ -80,16 +80,6 @@ namespace Microsoft.Agents.Storage.Tests
         public async Task WriteAsync()
         {
             InitStorage();
-
-            _client.Setup(e => e.UploadAsync(
-                It.IsAny<Stream>(),
-                It.IsAny<BlobHttpHeaders>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobRequestConditions>(),
-                It.IsAny<IProgress<long>>(),
-                It.IsAny<AccessTier?>(),
-                It.IsAny<StorageTransferOptions>(),
-                It.IsAny<CancellationToken>()));
 
             var changes = new Dictionary<string, object>
             {
@@ -304,9 +294,22 @@ namespace Microsoft.Agents.Storage.Tests
 
         private void InitStorage(JsonSerializerOptions jsonSerializerSettings = default)
         {
-            var container = new Mock<BlobContainerClient>();
             var jsonSerializer = jsonSerializerSettings;
+            var container = new Mock<BlobContainerClient>();
+            var response = new Mock<Response<BlobContentInfo>>();
+            var contentInfo = new Mock<BlobContentInfo>();
 
+            response.SetupGet(e => e.Value).Returns(contentInfo.Object);
+            _client.Setup(e => e.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobHttpHeaders>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<IProgress<long>>(),
+                It.IsAny<AccessTier?>(),
+                It.IsAny<StorageTransferOptions>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response.Object));
             container.Setup(e => e.GetBlobClient(It.IsAny<string>()))
                 .Returns(_client.Object);
             container.Setup(e => e.CreateIfNotExistsAsync(It.IsAny<PublicAccessType>(), It.IsAny<IDictionary<string, string>>(), It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<CancellationToken>()));

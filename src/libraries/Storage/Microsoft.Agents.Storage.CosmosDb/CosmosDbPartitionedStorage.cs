@@ -4,7 +4,6 @@
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +20,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
     /// <summary>
     /// Implements an CosmosDB based storage provider using partitioning for an Agent.
     /// </summary>
-    public class CosmosDbPartitionedStorage : IStorage, IDisposable
+    public class CosmosDbPartitionedStorage : IStorageExt, IDisposable
     {
         private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
@@ -138,7 +137,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
 
             return storeItems;
         }
-        
+
         //<inheritdoc/>
         public async Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
         {
@@ -155,14 +154,23 @@ namespace Microsoft.Agents.Storage.CosmosDb
         }
 
         /// <inheritdoc/>
-        public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        {
+            return WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
+            writeOptions ??= new StorageWriteOptions();
+
+            var results = new Dictionary<string, IStoreItem>(changes.Count);
             if (changes.Count == 0)
             {
                 // Nothing to write is a no-op.
-                return;
+                return results;
             }
 
             // Ensure Initialization has been run
@@ -187,34 +195,59 @@ namespace Microsoft.Agents.Storage.CosmosDb
                     RealId = change.Key,
                     Document = document,
                 };
-
+                var partitionKey = GetPartitionKey(documentChange.PartitionKey);
+                var requestOptions = new ItemRequestOptions();
                 var etag = (change.Value as IStoreItem)?.ETag;
 
-                // Store per eTag rules
-                if (etag == null || etag == "*")
+                if (etag != null && etag != "*")
                 {
-                    // if new item or * then insert or replace unconditionally
-                    await _container.UpsertItemAsync(
-                            documentChange,
-                            GetPartitionKey(documentChange.PartitionKey),
-                            cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
+                    if (etag.Length > 0)
+                    {
+                        requestOptions.IfMatchEtag = etag;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("etag empty");
+                    }
                 }
-                else if (etag.Length > 0)
+
+                try
                 {
-                    // if we have an etag, do opt. concurrency replace
-                    await _container.UpsertItemAsync(
-                            documentChange,
-                            GetPartitionKey(documentChange.PartitionKey),
-                            new ItemRequestOptions() { IfMatchEtag = etag, },
-                            cancellationToken)
-                        .ConfigureAwait(false);
+                    ItemResponse<DocumentStoreItem> response;
+                    if (writeOptions.IfNotExists)
+                    {
+                        requestOptions.IfNoneMatchEtag = "*";
+                        response = await _container.CreateItemAsync(
+                                documentChange,
+                                partitionKey,
+                                requestOptions,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // if we have an etag, do opt. concurrency replace
+                        response = await _container.UpsertItemAsync(
+                                documentChange,
+                                partitionKey,
+                                requestOptions,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+
+                    results[change.Key] = new WriteResult() { ETag = response.ETag };
                 }
-                else
+                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
                 {
-                    throw new ArgumentException("etag empty");
+                    throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict.");
+                }
+                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ItemExistsException($"Unable to write '{change.Key}' because it already exists.");
                 }
             }
+
+            return results;
         }
 
         //<inheritdoc/>
@@ -477,7 +510,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                         var json = sr.ReadToEnd();
                         var jsonObject = JsonObject.Parse(json);
 
-                        return (T) jsonObject.Deserialize<T>(_serializerSettings);
+                        return (T)jsonObject.Deserialize<T>(_serializerSettings);
                     }
                 }
             }
@@ -491,7 +524,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             public override Stream ToStream<T>(T input)
             {
                 var streamPayload = new MemoryStream();
-                
+
                 JsonSerializer.Serialize(streamPayload, input, _serializerSettings);
                 streamPayload.Seek(0, SeekOrigin.Begin);
                 streamPayload.Position = 0;
