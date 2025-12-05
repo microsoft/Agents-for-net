@@ -127,4 +127,5 @@
 	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
   
   </ItemGroup>
+
 </Project>
