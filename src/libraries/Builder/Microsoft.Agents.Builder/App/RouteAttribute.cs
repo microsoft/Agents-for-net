@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -128,24 +129,24 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(Text))
                 {
 #if !NETSTANDARD
-                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnMessage(Text, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnMessage(Text, (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
 #if !NETSTANDARD
-                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnMessage(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnMessage(new Regex(Regex), (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                    CreateHandlerDelegate<RouteHandler<IMessageActivity>>(app, attributedMethod, out var delegateHandler);
 
                     app.OnMessage(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
@@ -159,24 +160,24 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
 #if !NETSTANDARD
-                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler<IEventActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnEvent(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnEvent(EventName, (RouteHandler<IEventActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IEventActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
 #if !NETSTANDARD
-                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler<IEventActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnEvent(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnEvent(new Regex(Regex), (RouteHandler<IEventActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IEventActivity>), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                    CreateHandlerDelegate<RouteHandler<IEventActivity>>(app, attributedMethod, out var delegateHandler);
 
                     app.OnEvent(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
@@ -190,16 +191,16 @@ namespace Microsoft.Agents.Builder.App
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
 #if !NETSTANDARD
-                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler<IConversationUpdateActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #else
-                    app.OnConversationUpdate(EventName, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.OnConversationUpdate(EventName, (RouteHandler<IConversationUpdateActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IConversationUpdateActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
 #endif
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                    CreateHandlerDelegate<RouteHandler<IConversationUpdateActivity>>(app, attributedMethod, out var delegateHandler);
 
                     app.OnConversationUpdate(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
                 }
@@ -210,12 +211,12 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (RouteType == RouteType.ReactionAdded)
             {
-                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                CreateHandlerDelegate<RouteHandler<IMessageReactionActivity>>(app, attributedMethod, out var delegateHandler);
                 app.OnMessageReactionsAdded(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
             }
             else if (RouteType == RouteType.ReactionRemoved)
             {
-                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                CreateHandlerDelegate<RouteHandler<IMessageReactionActivity>>(app, attributedMethod, out var delegateHandler);
                 app.OnMessageReactionsRemoved(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
             }
             else if (RouteType == RouteType.HandOff)

@@ -621,7 +621,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             turnContextMock.Setup(tc => tc.UpdateActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
             turnContextMock.Setup(tc => tc.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
 
-            var typedTurnContext = new TypedTurnContext<IInvokeActivity>(turnContextMock.Object);
+            var typedTurnContext = new Compat.TypedTurnContext<IInvokeActivity>(turnContextMock.Object);
 
             // Act
             var bot = new TestDelegatingTurnContextActivityHandler();

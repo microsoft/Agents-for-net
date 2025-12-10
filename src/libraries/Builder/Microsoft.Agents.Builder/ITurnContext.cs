@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Builder
     /// <seealso cref="IAgent"/>
     /// <seealso cref="ITurnContext"/>
     /// </remarks>
-    public interface ITurnContext<T> : ITurnContext
+    public interface ITurnContext<out T> : ITurnContext
         where T : IActivity
     {
         /// <summary>

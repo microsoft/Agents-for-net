@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.Models.Activities
     /// <summary>
     /// Control of the conversation has been transferred, or a request to transfer control of the conversation.
     /// </summary>
-    public interface IHandoffInitiationActivity : IEventActivity
+    public interface IHandoffActivity : IEventActivity
     {
         /// <summary>
         /// The Attachments field contains a flat list of objects to be displayed as part of this Activity. The value of 

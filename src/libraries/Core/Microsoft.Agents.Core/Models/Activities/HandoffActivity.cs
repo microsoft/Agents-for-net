@@ -3,9 +3,15 @@ using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core.Models.Activities
 {
-    public class HandoffInitiationActivity : Activity, IHandoffInitiationActivity
+    public class HandoffActivity : Activity, IHandoffActivity
     {
-        public HandoffInitiationActivity(IActivity activity, object handoffContext, Transcript transcript = null) : base(ActivityTypes.Handoff)
+        /// <summary>
+        /// Create Handoff Initiation Activity
+        /// </summary>
+        /// <param name="activity"></param>
+        /// <param name="handoffContext"></param>
+        /// <param name="transcript"></param>
+        public HandoffActivity(IActivity activity, object handoffContext, Transcript transcript = null) : base(ActivityTypes.Handoff)
         {
             Id = Guid.NewGuid().ToString();
             Timestamp = DateTime.UtcNow;

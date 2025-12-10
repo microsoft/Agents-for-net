@@ -27,11 +27,11 @@ namespace Microsoft.Agents.Model.Tests
         {
             public IEnumerator<object[]> GetEnumerator()
             {
-                yield return new object[] { new Activity() { Text = "text" }, true };
-                yield return new object[] { new Activity() { Summary = "summary" }, true };
-                yield return new object[] { new Activity() { Attachments = GetAttachments() }, true };
-                yield return new object[] { new Activity() { ChannelData = new MyChannelData() }, true };
-                yield return new object[] { new Activity(), false };
+                yield return new object[] { new MessageActivity() { Text = "text" }, true };
+                yield return new object[] { new MessageActivity() { Summary = "summary" }, true };
+                yield return new object[] { new MessageActivity() { Attachments = GetAttachments() }, true };
+                yield return new object[] { new MessageActivity() { ChannelData = new MyChannelData() }, true };
+                yield return new object[] { new MessageActivity(), false };
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

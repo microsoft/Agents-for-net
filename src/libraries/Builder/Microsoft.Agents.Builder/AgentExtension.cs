@@ -31,7 +31,8 @@ namespace Microsoft.Agents.Builder
                 return isForChannel && await routeSelector(turnContext, cancellationToken);
             });
 
-            agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers);
+            //!!! hard-coded for not Agentic
+            agentApplication.AddRoute(ensureChannelMatches, routeHandler, false, isInvokeRoute, rank, autoSignInHandlers);
         }
     }
 }

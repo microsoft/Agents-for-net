@@ -187,19 +187,5 @@ namespace Microsoft.Agents.Core.Models.Activities
 
             return this;
         }
-
-        public static T CreateReply<T>(IActivity activity, Func<T> factory) where T : class, IActivity
-        {
-            var reply = factory();
-            reply.Timestamp = DateTime.UtcNow;
-            reply.From = new ChannelAccount(id: activity?.Recipient?.Id, name: activity?.Recipient?.Name);
-            reply.Recipient = new ChannelAccount(id: activity?.From?.Id, name: activity?.From?.Name);
-            reply.ReplyToId = !string.Equals(activity.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || activity.ChannelId != "directline" && activity.ChannelId != "webchat" ? activity.Id : null;
-            reply.ServiceUrl = activity.ServiceUrl;
-            reply.ChannelId = activity.ChannelId;
-            reply.Conversation = new ConversationAccount(isGroup: activity.Conversation.IsGroup, id: activity.Conversation.Id, name: activity.Conversation.Name);
-            reply.Entities = [];
-            return reply;
-        }
     }
 }

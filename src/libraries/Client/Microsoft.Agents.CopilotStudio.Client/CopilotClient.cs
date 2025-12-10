@@ -164,7 +164,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <returns></returns>
         public IAsyncEnumerable<IActivity> AskQuestionAsync(string question, string? conversationId = default, CancellationToken ct = default)
         {
-            var activity = new Activity
+            var activity = new MessageActivity
             {
                 Type = "message",
                 Text = question,

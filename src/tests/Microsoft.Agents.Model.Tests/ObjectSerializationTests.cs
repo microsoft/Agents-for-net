@@ -21,13 +21,12 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ActivityValueStringSerialize()
         {
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Value = "10"
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<string>(inActivity.Value);
@@ -37,13 +36,12 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ActivityValueNumberSerialize()
         {
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Value = 10
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<int>(inActivity.Value);
@@ -53,13 +51,12 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ActivityValueBooleanSerialize()
         {
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Value = true
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<bool>(inActivity.Value);
@@ -69,13 +66,12 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ActivityValueObjectSerialize()
         {
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Value = new { key1 = "1", key2 = 1 }
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<JsonElement>(inActivity.Value);
             var expected = outActivity.Value.ToJsonElements();
@@ -95,14 +91,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: String data comes back as a string
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = "testData"
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<string>(inActivity.ChannelData);
             Assert.Equal(outActivity.ChannelData, inActivity.ChannelData);
@@ -115,14 +110,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: String JSON data comes back as a JsonElement
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = "{\"stringProperty\":\"stringValue\",\"numberProperty\":10}"
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<JsonElement>(inActivity.ChannelData);
             Assert.Equal(outActivity.ChannelData, inActivity.ChannelData.ToString());
@@ -135,14 +129,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: int data comes back as an int
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = 1
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<int>(inActivity.ChannelData);
             Assert.Equal(outActivity.ChannelData, inActivity.ChannelData);
@@ -155,14 +148,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: Boolean data comes back as a boolean
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = true
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<bool>(inActivity.ChannelData);
             Assert.Equal(outActivity.ChannelData, inActivity.ChannelData);
@@ -175,14 +167,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: Object data comes back as a JsonElement
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = new { key1 = "1", key2 = 1 }
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<JsonElement>(inActivity.ChannelData);
             var expected = outActivity.ChannelData.ToJsonElements();
@@ -201,14 +192,13 @@ namespace Microsoft.Agents.Model.Tests
             //
             // This test: Array data comes back as a JsonElement
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 ChannelData = new[] { "test1", "test2" }
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<JsonElement>(inActivity.ChannelData);
             var actualArray = (JsonElement)inActivity.ChannelData;
@@ -237,14 +227,13 @@ namespace Microsoft.Agents.Model.Tests
                 Value = "10"
             });
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<string>(inActivity.SuggestedActions.Actions[0].Value);
@@ -262,14 +251,13 @@ namespace Microsoft.Agents.Model.Tests
                 Value = 10
             });
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<int>(inActivity.SuggestedActions.Actions[0].Value);
@@ -287,14 +275,13 @@ namespace Microsoft.Agents.Model.Tests
                 Value = true
             });
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.NotNull(inActivity);
             Assert.IsType<bool>(inActivity.SuggestedActions.Actions[0].Value);
@@ -312,14 +299,13 @@ namespace Microsoft.Agents.Model.Tests
                 Value = new { key1 = "1", key2 = 1 }
             });
 
-            var outActivity = new Activity
+            var outActivity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
 
-            var inActivity = RoundTrip(outActivity);
+            var inActivity = RoundTrip<IMessageActivity>(outActivity);
 
             Assert.IsType<JsonElement>(inActivity.SuggestedActions.Actions[0].Value);
             var expected = outActivity.SuggestedActions.Actions[0].Value.ToJsonElements();
@@ -336,11 +322,11 @@ namespace Microsoft.Agents.Model.Tests
         {
             var text = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", "ComplexActivityPayload.json"));
 
-            var activity = ProtocolJsonSerializer.ToObject<Activity>(text);
+            var activity = ProtocolJsonSerializer.ToObject<IMessageActivity>(text);
             AssertPropertyValues(activity);
 
             var json = ProtocolJsonSerializer.ToJson(activity);
-            var activity2 = ProtocolJsonSerializer.ToObject<Activity>(json);
+            var activity2 = ProtocolJsonSerializer.ToObject<IMessageActivity>(json);
 
             AssertPropertyValues(activity2);
         }
@@ -398,16 +384,16 @@ namespace Microsoft.Agents.Model.Tests
         {
             var text = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", "ComplexActivityPayload.json"));
 
-            var activity = ProtocolJsonSerializer.ToObject<Activity>(text);
+            var activity = ProtocolJsonSerializer.ToObject<IMessageActivity>(text);
 
             var json = ProtocolJsonSerializer.ToJson(activity);
 
             const int threadCount = 50;
-            var results = new Activity[threadCount];
+            var results = new IMessageActivity[threadCount];
 
             Parallel.For(0, threadCount, i =>
             {
-                results[i] = RoundTrip(activity);
+                results[i] = RoundTrip<IMessageActivity>(activity);
             });
 
             foreach (var result in results)
@@ -460,13 +446,13 @@ namespace Microsoft.Agents.Model.Tests
         }
 #endif
 
-        private Activity RoundTrip(Activity outActivity)
+        private T RoundTrip<T>(IActivity outActivity)
         {
             var json = ProtocolJsonSerializer.ToJson(outActivity);
-            return ProtocolJsonSerializer.ToObject<Activity>(json);
+            return ProtocolJsonSerializer.ToObject<T>(json);
         }
 
-        private void AssertPropertyValues(Activity activity)
+        private void AssertPropertyValues(IMessageActivity activity)
         {
             activity = activity ?? throw new ArgumentNullException(nameof(activity));
             AssertPropertyValue("cci_content_version", "1286428", activity);
@@ -474,15 +460,15 @@ namespace Microsoft.Agents.Model.Tests
             AssertPropertyValue("cci_bot_id", "215797fa-5550-4f12-a967-c15437884964", activity);
             AssertPropertyValue("cci_user_token", "secret", activity);
 
-            // Validate lists
-            Assert.NotEmpty(activity.MembersAdded);
-            Assert.NotEmpty(activity.MembersRemoved);    
-            Assert.NotEmpty(activity.ReactionsAdded);
-            Assert.NotEmpty(activity.ReactionsRemoved);
+            // Validate non-Message fields in IActivity.Properties
+            AssertPropertyExists("membersAdded", activity);
+            AssertPropertyExists("membersRemoved", activity);
+            AssertPropertyExists("reactionsAdded", activity);
+            AssertPropertyExists("reactionsRemoved", activity);
+            AssertPropertyExists("textHighlights", activity);
 
             Assert.NotNull(activity.Attachments);
             Assert.NotNull(activity.ListenFor);
-            Assert.NotNull(activity.TextHighlights);
 
             Assert.NotEmpty(activity.Entities);
             Assert.NotNull(activity.GetProductInfoEntity());
@@ -513,10 +499,15 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal("level two", testObject.TestObject?.ObjectName);
         }
 
-        private void AssertPropertyValue(string propertyName, string expectedValue, Activity activity)
+        private void AssertPropertyValue(string propertyName, string expectedValue, IActivity activity)
         {
             var actualValue = activity.Properties[propertyName].GetString();
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        private void AssertPropertyExists(string propertyName, IActivity activity)
+        {
+            Assert.True(activity.Properties.ContainsKey(propertyName), $"Property '{propertyName}' does not exist on activity.");
         }
 
         private class TestObjectClass

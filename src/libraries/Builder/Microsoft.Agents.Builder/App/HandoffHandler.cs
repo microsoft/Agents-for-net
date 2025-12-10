@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,5 +17,5 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    public delegate Task HandoffHandler(ITurnContext turnContext, ITurnState turnState, string continuation, CancellationToken cancellationToken);
+    public delegate Task HandoffHandler(ITurnContext<IHandoffActivity> turnContext, ITurnState turnState, string continuation, CancellationToken cancellationToken);
 }

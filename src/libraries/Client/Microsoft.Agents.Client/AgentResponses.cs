@@ -105,7 +105,8 @@ namespace Microsoft.Agents.Client
 
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
-            agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers);
+            //!!! hard-coded for not Agentic
+            agentApplication.AddRoute(routeSelector, routeHandler, false, isInvokeRoute, rank, autoSignInHandlers);
         }
     }
 }

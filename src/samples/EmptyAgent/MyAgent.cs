@@ -11,30 +11,23 @@ using Microsoft.Agents.Core.Models.Activities;
 
 namespace EmptyAgent;
 
-public class MyAgent : AgentApplication
+public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
+    [ConversationUpdate(Event = "membersAdded")]
+    public async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        if (turnContext.Activity is IConversationUpdateActivity activity)
+        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
-            foreach (ChannelAccount member in activity.MembersAdded)
+            if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                if (member.Id != activity.Recipient.Id)
-                {
-                    await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
-                }
+                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
             }
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Message]
+    public async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {(turnContext.Activity as IMessageActivity)!.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 }

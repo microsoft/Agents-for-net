@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models.Activities;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,16 +27,10 @@ namespace Microsoft.Agents.Builder.App
     /// <returns></returns>
     public delegate Task RouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
+    public delegate Task RouteHandler<in T>(ITurnContext<T> turnContext, ITurnState turnState, CancellationToken cancellationToken) where T : IActivity;
+
     internal class Route
     {
-        public Route(RouteSelector selector, bool isInvokeRoute = false, bool isAgenticRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isAgenticRoute, isInvokeRoute)
-        {
-        }
-
-        public Route(RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false) : this((_, _) => Task.FromResult(true), handler, isInvokeRoute, isAgenticRoute, null)
-        {
-        }
-
         public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, params string[] autoSignInHandler)
         {
             Selector = selector;

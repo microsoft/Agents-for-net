@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Model.Tests
             lst.Add(entity);
             activity.Entities = lst;
 
-            var strippedActivityText = activity.RemoveRecipientMention();
+            var strippedActivityText = activity.RemoveRecipientMentionText();
             Assert.Equal(strippedActivityText, expectedStrippedName);
         }
 
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Model.Tests
             lst.Add(entity);
             activity.Entities = lst;
 
-            var strippedActivityText = activity.RemoveRecipientMention();
+            var strippedActivityText = activity.RemoveRecipientMentionText();
             Assert.Equal(strippedActivityText, expectedStrippedName);
         }
 
@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             // https://github.com/Microsoft/botbuilder-dotnet/issues/1580
             var activity = CreateActivity("en-us", createRecipient, createFrom);
-            var trace = activity.CreateTrace("test", value, valueType, label);
+            var trace = new TraceActivity(activity, "test", value, valueType, label);
 
             Assert.NotNull(trace);
             Assert.True(trace.Type == ActivityTypes.Trace);
@@ -213,35 +213,11 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Theory]
-        [InlineData(nameof(ActivityTypes.EndOfConversation))]
-        [InlineData(nameof(ActivityTypes.Event))]
-        [InlineData(nameof(ActivityTypes.Handoff))]
-        [InlineData(nameof(ActivityTypes.Invoke))]
-        [InlineData(nameof(ActivityTypes.Message))]
-        [InlineData(nameof(ActivityTypes.Typing))]
-        public void CanCreateActivities(string activityType)
-        {
-            var createActivityMethod = typeof(Activity).GetMethod($"Create{activityType}Activity");
-            var activity = (Activity)createActivityMethod.Invoke(null, new object[0]);
-            var expectedActivityType = (string)typeof(ActivityTypes).GetField(activityType).GetValue(null);
-
-            Assert.NotNull(activity);
-            Assert.True(activity.Type == expectedActivityType);
-
-            if (expectedActivityType == ActivityTypes.Message)
-            {
-                Assert.IsType<List<Attachment>>(activity.Attachments);
-                Assert.True(activity.Attachments.Count == 0);
-                Assert.IsType<List<Entity>>(activity.Entities);
-            }
-        }
-
-        [Theory]
         [InlineData("TestTrace", null, null, null)]
         [InlineData("TestTrace", null, "TestValue", null)]
         public void TestCreateTraceActivity(string name, string valueType, object value, string label)
         {
-            var activity = Activity.CreateTraceActivity(name, value, valueType, label);
+            var activity = new TraceActivity(name, value, valueType, label);
 
             Assert.NotNull(activity);
             Assert.True(activity.Type == ActivityTypes.Trace);
@@ -259,7 +235,7 @@ namespace Microsoft.Agents.Model.Tests
         public void CanCreateReplyActivity(string activityLocale, string text, bool createRecipient = true, bool createFrom = true, string createReplyLocale = null)
         {
             var activity = CreateActivity(activityLocale, createRecipient, createFrom);
-            var reply = activity.CreateReply(text, createReplyLocale);
+            var reply = activity.CreateReply(() => new MessageActivity(text) { Locale = createReplyLocale });
 
             Assert.NotNull(reply);
             Assert.True(reply.Type == ActivityTypes.Message);
@@ -440,13 +416,13 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void SerializeTupleValue()
         {
-            var activity = new Activity()
+            var activity = new MessageActivity()
             {
                 Value = ("string1", "string2")
             };
 
             var json = ProtocolJsonSerializer.ToJson(activity);
-            var inActivity = ProtocolJsonSerializer.ToObject<Activity>(json);
+            var inActivity = ProtocolJsonSerializer.ToObject<IMessageActivity>(json);
 
             var outTupleValue = activity.Value;
             var inTupleValue = ProtocolJsonSerializer.ToObject<(string, string)>(inActivity.Value);
@@ -454,7 +430,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         // Default locale intentionally oddly-cased to check that it isn't defaulted somewhere, but tests stay in English
-        private static Activity CreateActivity(string locale, bool createRecipient = true, bool createFrom = true)
+        private static MessageActivity CreateActivity(string locale, bool createRecipient = true, bool createFrom = true)
         {
             var properties = ProtocolJsonSerializer.ToJsonElements("{ \"name\": \"Value\" }");
 
@@ -486,7 +462,7 @@ namespace Microsoft.Agents.Model.Tests
                 Role = "ConversationAccount_Role",
             };
 
-            var activity = new Activity
+            var activity = new MessageActivity
             {
                 Id = "123",
                 From = account1,

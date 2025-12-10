@@ -21,6 +21,14 @@ namespace Microsoft.Agents.Core.Models.Activities
             Value = value;
         }
 
+        public TraceActivity(string name, object value = null, string valueType = null, [CallerMemberName] string label = null) : base(ActivityTypes.Trace)
+        {
+            Name = name;
+            Label = label;
+            ValueType = valueType ?? value?.GetType().Name;
+            Value = value;
+        }
+
         public string Label { get; set; }
         public string Name { get; set; }
         //!!!public ConversationReference RelatesTo { get; set; }

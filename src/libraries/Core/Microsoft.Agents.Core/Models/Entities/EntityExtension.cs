@@ -134,7 +134,6 @@ namespace Microsoft.Agents.Core.Models.Entities
             }
         }
 
-
         /// <summary>
         /// Remove any mention text for given id from the Activity.Text property.  For example, given the message
         /// `@echoAgent Hi Agent`, this will remove "@echoAgent", leaving `Hi Agent`.
@@ -175,6 +174,11 @@ namespace Microsoft.Agents.Core.Models.Entities
             }
 
             return null;
+        }
+
+        public static string RemoveRecipientMentionText<T>(this T activity) where T : IActivity
+        {
+            return activity.RemoveMentionText(activity.Recipient?.Id);
         }
 
         public static bool IsStreamingMessage(this IActivity activity)
