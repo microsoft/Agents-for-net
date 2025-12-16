@@ -13,6 +13,9 @@ namespace Microsoft.Agents.Authentication
 
         Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default);
 
+        Task<string> GetAgenticInstanceTokenWithScopesAsync(string tenantId, string agentAppInstanceId, IList<string> scopes, CancellationToken cancellationToken = default);
+
+
         Task<string> GetAgenticUserTokenAsync(string tenantId, string agentAppInstanceId, string upn, IList<string> scopes, CancellationToken cancellationToken = default);
     }
 }
