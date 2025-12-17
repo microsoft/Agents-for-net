@@ -14,7 +14,7 @@
 
 	<ItemGroup>
       <PackageReference Include="Microsoft.NET.Test.Sdk" />
-      <PackageReference Condition="'$(TargetFramework)' == 'net4.8'" Include="System.IO.Compression" />
+	  <PackageReference Condition="'$(TargetFramework)' == 'net4.8'" Include="System.IO.Compression" />
       <PackageReference Include="xunit" />
       <PackageReference Include="xunit.runner.visualstudio">
         <PrivateAssets>all</PrivateAssets>
