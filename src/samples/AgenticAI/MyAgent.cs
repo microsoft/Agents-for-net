@@ -18,18 +18,25 @@ public class MyAgent : AgentApplication
         OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic", "me"]);
 
         // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["me"]);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["me_app_zeta"]);
+        OnMessage("-signout", OnSignOutAsync);
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
-        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, AAU token len={aauToken.Length}, Me token len={meToken.Length}", cancellationToken: cancellationToken);
+        //var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
+        //await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, AAU token len={aauToken.Length}, Me token len={meToken.Length}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, AAU token len={aauToken.Length}", cancellationToken: cancellationToken);
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+    }
+
+    private async Task OnSignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me_app_zeta", cancellationToken: cancellationToken);
     }
 }

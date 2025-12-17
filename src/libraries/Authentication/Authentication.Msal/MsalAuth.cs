@@ -185,10 +185,10 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
-            return await GetAgenticInstanceTokenWithScopesAsync(tenantId, agentAppInstanceId, ["api://AzureAdTokenExchange/.default"], cancellationToken).ConfigureAwait(false);
+            return await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, ["api://AzureAdTokenExchange/.default"], cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<string> GetAgenticInstanceTokenWithScopesAsync(string tenantId, string agentAppInstanceId, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 

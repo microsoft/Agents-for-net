@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Builder
                 {
                     if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
                     {
-                        return agenticTokenProvider.GetAgenticInstanceTokenWithScopesAsync(
+                        return agenticTokenProvider.GetAgenticInstanceTokenAsync(
                             turnContext.Activity.GetAgenticTenantId(),
                             turnContext.Activity.GetAgenticInstanceId(),
                             scopes,
