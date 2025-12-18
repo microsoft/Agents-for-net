@@ -30,37 +30,34 @@ namespace Microsoft.Agents.Connector.Errors
     /// </summary>
     internal static partial class ErrorHelper
     {
-        /// <summary>
-        /// Base error code for the authentication provider
-        /// </summary>
-        private static readonly int baseBuilderErrorCode = -60000;
+        // Base error code for the connector: -50500
 
-        internal static AgentErrorDefinition InvalidAccessTokenForAgentCallback = new AgentErrorDefinition(baseBuilderErrorCode, Properties.Resources.ConversationResponseUnAuthorized, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendGetConversationsError = new AgentErrorDefinition(baseBuilderErrorCode - 1, Properties.Resources.GetConversationsError, "https://aka.ms/AgentsSDK-Error02");
-        internal static AgentErrorDefinition SendCreateConversationError = new AgentErrorDefinition(baseBuilderErrorCode - 2, Properties.Resources.CreateConversationError, "https://aka.ms/AgentsSDK-Error03");
-        internal static AgentErrorDefinition SendSendConversationError = new AgentErrorDefinition(baseBuilderErrorCode - 3, Properties.Resources.SendToConversationError, "https://aka.ms/AgentsSDK-Error04");
-        internal static AgentErrorDefinition SendConversationHistoryError = new AgentErrorDefinition(baseBuilderErrorCode - 4, Properties.Resources.SendConversationHistoryError, "https://aka.ms/AgentsSDK-Error05");
-        internal static AgentErrorDefinition SendUpdateActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 5, Properties.Resources.SendUpdateActivityError, "https://aka.ms/AgentsSDK-Error06");
-        internal static AgentErrorDefinition SendReplyToActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 6, Properties.Resources.ReplyToActivityError, "https://aka.ms/AgentsSDK-Error07");
-        internal static AgentErrorDefinition SendDeleteActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 7, Properties.Resources.SendDeleteActivity, "https://aka.ms/AgentsSDK-Error08");
-        internal static AgentErrorDefinition SendGetConversationMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 8, Properties.Resources.SendGetConversationMembers, "https://aka.ms/AgentsSDK-Error09");
-        internal static AgentErrorDefinition SendGetConversationMemberError = new AgentErrorDefinition(baseBuilderErrorCode - 9, Properties.Resources.SendGetConversationMember, "https://aka.ms/AgentsSDK-Error10");
-        internal static AgentErrorDefinition SendDeleteConversationMemberError = new AgentErrorDefinition(baseBuilderErrorCode - 10, Properties.Resources.SendDeleteConversationMember, "https://aka.ms/AgentsSDK-Error11");
-        internal static AgentErrorDefinition SendGetConversationPagedMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 11, Properties.Resources.SendGetConversationPagedMembers, "https://aka.ms/AgentsSDK-Error12");
-        internal static AgentErrorDefinition SendGetActivityMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 12, Properties.Resources.SendGetActivityMembers, "https://aka.ms/AgentsSDK-Error13");
-        internal static AgentErrorDefinition SendUploadAttachmentError = new AgentErrorDefinition(baseBuilderErrorCode - 13, Properties.Resources.SendUploadAttachment, "https://aka.ms/AgentsSDK-Error14");
-        internal static AgentErrorDefinition GetSignInResourceAsync_BadRequestError = new AgentErrorDefinition(baseBuilderErrorCode - 14, Properties.Resources.GetSignInResourceAsync_BadRequest, "https://aka.ms/AgentsSDK-Error15");
-        internal static AgentErrorDefinition GetAttachmentError = new AgentErrorDefinition(baseBuilderErrorCode - 15, Properties.Resources.GetAttachment_Error, "https://aka.ms/AgentsSDK-Error16");
-        internal static AgentErrorDefinition GetAttachmentInfoError = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.GetAttachmentInfoError, "https://aka.ms/AgentsSDK-Error17");
-        internal static AgentErrorDefinition TokenServiceExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 17, Properties.Resources.TokenServiceExchangeFailed, "https://aka.ms/AgentsSDK-Error18");
-        internal static AgentErrorDefinition TokenServiceExchangeUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.TokenServiceExchangeUnexpected, "https://aka.ms/AgentsSDK-Error19");
-        internal static AgentErrorDefinition TokenServiceGetTokenUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.TokenServiceGetTokenUnexpected, "https://aka.ms/AgentsSDK-Error19");
-        internal static AgentErrorDefinition TokenServiceGetAadTokenUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.TokenServiceGetAadTokenUnexpected, "https://aka.ms/AgentsSDK-Error20");
-        internal static AgentErrorDefinition TokenServiceSignOutUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.TokenServiceSignOutUnexpected, "https://aka.ms/AgentsSDK-Error21");
-        internal static AgentErrorDefinition TokenServiceGetTokenStatusUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 21, Properties.Resources.TokenServiceGetTokenStatusUnexpected, "https://aka.ms/AgentsSDK-Error22");
-        internal static AgentErrorDefinition TokenServiceGetTokenOrSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.TokenServiceGetTokenOrSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error23");
-        internal static AgentErrorDefinition TokenServiceGetSignInUrlUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.TokenServiceGetSignInUrlUnexpected, "https://aka.ms/AgentsSDK-Error24");
-        internal static AgentErrorDefinition TokenServiceGetSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.TokenServiceGetSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error25");
-        internal static AgentErrorDefinition TokenServiceExchangeErrorResponse = new AgentErrorDefinition(baseBuilderErrorCode - 25, Properties.Resources.TokenServiceExchangeErrorResponse, "https://aka.ms/AgentsSDK-Error26");
+        internal static readonly AgentErrorDefinition InvalidAccessTokenForAgentCallback = new AgentErrorDefinition(-50500, Properties.Resources.ConversationResponseUnAuthorized, "https://aka.ms/M365AgentsErrorCodes/#-50500");
+        internal static readonly AgentErrorDefinition SendGetConversationsError = new AgentErrorDefinition(-50501, Properties.Resources.GetConversationsError, "https://aka.ms/M365AgentsErrorCodes/#-50501");
+        internal static readonly AgentErrorDefinition SendCreateConversationError = new AgentErrorDefinition(-50502, Properties.Resources.CreateConversationError, "https://aka.ms/M365AgentsErrorCodes/#-50502");
+        internal static readonly AgentErrorDefinition SendSendConversationError = new AgentErrorDefinition(-50503, Properties.Resources.SendToConversationError, "https://aka.ms/M365AgentsErrorCodes/#-50503");
+        internal static readonly AgentErrorDefinition SendConversationHistoryError = new AgentErrorDefinition(-50504, Properties.Resources.SendConversationHistoryError, "https://aka.ms/M365AgentsErrorCodes/#-50504");
+        internal static readonly AgentErrorDefinition SendUpdateActivityError = new AgentErrorDefinition(-50505, Properties.Resources.SendUpdateActivityError, "https://aka.ms/M365AgentsErrorCodes/#-50505");
+        internal static readonly AgentErrorDefinition SendReplyToActivityError = new AgentErrorDefinition(-50506, Properties.Resources.ReplyToActivityError, "https://aka.ms/M365AgentsErrorCodes/#-50506");
+        internal static readonly AgentErrorDefinition SendDeleteActivityError = new AgentErrorDefinition(-50507, Properties.Resources.SendDeleteActivity, "https://aka.ms/M365AgentsErrorCodes/#-50507");
+        internal static readonly AgentErrorDefinition SendGetConversationMembersError = new AgentErrorDefinition(-50508, Properties.Resources.SendGetConversationMembers, "https://aka.ms/M365AgentsErrorCodes/#-50508");
+        internal static readonly AgentErrorDefinition SendGetConversationMemberError = new AgentErrorDefinition(-50509, Properties.Resources.SendGetConversationMember, "https://aka.ms/M365AgentsErrorCodes/#-50509");
+        internal static readonly AgentErrorDefinition SendDeleteConversationMemberError = new AgentErrorDefinition(-50510, Properties.Resources.SendDeleteConversationMember, "https://aka.ms/M365AgentsErrorCodes/#-50510");
+        internal static readonly AgentErrorDefinition SendGetConversationPagedMembersError = new AgentErrorDefinition(-50511, Properties.Resources.SendGetConversationPagedMembers, "https://aka.ms/M365AgentsErrorCodes/#-50511");
+        internal static readonly AgentErrorDefinition SendGetActivityMembersError = new AgentErrorDefinition(-50512, Properties.Resources.SendGetActivityMembers, "https://aka.ms/M365AgentsErrorCodes/#-50512");
+        internal static readonly AgentErrorDefinition SendUploadAttachmentError = new AgentErrorDefinition(-50513, Properties.Resources.SendUploadAttachment, "https://aka.ms/M365AgentsErrorCodes/#-50513");
+        internal static readonly AgentErrorDefinition GetSignInResourceAsync_BadRequestError = new AgentErrorDefinition(-50514, Properties.Resources.GetSignInResourceAsync_BadRequest, "https://aka.ms/M365AgentsErrorCodes/#-50514");
+        internal static readonly AgentErrorDefinition GetAttachmentError = new AgentErrorDefinition(-50515, Properties.Resources.GetAttachment_Error, "https://aka.ms/M365AgentsErrorCodes/#-50515");
+        internal static readonly AgentErrorDefinition GetAttachmentInfoError = new AgentErrorDefinition(-50516, Properties.Resources.GetAttachmentInfoError, "https://aka.ms/M365AgentsErrorCodes/#-50516");
+        internal static readonly AgentErrorDefinition TokenServiceExchangeFailed = new AgentErrorDefinition(-50517, Properties.Resources.TokenServiceExchangeFailed, "https://aka.ms/M365AgentsErrorCodes/#-50517");
+        internal static readonly AgentErrorDefinition TokenServiceExchangeUnexpected = new AgentErrorDefinition(-50518, Properties.Resources.TokenServiceExchangeUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50518");
+        internal static readonly AgentErrorDefinition TokenServiceGetTokenUnexpected = new AgentErrorDefinition(-50519, Properties.Resources.TokenServiceGetTokenUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50519");
+        internal static readonly AgentErrorDefinition TokenServiceGetAadTokenUnexpected = new AgentErrorDefinition(-50520, Properties.Resources.TokenServiceGetAadTokenUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50520");
+        internal static readonly AgentErrorDefinition TokenServiceSignOutUnexpected = new AgentErrorDefinition(-50521, Properties.Resources.TokenServiceSignOutUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50521");
+        internal static readonly AgentErrorDefinition TokenServiceGetTokenStatusUnexpected = new AgentErrorDefinition(-50522, Properties.Resources.TokenServiceGetTokenStatusUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50522");
+        internal static readonly AgentErrorDefinition TokenServiceGetTokenOrSignInResourceUnexpected = new AgentErrorDefinition(-50523, Properties.Resources.TokenServiceGetTokenOrSignInResourceUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50523");
+        internal static readonly AgentErrorDefinition TokenServiceGetSignInUrlUnexpected = new AgentErrorDefinition(-50524, Properties.Resources.TokenServiceGetSignInUrlUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50524");
+        internal static readonly AgentErrorDefinition TokenServiceGetSignInResourceUnexpected = new AgentErrorDefinition(-50525, Properties.Resources.TokenServiceGetSignInResourceUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50525");
+        internal static readonly AgentErrorDefinition TokenServiceExchangeErrorResponse = new AgentErrorDefinition(-50526, Properties.Resources.TokenServiceExchangeErrorResponse, "https://aka.ms/M365AgentsErrorCodes/#-50526");
     }
 }

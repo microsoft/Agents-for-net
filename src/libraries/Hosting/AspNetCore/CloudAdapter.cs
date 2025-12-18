@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -134,7 +135,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             else
             {
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
-                if (!IsValidChannelActivity(activity))
+                if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
@@ -251,29 +252,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             await _responseQueue.SendActivitiesAsync(incomingActivity.RequestId, [outActivity], cancellationToken).ConfigureAwait(false);
-
-            return true;
-        }
-
-        private bool IsValidChannelActivity(IActivity activity)
-        {
-            if (activity == null)
-            {
-                Logger.LogWarning("BadRequest: Missing activity");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
-            {
-                Logger.LogWarning("BadRequest: Missing activity type");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(activity.Conversation?.Id))
-            {
-                Logger.LogWarning("BadRequest: Missing Conversation.Id");
-                return false;
-            }
 
             return true;
         }

@@ -7,10 +7,12 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,8 +77,6 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
 
-        public AgenticAuthorization AgenticAuthorization { get; }
-
         /// <summary>
         /// The application's configured options.
         /// </summary>
@@ -119,13 +119,14 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="isInvokeRoute">Boolean indicating if the RouteSelector is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly"></param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            _routes.AddRoute(selector, handler, isInvokeRoute, rank, autoSignInHandlers);
+            _routes.AddRoute(selector, handler, isAgenticOnly, isInvokeRoute, rank, autoSignInHandlers);
  
             return this;
         }
@@ -144,7 +145,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult(context.Activity.IsType(type) && (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)));
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, type == ActivityTypes.Invoke, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -162,7 +163,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type) && (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)));
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -188,7 +189,7 @@ namespace Microsoft.Agents.Builder.App
                 });
             }
 
-            AddRoute(rs, handler, false, rank, autoSignInHandlers);
+            AddRoute(rs, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -280,7 +281,7 @@ namespace Microsoft.Agents.Builder.App
                     }
             }
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -305,7 +306,7 @@ namespace Microsoft.Agents.Builder.App
                     && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
-            AddRoute(wrapper, handler, false, rank, autoSignInHandlers);
+            AddRoute(wrapper, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -360,7 +361,7 @@ namespace Microsoft.Agents.Builder.App
                     && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
                 );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -394,7 +395,7 @@ namespace Microsoft.Agents.Builder.App
                     && textPattern.IsMatch(context.Activity.Text)
                 );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -421,7 +422,7 @@ namespace Microsoft.Agents.Builder.App
                 return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
-            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -489,7 +490,7 @@ namespace Microsoft.Agents.Builder.App
                     && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
                 );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -516,7 +517,7 @@ namespace Microsoft.Agents.Builder.App
                     && namePattern.IsMatch(context.Activity.Name)
                 );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -540,7 +541,7 @@ namespace Microsoft.Agents.Builder.App
                 return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityTypes.Event) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
-            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -564,7 +565,7 @@ namespace Microsoft.Agents.Builder.App
                 && context.Activity.ReactionsAdded.Count > 0
             );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -588,7 +589,7 @@ namespace Microsoft.Agents.Builder.App
                 && context.Activity.ReactionsRemoved.Count > 0
             );
 
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
+            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
 
@@ -619,9 +620,55 @@ namespace Microsoft.Agents.Builder.App
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             }
 
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
+            AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
             return this;
         }
+
+        /// <summary>
+        /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
+        /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
+        /// </summary>
+        /// <param name="handler">Function to call when the route is triggered</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+            {
+                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
+                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
+                return Task.FromResult
+                (
+                    (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
+                    && context.Activity.Type == ActivityTypes.Invoke
+                    && context.Activity.Name == "message/submitAction"
+                    && actionName == "feedback"
+                );
+            }
+
+            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value)!;
+                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
+
+                await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
+
+                // Check to see if an invoke response has already been added
+                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
+                {
+                    var activity = Activity.CreateInvokeResponseActivity();
+                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                }
+            }
+
+            AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
+            return this;
+        }
+
 
         /// <summary>
         /// Add a handler that will execute before the turn's activity handler logic is processed.

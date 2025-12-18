@@ -21,5 +21,7 @@ namespace Microsoft.Agents.Authentication
         /// Returns an Azure TokenCredential using this provider.
         /// </summary>
         TokenCredential GetTokenCredential();
+
+        ImmutableConnectionSettings ConnectionSettings { get; }
     }
 }

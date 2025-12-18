@@ -42,7 +42,6 @@
 		<!-- Force System.Text.Json to a safe version. -->
 		<PackageReference Include="System.Text.Json" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
-		<PackageReference Include="Microsoft.AspNetCore.Authorization" />
 		<PackageReference Include="Microsoft.IdentityModel.Validators" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 	</ItemGroup>

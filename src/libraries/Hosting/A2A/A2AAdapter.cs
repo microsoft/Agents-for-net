@@ -194,7 +194,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         bool isStreaming = !jsonRpcRequest.Method.Equals(A2AMethods.MessageSend);
         var sendParams = A2AModel.MessageSendParamsFromRequest(jsonRpcRequest);
         var (activity, contextId, taskId, message) = A2AActivity.ActivityFromRequest(jsonRpcRequest, sendParams: sendParams, isStreaming: isStreaming);
-        if (activity == null || !activity.Validate([ValidationContext.Channel, ValidationContext.Receiver]))
+        if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
         {
             httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
             return;

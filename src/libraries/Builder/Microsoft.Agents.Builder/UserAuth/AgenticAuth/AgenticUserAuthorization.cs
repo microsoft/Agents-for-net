@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -61,23 +62,30 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            IAccessTokenProvider connection = null;
+            if (!turnContext.Activity.IsAgenticRequest())
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NotAnAgenticRequest, null, "GetAgenticUserToken");
+            }
+
+            IAccessTokenProvider connection;
             if (!string.IsNullOrEmpty(_a365AuthSettings.AlternateBlueprintConnectionName))
             {
                 connection = _connections.GetConnection(_a365AuthSettings.AlternateBlueprintConnectionName);
             }
             else
             {
-                connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+                connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             }
 
             if (connection is not IAgenticTokenProvider agenticTokenProvider)
             {
-                throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
             }
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
-                App.AgenticAuthorization.GetAgentInstanceId(turnContext),
+                turnContext.Activity.GetAgenticTenantId(),
+                turnContext.Activity.GetAgenticInstanceId(),
                 App.AgenticAuthorization.GetAgenticUser(turnContext),
                 exchangeScopes ?? _a365AuthSettings.Scopes,
                 cancellationToken).ConfigureAwait(false);

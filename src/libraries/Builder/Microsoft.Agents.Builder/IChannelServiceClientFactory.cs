@@ -31,6 +31,8 @@ namespace Microsoft.Agents.Builder
         /// <returns>A <see cref="IConnectorClient"/>.</returns>
         Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false);
 
+        Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Creates the appropriate <see cref="IUserTokenClient" /> instance.
         /// </summary>

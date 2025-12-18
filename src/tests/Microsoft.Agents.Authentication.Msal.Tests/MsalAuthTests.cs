@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                 .Verifiable(Times.Once);
             service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
                 .Returns(new TestHttpClientFactory())
-                .Verifiable(Times.Exactly(2));
+                .Verifiable(Times.AtLeast(1));
 
             var msalAuth = new MsalAuth(service.Object, _configuration.GetSection(SettingsSection));
             
@@ -328,6 +328,118 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             Assert.IsAssignableFrom<IManagedIdentityApplication>(msalProvider.CreateClientApplication());
         }
 
+        [Fact]
+        public async Task MSALProvider_Agentic_CommonReplacement()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id-1" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://login.microsoftonline.com/common" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(5));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory((httpRequest) =>
+                {
+                    string uri;
+                    if (httpRequest.RequestUri.ToString().Contains("/common/discovery"))
+                    {
+                        uri = httpRequest.RequestUri.Query;
+                    }
+                    else
+                    {
+                        uri = httpRequest.RequestUri.ToString();
+                    }
+
+                    Assert.DoesNotContain("common", uri);
+                    Assert.Contains("new-tenant", uri);
+                }))
+                .Verifiable(Times.Exactly(5));
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+            await msal.GetAgenticUserTokenAsync("new-tenant", "aai", "upn", ["scope-1"]);
+            Mock.Verify(options, service);
+        }
+
+        [Fact]
+        public async Task MSALProvider_Agentic_CommonReplacementSkipped()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id-2" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://login.microsoftonline.com/common" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(5));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory((httpRequest) =>
+                {
+                    string uri;
+                    if (httpRequest.RequestUri.ToString().Contains("/common/discovery"))
+                    {
+                        uri = httpRequest.RequestUri.Query;
+                    }
+                    else
+                    {
+                        uri = httpRequest.RequestUri.ToString();
+                    }
+
+                    Assert.Contains("common", uri);
+                }))
+                .Verifiable(Times.AtLeast(4));
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+            // if tenantId not specified, authority is unchanged.
+            await msal.GetAgenticUserTokenAsync(null, "aai-2", "upn-2", ["scope-2"]);
+
+            Mock.Verify(options, service);
+        }
+
         private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
         {
             using var rsa = RSA.Create(2048);
@@ -344,6 +456,13 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
         private class TestHttpClientFactory : IHttpClientFactory
         {
+            private readonly Action<HttpRequestMessage> _assertFunc;
+
+            public TestHttpClientFactory(Action<HttpRequestMessage> assertFunc = null)
+            {
+                _assertFunc = assertFunc;
+            }
+
             public HttpClient CreateClient(string name)
             {
                 var response = new
@@ -359,7 +478,13 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                 };
 
                 var client = new Mock<HttpClient>();
-                client.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+                client
+                    .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                    .Callback<HttpRequestMessage, CancellationToken>((httpRequest, ct) =>
+                    {
+                        _assertFunc?.Invoke(httpRequest);
+                    })
+                    .ReturnsAsync(httpResponse);
                 return client.Object;
             }
         }

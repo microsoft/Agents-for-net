@@ -19,8 +19,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Caching;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Microsoft.Agents.Authentication.Msal
 {
@@ -34,6 +38,8 @@ namespace Microsoft.Agents.Authentication.Msal
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
     public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider, IAgenticTokenProvider
     {
+        private readonly static MemoryCache _agenticTokenCache = new MemoryCache(nameof(MsalAuth));
+
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
         private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList;
@@ -69,6 +75,8 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
         #region IAccessTokenProvider
+        public ImmutableConnectionSettings ConnectionSettings => new(_connectionSettings);
+
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
             var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
@@ -86,42 +94,16 @@ namespace Microsoft.Agents.Authentication.Msal
             var localScopes = ResolveScopesList(instanceUri, scopes);
 
             // Get or create existing token. 
-            _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
-            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
+            var cacheEntry = CacheGet(instanceUri, forceRefresh);
+            if (cacheEntry != null)
             {
-                if (!forceRefresh)
-                {
-                    var accessToken = authResultFromCache.MsalAuthResult.AccessToken;
-                    var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
-                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
-                    {
-                        accessToken = string.Empty; // flush the access token if it is about to expire.
-#if !NETSTANDARD
-                        _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
-#else
-                        _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
-#endif
-                    }
-
-                    if (!string.IsNullOrEmpty(accessToken))
-                    {
-                        return authResultFromCache.MsalAuthResult;
-                    }
-                }
-                else
-                {
-#if !NETSTANDARD
-                    _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
-#else
-                    _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
-#endif
-                }
+                return cacheEntry.MsalAuthResult;
             }
 
             object msalAuthClient = InnerCreateClientApplication();
 
             // setup the result payload. 
-            ExecuteAuthenticationResults authResultPayload = null;
+            ExecuteAuthenticationResults authResultPayload;
             if (msalAuthClient is IConfidentialClientApplication msalConfidentialClient)
             {
                 if (localScopes.Length == 0)
@@ -152,14 +134,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new System.NotImplementedException();
             }
 
-            if (_cacheList.ContainsKey(instanceUri))
-            {
-                _cacheList[instanceUri] = authResultPayload;
-            }
-            else
-            {
-                _cacheList.TryAdd(instanceUri, authResultPayload);
-            }
+            CacheSet(instanceUri, authResultPayload);
 
             return authResultPayload.MsalAuthResult;
         }
@@ -192,11 +167,11 @@ namespace Microsoft.Agents.Authentication.Msal
         #endregion
 
         #region IAgenticTokenProvider
-        public async Task<string> GetAgenticApplicationTokenAsync(string agentAppInstanceId, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticApplicationTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            if (InnerCreateClientApplication() is IConfidentialClientApplication msalApplication)
+            if (InnerCreateClientApplication(tenantId) is IConfidentialClientApplication msalApplication)
             {
                 var tokenResult = await msalApplication
                     .AcquireTokenForClient(["api://AzureAdTokenExchange/.default"]).WithFmiPath(agentAppInstanceId)
@@ -208,16 +183,20 @@ namespace Microsoft.Agents.Authentication.Msal
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for Agentic.");
         }
 
-        public async Task<string> GetAgenticInstanceTokenAsync(string agentAppInstanceId, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            var agentTokenResult = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var agentTokenResult = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentTokenResult))
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
+                .WithAuthority(ResolveAuthority(_connectionSettings, tenantId))
+                .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
+                .WithLegacyCacheCompatibility(false)
+                .WithCacheOptions(new CacheOptions(true))
+                .WithHttpClientFactory(_msalHttpClient)
                 .Build();
 
             var agentInstanceToken = await instanceApp
@@ -227,35 +206,68 @@ namespace Microsoft.Agents.Authentication.Msal
             return agentInstanceToken.AccessToken;
         }
 
-        public async Task<string> GetAgenticUserTokenAsync(string agentAppInstanceId, string upn, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticUserTokenAsync(string tenantId, string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(upn, nameof(upn));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
 
-            var agentToken = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
-            var instanceToken = await GetAgenticInstanceTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var cacheKey = $"{agentAppInstanceId}/{agenticUserId}/{DelimitedScopes(scopes, ";")}";
+            var value = _agenticTokenCache.Get(cacheKey);
+            if (value != null)
+            {
+                return ((HttpMsalResponse)value).AccessToken;
+            }
 
+            var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+
+            /*
+            var instanceApp = ConfidentialClientApplicationBuilder
+                .Create(agentAppInstanceId)
+                .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentToken))
+                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
+                .WithExtraQueryParameters(new Dictionary<string,string>()
+                    {
+                        { "username", upn },
+                        { "user_federated_identity_credential", instanceToken },
+                        { "grant_type", "user_fic" }
+                    })
+                .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
+                .WithLegacyCacheCompatibility(false)
+                .WithCacheOptions(new CacheOptions(true))
+                .WithHttpClientFactory(_msalHttpClient)
+                .Build();
+
+            var aauToken = await instanceApp
+                .AcquireTokenForClient(scopes)
+                .ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+            return aauToken.AccessToken;
+            */
+
+            // ConfidentialClientApplication does not work for this, at least in the version of Microsoft.Identity.Client currently being
+            // used.  It does work in Python.  This should be retested using ConfidentialClientApplication when the Msal package is updated.
             var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
             using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
 
+            
             var tokenEndpoint = _connectionSettings.Authority != null 
-                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token"
-                : $"https://login.microsoftonline.com/{_connectionSettings.TenantId}/oauth2/v2.0/token";
+                ? $"{ResolveAuthority(_connectionSettings, tenantId)}/oauth2/v2.0/token" // update to use tenantId if "common" but retain original host for regionalization purposes
+                : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
 
             var parameters = new Dictionary<string, string>
             {
                 { "client_id", agentAppInstanceId },
-                { "scope", string.Join(" ", scopes) },
+                { "scope", DelimitedScopes(scopes, " ") },
                 { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
                 { "client_assertion", agentToken },
-                { "username", upn },
+                { "user_id", agenticUserId },
                 { "user_federated_identity_credential", instanceToken },
                 { "grant_type", "user_fic" }
             };
 
-            var content = new FormUrlEncodedContent(parameters);
-
-            var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
+            using var content = new FormUrlEncodedContent(parameters);
+            using var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
 
 #if !NETSTANDARD
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -265,21 +277,70 @@ namespace Microsoft.Agents.Authentication.Msal
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"Failed to acquire user federated identity token: {responseContent}");
+                throw new InvalidOperationException($"Failed to acquire Agentic User token: AAI={agentAppInstanceId}, AgenticUserId={agenticUserId}, Scopes={string.Join(";", scopes)}, Response={response.StatusCode}/{responseContent}");
             }
 
-            var tokenResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
-
-            if (tokenResponse != null && tokenResponse.TryGetValue("access_token", out var accessToken))
+            var acccessTokenResult = System.Text.Json.JsonSerializer.Deserialize<HttpMsalResponse>(responseContent);
+            if (string.IsNullOrEmpty(acccessTokenResult.AccessToken))
             {
-                return accessToken?.ToString() ?? throw new InvalidOperationException("Access token is null");
+                throw new InvalidOperationException("Failed to parse access token from response");
             }
 
-            throw new InvalidOperationException("Failed to parse access token from response");
+            _agenticTokenCache.Add(
+                new CacheItem(cacheKey) { Value = acccessTokenResult },
+                new CacheItemPolicy()
+                {
+                    AbsoluteExpiration = DateTime.UtcNow.AddSeconds(acccessTokenResult.ExpiresIn).Subtract(TimeSpan.FromMinutes(5))
+                });
+
+            return acccessTokenResult.AccessToken;
+        }
+
+        /// <summary>
+        /// This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
+        /// </summary>
+        /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
+        /// <param name="tenantId">Tenant Id to use in place of Common</param>
+        private static string ResolveAuthority(ConnectionSettings connectionSettings, string tenantId)
+        {
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                // tenant id is not specified, check to see if authority is set, if it is set use it. 
+                return connectionSettings.Authority ?? $"https://login.microsoftonline.com/{connectionSettings.TenantId}";
+            }
+
+            return !string.IsNullOrEmpty(connectionSettings.Authority)
+                ? Regex.Replace(connectionSettings.Authority, @"/common(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
+                : $"https://login.microsoftonline.com/{tenantId}";
+        }
+
+        /// <summary>
+        /// This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings TenantId is "common".
+        /// </summary>
+        /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
+        /// <param name="tenantId">Tenant Id to use in place of Common</param>
+        private static string ResolveTenantId(ConnectionSettings connectionSettings, string tenantId)
+        {
+            if (!string.IsNullOrEmpty(tenantId) && connectionSettings.TenantId.Equals("common", StringComparison.OrdinalIgnoreCase))
+            {
+                return tenantId;
+            }
+
+            return connectionSettings.TenantId;
+        }
+
+        private static string DelimitedScopes(IList<string> scopes, string separator)
+        {
+            var scp = "";
+            if (scopes != null)
+            {
+                scp = string.Join(separator, scopes);
+            }
+            return scp;
         }
         #endregion
 
-        private object InnerCreateClientApplication()
+        private object InnerCreateClientApplication(string tenantId = null)
         {
             object msalAuthClient = null;
 
@@ -317,12 +378,13 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 if (!string.IsNullOrEmpty(_connectionSettings.Authority))
                 {
-                    cAppBuilder.WithAuthority(_connectionSettings.Authority);
+                    cAppBuilder.WithAuthority(ResolveAuthority(_connectionSettings, tenantId));
                 }
                 else
                 {
-                    cAppBuilder.WithTenantId(_connectionSettings.TenantId);
+                    cAppBuilder.WithTenantId(ResolveTenantId(_connectionSettings, tenantId));
                 }
+
                 // If Client secret was passed in , get the secret and create it that way 
                 // if Client CertThumbprint was passed in, get the cert and create it that way.
                 // if neither was passed in, throw an exception.
@@ -398,5 +460,69 @@ namespace Microsoft.Agents.Authentication.Msal
                 return templist.ToArray();
             }
         }
+
+        private ExecuteAuthenticationResults CacheGet(Uri instanceUri, bool forceRefresh = false)
+        {
+            _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
+            if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
+            {
+                if (!forceRefresh)
+                {
+                    var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
+                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
+                    {
+                        // flush the access token if it is about to expire.
+#if !NETSTANDARD
+                        _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                        _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
+                        return null;
+                    }
+
+                    return authResultFromCache;
+                }
+                else
+                {
+#if !NETSTANDARD
+                    _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                    _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
+                }
+            }
+
+            return null;
+        }
+
+        private void CacheSet(Uri instanceUri, ExecuteAuthenticationResults authResultPayload)
+        {
+            if (_cacheList.ContainsKey(instanceUri))
+            {
+                _cacheList[instanceUri] = authResultPayload;
+            }
+            else
+            {
+                _cacheList.TryAdd(instanceUri, authResultPayload);
+            }
+        }
+    }
+
+    class HttpMsalResponse
+    {
+        [JsonPropertyName("token_type")]
+        public string TokeType { get; set; }
+
+        [JsonPropertyName("scope")]
+        public string Scope { get; set; }
+
+        [JsonPropertyName("expires_in")]
+        public int ExpiresIn { get; set; }
+    
+        [JsonPropertyName("ext_expires_in")]
+        public int ExtExpiresIn { get; set; }
+
+        [JsonPropertyName("access_token")]
+        public string AccessToken { get; set; }
     }
 }

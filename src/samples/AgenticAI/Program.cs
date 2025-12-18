@@ -44,7 +44,7 @@ app.UseAuthorization();
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, CloudAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
