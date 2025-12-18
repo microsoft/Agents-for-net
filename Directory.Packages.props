@@ -73,7 +73,7 @@
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.4" />
-    <PackageVersion Include="Azure.Identity" Version="1.13.2" />
+    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
 	<PackageVersion Include="Azure.Core" Version="1.45.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.22.2" />
 	<PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.49.0" />
