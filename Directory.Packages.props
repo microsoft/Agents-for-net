@@ -99,7 +99,7 @@
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
     <!-- TeamsAI -->
-    <PackageVersion Include="JsonSchema.Net" Version="6.1.2" />
+    <PackageVersion Include="JsonSchema.Net" Version="8.0.4" />
     <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.1" />
     <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.1" />
     <PackageVersion Include="Azure.AI.ContentSafety" Version="1.0.0" />
