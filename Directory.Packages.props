@@ -72,7 +72,7 @@
     <PackageVersion Include="xunit.extensibility.core" Version="2.9.0" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <!-- SDK Core -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />
 	<PackageVersion Include="Azure.Core" Version="1.45.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.22.2" />
