@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,17 +47,19 @@ namespace Microsoft.Agents.Builder
         private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
+        private readonly ISubject<IActivity> _activitySubject = Subject.Synchronize(new Subject<IActivity>());
+        private DynamicIntervalTextChunkBatcher _textBatcher;
+        private IDisposable _batcherSubscription;
+        private IDisposable _activitySubscription;
         private int _nextSequence = 1;
         private bool _ended = false;
-        private Timer _timer;
-        private bool _messageUpdated = false;
         private bool _isTeamsChannel;
         private bool _canceled;
         private bool _userCanceled;
-
-        // Queue for outgoing activities
-        private readonly List<Func<IActivity>> _queue = [];
-        private readonly AutoResetEvent _queueEmpty = new(false);
+        private bool _streamStarted = false;
+        private string _accumulatedMessage = "";
+        private TaskCompletionSource<bool> _streamCompleteTcs = new TaskCompletionSource<bool>();
+        private int _interval;
 
         /// <summary>
         /// Set IActivity that will be (optionally) used for the final streaming message.
@@ -96,7 +100,15 @@ namespace Microsoft.Agents.Builder
         /// Teams default: 1000
         /// WebChat default: 500
         /// </remarks>
-        public int Interval { get; set; }
+        public int Interval
+        {
+            get => Volatile.Read(ref _interval);
+            set
+            {
+                Volatile.Write(ref _interval, value);
+                _textBatcher?.SetInterval(value);
+            }
+        }
 
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
 
@@ -125,6 +137,80 @@ namespace Microsoft.Agents.Builder
 
             _context = turnContext;
             SetDefaults(turnContext);
+
+            if (IsStreamingChannel)
+            {
+                SetupStreamingPipeline();
+            }
+        }
+
+        private void SetupStreamingPipeline()
+        {
+            _textBatcher = new DynamicIntervalTextChunkBatcher(Interval);
+
+            // Subscribe to batched text emissions
+            _batcherSubscription = _textBatcher.Subscribe(text =>
+            {
+                Message = text;
+                var activity = CreateStreamingActivity(StreamTypes.Streaming, text);
+                _activitySubject.OnNext(activity);
+            });
+
+            // Subscribe to activity emissions to send them
+            _activitySubscription = _activitySubject
+                .Subscribe(
+                    async activity =>
+                    {
+                        await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
+                    },
+                    error =>
+                    {
+                        _canceled = true;
+                        _streamCompleteTcs.TrySetResult(true);
+                    },
+                    () =>
+                    {
+                        _streamCompleteTcs.TrySetResult(true);
+                    });
+        }
+
+
+        private Activity CreateStreamingActivity(string streamType, string text)
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Typing,
+                Text = text,
+                Entities = []
+            };
+
+            var streamInfo = new StreamInfo
+            {
+                StreamSequence = Interlocked.Increment(ref _nextSequence) - 1
+            };
+
+            if (streamType == StreamTypes.Informative)
+            {
+                streamInfo.StreamType = StreamTypes.Informative;
+            }
+            else
+            {
+                streamInfo.StreamType = StreamTypes.Streaming;
+
+                if (Citations != null && Citations.Count > 0)
+                {
+                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(text, Citations);
+                    AIEntity entity = new();
+                    if (currCitations != null && currCitations.Count > 0)
+                    {
+                        entity.Citation = currCitations;
+                    }
+                    activity.Entities.Add(entity);
+                }
+            }
+
+            activity.Entities.Add(streamInfo);
+            return activity;
         }
 
         /// <summary>
@@ -207,46 +293,23 @@ namespace Microsoft.Agents.Builder
         /// <param name="text">Text of the update to send.</param>
         /// <param name="cancellationToken"></param>
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
+        public Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            Func<IActivity> queueFunc;
-
-            lock (this)
+            if (_ended)
             {
-                if (_ended)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
-                }
-
-                queueFunc = () =>
-                {
-                    return new Activity
-                    {
-                        Type = ActivityTypes.Typing,
-                        Text = text,
-                        Entities = [new StreamInfo()
-                            {
-                                StreamType = StreamTypes.Informative,
-                                StreamSequence = _nextSequence++,
-                            }]
-                    };
-                };
-
-                if (IsStreamStarted())
-                {
-                    QueueActivity(queueFunc);
-                    return;
-                }
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
             }
 
-            // if we got this far, the stream has been started so just send directly and start.
-            await SendActivityAsync(queueFunc(), cancellationToken).ConfigureAwait(false);
-            StartStream();
+            _streamStarted = true;
+            var activity = CreateStreamingActivity(StreamTypes.Informative, text);
+            _activitySubject.OnNext(activity);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -262,26 +325,25 @@ namespace Microsoft.Agents.Builder
                 return;
             }
 
-            lock (this)
+            if (_ended)
             {
-                if (_ended)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
-                }
-
-                // buffer all chunks
-                Message += text;
-
-                // If there are citations, modify the content so that the sources are numbers instead of [doc1], [doc2], etc.
-                Message = CitationUtils.FormatCitationsResponse(Message);
-
-                _messageUpdated = true;
-
-                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
-                // and we're just now starting the stream.  It uses Interval after the first stream message.
-                StartStream(250);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
             }
+
+            if (!IsStreamingChannel)
+            {
+                // For non-streaming channels, just accumulate
+                Message += text;
+                Message = CitationUtils.FormatCitationsResponse(Message);
+                return;
+            }
+
+            _streamStarted = true;
+            _accumulatedMessage += text;
+            Message = CitationUtils.FormatCitationsResponse(_accumulatedMessage);
+            _textBatcher.OnNext(text);
         }
+
 
         /// <summary>
         /// Ends the stream by sending the final message to the client.
@@ -295,15 +357,12 @@ namespace Microsoft.Agents.Builder
         {
             if (!IsStreamingChannel)
             {
-                lock (this)
+                if (_ended)
                 {
-                    if (_ended)
-                    {
-                        return StreamingResponseResult.AlreadyEnded;
-                    }
-
-                    _ended = true;
+                    return StreamingResponseResult.AlreadyEnded;
                 }
+
+                _ended = true;
 
                 // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
                 if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
@@ -315,32 +374,40 @@ namespace Microsoft.Agents.Builder
             }
             else
             {
-                lock (this)
+                if (_ended)
                 {
-                    if (_ended)
-                    {
-                        return StreamingResponseResult.AlreadyEnded;
-                    }
-
-                    _ended = true;
-
-                    if (_canceled)
-                    {
-                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
-                    }
-
-                    if (!IsStreamStarted())
-                    {
-                        return StreamingResponseResult.NotStarted;
-                    }
+                    return StreamingResponseResult.AlreadyEnded;
                 }
+
+                _ended = true;
+
+                if (_canceled)
+                {
+                    return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                }
+
+                if (!_streamStarted)
+                {
+                    return StreamingResponseResult.NotStarted;
+                }
+
+                // Complete the batcher and wait for all emissions
+                _textBatcher?.OnCompleted();
 
                 StreamingResponseResult result = StreamingResponseResult.Success;
 
-                // Wait for queue items to be sent per Interval
+                // Wait for stream to complete
                 try
                 {
-                    if (!_queueEmpty.WaitOne(EndStreamTimeout))
+                    // Complete the activity subject after a small delay to ensure batched items are sent
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(100, CancellationToken.None);
+                        _activitySubject.OnCompleted();
+                    }, CancellationToken.None);
+
+                    var waitTask = _streamCompleteTcs.Task;
+                    if (await Task.WhenAny(waitTask, Task.Delay(EndStreamTimeout, CancellationToken.None)) != waitTask)
                     {
                         result = StreamingResponseResult.Timeout;
                     }
@@ -350,9 +417,10 @@ namespace Microsoft.Agents.Builder
                         return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
                     }
                 }
-                catch (AbandonedMutexException)
+                catch
                 {
-                    StopStream();
+                    _batcherSubscription?.Dispose();
+                    _activitySubscription?.Dispose();
                 }
 
                 if (UpdatesSent() > 0 || FinalMessage != null)
@@ -393,7 +461,7 @@ namespace Microsoft.Agents.Builder
 
             // Add in Generated by AI
             List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if((bool)EnableGeneratedByAILabel || currCitations != null)
+            if ((bool)EnableGeneratedByAILabel || currCitations != null)
             {
                 AIEntity entity = new()
                 {
@@ -419,90 +487,36 @@ namespace Microsoft.Agents.Builder
         /// <returns></returns>
         public async Task ResetAsync(CancellationToken cancellationToken = default)
         {
-            if (IsStreamStarted())
+            if (_streamStarted)
             {
                 await EndStreamAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            lock (this)
+            _batcherSubscription?.Dispose();
+            _activitySubscription?.Dispose();
+            _textBatcher?.Dispose();
+
+            _ended = false;
+            FinalMessage = null;
+            _nextSequence = 1;
+            StreamId = null;
+            _canceled = false;
+            _userCanceled = false;
+            _streamStarted = false;
+            _accumulatedMessage = "";
+            Message = "";
+            _streamCompleteTcs = new TaskCompletionSource<bool>();
+
+            if (IsStreamingChannel)
             {
-                StopStream();
-                _ended = false;
-                _queue.Clear();
-                FinalMessage = null;
-                _nextSequence = 1;
-                StreamId = null;
-                _canceled = false;
-                _userCanceled = false;
+                SetupStreamingPipeline();
             }
-        }
-
-        /// <summary>
-        /// Queue an activity to be sent to the client.
-        /// </summary>
-        /// <param name="factory"></param>
-        private void QueueActivity(Func<IActivity> factory)
-        {
-            if (factory != null)
-            {
-                _queue.Add(factory);
-                _queueEmpty.Reset();
-            }
-        }
-
-        /// <summary>
-        /// Queue the next chunk of text to be sent to the client.
-        /// </summary>
-        private void QueueNextChunkActivity()
-        {
-            if (!_messageUpdated)
-            {
-                return;
-            }
-
-            // Queue a chunk of text to be sent. Is done via a Func to create
-            // the Activity so that member variables are evaluated at time of 
-            // interval send.
-            QueueActivity(() =>
-            {
-                // Send typing activity
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Typing,
-                    Text = Message,
-                    Entities = []
-                };
-
-                var sequence = _nextSequence++;
-
-                activity.Entities.Add(new StreamInfo()
-                {
-                    StreamType = StreamTypes.Streaming,
-                    StreamSequence = sequence,
-                });
-
-                if (Citations != null && Citations.Count > 0)
-                {
-                    // If there are citations, filter out the citations unused in content.
-                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-                    AIEntity entity = new();
-                    if (currCitations != null && currCitations.Count > 0)
-                    {
-                        entity.Citation = currCitations;
-                    }
-
-                    activity.Entities.Add(entity);
-                }
-
-                _messageUpdated = false;
-
-                return activity;
-            });
         }
 
         private void SetDefaults(TurnContext turnContext)
         {
             _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
+            int defaultInterval = 500;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
@@ -522,13 +536,13 @@ namespace Microsoft.Agents.Builder
                     // Teams MUST use the Activity.Id returned from the first Informative message for
                     // subsequent intermediate messages.  Do not set StreamId here.
 
-                    Interval = 1000;
+                    defaultInterval = 1000;
                     IsStreamingChannel = true;
                 }
             }
             else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
-                Interval = 500;
+                defaultInterval = 500;
                 IsStreamingChannel = true;
 
                 // WebChat will use whatever StreamId is created.
@@ -538,74 +552,20 @@ namespace Microsoft.Agents.Builder
             {
                 // Support streaming for DeliveryMode.Stream
                 IsStreamingChannel = true;
-                Interval = 100;
+                defaultInterval = 100;
                 StreamId = Guid.NewGuid().ToString();
             }
             else
             {
                 IsStreamingChannel = false;
             }
+
+            Volatile.Write(ref _interval, defaultInterval);
         }
 
         public bool IsStreamStarted()
         {
-            return _timer != null;
-        }
-
-        private void StartStream(int interval = 0)
-        {
-            if (_timer == null && IsStreamingChannel)
-            {
-                _timer = new Timer(SendIntermediateMessage, null, interval == 0 ? Interval : interval, System.Threading.Timeout.Infinite);
-            }
-        }
-
-        private void StopStream()
-        {
-            if (_timer != null)
-            {
-                _timer.Dispose();
-                _timer = null;
-            }
-        }
-
-        private async void SendIntermediateMessage(object state)
-        {
-            // Send one buffered Activity per interval.
-            IActivity activity = null;
-
-            lock (this)
-            {
-                QueueNextChunkActivity();
-
-                if (_queue.Count > 0)
-                {
-                    activity = _queue[0]();
-                    _queue.RemoveAt(0);
-
-                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
-                    // longer than the Interval. MSAL can take longer than the interval in some cases,
-                    // which case out of sequence messages.
-                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
-                }
-                else if (_ended)
-                {
-                    _queueEmpty.Set();
-                    StopStream();
-                    return;
-                }
-                else
-                {
-                    // Nothing is in the queue, and not ending, so chances are
-                    // the chunking is slow.  We can speed up the interval to
-                    // pick up the next chunk faster.
-                    _timer.Change(200, Timeout.Infinite);
-                    return;
-                }
-            }
-
-            // Looks a bit odd, but can't call await inside a lock.
-            await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
+            return _streamStarted;
         }
 
         private async Task SendActivityAsync(IActivity activity, CancellationToken cancellationToken)
@@ -625,16 +585,9 @@ namespace Microsoft.Agents.Builder
                     {
                         StreamId = response.Id;
                     }
-
-                    // Restart the timer with normal Interval (if running)
-                    _timer?.Change(Interval, Timeout.Infinite);
                 }
                 catch (Exception ex)
                 {
-                    // We are not rethrowing from here since this is likely being called
-                    // from the Timer thread and will crash the app.  A more elegant 
-                    // solution would be to get it back to the calling thread.
-
                     bool CanceledStream = true;
                     if (ex is ErrorResponseException errorResponse)
                     {
@@ -677,12 +630,10 @@ namespace Microsoft.Agents.Builder
                         }
                     }
 
-                    lock (this)
-                    {
-                        StopStream();
-                        _canceled = CanceledStream;
-                        _queueEmpty.Set();
-                    }
+                    _canceled = CanceledStream;
+                    _batcherSubscription?.Dispose();
+                    _activitySubscription?.Dispose();
+                    _streamCompleteTcs.TrySetResult(true);
                 }
             }
         }
