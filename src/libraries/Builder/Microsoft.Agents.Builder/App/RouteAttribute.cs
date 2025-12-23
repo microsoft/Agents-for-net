@@ -87,9 +87,9 @@ namespace Microsoft.Agents.Builder.App
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
 #if !NETSTANDARD
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+            SignInResolver autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? new SignInResolver(SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)) : null;
 #else
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+            SignInResolver autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? new SignInResolver(SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries)) : null;
 #endif
 
             if (RouteType == RouteType.Activity)
