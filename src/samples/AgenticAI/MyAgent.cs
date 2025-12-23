@@ -35,7 +35,7 @@ public class MyAgent : AgentApplication
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
+        var aauToken = await turnContext.GetTurnTokenAsync("agentic", cancellationToken);
         await turnContext.SendActivityAsync($"(Agentic Only) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
     }
 
@@ -46,7 +46,7 @@ public class MyAgent : AgentApplication
 
     private async Task OnMeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var token = await turnContext.GetTurnTokenAsync(cancellationToken: cancellationToken);
-        await turnContext.SendActivityAsync($"({(turnContext.Activity.IsAgenticRequest() ? "Agentic" : "Bot")}) You said: {turnContext.Activity.Text}, user token len={token.Length}", cancellationToken: cancellationToken);
+        var tokens = turnContext.GetTurnTokens();
+        await turnContext.SendActivityAsync($"({tokens[0].Handler}) You said: {turnContext.Activity.Text}, token len={tokens[0].Token.Length}", cancellationToken: cancellationToken);
     }
 }

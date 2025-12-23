@@ -13,12 +13,12 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public static class TurnContextExtensions
     {
-        public static IDictionary<string, string> GetTurnTokens(this ITurnContext turnContext)
+        public static IList<TurnToken> GetTurnTokens(this ITurnContext turnContext)
         {
             var userAuth = turnContext.Services.Get<UserAuthorization>();
             if (userAuth == null)
             {
-                return new Dictionary<string, string>();
+                return [];
             }
             return userAuth.GetTurnTokens();
         }

@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AssertionHelpers.ThrowIfNull(conversationUpdateEvent, nameof(conversationUpdateEvent));
@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
             => OnFileConsent(handler, "accept");
 
         /// <summary>
@@ -312,10 +312,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
             => OnFileConsent(handler, "decline", rank, autoSignInHandlers);
 
-        private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) =>
@@ -352,7 +352,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="rank"></param>
         /// <param name="autoSignInHandlers"></param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
@@ -385,7 +385,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers"></param>
         /// <returns></returns>
         [Obsolete("Use AgentApplication.OnFeedbackLoop instead")]
-        public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             // This is for back-compat with existing usage.  We need to convert from Core FeedbackData to existing Teams Extension FeedbackLoopData.
             async Task coreHandler(ITurnContext turnContext, ITurnState turnState, Builder.App.FeedbackData coreFeedbackData, CancellationToken cancellationToken)

@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Client
         public ChannelId ChannelId { get; set; } = "*";
 #endif
 
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers);
         }

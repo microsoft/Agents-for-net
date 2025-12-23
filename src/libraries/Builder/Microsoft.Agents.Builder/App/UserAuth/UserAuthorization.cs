@@ -148,9 +148,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return null;
         }
 
-        public IDictionary<string,string> GetTurnTokens()
+        public IList<TurnToken> GetTurnTokens()
         {
-            return (IDictionary<string, string>)_authTokens.Select(ht => new KeyValuePair<string, string>(ht.Handler, ht.TokenResponse.Token));
+            return [.. _authTokens.Select(ht => new TurnToken(ht.Handler, ht.TokenResponse.Token))];
         }
 
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
@@ -329,5 +329,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     {
         public string Handler { get; set; }
         public TokenResponse TokenResponse { get; set; }
+    }
+
+    public class TurnToken(string handler, string token)
+    {
+        public string Handler { get; private set; } = handler;
+        public string Token { get; private set; } = token;
     }
 }
