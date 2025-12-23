@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Builder
             _batcherSubscription = _textBatcher.Subscribe(text =>
             {
                 Message = text;
-                var activity = CreateStreamingActivity("Streaming", text);
+                var activity = CreateStreamingActivity(StreamTypes.Streaming, text);
                 _activitySubject.OnNext(activity);
             });
 
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder
                 StreamSequence = Interlocked.Increment(ref _nextSequence) - 1
             };
 
-            if (streamType == "Informative")
+            if (streamType == StreamTypes.Informative)
             {
                 streamInfo.StreamType = StreamTypes.Informative;
             }
@@ -293,11 +293,11 @@ namespace Microsoft.Agents.Builder
         /// <param name="text">Text of the update to send.</param>
         /// <param name="cancellationToken"></param>
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
+        public Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (_ended)
@@ -306,8 +306,10 @@ namespace Microsoft.Agents.Builder
             }
 
             _streamStarted = true;
-            var activity = CreateStreamingActivity("Informative", text);
+            var activity = CreateStreamingActivity(StreamTypes.Informative, text);
             _activitySubject.OnNext(activity);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
