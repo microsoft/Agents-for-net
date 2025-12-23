@@ -12,12 +12,12 @@ namespace Microsoft.Agents.Builder.App
         private readonly ReaderWriterLock rwl = new();
         private List<RouteEntry> routes = [];
 
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
+        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             AddRoute(selector, handler, false, isInvokeRoute, rank, autoSignInHandlers);
         }
 
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isAgenticRoute, bool isInvokeRoute, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
+        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isAgenticRoute, bool isInvokeRoute, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null)
         {
             try
             {

@@ -112,6 +112,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 // Cached turn tokens are stored in the order of addition (the order on the route).
                 // If no handler name is provided, return the first.
                 token = _authTokens[0].TokenResponse;
+                handlerName = _authTokens[0].Handler;
             }
             else
             {
