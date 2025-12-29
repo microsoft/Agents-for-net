@@ -12,7 +12,7 @@
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
   <PropertyGroup>
-    <Microsoft_Extentions_PkgVer>9.0.1</Microsoft_Extentions_PkgVer>
+    <Microsoft_Extentions_PkgVer>10.0.1</Microsoft_Extentions_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.11</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.8.0</Microsoft_IdentityModel_PkgVer>
 	<Microsoft_IdentityClient_PkgVer>4.70.2</Microsoft_IdentityClient_PkgVer>
@@ -47,7 +47,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="$(Microsoft_Extentions_PkgVer)" />
 	<PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
-	<PackageVersion Include="System.Text.Json" Version="9.0.2" />
+	<PackageVersion Include="System.Text.Json" Version="10.0.1" />
     <PackageVersion Include="System.Memory.Data" Version="8.0.1" />
 	<PackageVersion Include="System.Runtime.Caching" Version="8.0.1" />
 	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.1" />
