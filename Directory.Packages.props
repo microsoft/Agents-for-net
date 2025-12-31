@@ -18,7 +18,7 @@
 	<Microsoft_IdentityClient_PkgVer>4.79.2</Microsoft_IdentityClient_PkgVer>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
 	  
     <PackageVersion Include="Microsoft.Identity.Client" Version="$(Microsoft_IdentityClient_PkgVer)" />
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="$(Microsoft_IdentityClient_PkgVer)" />
