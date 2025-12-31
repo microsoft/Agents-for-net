@@ -347,7 +347,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 SearchInvokeResponse searchInvokeResponse = new()
                 {
                     StatusCode = 200,
-                    Type = "application/vnd.microsoft.search.searchResponse",
+                    Type = ContentTypes.SearchResponse,
                     Value = new AdaptiveCardsSearchInvokeResponseValue
                     {
                         Results = results

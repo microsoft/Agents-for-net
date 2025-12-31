@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             }
 
             // Filter out HTML attachments
-            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith("text/html"));
+            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith(ContentTypes.Html));
             if (attachments == null || !attachments.Any())
             {
                 return [];
