@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.App
         {
         }
 
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, params string[] autoSignInHandler)
+        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, SignInResolver autoSignInHandler = null)
         {
             Selector = selector;
             Handler = handler;
@@ -53,6 +53,6 @@ namespace Microsoft.Agents.Builder.App
 
         public bool IsInvokeRoute { get; private set; }
 
-        public string[] AutoSignInHandler { get; private set; }
+        public SignInResolver AutoSignInHandler { get; private set; }
     }
 }

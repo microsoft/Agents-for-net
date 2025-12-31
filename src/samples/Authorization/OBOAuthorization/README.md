@@ -20,13 +20,9 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
        
 2. Create an Azure Bot with one of these authentication types
    - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
-   - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
-   - [User Assigned Managed Identity](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-msi.md)
 
 3. Setting up OAuth for an exchangeable token 
-   1. Create a new App Registration
-      1. SingleTenant
-      1. Give it a name and click **Register**
+   1. Got to the App Registration for the Azure Bot
       1. **Authentication** tab
          1. **Add Platform**, then **Web**, Set `Redirect URI` to `Web` and `https://token.botframework.com/.auth/web/redirect`
          1. **Add Platform**, then **Mobile and desktop applications**, and add an additional `http://localhost` Uri.
@@ -45,10 +41,10 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
          1. Create a new secret and record the value.  This will be used later.
          
 4. Create Azure Bot **OAuth Connection**
-   1. On the Azure Bot created in Step #2, Click **Configuration** tab then the **Add OAuth Connection Settings** button.
+   1. On the Azure Bot, click **Configuration** tab then the **Add OAuth Connection Settings** button.
    1. Enter a **Name**.  This will be used later.
    1. For **Service Provider** select **Azure Active Directory v2**
-   1. **Client id** and **Client Secret** are the values created in step #3.
+   1. **Client id** and **Client Secret** are the values created in step #2.
    1. Enter the **Tenant ID**
    1. **Scopes** is `api://botid-{{appid}}/defaultScope`
 
@@ -79,20 +75,6 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       1. Set the **{{ClientSecret}}** to the Secret that was created on the App Registration.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
-      
-   1. In the same section, edit the **MCSConnection**
-      ```json
-        "MCSConnection": {
-        "Settings": {
-          "AuthType": "ClientSecret",
-          "AuthorityEndpoint": "https://login.microsoftonline.com/{{OAuthTenantId}}",
-          "ClientId": "{{OAuthClientId}}", // this is the Client ID created in Step #3
-          "ClientSecret": "{{OAuthClientSecret}}" // this is the Client Secret created in Step #3
-        }
-      ```
-      1. Set **{{OAuthTenantId}}** to the AppId created in Step #3
-      1. Set **{{OAuthClientSecret}}** to the secret created in Step #3
-      1. Set **{{OAuthTenantId}}**
       
    1. In appsettings, replace **{{AzureBotOAuthConnectionName}}** with the OAuth Connection Name created in Step #4.
 
