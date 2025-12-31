@@ -97,7 +97,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.45.0" />
     <!-- OpenAI -->
-    <PackageVersion Include="OpenAI" Version="2.1.0" />
+    <PackageVersion Include="OpenAI" Version="2.8.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.1.1-preview.1.25612.2" />
     <!-- TeamsAI -->
