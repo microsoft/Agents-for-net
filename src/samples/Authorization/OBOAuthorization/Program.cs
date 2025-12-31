@@ -100,7 +100,7 @@ builder.AddAgent(sp =>
                 }
             }
         }
-    }, autoSignInHandlers: ["mcs"]);
+    });
 
     // Called when the OAuth flow fails
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
