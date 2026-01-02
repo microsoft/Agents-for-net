@@ -240,15 +240,27 @@ namespace Microsoft.Agents.Builder
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()
             {
-                if (!Responded)
-                {
-                    Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
-                }
-
                 // Send from the list which may have been manipulated via the event handlers.
                 // Note that 'responses' was captured from the root of the call, and will be
                 // returned to the original caller.
-                return await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
+                var responses = await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
+                var sentNonTraceActivity = false;
+
+                for (var index = 0; index < responses.Length; index++)
+                {
+                    var activity = bufferedActivities[index];
+
+                    activity.Id = responses[index].Id;
+
+                    sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
+                }
+
+                if (sentNonTraceActivity)
+                {
+                    Responded = true;
+                }
+
+                return responses;
             }
         }
 
