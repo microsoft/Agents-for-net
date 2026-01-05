@@ -21,6 +21,7 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="System.Runtime.Caching" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="Microsoft.Bcl.Memory" />
 	</ItemGroup>
 
 	<ItemGroup>
