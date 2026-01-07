@@ -77,21 +77,21 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public void ShouldReturnTrueForSupportsSuggestedActionsWithTeamsAndPersonalAnd3()
         {
-            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 3, "personal");
+            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 3, ConversationTypes.Personal);
             Assert.True(supports);
         }
 
         [Fact]
         public void ShouldReturnFalseForSupportsSuggestedActionsWithTeamsAndPersonalAnd4()
         {
-            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 4, "personal");
+            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 4, ConversationTypes.Personal);
             Assert.False(supports);
         }
 
         [Fact]
         public void ShouldReturnFalseForSupportsSuggestedActionsWithTeamsAndGroupChat()
         {
-            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 3, "groupChat");
+            var supports = Channels.SupportsSuggestedActions(Channels.Msteams, 3, ConversationTypes.GroupChat);
             Assert.False(supports);
         }
 

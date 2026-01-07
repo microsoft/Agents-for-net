@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The content type value of a <see cref="HeroCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.hero";
+        public const string ContentType = Models.ContentTypes.HeroCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="HeroCard"/>.
