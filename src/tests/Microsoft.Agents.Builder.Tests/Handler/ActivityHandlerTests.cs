@@ -855,7 +855,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
             Assert.IsType<AdaptiveCardInvokeResponse>(value.Body);
             var body = value.Body as AdaptiveCardInvokeResponse;
-            Assert.Equal("application/vnd.microsoft.error", body.Type);
+            Assert.Equal(ContentTypes.Error, body.Type);
             Assert.Equal(400, body.StatusCode);
 
             Assert.IsType<Error>(body.Value);
@@ -906,7 +906,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
 
             Assert.IsType<AdaptiveCardInvokeResponse>(value.Body);
             var body = value.Body as AdaptiveCardInvokeResponse;
-            Assert.Equal("application/vnd.microsoft.error", body.Type);
+            Assert.Equal(ContentTypes.Error, body.Type);
             Assert.Equal(400, body.StatusCode);
 
             Assert.IsType<Error>(body.Value);

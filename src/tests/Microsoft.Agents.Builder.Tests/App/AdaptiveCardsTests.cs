@@ -398,7 +398,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Body = new SearchInvokeResponse()
                 {
                     StatusCode = 200,
-                    Type = "application/vnd.microsoft.search.searchResponse",
+                    Type = ContentTypes.SearchResponse,
                     Value = new
                     {
                         Results = searchResults

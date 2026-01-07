@@ -104,7 +104,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The importance field contains an enumerated set of values to signal to the recipient the relative importance 
         /// of the Activity. It is up to the receiver to map these importance hints to the user experience. The value of 
-        /// the importance field is of type string, with defined values of low, normal and high. The default value is normal.
+        /// the importance field is of type string, with defined values of <see cref="Importance.Low"/>, 
+        /// <see cref="Importance.Normal"/>, <see cref="Importance.High"/>. The default value is <see cref="Importance.Normal"/>.
         /// </summary>
         string Importance { get; set; }
 
@@ -241,7 +242,8 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// The textFormat field denotes whether the text field should be interpreted as Markdown [3], plain text, or XML. The value 
-        /// of the textFormat field is of type string, with defined values of markdown, plain, and xml. The default value is plain. 
+        /// of the textFormat field is of type string, with defined values of <see cref="TextFormatTypes.Plain"/>, <see cref="TextFormatTypes.Markdown"/> 
+        /// or <see cref="TextFormatTypes.Xml"/>. Default is <see cref="TextFormatTypes.Plain"/>.
         /// This field is not designed to be extended with arbitrary values.
         /// </summary>
         string TextFormat { get; set; }
