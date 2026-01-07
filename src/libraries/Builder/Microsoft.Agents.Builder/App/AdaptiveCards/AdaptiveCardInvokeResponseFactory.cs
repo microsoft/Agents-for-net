@@ -27,6 +27,11 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             };
         }
 
+        /// <summary>
+        /// Create a search response with the specified value.
+        /// </summary>
+        /// <param name="result">The response value.</param>
+        /// <returns></returns>
         public static AdaptiveCardInvokeResponse SearchResponse(object result)
         {
             return new AdaptiveCardInvokeResponse
@@ -145,6 +150,13 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             };
         }
 
+        /// <summary>
+        /// Validates that the Activity.Value contains a valid AdaptiveCardSearchInvokeValue value.
+        /// </summary>
+        /// <param name="activity">The Activity to validate.</param>
+        /// <param name="searchInvokeValue">If successful, the AdaptiveCardSearchInvokeValue instance.</param>
+        /// <param name="errorResponse">If failed, the AdaptiveCardInvokeResponse to reply with.</param>
+        /// <returns>True if Acitivity.Value contains a valid AdaptiveCardSearchInvokeValue.</returns>
         public static bool TryValidateSearchInvokeValue(IActivity activity, out AdaptiveCardSearchInvokeValue searchInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
         {
             searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(activity.Value);
@@ -185,6 +197,14 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             return true;
         }
 
+        /// <summary>
+        /// Validates that the Activity.Value contains a valid AdaptiveCardInvokeValue value.
+        /// </summary>
+        /// <param name="activity">The Activity to validate.</param>
+        /// <param name="expectedAction">The expected AdaptiveCardInvokeValue.Action.Type.</param>
+        /// <param name="actionInvokeValue">If successful, the AdaptiveCardInvokeValue instance.</param>
+        /// <param name="errorResponse">If failed, the AdaptiveCardInvokeResponse to reply with.</param>
+        /// <returns>True if Acitivity.Value contains a valid AdaptiveCardInvokeValue.</returns>
         public static bool TryValidateActionInvokeValue(IActivity activity, string expectedAction, out AdaptiveCardInvokeValue actionInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
         {
             actionInvokeValue = null;
