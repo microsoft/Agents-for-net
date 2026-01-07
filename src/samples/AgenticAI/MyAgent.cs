@@ -15,11 +15,12 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // Register a route for Agentic-only Messages.
+        OnMessage("-signout", OnSignOutAgenticAsync, isAgenticOnly: true);
         OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic", "me"]);
 
         // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["me_app_zeta"]);
-        OnMessage("-signout", OnSignOutAsync);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["bot"]);
+        OnMessage("-signout", OnSignOutBotAsync);
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -35,8 +36,13 @@ public class MyAgent : AgentApplication
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
-    private async Task OnSignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnSignOutBotAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me_app_zeta", cancellationToken: cancellationToken);
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "bot", cancellationToken: cancellationToken);
+    }
+
+    private async Task OnSignOutAgenticAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken: cancellationToken);
     }
 }
