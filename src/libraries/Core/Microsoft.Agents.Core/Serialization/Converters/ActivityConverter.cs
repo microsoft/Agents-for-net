@@ -19,8 +19,20 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         public override Activity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var localReader = reader;
+
             using var doc = JsonDocument.ParseValue(ref localReader);
-            var typeDiscriminator = doc.RootElement.GetProperty("type").GetString() ?? throw new JsonException("Type discriminator not found.");
+
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeProperty) || typeProperty.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("Type discriminator not found.");
+            }
+
+            var typeDiscriminator = typeProperty.GetString();
+            if (string.IsNullOrEmpty(typeDiscriminator))
+            {
+                throw new JsonException("Type discriminator not found.");
+            }
 
             // TODO: Should use Attributes to pick up a list of Activity subclasses
             // TODO: Handoff is a bit different (but doesn't have to be).  See Initiation vs Status.  May just collapse back to a single IHandoffActivity instead.
@@ -45,10 +57,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             var productInfo = activity.GetProductInfoEntity();
             if (productInfo != null)
             {
-                if (activity.ChannelId != null)
-                {
-                    activity.ChannelId.SubChannel = productInfo.Id;
-                }
+                activity.ChannelId?.SubChannel = productInfo.Id;
             }
 
             return activity;
