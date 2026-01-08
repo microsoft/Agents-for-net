@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -17,7 +18,7 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; private set; } = InitSerializerOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
         /// <summary>
@@ -32,21 +33,36 @@ namespace Microsoft.Agents.Core.Serialization
         /// <summary>
         /// Maintains a mapping of entity type names to their corresponding Type objects.
         /// </summary>
-        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+        public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
             SerializationInitAssemblyAttribute.InitSerialization();
+            EntityInitAssemblyAttribute.InitSerialization();
         }
 
-        private static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions InitSerializerOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
             return options;
+        }
+
+        private static ConcurrentDictionary<string, Type> CoreEntities()
+        {
+            var entities = new ConcurrentDictionary<string, Type>();
+            entities[Models.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
+            entities[Models.EntityTypes.AICitation] = typeof(AIEntity);
+            entities[Models.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
+            entities[Models.EntityTypes.Mention] = typeof(Mention);
+            entities[Models.EntityTypes.Place] = typeof(Place);
+            entities[Models.EntityTypes.ProductInfo] = typeof(ProductInfo);
+            entities[Models.EntityTypes.StreamInfo] = typeof(StreamInfo);
+            entities[Models.EntityTypes.Thing] = typeof(Thing);
+            return entities;
         }
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
