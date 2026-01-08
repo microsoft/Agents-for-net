@@ -25,7 +25,9 @@ namespace Microsoft.Agents.Core.Models
             ChannelId = channelId;
             ConnectionName = connectionName;
             Token = token;
-            Expiration = expiration;
+
+            if (expiration != default) // do not set the expiration if the default value is passed. If the timezone is + UTC it will cause a fault when assigned as an offset.
+                Expiration = expiration;
         }
 
         /// <summary> The channelId of the TokenResponse. </summary>

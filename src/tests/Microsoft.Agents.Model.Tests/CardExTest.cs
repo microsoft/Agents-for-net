@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(heroCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.hero", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.HeroCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(thumbnailCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.thumbnail", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.ThumbnailCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(signinCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.signin", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.SignInCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(audioCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.audio", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.AudioCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(videoCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.video", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.VideoCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(animationCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.animation", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.AnimationCard, attachments[0].ContentType);
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(oauthCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal("application/vnd.microsoft.card.oauth", attachments[0].ContentType);
+            Assert.Equal(ContentTypes.OAuthCard, attachments[0].ContentType);
         }
     }
 }

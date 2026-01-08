@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Core.Serialization.Converters;
 using System;
 using System.Collections.Concurrent;
@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -19,7 +18,7 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; private set; } = InitSerializerOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
         /// <summary>
@@ -34,21 +33,36 @@ namespace Microsoft.Agents.Core.Serialization
         /// <summary>
         /// Maintains a mapping of entity type names to their corresponding Type objects.
         /// </summary>
-        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+        public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
             SerializationInitAssemblyAttribute.InitSerialization();
+            EntityInitAssemblyAttribute.InitSerialization();
         }
 
-        private static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions InitSerializerOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
             return options;
+        }
+
+        private static ConcurrentDictionary<string, Type> CoreEntities()
+        {
+            var entities = new ConcurrentDictionary<string, Type>();
+            entities[Models.Entities.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
+            entities[Models.Entities.EntityTypes.AICitation] = typeof(AIEntity);
+            entities[Models.Entities.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
+            entities[Models.Entities.EntityTypes.Mention] = typeof(Mention);
+            entities[Models.Entities.EntityTypes.Place] = typeof(Place);
+            entities[Models.Entities.EntityTypes.ProductInfo] = typeof(ProductInfo);
+            entities[Models.Entities.EntityTypes.StreamInfo] = typeof(StreamInfo);
+            entities[Models.Entities.EntityTypes.Thing] = typeof(Thing);
+            return entities;
         }
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)

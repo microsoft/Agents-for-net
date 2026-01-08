@@ -211,7 +211,7 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
 
-            var cacheKey = $"{agentAppInstanceId}/{agenticUserId}/{string.Join(";", scopes)}";
+            var cacheKey = $"{agentAppInstanceId}/{agenticUserId}/{DelimitedScopes(scopes, ";")}";
             var value = _agenticTokenCache.Get(cacheKey);
             if (value != null)
             {
@@ -254,12 +254,11 @@ namespace Microsoft.Agents.Authentication.Msal
             var tokenEndpoint = _connectionSettings.Authority != null 
                 ? $"{ResolveAuthority(_connectionSettings, tenantId)}/oauth2/v2.0/token" // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
-            
 
             var parameters = new Dictionary<string, string>
             {
                 { "client_id", agentAppInstanceId },
-                { "scope", string.Join(" ", scopes) },
+                { "scope", DelimitedScopes(scopes, " ") },
                 { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
                 { "client_assertion", agentToken },
                 { "user_id", agenticUserId },
@@ -328,6 +327,16 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return connectionSettings.TenantId;
+        }
+
+        private static string DelimitedScopes(IList<string> scopes, string separator)
+        {
+            var scp = "";
+            if (scopes != null)
+            {
+                scp = string.Join(separator, scopes);
+            }
+            return scp;
         }
         #endregion
 

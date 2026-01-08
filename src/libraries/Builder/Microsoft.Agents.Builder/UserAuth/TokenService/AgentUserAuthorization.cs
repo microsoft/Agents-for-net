@@ -69,6 +69,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 isMatch |= invoke.Name == SignInConstants.SignInFailure;
             }
 
+            if (context.Activity is IEventActivity eventActivity)
+            {
+                isMatch |= eventActivity.Name == SignInConstants.TokenResponseEventName;
+            }
+
             return isMatch;
         }
 

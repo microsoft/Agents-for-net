@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Authentication
         /// <returns>Returns <c>true</c> if successful; otherwise <c>false</c>.</returns>
         public bool TryGetConnection(string name, out IAccessTokenProvider connection)
         {
-            if (!_connections.TryGetValue(name, out ConnectionDefinition definition))
+            if (string.IsNullOrEmpty(name) || !_connections.TryGetValue(name, out ConnectionDefinition definition))
             {
                 connection = null;
                 return false;

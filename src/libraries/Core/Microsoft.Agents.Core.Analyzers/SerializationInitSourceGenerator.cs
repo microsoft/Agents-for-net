@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -7,6 +10,9 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.Agents.Core.Analyzers
 {
+    /// <summary>
+    /// Creates assembly SerializationInitAssemblyAttribute to register all SerializationInitAttributes for serialization configuration.
+    /// </summary>
     [Generator]
     public class SerializationInitSourceGenerator : IIncrementalGenerator
     {
@@ -36,5 +42,4 @@ namespace Microsoft.Agents.Core.Analyzers
             });
         }
     }
-
 }

@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void EntityTypedDeserialize()
+        public void EntityUnknownTypeDeserialize()
         {
             var json = "{\"entities\": [{\"type\": \"unknown\", \"name\": \"name\"}]}";
             var activity = ProtocolJsonSerializer.ToObject<IActivity>(json);
@@ -95,6 +95,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.IsType<Entity>(activity.Entities[0]);
 
             var entity = activity.Entities[0];
+            Assert.IsAssignableFrom<Entity>(entity);
             Assert.Equal("unknown", entity.Type);
             Assert.NotEmpty(entity.Properties);
             Assert.True(entity.Properties.ContainsKey("name")); 

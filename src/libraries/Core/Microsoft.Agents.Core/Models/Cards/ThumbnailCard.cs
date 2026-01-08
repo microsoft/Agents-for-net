@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Core.Models.Cards
         /// <summary>
         /// The content type value of a <see cref="ThumbnailCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.thumbnail";
+        public const string ContentType = Models.ContentTypes.ThumbnailCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="ThumbnailCard"/>.

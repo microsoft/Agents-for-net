@@ -13,7 +13,7 @@ namespace EmptyAgent;
 
 public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    [ConversationUpdate(Event = "membersAdded")]
+    [ConversationUpdate(Event = ConversationUpdateEvents.MembersAdded)]
     public async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)

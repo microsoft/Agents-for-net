@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Core.Models.Entities
             }
             Appearance = new ClientCitationAppearance()
             {
-                EncodingFormat = useDefaultAdaptiveCard ? "application/vnd.microsoft.card.adaptive" : null,
+                EncodingFormat = useDefaultAdaptiveCard ? ContentTypes.AdaptiveCard : null,
                 Name = title,
                 Url = citationLink,
                 Abstract = abstractText,
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Core.Models.Entities
 
         /// <summary>
         /// Optional. Encoding format of the `citation.appearance.text` field. 
-        /// It should be one of "text/html" or "application/vnd.microsoft.card.adaptive".
+        /// It should be one of <see cref="ContentTypes.Html"/> or <see cref="ContentTypes.AdaptiveCard"/>.
         /// </summary>
         public string? EncodingFormat { get; set; } 
 

@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> Indicates whether the conversation contains more than two participants at the time the activity was generated. </summary>
         public bool? IsGroup { get; set; }
-        /// <summary> Indicates the type of the conversation in channels that distinguish between conversation types. </summary>
+        /// <summary> Indicates the type of the conversation in channels that distinguish between conversation types. See <see cref="ConversationTypes"/></summary>
         public string ConversationType { get; set; }
         /// <summary> This conversation's tenant ID. </summary>
         public string TenantId { get; set; }

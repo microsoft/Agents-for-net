@@ -885,7 +885,7 @@ namespace Microsoft.Agents.Builder.Compat
             return new AdaptiveCardInvokeResponse()
             {
                 StatusCode = (int)statusCode,
-                Type = "application/vnd.microsoft.error",
+                Type = ContentTypes.Error,
                 Value = new Error()
                 {
                     Code = code,

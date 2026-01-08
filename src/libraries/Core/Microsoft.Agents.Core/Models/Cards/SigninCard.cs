@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Core.Models.Cards
         /// <summary>
         /// The content type value of a <see cref="SigninCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.signin";
+        public const string ContentType = Models.ContentTypes.SignInCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="SigninCard"/>.

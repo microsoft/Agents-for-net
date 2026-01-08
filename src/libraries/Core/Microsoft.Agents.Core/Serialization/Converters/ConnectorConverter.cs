@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
     {
         private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
         private static readonly ConcurrentDictionary<(Type, bool, Type), Dictionary<string, (PropertyInfo, bool)>> JsonPropertyMetadataCache = new();
-        
+
         public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
@@ -24,6 +24,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 throw new JsonException($"JSON is not at the start of {typeToConvert.FullName}!");
             }
 
+            if (typeToConvert.GetConstructor(Type.EmptyTypes) is null)
+            {
+                throw new JsonException($"Type '{typeToConvert.FullName}' must have a public parameterless constructor to be deserialized.");
+            }
             var value = Activator.CreateInstance(typeToConvert);
 
             var propertyMetadataMap = GetJsonPropertyMetadata(typeToConvert, options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
@@ -52,7 +56,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             throw new JsonException($"JSON did not contain the end of {typeToConvert.FullName}!");
         }
-
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();

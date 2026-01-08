@@ -143,11 +143,15 @@ namespace Microsoft.Agents.Storage.Transcript
         /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="containerClient">The custom implementation of BlobContainerClient.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
-        internal BlobsTranscriptStore(BlobContainerClient containerClient, JsonSerializerOptions jsonSerializer = null)
+        public BlobsTranscriptStore(BlobContainerClient containerClient, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializer = null)
         {
+            AssertionHelpers.ThrowIfNull(containerClient, nameof(containerClient));
+
             _containerClient = new Lazy<BlobContainerClient>(() => containerClient);
             _serializerOptions = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
+            _storageTransferOptions = storageTransferOptions;
         }
 
         /// <summary>
