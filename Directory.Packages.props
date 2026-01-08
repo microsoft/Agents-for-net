@@ -28,7 +28,7 @@
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="$(Microsoft_IdentityModel_PkgVer)" />
-	<PackageVersion Include="Microsoft.Identity.Web.Certificateless" Version="4.2.0" />
+	<PackageVersion Include="Microsoft.Identity.Web.Certificateless" Version="4.3.0" />
 
 	<PackageVersion Include="Microsoft.Extensions.Logging.AzureAppServices" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(Microsoft_Extentions_PkgVer)" />
