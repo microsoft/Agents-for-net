@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder
         /// This is called at the beginning of each turn.
         /// </remarks>
         /// <returns>A <see cref="IConnectorClient"/>.</returns>
-        Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false);
+        Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
         Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
@@ -40,6 +40,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
         /// <returns>Asynchronous Task with <see cref="IUserTokenClient" /> instance.</returns>
-        Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false);
+        Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, bool useAnonymous = false, CancellationToken cancellationToken = default);
+
+        Task<IUserTokenClient> CreateUserTokenClientAsync(ITurnContext turnContext, bool useAnonymous = false, CancellationToken cancellationToken = default);
     }
 }
