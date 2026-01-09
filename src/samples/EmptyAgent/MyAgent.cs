@@ -28,6 +28,6 @@ public class MyAgent(AgentApplicationOptions options) : AgentApplication(options
     [Message]
     public async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
     }
 }
