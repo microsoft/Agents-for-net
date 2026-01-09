@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Builder.Errors;
+using System;
 using System.Collections.Generic;
-using Microsoft.Agents.Core.Errors;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -185,14 +185,35 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 // Auth flow hasn't start yet.
                 activeFlowName ??= handlerName ?? DefaultHandlerName;
 
+                if (!flowContinuation)
+                {
+                    // Bank the incoming Activity so it can be executed after sign in is complete.
+                    signInState.ContinuationActivity = turnContext.Activity;
+                    signInState.ActiveHandler = activeFlowName;
+
+                    // Save state now to avoid potential race with overlapping requests.
+                    await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+
                 // Get token or start flow for specified flow.
                 SignInResponse response = await _dispatcher.SignUserInAsync(
-                    turnContext,
-                    activeFlowName,
-                    forceSignIn: !flowContinuation,
-                    exchangeConnection: signInState.RuntimeOBOConnectionName,
-                    exchangeScopes: signInState.RuntimeOBOScopes,
-                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                        turnContext,
+                        activeFlowName,
+                        forceSignIn: !flowContinuation,
+                        exchangeConnection: signInState.RuntimeOBOConnectionName,
+                        exchangeScopes: signInState.RuntimeOBOScopes,
+                        cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (response.Status == SignInStatus.Cancelled)
+                {
+                    // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
+                    // e.g., user interrupts the flow by clicking the Consent Cancel button.
+                    DeleteSignInState(turnState);
+                    await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
+                    await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    // Return true since at this point we are in a continuation flow, an we need to start a new flow that is handled later.
+                    return true;
+                }
 
                 if (response.Status == SignInStatus.Duplicate)
                 {
@@ -201,15 +222,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 if (response.Status == SignInStatus.Pending)
                 {
-                    if (!flowContinuation)
-                    {
-                        // Bank the incoming Activity so it can be executed after sign in is complete.
-                        signInState.ContinuationActivity = turnContext.Activity;
-                        signInState.ActiveHandler = activeFlowName;
-
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    }
-
                     // Flow started, pending user input
                     return false;
                 }
@@ -226,12 +238,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     if (_userSignInFailureHandler != null)
                     {
                         await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, signInState.ContinuationActivity, cancellationToken).ConfigureAwait(false);
-                        return false;
+                    }
+                    else
+                    {
+                        await turnContext.SendActivitiesAsync(
+                            _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
+                            cancellationToken).ConfigureAwait(false);
                     }
 
-                    await turnContext.SendActivitiesAsync(
-                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
-                        cancellationToken).ConfigureAwait(false);
                     return false;
                 }
 
@@ -249,11 +263,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         {
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
+                            // It is important to save state now so that the continuationActivity doesn't try to continue the flow again.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await _app.Options.Adapter.ProcessProactiveAsync(
-                                turnContext.Identity, 
-                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
-                                _app, 
+                                turnContext.Identity,
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true),
+                                _app,
                                 cancellationToken).ConfigureAwait(false);
                             return false;
                         }

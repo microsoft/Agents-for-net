@@ -1039,6 +1039,33 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
+        [Fact]
+        public async Task Test_TokenExchange_Deduplication()
+        {
+            // arrange
+            var userTokenClient = new Mock<IUserTokenClient>();
+            userTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new TokenOrSignInResourceResponse() { TokenResponse = new TokenResponse() { Token = "token", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) } }));
+
+            var adapter = new TestAdapter(tokenClient: userTokenClient.Object);
+            var storage = new MemoryStorage();
+            var auth = new AzureBotUserAuthorization(GraphName, storage, MockConnections.Object, new OAuthSettings());
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Name = SignInConstants.TokenExchangeOperationName,
+                ChannelId = Channels.Msteams,
+                From = new() { Id = "user" },
+                Conversation = new() { Id = "conversationId" }
+            };
+
+            var context = adapter.CreateTurnContext(activity);
+            await auth.SignInUserAsync(context);
+            
+            await Assert.ThrowsAsync<DuplicateExchangeException>(() => auth.SignInUserAsync(context));
+        }
+
         private static TurnContext MockTurnContext()
         {
             return new TurnContext(new SimpleAdapter(), new Activity()

@@ -7,6 +7,39 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Storage
 {
+    public record StorageWriteOptions
+    {
+        public StorageWriteOptions(bool ifNotExists = false)
+        {
+            IfNotExists = ifNotExists;
+        }
+
+        /// <summary>
+        /// If true, the write operation will only succeed if the item does not already exist in storage.
+        /// </summary>
+        /// <remarks>
+        /// This is useful for scenarios where you want to ensure that you are creating a new item
+        /// and do not want to overwrite any existing data. If the item already exists, the write
+        /// operation will fail with an error.
+        /// 
+        /// The default value is false, meaning that the write operation will overwrite existing items.
+        /// </remarks>
+        public bool IfNotExists { get; private set; }
+    }
+
+    public interface IStorageExt : IStorage
+    {
+        /// <summary>
+        /// Writes storage items to storage.
+        /// </summary>
+        /// <param name="changes">The items to write, indexed by key.</param>
+        /// <param name="writeOptions">The write options to use for the operation.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>The task result contains the items written, indexed by key.</returns>
+        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default);
+    }
+
     /// <summary>
     /// Defines the interface for a storage layer.
     /// </summary>
