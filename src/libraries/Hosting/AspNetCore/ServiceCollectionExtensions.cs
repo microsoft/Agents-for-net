@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using static Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -226,19 +228,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
+        public delegate Task ProcessRequestDelegate<TAdapter, TAgent>(HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken)
+            where TAgent : IAgent
+            where TAdapter : IAgentHttpAdapter;
+
         /// <summary>
         /// Maps Agent Activity Protocol endpoints.
         /// </summary>
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
         /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
-        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints(
             this WebApplication app, 
             bool requireAuth = true, 
-            [StringSyntax("Route")] string path = "/api/messages", 
-            Action<HttpRequest, HttpResponse, IAgentHttpAdapter, IAgent, CancellationToken> process = null)
+            [StringSyntax("Route")] string path = "/api/messages",
+            ProcessRequestDelegate<IAgentHttpAdapter, IAgent> process = null)
         {
             return app.MapAgentEndpoints<IAgentHttpAdapter, IAgent>(requireAuth, path, process);
         }
@@ -249,13 +255,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
         /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
-        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints<TAgent>(
             this WebApplication app, 
             bool requireAuth = true, 
-            [StringSyntax("Route")] string path = "/api/messages", 
-            Action<HttpRequest, HttpResponse, IAgentHttpAdapter, TAgent, CancellationToken> process = null)
+            [StringSyntax("Route")] string path = "/api/messages",
+            ProcessRequestDelegate<IAgentHttpAdapter, TAgent> process = null)
             where TAgent : IAgent
         {
             return app.MapAgentEndpoints<IAgentHttpAdapter, TAgent>(requireAuth, path, process);
@@ -267,13 +273,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
         /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
-        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints<TAdapter, TAgent>(
             this WebApplication app, 
             bool requireAuth = true, 
-            [StringSyntax("Route")] string path = "/api/messages", 
-            Action<HttpRequest, HttpResponse, TAdapter, TAgent, CancellationToken> process = null) 
+            [StringSyntax("Route")] string path = "/api/messages",
+            ProcessRequestDelegate<TAdapter, TAgent> process = null) 
             where TAgent : IAgent 
             where TAdapter : IAgentHttpAdapter
         {
@@ -299,7 +305,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 if (process != null)
                 {
-                    process(request, response, adapter, agent, cancellationToken);
+                    await process(request, response, adapter, agent, cancellationToken);
                 }
                 else
                 {
