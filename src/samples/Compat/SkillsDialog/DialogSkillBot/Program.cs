@@ -39,18 +39,14 @@ builder.Services.AddSingleton<ConversationState>();
 
 WebApplication app = builder.Build();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
-
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+// Map Agent endpoints.  By default the agent will respond on '/api/messages'.
+app.MapAgentEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:39783");
+    app.Urls.Add($"http://localhost:3978");
 }
 
 app.Run();

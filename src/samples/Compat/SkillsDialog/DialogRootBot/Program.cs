@@ -51,12 +51,8 @@ WebApplication app = builder.Build();
 app.UseRouting();
 app.MapControllers();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
-
-app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+// Map Agent endpoints.  By default the agent will respond on '/api/messages'.
+app.MapAgentEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {

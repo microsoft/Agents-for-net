@@ -11,6 +11,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
+using System;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
@@ -29,18 +30,28 @@ public static class A2AServiceExtensions
         services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
     }
 
+
+    [Obsolete("Use MapA2AEndpoints instead.")]
+    public static IEndpointConventionBuilder MapA2A(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
+    {
+        return app.MapA2AEndpoints(requireAuth, pattern);
+    }
+
     /// <summary>
     /// Maps A2A endpoints.
     /// </summary>
-    /// <param name="endpoints"></param>
+    /// <param name="app"></param>
     /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
     /// <param name="pattern">Indicate the route patter, defaults to "/a2a"</param>
-    /// <returns></returns>
-    public static IEndpointConventionBuilder MapA2A(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
+    /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
+    public static IEndpointConventionBuilder MapA2AEndpoints(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
     {
-        var a2aGroup = endpoints.MapGroup(pattern);
+        var a2aGroup = app.MapGroup(pattern);
         if (requireAuth)
         {
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             a2aGroup.RequireAuthorization();
         }
         else
@@ -68,7 +79,7 @@ public static class A2AServiceExtensions
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, typeof(JsonRpcError), contentTypes: ["application/json"]));
 
         // Temporary because the TCK is hitting host root with the older document name
-        endpoints.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        app.MapGet("/.well-known/agent.json", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
         {
             System.Diagnostics.Trace.WriteLine("/.well-known/agent.json");
             await adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);

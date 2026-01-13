@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MultiAgent;
-using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -33,18 +31,9 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 WebApplication app = builder.Build();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
-
-// This receives incoming messages from Azure Bot Service or other SDK Agents
-app.MapPost("/api/1/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, Agent1 agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
-
-app.MapPost("/api/2/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, Agent2 agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+// Map Agent endpoints.  By default the agent will respond on '/api/messages'.
+app.MapAgentEndpoints<Agent1>(!app.Environment.IsDevelopment(), "/api/1/messages");
+app.MapAgentEndpoints<Agent2>(!app.Environment.IsDevelopment(), "/api/2/messages");
 
 if (app.Environment.IsDevelopment())
 {

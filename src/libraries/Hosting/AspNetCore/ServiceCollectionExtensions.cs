@@ -3,15 +3,20 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -219,6 +224,90 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
                 services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
             }
+        }
+
+        /// <summary>
+        /// Maps Agent Activity Protocol endpoints.
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
+        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
+        public static IEndpointConventionBuilder MapAgentEndpoints(
+            this WebApplication app, 
+            bool requireAuth = true, 
+            [StringSyntax("Route")] string path = "/api/messages", 
+            Action<HttpRequest, HttpResponse, IAgentHttpAdapter, IAgent, CancellationToken> process = null)
+        {
+            return app.MapAgentEndpoints<IAgentHttpAdapter, IAgent>(requireAuth, path, process);
+        }
+
+        /// <summary>
+        /// Maps Agent Activity Protocol endpoints.
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
+        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
+        public static IEndpointConventionBuilder MapAgentEndpoints<TAgent>(
+            this WebApplication app, 
+            bool requireAuth = true, 
+            [StringSyntax("Route")] string path = "/api/messages", 
+            Action<HttpRequest, HttpResponse, IAgentHttpAdapter, TAgent, CancellationToken> process = null)
+            where TAgent : IAgent
+        {
+            return app.MapAgentEndpoints<IAgentHttpAdapter, TAgent>(requireAuth, path, process);
+        }
+
+        /// <summary>
+        /// Maps Agent Activity Protocol endpoints.
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
+        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
+        /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
+        public static IEndpointConventionBuilder MapAgentEndpoints<TAdapter, TAgent>(
+            this WebApplication app, 
+            bool requireAuth = true, 
+            [StringSyntax("Route")] string path = "/api/messages", 
+            Action<HttpRequest, HttpResponse, TAdapter, TAgent, CancellationToken> process = null) 
+            where TAgent : IAgent 
+            where TAdapter : IAgentHttpAdapter
+        {
+            var assemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+            var assemblyVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+            app.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
+
+            var agentGroup = app.MapGroup("");
+            if (requireAuth)
+            {
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                agentGroup.RequireAuthorization();
+            }
+            else
+            {
+                agentGroup.AllowAnonymous();
+            }
+
+            // This receives incoming messages from Azure Bot Service or other SDK Agents
+            var incomingRoute = agentGroup.MapPost(path, async (HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+            {
+                if (process != null)
+                {
+                    process(request, response, adapter, agent, cancellationToken);
+                }
+                else
+                {
+                    await adapter.ProcessAsync(request, response, agent, cancellationToken);
+                }
+            });
+
+            return agentGroup;
         }
     }
 }

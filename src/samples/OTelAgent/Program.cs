@@ -1,32 +1,25 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using OTelAgent;
-using Microsoft.Agents.Builder;
+// Azure Monitor exporter
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+// Configuration extensions
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System;
-using System.Diagnostics.Metrics;
-
+using Microsoft.Extensions.Logging;
 // OpenTelemetry imports
-using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-
-// Configuration extensions
-using Microsoft.Extensions.Configuration;
-
-// Azure Monitor exporter
-using Azure.Monitor.OpenTelemetry.Exporter;
-using Microsoft.Extensions.Logging;
+using OTelAgent;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -139,13 +132,7 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
-
-// Incoming messages route
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+app.MapAgentEndpoints(requireAuth: !app.Environment.IsDevelopment(), process: async (request, response, adapter, agent, cancellationToken) =>
 {
     using var activity = AgentTelemetry.ActivitySource.StartActivity("agent.process_message");
 
@@ -178,13 +165,11 @@ var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, Htt
     }
 });
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    incomingRoute.RequireAuthorization();
-}
-else
-{
-    app.Urls.Add("http://localhost:3978");
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
+    app.Urls.Add($"http://localhost:3978");
 }
 
 app.Run();
