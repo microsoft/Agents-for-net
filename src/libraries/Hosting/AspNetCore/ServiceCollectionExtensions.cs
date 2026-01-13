@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
         /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints(
@@ -248,7 +248,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
         /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints<TAgent>(
@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="app"></param>
         /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-        /// <param name="path">Optional: Indicate the route patter, defaults to "/api/messages"</param>
+        /// <param name="path">Optional: Indicate the route pattern, defaults to "/api/messages"</param>
         /// <param name="process">Optional: Action to handle request processing.  Defaults to IAgentHttpAdapter.ProcessActivityAsync.</param>
         /// <returns>Returns a builder for configuring additional endpoint conventions like authorization policies.</returns>
         public static IEndpointConventionBuilder MapAgentEndpoints<TAdapter, TAgent>(
