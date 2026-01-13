@@ -32,8 +32,8 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 WebApplication app = builder.Build();
 
 // Map Agent endpoints.  By default the agent will respond on '/api/messages'.
-app.MapAgentEndpoints<Agent1>(!app.Environment.IsDevelopment(), "/api/1/messages");
-app.MapAgentEndpoints<Agent2>(!app.Environment.IsDevelopment(), "/api/2/messages");
+app.MapAgentEndpoints<Agent1>(requireAuth: !app.Environment.IsDevelopment(), path: "/api/1/messages");
+app.MapAgentEndpoints<Agent2>(requireAuth: !app.Environment.IsDevelopment(), path: "/api/2/messages");
 
 if (app.Environment.IsDevelopment())
 {
