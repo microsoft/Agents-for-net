@@ -301,7 +301,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             // This receives incoming messages from Azure Bot Service or other SDK Agents
-            var incomingRoute = agentGroup.MapPost(path, async (HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+            agentGroup.MapPost(path, async (HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
             {
                 if (process != null)
                 {
