@@ -18,7 +18,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
