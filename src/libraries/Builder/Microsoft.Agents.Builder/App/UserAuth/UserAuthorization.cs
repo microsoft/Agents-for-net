@@ -104,9 +104,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
-                // An exchangeable token needs to be exchanged.
                 if (!turnContext.IsAgenticRequest())
                 {
+                    // An exchangeable token always needs to be exchanged.
                     if (!token.IsExchangeable)
                     {
                         var diff = token.Expiration - DateTimeOffset.UtcNow;
@@ -117,13 +117,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     }
                 }
 
-
                 // Get a new token if near expiration, or it's an exchangeable token.
                 var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
-                    _authTokens[handlerName] = response;
+                    if (!token.IsExchangeable)
+                    {
+                        // Refresh cahce with the latest non-exchangeable token.
+                        _authTokens[handlerName] = response;
+                    }
                     return response.Token;
                 }
 
