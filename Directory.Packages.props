@@ -81,7 +81,7 @@
 
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />
-	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.1" />
+	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.2" />
 	<PackageVersion Include="Azure.Identity" Version="1.17.1" />
 	<PackageVersion Include="Azure.Core" Version="1.50.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
