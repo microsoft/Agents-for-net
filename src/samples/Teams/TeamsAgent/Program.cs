@@ -4,7 +4,6 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 
@@ -20,12 +19,9 @@ builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
 {
     return 
     [
-        new TeamsAttachmentDownloader(new TeamsAttachmentDownloaderOptions()
-        {
-            TokenProviderName = "ServiceConnection"
-        },
-        sp.GetService<IConnections>()!,
-        sp.GetService<IHttpClientFactory>()!),
+        new Microsoft.Agents.Builder.App.M365AttachmentDownloader(
+            sp.GetService<IConnections>()!,
+            sp.GetService<IHttpClientFactory>()!),
         // new AttachmentDownloader(sp.GetService<IHttpClientFactory>()!)
     ];
 });

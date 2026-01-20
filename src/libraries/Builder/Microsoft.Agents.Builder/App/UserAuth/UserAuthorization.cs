@@ -136,7 +136,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
-                    CacheToken(handlerName, response);
+                    if (!token.IsExchangeable)
+                    {
+                        // Refresh cahce with the latest non-exchangeable token.
+                        CacheToken(handlerName, response);
+                    }
                     return response.Token;
                 }
 

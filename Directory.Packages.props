@@ -15,8 +15,10 @@
     <Microsoft_Extentions_PkgVer>10.0.1</Microsoft_Extentions_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.22</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.15.0</Microsoft_IdentityModel_PkgVer>
-	<Microsoft_IdentityClient_PkgVer>4.79.2</Microsoft_IdentityClient_PkgVer>
-  </PropertyGroup>
+	<Microsoft_IdentityClient_PkgVer>4.80.0</Microsoft_IdentityClient_PkgVer>
+	<OpenTelemetry_PkgVer>1.14.0</OpenTelemetry_PkgVer>
+	<Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
+	<Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>  </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
 	  
@@ -28,7 +30,7 @@
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="$(Microsoft_IdentityModel_PkgVer)" />
-	<PackageVersion Include="Microsoft.Identity.Web.Certificateless" Version="4.2.0" />
+	<PackageVersion Include="Microsoft.Identity.Web.Certificateless" Version="4.3.0" />
 
 	<PackageVersion Include="Microsoft.Extensions.Logging.AzureAppServices" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(Microsoft_Extentions_PkgVer)" />
@@ -58,12 +60,25 @@
     <PackageVersion Include="Microsoft.AspNetCore.Http" Version="$(Microsoft_AspNetCore_PkgVer)" />
     <!-- Test nuget packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.extensibility.core" Version="2.9.3" />
-	<PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
+
+    <PackageVersion Include="xunit"                                                                        Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.abstractions"                                                           Version="2.0.3" />
+    <PackageVersion Include="xunit.assert"                                                                 Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.assert.source"                                                          Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.core"                                                                   Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.extensibility.core"                                                     Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.extensibility.execution"                                                Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.runner.utility"                                                         Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.runner.visualstudio"                                                    Version="2.8.2" />
+
+    <PackageVersion Include="xunit.v3"                                                                     Version="$(Xunit_v3_PackageVersion)" />
+    <PackageVersion Include="xunit.v3.assert"                                                              Version="$(Xunit_v3_PackageVersion)" />  
+    <PackageVersion Include="xunit.v3.core"                                                                Version="$(Xunit_v3_PackageVersion)" />
+    <PackageVersion Include="xunit.v3.extensibility.core"                                                  Version="$(Xunit_v3_PackageVersion)" />      
+
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />
 	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.1" />
@@ -74,14 +89,21 @@
     <PackageVersion Include="Microsoft.Recognizers.Text.Choice" Version="1.3.2" />
     <PackageVersion Include="Microsoft.Recognizers.Text.DateTime" Version="1.3.2" />
     <PackageVersion Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.3.2" />
-    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />
-	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.10.0" />
-	<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
-	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  <PrivateAssets>all</PrivateAssets>
+	<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		<PrivateAssets>all</PrivateAssets>
 	</PackageVersion>
-
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp"             Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"  Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.Common"             Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"  Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting"   Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.2" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeRefactoring.Testing" Version="1.1.2" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />
+	  
 	<!-- Samples -->
     <PackageVersion Include="AdaptiveCards" Version="3.1.0" />
     <PackageVersion Include="AdaptiveCards.Templating" Version="2.0.3" />
@@ -113,19 +135,17 @@
 	<PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
 
 	  <!-- OpenTelemetry packages -->
-	  <PackageVersion Include="OpenTelemetry" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="0.5.0-beta.5" />
-
-	  <!-- OpenTelemetry Exporters -->
-	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.14.0-beta.2" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetry_PkgVer)" />
 
 	  <!-- Azure Monitor (Application Insights) Exporter -->
-	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
+	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
   
   </ItemGroup>
 </Project>

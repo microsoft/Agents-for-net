@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder
 #else
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null) {
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false) {
             var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
                 bool isForChannel = false; 
                 if (turnContext.Activity.ChannelId != null && ChannelId != null)
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder
                 return isForChannel && await routeSelector(turnContext, cancellationToken);
             });
 
-            agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers);
+            agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
         }
     }
 }

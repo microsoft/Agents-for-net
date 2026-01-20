@@ -118,8 +118,8 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="isInvokeRoute">Boolean indicating if the RouteSelector is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers"></param>
-        /// <param name="isAgenticOnly"></param>
+        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
         {
@@ -822,6 +822,17 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
 
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    {
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        {
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                        }
+                    }
+
                     // Call before turn handler
                     foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                     {
@@ -833,17 +844,6 @@ namespace Microsoft.Agents.Builder.App
                             await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                             return;
-                        }
-                    }
-
-                    // Download any input files
-                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                    if (fileDownloaders != null && fileDownloaders.Count > 0)
-                    {
-                        foreach (IInputFileDownloader downloader in fileDownloaders)
-                        {
-                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
                         }
                     }
 
