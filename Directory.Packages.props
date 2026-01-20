@@ -113,7 +113,7 @@
 	<PackageVersion Include="CsvHelper" Version="33.0.1" />
 	<PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />  <!-- To override older version in AdaptiveCards -->
     <!-- Semantic Kernel Samples -->
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.69.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.45.0-preview" />
 	<PackageVersion Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.45.0-preview" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
