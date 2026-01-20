@@ -48,7 +48,7 @@
 	<PackageVersion Include="System.Text.Json" Version="10.0.1" />
     <PackageVersion Include="System.Memory.Data" Version="10.0.1" />
 	<PackageVersion Include="System.Runtime.Caching" Version="10.0.1" />
-	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
+	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 	  
 	<!-- ASP.net Core support -->
