@@ -12,7 +12,7 @@
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
   <PropertyGroup>
-    <Microsoft_Extentions_PkgVer>10.0.1</Microsoft_Extentions_PkgVer>
+    <Microsoft_Extentions_PkgVer>10.0.2</Microsoft_Extentions_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.22</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.15.0</Microsoft_IdentityModel_PkgVer>
 	<Microsoft_IdentityClient_PkgVer>4.80.0</Microsoft_IdentityClient_PkgVer>
