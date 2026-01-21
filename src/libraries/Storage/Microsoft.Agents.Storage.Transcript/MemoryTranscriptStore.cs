@@ -1,10 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,7 +20,7 @@ namespace Microsoft.Agents.Storage.Transcript
     /// </remarks>
     public class MemoryTranscriptStore : ITranscriptStore
     {
-        private readonly Dictionary<string, Dictionary<string, List<IActivity>>> _channels = [];
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, ImmutableList<IActivity>>> _channels = new();
 
         /// <summary>
         /// Logs an activity to the transcript.
@@ -32,74 +34,63 @@ namespace Microsoft.Agents.Storage.Transcript
                 throw new ArgumentNullException(nameof(activity), "activity cannot be null for LogActivity()");
             }
 
-            lock (_channels)
-            {
-                if (!_channels.TryGetValue(activity.ChannelId, out var channel))
-                {
-                    channel = [];
-                    _channels[activity.ChannelId] = channel;
-                }
+            var channel = _channels.GetOrAdd(activity.ChannelId, _ => new ConcurrentDictionary<string, ImmutableList<IActivity>>());
 
-                if (!channel.TryGetValue(activity.Conversation.Id, out var transcript))
-                {
-                    transcript = [];
-                    channel[activity.Conversation.Id] = transcript;
-                }
-
-                switch (activity.Type)
-                {
-                    case ActivityTypes.MessageDelete:
-                        // if message delete comes in, delete the message from the transcript
-                        for (int i = 0; i < transcript.Count; i++)
-                        {
-                            var originalActivity = transcript[i];
-                            if (originalActivity.Id == activity.Id)
-                            {
-                                // tombstone the original message
-                                transcript[i] = new Activity()
-                                {
-                                    Type = ActivityTypes.MessageDelete,
-                                    Id = originalActivity.Id,
-                                    From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
-                                    Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),
-                                    Locale = originalActivity.Locale,
-                                    LocalTimestamp = originalActivity.Timestamp,
-                                    Timestamp = originalActivity.Timestamp,
-                                    ChannelId = originalActivity.ChannelId,
-                                    Conversation = originalActivity.Conversation,
-                                    ServiceUrl = originalActivity.ServiceUrl,
-                                    ReplyToId = originalActivity.ReplyToId,
-                                };
-                                break;
-                            }
-                        }
-
-                        break;
-
-                    case ActivityTypes.MessageUpdate:
-                        for (int i = 0; i < transcript.Count; i++)
-                        {
-                            var originalActivity = transcript[i];
-                            if (originalActivity.Id == activity.Id)
-                            {
-                                var updatedActivity = activity.Clone();
-                                updatedActivity.Type = originalActivity.Type; // fixup original type (should be Message)
-                                updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
-                                updatedActivity.Timestamp = originalActivity.Timestamp;
-                                transcript[i] = updatedActivity;
-                                break;
-                            }
-                        }
-
-                        break;
-
-                    default:
-                        transcript.Add(activity);
-                        break;
-                }
-            }
+            channel.AddOrUpdate(
+                activity.Conversation.Id,
+                // Add factory - create new list with the activity
+                _ => ProcessActivity(ImmutableList<IActivity>.Empty, activity),
+                // Update factory - add to existing list
+                (_, existingTranscript) => ProcessActivity(existingTranscript, activity)
+            );
 
             return Task.CompletedTask;
+        }
+
+        private static ImmutableList<IActivity> ProcessActivity(ImmutableList<IActivity> transcript, IActivity activity)
+        {
+            switch (activity.Type)
+            {
+                case ActivityTypes.MessageDelete:
+                    // if message delete comes in, delete the message from the transcript
+                    var deleteIndex = transcript.FindIndex(a => a.Id == activity.Id);
+                    if (deleteIndex >= 0)
+                    {
+                        var originalActivity = transcript[deleteIndex];
+                        var tombstone = new Activity()
+                        {
+                            Type = ActivityTypes.MessageDelete,
+                            Id = originalActivity.Id,
+                            From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
+                            Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),
+                            Locale = originalActivity.Locale,
+                            LocalTimestamp = originalActivity.Timestamp,
+                            Timestamp = originalActivity.Timestamp,
+                            ChannelId = originalActivity.ChannelId,
+                            Conversation = originalActivity.Conversation,
+                            ServiceUrl = originalActivity.ServiceUrl,
+                            ReplyToId = originalActivity.ReplyToId,
+                        };
+                        return transcript.SetItem(deleteIndex, tombstone);
+                    }
+                    return transcript;
+
+                case ActivityTypes.MessageUpdate:
+                    var updateIndex = transcript.FindIndex(a => a.Id == activity.Id);
+                    if (updateIndex >= 0)
+                    {
+                        var originalActivity = transcript[updateIndex];
+                        var updatedActivity = activity.Clone();
+                        updatedActivity.Type = originalActivity.Type; // fixup original type (should be Message)
+                        updatedActivity.LocalTimestamp = originalActivity.LocalTimestamp;
+                        updatedActivity.Timestamp = originalActivity.Timestamp;
+                        return transcript.SetItem(updateIndex, updatedActivity);
+                    }
+                    return transcript;
+
+                default:
+                    return transcript.Add(activity);
+            }
         }
 
         /// <summary>
@@ -117,39 +108,37 @@ namespace Microsoft.Agents.Storage.Transcript
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var pagedResult = new PagedResult<IActivity>();
-            lock (_channels)
+
+            if (_channels.TryGetValue(channelId, out var channel))
             {
-                if (_channels.TryGetValue(channelId, out Dictionary<string, List<IActivity>> channel))
+                if (channel.TryGetValue(conversationId, out var transcript))
                 {
-                    if (channel.TryGetValue(conversationId, out List<IActivity> transcript))
+                    if (continuationToken != null)
                     {
-                        if (continuationToken != null)
-                        {
-                            pagedResult.Items = transcript
-                                .OrderBy(a => a.Timestamp)
-                                .Where(a => a.Timestamp >= startDate)
-                                .SkipWhile(a => a.Id != continuationToken)
-                                .Skip(1)
-                                .Take(20)
-                                .ToArray();
+                        pagedResult.Items = transcript
+                            .OrderBy(a => a.Timestamp)
+                            .Where(a => a.Timestamp >= startDate)
+                            .SkipWhile(a => a.Id != continuationToken)
+                            .Skip(1)
+                            .Take(20)
+                            .ToArray();
 
-                            if (pagedResult.Items.Count == 20)
-                            {
-                                pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
-                            }
+                        if (pagedResult.Items.Count == 20)
+                        {
+                            pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                         }
-                        else
-                        {
-                            pagedResult.Items = transcript
-                                .OrderBy(a => a.Timestamp)
-                                .Where(a => a.Timestamp >= startDate)
-                                .Take(20)
-                                .ToArray();
+                    }
+                    else
+                    {
+                        pagedResult.Items = transcript
+                            .OrderBy(a => a.Timestamp)
+                            .Where(a => a.Timestamp >= startDate)
+                            .Take(20)
+                            .ToArray();
 
-                            if (pagedResult.Items.Count == 20)
-                            {
-                                pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
-                            }
+                        if (pagedResult.Items.Count == 20)
+                        {
+                            pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                         }
                     }
                 }
@@ -169,12 +158,9 @@ namespace Microsoft.Agents.Storage.Transcript
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
-            lock (_channels)
+            if (_channels.TryGetValue(channelId, out var channel))
             {
-                if (_channels.TryGetValue(channelId, out var channel))
-                {
-                    channel.Remove(conversationId);
-                }
+                channel.TryRemove(conversationId, out _);
             }
 
             return Task.CompletedTask;
@@ -192,46 +178,47 @@ namespace Microsoft.Agents.Storage.Transcript
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
 
             var pagedResult = new PagedResult<TranscriptInfo>();
-            lock (_channels)
+
+            if (_channels.TryGetValue(channelId, out var channel))
             {
-                if (_channels.TryGetValue(channelId, out var channel))
+                // Take a snapshot of the channel for consistent iteration
+                var channelSnapshot = channel.ToArray();
+
+                if (continuationToken != null)
                 {
-                    if (continuationToken != null)
+                    pagedResult.Items = channelSnapshot.Select(c => new TranscriptInfo()
                     {
-                        pagedResult.Items = channel.Select(c => new TranscriptInfo()
+                        ChannelId = channelId,
+                        Id = c.Key,
+                        Created = c.Value.FirstOrDefault()?.Timestamp ?? default,
+                    })
+                    .OrderBy(c => c.Created)
+                    .SkipWhile(c => c.Id != continuationToken)
+                    .Skip(1)
+                    .Take(20)
+                    .ToArray();
+
+                    if (pagedResult.Items.Count == 20)
+                    {
+                        pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
+                    }
+                }
+                else
+                {
+                    pagedResult.Items = channelSnapshot.Select(
+                        c => new TranscriptInfo
                         {
                             ChannelId = channelId,
                             Id = c.Key,
                             Created = c.Value.FirstOrDefault()?.Timestamp ?? default,
                         })
                         .OrderBy(c => c.Created)
-                        .SkipWhile(c => c.Id != continuationToken)
-                        .Skip(1)
                         .Take(20)
                         .ToArray();
 
-                        if (pagedResult.Items.Count == 20)
-                        {
-                            pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
-                        }
-                    }
-                    else
+                    if (pagedResult.Items.Count == 20)
                     {
-                        pagedResult.Items = channel.Select(
-                            c => new TranscriptInfo
-                            {
-                                ChannelId = channelId,
-                                Id = c.Key,
-                                Created = c.Value.FirstOrDefault()?.Timestamp ?? default,
-                            })
-                            .OrderBy(c => c.Created)
-                            .Take(20)
-                            .ToArray();
-
-                        if (pagedResult.Items.Count == 20)
-                        {
-                            pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
-                        }
+                        pagedResult.ContinuationToken = pagedResult.Items.Last().Id;
                     }
                 }
             }
