@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
@@ -25,8 +26,9 @@ namespace Microsoft.Agents.Storage
     {
         // If a JsonSerializer is not provided during construction, this will be the default static JsonSerializer.
         private readonly JsonSerializerOptions _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
-        private readonly Dictionary<string, JsonObject> _memory = dictionary ?? [];
-        private readonly object _syncroot = new();
+        private readonly ConcurrentDictionary<string, JsonObject> _memory = dictionary != null
+            ? new ConcurrentDictionary<string, JsonObject>(dictionary)
+            : new ConcurrentDictionary<string, JsonObject>();
         private int _eTag = 0;
 
         /// <summary>
@@ -40,15 +42,11 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
         public Task DeleteAsync(string[] keys, CancellationToken cancellationToken)
         {
-
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            lock (_syncroot)
+            foreach (var key in keys)
             {
-                foreach (var key in keys)
-                {
-                    _memory.Remove(key);
-                }
+                _memory.TryRemove(key, out _);
             }
 
             return Task.CompletedTask;
@@ -69,22 +67,21 @@ namespace Microsoft.Agents.Storage
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
             var storeItems = new Dictionary<string, object>(keys.Length);
-            lock (_syncroot)
+
+            foreach (var key in keys)
             {
-                foreach (var key in keys)
+                if (_memory.TryGetValue(key, out var state))
                 {
-                    if (_memory.TryGetValue(key, out var state))
+                    // Create a copy to avoid concurrent modification issues
+                    var stateCopy = JsonNode.Parse(state.ToJsonString())?.AsObject();
+                    if (stateCopy != null && stateCopy.GetTypeInfo(out var type))
                     {
-                        if (state.GetTypeInfo(out var type))
-                        {
-                            var typeProps = state.RemoveTypeInfoProperties();
-                            storeItems.Add(key, state.Deserialize(type, _stateJsonSerializer));
-                            state.SetTypeInfoProperties(typeProps);
-                        }
-                        else
-                        {
-                            storeItems.Add(key, state);
-                        }
+                        var typeProps = stateCopy.RemoveTypeInfoProperties();
+                        storeItems.Add(key, stateCopy.Deserialize(type, _stateJsonSerializer));
+                    }
+                    else if (stateCopy != null)
+                    {
+                        storeItems.Add(key, stateCopy);
                     }
                 }
             }
@@ -119,45 +116,58 @@ namespace Microsoft.Agents.Storage
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-            lock (_syncroot)
+
+            foreach (var change in changes)
             {
-                foreach (var change in changes)
-                {
-                    var newValue = change.Value;
+                var newValue = change.Value;
 
-                    var oldStateETag = default(string);
-
-                    if (_memory.TryGetValue(change.Key, out var oldState))
+                // Use AddOrUpdate for atomic operations
+                _memory.AddOrUpdate(
+                    change.Key,
+                    // Add factory
+                    (_) => CreateNewState(newValue),
+                    // Update factory
+                    (_, oldState) =>
                     {
+                        string oldStateETag = null;
                         if (oldState.TryGetPropertyValue("ETag", out var etag))
                         {
-                            oldStateETag = etag.ToString();
+                            oldStateETag = etag?.ToString();
                         }
-                    }
 
-                    var newState = newValue != null ? JsonObject.Create(JsonSerializer.SerializeToElement(newValue, _stateJsonSerializer)) : null;
-
-                    // Set ETag if applicable
-                    if (newValue is IStoreItem newStoreItem)
-                    {
-                        if (oldStateETag != null
-                                &&
-                           newStoreItem.ETag != "*"
-                                &&
-                           newStoreItem.ETag != oldStateETag)
+                        // Check ETag if applicable
+                        if (newValue is IStoreItem newStoreItem)
                         {
-                            throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                            if (oldStateETag != null
+                                    &&
+                               newStoreItem.ETag != "*"
+                                    &&
+                               newStoreItem.ETag != oldStateETag)
+                            {
+                                throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                            }
                         }
 
-                        newState["ETag"] = (_eTag++).ToString(CultureInfo.InvariantCulture);
+                        return CreateNewState(newValue);
                     }
-
-                    newState?.AddTypeInfo(change.Value);
-                    _memory[change.Key] = newState;
-                }
+                );
             }
 
             return Task.CompletedTask;
+        }
+
+        private JsonObject CreateNewState(object value)
+        {
+            var newState = value != null ? JsonObject.Create(JsonSerializer.SerializeToElement(value, _stateJsonSerializer)) : null;
+
+            // Set ETag if applicable
+            if (newState != null && value is IStoreItem)
+            {
+                newState["ETag"] = Interlocked.Increment(ref _eTag).ToString(CultureInfo.InvariantCulture);
+            }
+
+            newState?.AddTypeInfo(value);
+            return newState;
         }
 
         //<inheritdoc/>
