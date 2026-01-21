@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Authentication;
@@ -13,6 +13,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +27,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     internal class HostedActivityService : BackgroundService
     {
         private readonly ILogger<HostedActivityService> _logger;
-        private readonly ReaderWriterLockSlim _lock = new();
+        private readonly BehaviorSubject<bool> _isAcceptingWork = new(true);
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
         private readonly int _shutdownTimeoutSeconds;
@@ -67,11 +69,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
             _activityQueue.Stop();
 
-            // Obtain a write lock and do not release it, preventing new tasks from starting
-            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
+            // Signal that we're no longer accepting work
+            _isAcceptingWork.OnNext(false);
+            _isAcceptingWork.OnCompleted();
+
+            // Wait for currently running tasks, but only up to the timeout
+            var timeout = TimeSpan.FromSeconds(_shutdownTimeoutSeconds);
+            var activeTasks = _activitiesProcessing.Values.ToArray();
+
+            if (activeTasks.Length > 0)
             {
-                // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(
+                    Task.WhenAll(activeTasks),
+                    Task.Delay(timeout, stoppingToken)
+                ).ConfigureAwait(false);
             }
 
             await base.StopAsync(stoppingToken);
@@ -93,9 +104,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 {
                     try
                     {
-                        // The read lock will not be acquirable if the app is shutting down.
-                        // New tasks should not be starting during shutdown.
-                        if (_lock.TryEnterReadLock(500))
+                        // Check if we're still accepting work
+                        if (_isAcceptingWork.Value)
                         {
                             // Create the task which will execute the work item.
                             var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
@@ -115,9 +125,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
                         }
                     }
-                    finally
+                    catch (Exception ex)
                     {
-                        _lock.ExitReadLock();
+                        _logger.LogError(ex, "Error processing activity for '{ConversationId}'.", activityWithClaims?.Activity?.Conversation?.Id);
                     }
                 }
             }
@@ -148,15 +158,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IAgent)agent).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
                     {
                         var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-                            ((IAgent)agent).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
 
                         if (activityWithClaims.OnComplete != null)
@@ -173,7 +183,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     InvokeResponse invokeResponse = null;
                     if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
                     {
-                        invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
+                        invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError };
                     }
 
                     if (activityWithClaims.OnComplete != null)
@@ -182,6 +192,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
                 }
             }, stoppingToken);
+        }
+
+        public override void Dispose()
+        {
+            _isAcceptingWork.Dispose();
+            base.Dispose();
         }
     }
 }
