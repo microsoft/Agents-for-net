@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,19 +16,26 @@ namespace Microsoft.Agents.Storage
     /// <summary>
     /// A storage layer that uses an in-memory dictionary.
     /// </summary>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="MemoryStorage"/> class.
-    /// </remarks>
-    /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
-    /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
-    public class MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null) : IStorage
+    public class MemoryStorage : IStorage
     {
         // If a JsonSerializer is not provided during construction, this will be the default static JsonSerializer.
-        private readonly JsonSerializerOptions _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
-        private readonly ConcurrentDictionary<string, JsonObject> _memory = dictionary != null
-            ? new ConcurrentDictionary<string, JsonObject>(dictionary)
-            : new ConcurrentDictionary<string, JsonObject>();
+        private readonly JsonSerializerOptions _stateJsonSerializer;
+        private readonly ConcurrentDictionary<string, JsonObject> _memory;
+        private readonly Dictionary<string, JsonObject> _externalDictionary;
         private int _eTag = 0;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MemoryStorage"/> class.
+        /// </summary>
+        /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
+        /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.
+        /// When provided, this dictionary will be used directly (not copied) for storage operations.</param>
+        public MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null)
+        {
+            _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
+            _externalDictionary = dictionary;
+            _memory = dictionary == null ? new ConcurrentDictionary<string, JsonObject>() : null;
+        }
 
         /// <summary>
         /// Deletes storage items from storage.
@@ -46,7 +52,14 @@ namespace Microsoft.Agents.Storage
 
             foreach (var key in keys)
             {
-                _memory.TryRemove(key, out _);
+                if (_externalDictionary != null)
+                {
+                    _externalDictionary.Remove(key);
+                }
+                else
+                {
+                    _memory.TryRemove(key, out _);
+                }
             }
 
             return Task.CompletedTask;
@@ -70,7 +83,17 @@ namespace Microsoft.Agents.Storage
 
             foreach (var key in keys)
             {
-                if (_memory.TryGetValue(key, out var state))
+                JsonObject state = null;
+                if (_externalDictionary != null)
+                {
+                    _externalDictionary.TryGetValue(key, out state);
+                }
+                else
+                {
+                    _memory.TryGetValue(key, out state);
+                }
+
+                if (state != null)
                 {
                     // Create a copy to avoid concurrent modification issues
                     var stateCopy = JsonNode.Parse(state.ToJsonString())?.AsObject();
@@ -121,13 +144,10 @@ namespace Microsoft.Agents.Storage
             {
                 var newValue = change.Value;
 
-                // Use AddOrUpdate for atomic operations
-                _memory.AddOrUpdate(
-                    change.Key,
-                    // Add factory
-                    (_) => CreateNewState(newValue),
-                    // Update factory
-                    (_, oldState) =>
+                if (_externalDictionary != null)
+                {
+                    // For external dictionary (test scenarios), use simple dictionary operations
+                    if (_externalDictionary.TryGetValue(change.Key, out var oldState))
                     {
                         string oldStateETag = null;
                         if (oldState.TryGetPropertyValue("ETag", out var etag))
@@ -147,10 +167,43 @@ namespace Microsoft.Agents.Storage
                                 throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
                             }
                         }
-
-                        return CreateNewState(newValue);
                     }
-                );
+
+                    _externalDictionary[change.Key] = CreateNewState(newValue);
+                }
+                else
+                {
+                    // Use AddOrUpdate for atomic operations with ConcurrentDictionary
+                    _memory.AddOrUpdate(
+                        change.Key,
+                        // Add factory
+                        (_) => CreateNewState(newValue),
+                        // Update factory
+                        (_, oldState) =>
+                        {
+                            string oldStateETag = null;
+                            if (oldState.TryGetPropertyValue("ETag", out var etag))
+                            {
+                                oldStateETag = etag?.ToString();
+                            }
+
+                            // Check ETag if applicable
+                            if (newValue is IStoreItem newStoreItem)
+                            {
+                                if (oldStateETag != null
+                                        &&
+                                   newStoreItem.ETag != "*"
+                                        &&
+                                   newStoreItem.ETag != oldStateETag)
+                                {
+                                    throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                                }
+                            }
+
+                            return CreateNewState(newValue);
+                        }
+                    );
+                }
             }
 
             return Task.CompletedTask;
@@ -163,7 +216,8 @@ namespace Microsoft.Agents.Storage
             // Set ETag if applicable
             if (newState != null && value is IStoreItem)
             {
-                newState["ETag"] = Interlocked.Increment(ref _eTag).ToString(CultureInfo.InvariantCulture);
+                // Use post-increment semantics: return current value, then increment
+                newState["ETag"] = (Interlocked.Increment(ref _eTag) - 1).ToString(CultureInfo.InvariantCulture);
             }
 
             newState?.AddTypeInfo(value);
