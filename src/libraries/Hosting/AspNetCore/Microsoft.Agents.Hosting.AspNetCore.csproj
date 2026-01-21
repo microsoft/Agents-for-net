@@ -44,6 +44,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 		<PackageReference Include="Microsoft.IdentityModel.Validators" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="System.Reactive" />
 	</ItemGroup>
 
 	<ItemGroup>
