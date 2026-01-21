@@ -537,6 +537,8 @@ namespace Microsoft.Agents.Builder
         private void SetupStreamPipeline(int initialInterval)
         {
             // Set up the text batcher for lock-free text chunk batching
+            // Note: initialInterval is not used because the batcher emits immediately on first text
+            // (via CombineLatest with StartWith), providing even faster UX than the original timer approach
             _textBatcher = new DynamicIntervalTextChunkBatcher(Interval);
 
             // Subscribe to batched text emissions and queue streaming activities
@@ -559,18 +561,16 @@ namespace Microsoft.Agents.Builder
                 return subscription;
             });
 
-            // Process activities with throttling
+            // Process activities with throttling - use maxConcurrent: 1 to ensure sequential sending
             _streamSubscription = activityStream
                 .TakeUntil(_state.Where(s => s == StreamState.Canceled || s == StreamState.UserCanceled || s == StreamState.Error))
-                .SelectMany(factory =>
+                .Select(factory => Observable.FromAsync(async ct =>
                 {
-                    return Observable.FromAsync(async ct =>
-                    {
-                        var activity = factory();
-                        await SendActivityAsync(activity, ct).ConfigureAwait(false);
-                        return Unit.Default;
-                    });
-                })
+                    var activity = factory();
+                    await SendActivityAsync(activity, ct).ConfigureAwait(false);
+                    return Unit.Default;
+                }))
+                .Concat()
                 .Subscribe(
                     onNext: _ => { },
                     onError: ex =>

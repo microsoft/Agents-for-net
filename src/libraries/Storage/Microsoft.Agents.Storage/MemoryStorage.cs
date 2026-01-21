@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Storage
                     var stateCopy = JsonNode.Parse(state.ToJsonString())?.AsObject();
                     if (stateCopy != null && stateCopy.GetTypeInfo(out var type))
                     {
-                        var typeProps = stateCopy.RemoveTypeInfoProperties();
+                        stateCopy.RemoveTypeInfoProperties();
                         storeItems.Add(key, stateCopy.Deserialize(type, _stateJsonSerializer));
                     }
                     else if (stateCopy != null)
