@@ -66,23 +66,42 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <inheritdoc/>
         public async Task<ActivityWithClaims> WaitForActivityAsync(CancellationToken cancellationToken)
         {
-            // Try to dequeue immediately if items are available
-            if (_activities.TryDequeue(out var activity))
+            while (!cancellationToken.IsCancellationRequested)
             {
-                DecrementPendingAndCheckDrain();
-                return activity;
+                // Try to dequeue immediately if items are available
+                if (_activities.TryDequeue(out var activity))
+                {
+                    DecrementPendingAndCheckDrain();
+                    return activity;
+                }
+
+                // Check if we're stopped and queue is empty - no more items coming
+                if (Interlocked.CompareExchange(ref _stopped, 0, 0) == 1 && _activities.IsEmpty)
+                {
+                    return null;
+                }
+
+                // Wait for a signal that an activity was enqueued
+                // Use Take(1) to get exactly one signal, then loop back to try dequeuing
+                try
+                {
+                    await _activitySignal.Take(1).ToTask(cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Subject completed - no more items coming
+                    return null;
+                }
+
+                // Loop back to try dequeuing - the item might have been taken by another consumer
+                // or we might have received a spurious wakeup
             }
 
-            // Wait for a signal that an activity was enqueued
-            await _activitySignal.FirstAsync().ToTask(cancellationToken).ConfigureAwait(false);
-
-            _activities.TryDequeue(out activity);
-            if (activity != null)
-            {
-                DecrementPendingAndCheckDrain();
-            }
-
-            return activity;
+            return null;
         }
 
         private void DecrementPendingAndCheckDrain()
