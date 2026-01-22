@@ -349,14 +349,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(6));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
                 .Returns(options.Object)
-                .Verifiable(Times.Exactly(5));
+                .Verifiable(Times.Exactly(6));
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
                 .Verifiable(Times.Once);
@@ -404,14 +404,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(6));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
                 .Returns(options.Object)
-                .Verifiable(Times.Exactly(5));
+                .Verifiable(Times.Exactly(6));
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
                 .Verifiable(Times.Once);
