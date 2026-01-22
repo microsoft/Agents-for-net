@@ -103,9 +103,6 @@ namespace Microsoft.Agents.Core.Errors
                 {
                     sw.AppendLine($"Headers: {de.Key} = {de.Value}");
                 }
-            }
-            if (includeStackTrace)
-            {
                 //TODO:
                 // Update this code to use a setting or environment variable to control the output of the stack trace.
                 if (!string.IsNullOrEmpty(stackTrace))
