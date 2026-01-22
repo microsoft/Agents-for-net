@@ -1,9 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -19,8 +21,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     internal class HostedTaskService : BackgroundService
     {
         private readonly ILogger<HostedTaskService> _logger;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new();
+        private readonly BehaviorSubject<bool> _isAcceptingWork = new(true);
+        private readonly ConcurrentDictionary<Func<CancellationToken, Task>, Task> _tasks = new();
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly int _shutdownTimeoutSeconds;
 
@@ -39,7 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _taskQueue = taskQueue;
-            _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance;
         }
 
         /// <summary>
@@ -51,11 +53,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             _logger.LogInformation("Queued Hosted Service is stopping.");
 
-            // Obtain a write lock and do not release it, preventing new tasks from starting
-            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
+            // Signal that we're no longer accepting work
+            _isAcceptingWork.OnNext(false);
+            _isAcceptingWork.OnCompleted();
+
+            // Wait for currently running tasks, but only up to the timeout
+            var timeout = TimeSpan.FromSeconds(_shutdownTimeoutSeconds);
+            var activeTasks = _tasks.Values.ToArray();
+
+            if (activeTasks.Length > 0)
             {
-                // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(
+                    Task.WhenAll(activeTasks),
+                    Task.Delay(timeout, stoppingToken)
+                ).ConfigureAwait(false);
             }
 
             await base.StopAsync(stoppingToken);
@@ -64,7 +75,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.{Environment.NewLine}", Environment.NewLine);
-            
+
             await BackgroundProcessing(stoppingToken);
         }
 
@@ -77,9 +88,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 {
                     try
                     {
-                        // The read lock will not be acquirable if the app is shutting down.
-                        // New tasks should not be starting during shutdown.
-                        if (_lock.TryEnterReadLock(500))
+                        // Check if we're still accepting work
+                        if (_isAcceptingWork.Value)
                         {
                             var task = GetTaskFromWorkItem(workItem, stoppingToken)
                                 .ContinueWith(t =>
@@ -98,9 +108,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             _logger.LogError("Work item not processed.  Server is shutting down.");
                         }
                     }
-                    finally
+                    catch (Exception ex)
                     {
-                        _lock.ExitReadLock();
+                        _logger.LogError(ex, "Error processing work item.");
                     }
                 }
             }
@@ -122,6 +132,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         _logger.LogError(ex, "Error occurred executing WorkItem.");
                     }
                 }, stoppingToken);
+        }
+
+        public override void Dispose()
+        {
+            _isAcceptingWork.Dispose();
+            base.Dispose();
         }
     }
 }

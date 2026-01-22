@@ -1,16 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
-using System.Threading;
+using System.Reactive.Subjects;
 
 namespace Microsoft.Agents.Builder.App
 {
-    internal class RouteList
+    internal class RouteList : IDisposable
     {
-        private readonly ReaderWriterLock rwl = new();
-        private List<RouteEntry> routes = [];
+        private readonly BehaviorSubject<ImmutableList<RouteEntry>> _routes = new(ImmutableList<RouteEntry>.Empty);
+        private bool _disposed;
 
         public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
         {
@@ -19,10 +22,14 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(RouteSelector selector, RouteHandler handler, bool isAgenticRoute, bool isInvokeRoute, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
         {
-            try
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(RouteList));
+
+            // Atomically update the immutable list
+            ImmutableList<RouteEntry> currentRoutes, newRoutes;
+            do
             {
-                rwl.AcquireWriterLock(1000);
-                routes.Add(new RouteEntry(rank, new(selector, handler, isInvokeRoute, isAgenticRoute, autoSignInHandlers)));
+                currentRoutes = _routes.Value;
+                var newEntry = new RouteEntry(rank, new Route(selector, handler, isInvokeRoute, isAgenticRoute, autoSignInHandlers));
 
                 // Ordered by:
                 //    Agentic + Invoke
@@ -30,26 +37,40 @@ namespace Microsoft.Agents.Builder.App
                 //    Agentic
                 //    Other
                 // Then by Rank
-                routes = [.. routes
+                newRoutes = currentRoutes
+                    .Add(newEntry)
                     .OrderByDescending(entry => entry.Type)
-                    .ThenBy(entry => entry.Rank)];
+                    .ThenBy(entry => entry.Rank)
+                    .ToImmutableList();
             }
-            finally
-            {
-                rwl.ReleaseWriterLock();
-            }
+            while (_routes.Value != currentRoutes);
+
+            _routes.OnNext(newRoutes);
         }
 
         public IEnumerable<Route> Enumerate()
         {
-            try
+            AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(RouteList));
+
+            // Return a snapshot - immutable so no locking needed
+            return _routes.Value.Select(e => e.Route).ToList();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
             {
-                rwl.AcquireReaderLock(1000);
-                return [.. routes.Select(e => e.Route).ToList()];
-            }
-            finally
-            {
-                rwl.ReleaseReaderLock();
+                if (disposing)
+                {
+                    _routes.Dispose();
+                }
+                _disposed = true;
             }
         }
     }
@@ -64,8 +85,8 @@ namespace Microsoft.Agents.Builder.App
 
     class RouteEntry
     {
-        public RouteEntry(ushort rank, Route route) 
-        { 
+        public RouteEntry(ushort rank, Route route)
+        {
             Rank = rank;
             Route = route;
             if (route.IsInvokeRoute)

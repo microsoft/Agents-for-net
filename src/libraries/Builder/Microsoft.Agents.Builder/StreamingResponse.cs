@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
@@ -9,18 +9,35 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
+    /// Represents the state of the streaming response.
+    /// </summary>
+    internal enum StreamState
+    {
+        Initial,
+        Streaming,
+        Ended,
+        Canceled,
+        UserCanceled,
+        Error
+    }
+
+    /// <summary>
     /// This class enables sending chunked text in a series of "intermediate" messages, on an interval.  This
-    /// gives the UX of a streamed message. When complete, a final message (ActivityType.Message) is sent with 
+    /// gives the UX of a streamed message. When complete, a final message (ActivityType.Message) is sent with
     /// the full message and optional Attachments.
-    /// 
+    ///
     /// The expected sequence of calls is:
-    /// 
+    ///
     /// `QueueInformativeUpdateAsync()`, `QueueTextChunk()`, `QueueTextChunk()`, ..., `EndStreamAsync()`.
     ///
     ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
@@ -35,27 +52,27 @@ namespace Microsoft.Agents.Builder
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
     /// </remarks>
-    internal class StreamingResponse : IStreamingResponse
+    internal class StreamingResponse : IStreamingResponse, IDisposable
     {
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
-        // Teams failed to accept streaming messages. 
         private const string BadArgument = "BadArgument";
         private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
-        private int _nextSequence = 1;
-        private bool _ended = false;
-        private Timer _timer;
-        private bool _messageUpdated = false;
-        private bool _isTeamsChannel;
-        private bool _canceled;
-        private bool _userCanceled;
+        private readonly BehaviorSubject<StreamState> _state = new(StreamState.Initial);
+        private readonly Subject<Func<IActivity>> _activityQueue = new();
+        private readonly CompositeDisposable _subscriptions = new();
+        private readonly TaskCompletionSource<object> _streamComplete = new();
 
-        // Queue for outgoing activities
-        private readonly List<Func<IActivity>> _queue = [];
-        private readonly AutoResetEvent _queueEmpty = new(false);
+        private int _nextSequence = 1;
+        private string _accumulatedMessage = "";
+        private DynamicIntervalTextChunkBatcher _textBatcher;
+        private IDisposable _batcherSubscription;
+        private bool _isTeamsChannel;
+        private bool _disposed;
+        private IDisposable _streamSubscription;
 
         /// <summary>
         /// Set IActivity that will be (optionally) used for the final streaming message.
@@ -214,37 +231,33 @@ namespace Microsoft.Agents.Builder
                 return;
             }
 
-            Func<IActivity> queueFunc;
-
-            lock (this)
+            var currentState = _state.Value;
+            if (currentState == StreamState.Ended || currentState == StreamState.Canceled || currentState == StreamState.UserCanceled || currentState == StreamState.Error)
             {
-                if (_ended)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
-                }
-
-                queueFunc = () =>
-                {
-                    return new Activity
-                    {
-                        Type = ActivityTypes.Typing,
-                        Text = text,
-                        Entities = [new StreamInfo()
-                            {
-                                StreamType = StreamTypes.Informative,
-                                StreamSequence = _nextSequence++,
-                            }]
-                    };
-                };
-
-                if (IsStreamStarted())
-                {
-                    QueueActivity(queueFunc);
-                    return;
-                }
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
             }
 
-            // if we got this far, the stream has been started so just send directly and start.
+            Func<IActivity> queueFunc = () =>
+            {
+                return new Activity
+                {
+                    Type = ActivityTypes.Typing,
+                    Text = text,
+                    Entities = [new StreamInfo()
+                        {
+                            StreamType = StreamTypes.Informative,
+                            StreamSequence = Interlocked.Increment(ref _nextSequence) - 1,
+                        }]
+                };
+            };
+
+            if (IsStreamStarted())
+            {
+                _activityQueue.OnNext(queueFunc);
+                return;
+            }
+
+            // Stream hasn't started - send directly and start
             await SendActivityAsync(queueFunc(), cancellationToken).ConfigureAwait(false);
             StartStream();
         }
@@ -257,30 +270,35 @@ namespace Microsoft.Agents.Builder
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         public void QueueTextChunk(string text)
         {
-            if (string.IsNullOrEmpty(text) || _canceled)
+            var currentState = _state.Value;
+            if (string.IsNullOrEmpty(text) || currentState == StreamState.Canceled || currentState == StreamState.UserCanceled || currentState == StreamState.Error)
             {
                 return;
             }
 
-            lock (this)
+            if (currentState == StreamState.Ended)
             {
-                if (_ended)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
-                }
-
-                // buffer all chunks
-                Message += text;
-
-                // If there are citations, modify the content so that the sources are numbers instead of [doc1], [doc2], etc.
-                Message = CitationUtils.FormatCitationsResponse(Message);
-
-                _messageUpdated = true;
-
-                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
-                // and we're just now starting the stream.  It uses Interval after the first stream message.
-                StartStream(250);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
             }
+
+            // Buffer all chunks
+            _accumulatedMessage += text;
+
+            // If there are citations, modify the content so that the sources are numbers instead of [doc1], [doc2], etc.
+            Message = CitationUtils.FormatCitationsResponse(_accumulatedMessage);
+
+            // Update state and start stream if needed
+            if (_state.Value == StreamState.Initial)
+            {
+                _state.OnNext(StreamState.Streaming);
+            }
+
+            // Start stream if needed. The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+            // and we're just now starting the stream.
+            StartStream(250);
+
+            // Feed the text to the batcher (thread-safe via Rx)
+            _textBatcher?.OnNext(text);
         }
 
         /// <summary>
@@ -293,19 +311,18 @@ namespace Microsoft.Agents.Builder
         /// <returns>StreamingResponseResult with the result of the streaming response.</returns>
         public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
         {
+            var currentState = _state.Value;
+
             if (!IsStreamingChannel)
             {
-                lock (this)
+                if (currentState == StreamState.Ended)
                 {
-                    if (_ended)
-                    {
-                        return StreamingResponseResult.AlreadyEnded;
-                    }
-
-                    _ended = true;
+                    return StreamingResponseResult.AlreadyEnded;
                 }
 
-                // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
+                _state.OnNext(StreamState.Ended);
+
+                // Timer isn't running for non-streaming channels. Just send the Message buffer as a message.
                 if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
                 {
                     await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
@@ -315,39 +332,58 @@ namespace Microsoft.Agents.Builder
             }
             else
             {
-                lock (this)
+                if (currentState == StreamState.Ended)
                 {
-                    if (_ended)
-                    {
-                        return StreamingResponseResult.AlreadyEnded;
-                    }
-
-                    _ended = true;
-
-                    if (_canceled)
-                    {
-                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
-                    }
-
-                    if (!IsStreamStarted())
-                    {
-                        return StreamingResponseResult.NotStarted;
-                    }
+                    return StreamingResponseResult.AlreadyEnded;
                 }
+
+                if (currentState == StreamState.Canceled || currentState == StreamState.Error)
+                {
+                    _state.OnNext(StreamState.Ended);
+                    return StreamingResponseResult.Error;
+                }
+
+                if (currentState == StreamState.UserCanceled)
+                {
+                    _state.OnNext(StreamState.Ended);
+                    return StreamingResponseResult.UserCancelled;
+                }
+
+                if (!IsStreamStarted())
+                {
+                    _state.OnNext(StreamState.Ended);
+                    return StreamingResponseResult.NotStarted;
+                }
+
+                _state.OnNext(StreamState.Ended);
+                _activityQueue.OnCompleted();
 
                 StreamingResponseResult result = StreamingResponseResult.Success;
 
                 // Wait for queue items to be sent per Interval
                 try
                 {
-                    if (!_queueEmpty.WaitOne(EndStreamTimeout))
+                    using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                     {
-                        result = StreamingResponseResult.Timeout;
+                        cts.CancelAfter(EndStreamTimeout);
+
+                        var timeoutTask = Task.Delay(Timeout.InfiniteTimeSpan, cts.Token);
+                        var completedTask = await Task.WhenAny(_streamComplete.Task, timeoutTask).ConfigureAwait(false);
+
+                        if (completedTask == timeoutTask && cts.IsCancellationRequested)
+                        {
+                            result = StreamingResponseResult.Timeout;
+                        }
                     }
 
-                    if (_canceled)
+                    var finalState = _state.Value;
+                    if (finalState == StreamState.UserCanceled)
                     {
-                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                        return StreamingResponseResult.UserCancelled;
+                    }
+                    if (finalState == StreamState.Canceled || finalState == StreamState.Error)
+                    {
+                        return StreamingResponseResult.Error;
                     }
                 }
                 catch (AbandonedMutexException)
@@ -393,7 +429,7 @@ namespace Microsoft.Agents.Builder
 
             // Add in Generated by AI
             List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if((bool)EnableGeneratedByAILabel || currCitations != null)
+            if ((bool)EnableGeneratedByAILabel || currCitations != null)
             {
                 AIEntity entity = new()
                 {
@@ -424,80 +460,20 @@ namespace Microsoft.Agents.Builder
                 await EndStreamAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            lock (this)
-            {
-                StopStream();
-                _ended = false;
-                _queue.Clear();
-                FinalMessage = null;
-                _nextSequence = 1;
-                StreamId = null;
-                _canceled = false;
-                _userCanceled = false;
-            }
-        }
+            StopStream();
 
-        /// <summary>
-        /// Queue an activity to be sent to the client.
-        /// </summary>
-        /// <param name="factory"></param>
-        private void QueueActivity(Func<IActivity> factory)
-        {
-            if (factory != null)
-            {
-                _queue.Add(factory);
-                _queueEmpty.Reset();
-            }
-        }
+            // Dispose of the batcher
+            _batcherSubscription?.Dispose();
+            _batcherSubscription = null;
+            _textBatcher?.Dispose();
+            _textBatcher = null;
 
-        /// <summary>
-        /// Queue the next chunk of text to be sent to the client.
-        /// </summary>
-        private void QueueNextChunkActivity()
-        {
-            if (!_messageUpdated)
-            {
-                return;
-            }
-
-            // Queue a chunk of text to be sent. Is done via a Func to create
-            // the Activity so that member variables are evaluated at time of 
-            // interval send.
-            QueueActivity(() =>
-            {
-                // Send typing activity
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Typing,
-                    Text = Message,
-                    Entities = []
-                };
-
-                var sequence = _nextSequence++;
-
-                activity.Entities.Add(new StreamInfo()
-                {
-                    StreamType = StreamTypes.Streaming,
-                    StreamSequence = sequence,
-                });
-
-                if (Citations != null && Citations.Count > 0)
-                {
-                    // If there are citations, filter out the citations unused in content.
-                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-                    AIEntity entity = new();
-                    if (currCitations != null && currCitations.Count > 0)
-                    {
-                        entity.Citation = currCitations;
-                    }
-
-                    activity.Entities.Add(entity);
-                }
-
-                _messageUpdated = false;
-
-                return activity;
-            });
+            _state.OnNext(StreamState.Initial);
+            FinalMessage = null;
+            _nextSequence = 1;
+            StreamId = null;
+            Message = "";
+            _accumulatedMessage = "";
         }
 
         private void SetDefaults(TurnContext turnContext)
@@ -514,14 +490,12 @@ namespace Microsoft.Agents.Builder
                 if (turnContext.Activity.IsAgenticRequest())
                 {
                     // Agentic requests do not support streaming responses at this time.
-                    // TODO : Enable streaming for agentic requests when supported.
                     IsStreamingChannel = false;
                 }
                 else
                 {
                     // Teams MUST use the Activity.Id returned from the first Informative message for
                     // subsequent intermediate messages.  Do not set StreamId here.
-
                     Interval = 1000;
                     IsStreamingChannel = true;
                 }
@@ -549,63 +523,112 @@ namespace Microsoft.Agents.Builder
 
         public bool IsStreamStarted()
         {
-            return _timer != null;
+            return _streamSubscription != null;
         }
 
-        private void StartStream(int interval = 0)
+        private void StartStream(int initialDelay = 0)
         {
-            if (_timer == null && IsStreamingChannel)
+            if (_streamSubscription == null && IsStreamingChannel)
             {
-                _timer = new Timer(SendIntermediateMessage, null, interval == 0 ? Interval : interval, System.Threading.Timeout.Infinite);
+                SetupStreamPipeline(initialDelay == 0 ? Interval : initialDelay);
             }
+        }
+
+        private void SetupStreamPipeline(int initialInterval)
+        {
+            // Set up the text batcher for lock-free text chunk batching
+            // Note: initialInterval is not used because the batcher emits immediately on first text
+            // (via CombineLatest with StartWith), providing even faster UX than the original timer approach
+            _textBatcher = new DynamicIntervalTextChunkBatcher(Interval);
+
+            // Subscribe to batched text emissions and queue streaming activities
+            _batcherSubscription = _textBatcher
+                .TakeUntil(_state.Where(s => s == StreamState.Ended || s == StreamState.Canceled || s == StreamState.UserCanceled || s == StreamState.Error))
+                .Subscribe(text =>
+                {
+                    _activityQueue.OnNext(CreateChunkActivityFactory());
+                });
+
+            // Create observable that produces activities on interval
+            var activityStream = Observable.Create<Func<IActivity>>(observer =>
+            {
+                var subscription = _activityQueue.Subscribe(
+                    onNext: factory => observer.OnNext(factory),
+                    onError: ex => observer.OnError(ex),
+                    onCompleted: () => observer.OnCompleted()
+                );
+
+                return subscription;
+            });
+
+            // Process activities with throttling - use maxConcurrent: 1 to ensure sequential sending
+            _streamSubscription = activityStream
+                .TakeUntil(_state.Where(s => s == StreamState.Canceled || s == StreamState.UserCanceled || s == StreamState.Error))
+                .Select(factory => Observable.FromAsync(async ct =>
+                {
+                    var activity = factory();
+                    await SendActivityAsync(activity, ct).ConfigureAwait(false);
+                    return Unit.Default;
+                }))
+                .Concat()
+                .Subscribe(
+                    onNext: _ => { },
+                    onError: ex =>
+                    {
+                        _state.OnNext(StreamState.Error);
+                        _streamComplete.TrySetResult(null);
+                    },
+                    onCompleted: () =>
+                    {
+                        _streamComplete.TrySetResult(null);
+                    }
+                );
+
+            _subscriptions.Add(_streamSubscription);
+        }
+
+        private Func<IActivity> CreateChunkActivityFactory()
+        {
+            return () =>
+            {
+                var currentMessage = Message;
+
+                var activity = new Activity
+                {
+                    Type = ActivityTypes.Typing,
+                    Text = currentMessage,
+                    Entities = []
+                };
+
+                var sequence = Interlocked.Increment(ref _nextSequence) - 1;
+
+                activity.Entities.Add(new StreamInfo()
+                {
+                    StreamType = StreamTypes.Streaming,
+                    StreamSequence = sequence,
+                });
+
+                if (Citations != null && Citations.Count > 0)
+                {
+                    // If there are citations, filter out the citations unused in content.
+                    List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(currentMessage, Citations);
+                    AIEntity entity = new();
+                    if (currCitations != null && currCitations.Count > 0)
+                    {
+                        entity.Citation = currCitations;
+                    }
+
+                    activity.Entities.Add(entity);
+                }
+
+                return activity;
+            };
         }
 
         private void StopStream()
         {
-            if (_timer != null)
-            {
-                _timer.Dispose();
-                _timer = null;
-            }
-        }
-
-        private async void SendIntermediateMessage(object state)
-        {
-            // Send one buffered Activity per interval.
-            IActivity activity = null;
-
-            lock (this)
-            {
-                QueueNextChunkActivity();
-
-                if (_queue.Count > 0)
-                {
-                    activity = _queue[0]();
-                    _queue.RemoveAt(0);
-
-                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
-                    // longer than the Interval. MSAL can take longer than the interval in some cases,
-                    // which case out of sequence messages.
-                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
-                }
-                else if (_ended)
-                {
-                    _queueEmpty.Set();
-                    StopStream();
-                    return;
-                }
-                else
-                {
-                    // Nothing is in the queue, and not ending, so chances are
-                    // the chunking is slow.  We can speed up the interval to
-                    // pick up the next chunk faster.
-                    _timer.Change(200, Timeout.Infinite);
-                    return;
-                }
-            }
-
-            // Looks a bit odd, but can't call await inside a lock.
-            await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
+            _streamSubscription?.Dispose();
+            _streamSubscription = null;
         }
 
         private async Task SendActivityAsync(IActivity activity, CancellationToken cancellationToken)
@@ -625,65 +648,84 @@ namespace Microsoft.Agents.Builder
                     {
                         StreamId = response.Id;
                     }
-
-                    // Restart the timer with normal Interval (if running)
-                    _timer?.Change(Interval, Timeout.Infinite);
                 }
                 catch (Exception ex)
                 {
-                    // We are not rethrowing from here since this is likely being called
-                    // from the Timer thread and will crash the app.  A more elegant 
-                    // solution would be to get it back to the calling thread.
-
-                    bool CanceledStream = true;
-                    if (ex is ErrorResponseException errorResponse)
-                    {
-                        // User canceled?
-                        if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
-                        {
-                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
-                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
-
-                            _userCanceled = true;
-                        }
-                        // Stream not allowed?
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
-                        else if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
-                            errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
-                        {
-                            _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-                            System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-
-                            IsStreamingChannel = false; // Disabled Streaming for this channel / interaction as teams will not accept it at this time. 
-                            CanceledStream = false;
-                        }
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-                        else
-                        {
-                            var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
-
-                            _context?.Adapter?.Logger?.LogWarning(
-                                "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
-                                ex.Message,
-                                errorMessage);
-
-                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
-                        }
-
-                        if (CanceledStream)
-                        {
-                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
-                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
-                        }
-                    }
-
-                    lock (this)
-                    {
-                        StopStream();
-                        _canceled = CanceledStream;
-                        _queueEmpty.Set();
-                    }
+                    // We are not rethrowing from here since this could be called from a background thread.
+                    HandleSendError(ex);
                 }
+            }
+        }
+
+        private void HandleSendError(Exception ex)
+        {
+            bool canceledStream = true;
+
+            if (ex is ErrorResponseException errorResponse)
+            {
+                // User canceled?
+                if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
+                {
+                    _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                    System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
+
+                    _state.OnNext(StreamState.UserCanceled);
+                    _streamComplete.TrySetResult(null);
+                    return;
+                }
+                // Stream not allowed?
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
+                else if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
+                    errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
+                {
+                    _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                    System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+
+                    IsStreamingChannel = false;
+                    canceledStream = false;
+                }
+#pragma warning restore CA1862
+                else
+                {
+                    var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
+
+                    _context?.Adapter?.Logger?.LogWarning(
+                        "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
+                        ex.Message,
+                        errorMessage);
+
+                    System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
+                }
+            }
+
+            if (canceledStream)
+            {
+                _state.OnNext(StreamState.Canceled);
+                StopStream();
+                _streamComplete.TrySetResult(null);
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    StopStream();
+                    _batcherSubscription?.Dispose();
+                    _textBatcher?.Dispose();
+                    _subscriptions.Dispose();
+                    _activityQueue.Dispose();
+                    _state.Dispose();
+                }
+                _disposed = true;
             }
         }
     }
