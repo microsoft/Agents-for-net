@@ -50,11 +50,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _dispatcher = options.Dispatcher;
 
-            if (_app.Options.Adapter == null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.UserAuthorizationRequiresAdapter, null);
-            }
-
             if (_options.AutoSignIn != null)
             {
                 _startSignIn = _options.AutoSignIn;
@@ -253,7 +248,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            await _app.Options.Adapter.ProcessProactiveAsync(
+                            await turnContext.Adapter.ProcessProactiveAsync(
                                 turnContext.Identity, 
                                 signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
                                 _app, 
