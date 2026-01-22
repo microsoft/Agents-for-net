@@ -14,21 +14,26 @@ public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        // Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
-        OnMessage("-me", OnMeAsync, autoSignInHandlers: (SignInResolver)SignInDelegate);
+        // (WITH BUILDER) Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
+        var route = RouteBuilder.Create()
+            .WithMessage("-me")
+            .WithHander(OnMeAsync)
+            .WithOAuthHandlers(OAuthHandlers)
+            .Build();
+        AddRoute(route);
 
-        // Register a route for Agentic-only Messages.
+        // (COMPAT) Register a route for Agentic-only Messages.
         OnMessage("-agentic", OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
 
-        // Non-agentic messages go here
+        // (COMPAT) Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
-    private static string[] SignInDelegate(ITurnContext turnContext)
+    private static string[] OAuthHandlers(ITurnContext turnContext)
     {
         if (turnContext.Activity.IsAgenticRequest())
         {
-            return new string[] { "agentic" };
+            return ["agentic"];
         }
         return ["bot"];
     }

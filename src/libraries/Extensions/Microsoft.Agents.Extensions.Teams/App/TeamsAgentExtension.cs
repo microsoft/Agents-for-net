@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AssertionHelpers.ThrowIfNull(conversationUpdateEvent, nameof(conversationUpdateEvent));
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -181,7 +181,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -281,7 +281,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -310,7 +310,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
             => OnFileConsent(handler, "accept", rank, autoSignInHandlers, isAgenticOnly);
 
         /// <summary>
@@ -321,10 +321,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
             => OnFileConsent(handler, "decline", rank, autoSignInHandlers, isAgenticOnly);
 
-        private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) =>
@@ -362,7 +362,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
@@ -396,7 +396,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns></returns>
         [Obsolete("Use AgentApplication.OnFeedbackLoop instead")]
-        public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, SignInResolver autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             // This is for back-compat with existing usage.  We need to convert from Core FeedbackData to existing Teams Extension FeedbackLoopData.
             async Task coreHandler(ITurnContext turnContext, ITurnState turnState, Builder.App.FeedbackData coreFeedbackData, CancellationToken cancellationToken)

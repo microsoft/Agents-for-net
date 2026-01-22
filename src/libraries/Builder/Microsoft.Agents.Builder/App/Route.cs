@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,33 +27,23 @@ namespace Microsoft.Agents.Builder.App
     /// <returns></returns>
     public delegate Task RouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
-    internal class Route
+    public enum RouteFlags
     {
-        public Route(RouteSelector selector, bool isInvokeRoute = false, bool isAgenticRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isAgenticRoute, isInvokeRoute)
-        {
-        }
+        Agentic = 1,
+        Invoke = 2,
+        NonTerminal = 4
+    }
 
-        public Route(RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false) : this((_, _) => Task.FromResult(true), handler, isInvokeRoute, isAgenticRoute, null)
-        {
-        }
+    public class Route()
+    {
+        public RouteSelector Selector;
 
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, SignInResolver autoSignInHandler = null)
-        {
-            Selector = selector;
-            Handler = handler;
-            IsInvokeRoute = isInvokeRoute;
-            IsAgenticRoute = isAgenticRoute;
-            AutoSignInHandler = autoSignInHandler;
-        }
+        public RouteHandler Handler;
 
-        public RouteSelector Selector { get; private set; }
+        public RouteFlags Flags;
 
-        public RouteHandler Handler { get; private set; }
+        public ushort Rank = RouteRank.Unspecified;
 
-        public bool IsAgenticRoute { get; private set; }
-
-        public bool IsInvokeRoute { get; private set; }
-
-        public SignInResolver AutoSignInHandler { get; private set; }
+        public Func<ITurnContext, string[]> OAuthHandlers = context => [];
     }
 }
