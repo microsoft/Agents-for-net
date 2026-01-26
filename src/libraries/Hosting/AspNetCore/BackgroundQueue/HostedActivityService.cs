@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -141,28 +142,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-
-                    if (activityWithClaims.IsProactive)
+                    activityWithClaims.TelemetryActivity?.Start();
+                    try
                     {
-                        await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
-                            activityWithClaims.ClaimsIdentity,
-                            activityWithClaims.Activity,
-                            activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IAgent)agent).OnTurnAsync, 
-                            stoppingToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity, 
-                            activityWithClaims.Activity,
-                            ((IAgent)agent).OnTurnAsync, 
-                            stoppingToken).ConfigureAwait(false);
-
-                        if (activityWithClaims.OnComplete != null)
+                        if (activityWithClaims.IsProactive)
                         {
-                            await activityWithClaims.OnComplete.Invoke(response);
+                            await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
+                                activityWithClaims.ClaimsIdentity,
+                                activityWithClaims.Activity,
+                                activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
+                                ((IAgent)agent).OnTurnAsync,
+                                stoppingToken).ConfigureAwait(false);
                         }
+                        else
+                        {
+                            var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
+                                activityWithClaims.ClaimsIdentity,
+                                activityWithClaims.Activity,
+                                ((IAgent)agent).OnTurnAsync,
+                                stoppingToken).ConfigureAwait(false);
+
+                            if (activityWithClaims.OnComplete != null)
+                            {
+                                await activityWithClaims.OnComplete.Invoke(response);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        // make sure to close down any current activity once the turn is complete. 
+                        activityWithClaims.TelemetryActivity?.Stop();
                     }
                 }
                 catch (Exception ex)
@@ -173,7 +182,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     InvokeResponse invokeResponse = null;
                     if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
                     {
-                        invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
+                        invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError };
                     }
 
                     if (activityWithClaims.OnComplete != null)
