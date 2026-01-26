@@ -126,8 +126,24 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            _routes.AddRoute(selector, handler, isAgenticOnly, isInvokeRoute, rank, autoSignInHandlers);
- 
+            var route = RouteBuilder.Create(isInvokeRoute, isAgenticOnly)
+                .WithSelector(selector)
+                .WithHander(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+
+            _routes.AddRoute(route);
+
+            return this;
+        }
+
+        public AgentApplication AddRoute(Route route)
+        {
+            AssertionHelpers.ThrowIfNull(route, nameof(route));
+
+            _routes.AddRoute(route);
+
             return this;
         }
 
@@ -778,6 +794,11 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+
             try
             {
                 // Start typing timer if configured
@@ -847,7 +868,8 @@ namespace Microsoft.Agents.Builder.App
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
-                            if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
+                            var handlers = route.OAuthHandlers(turnContext);
+                            if (_userAuth == null || handlers?.Length == 0)
                             {
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }
@@ -855,7 +877,6 @@ namespace Microsoft.Agents.Builder.App
                             {
                                 bool signInComplete = false;
 
-                                var handlers = route.AutoSignInHandler;
                                 foreach (var handler in handlers)
                                 {
                                     signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, handler, forceAuto: true, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -871,7 +892,10 @@ namespace Microsoft.Agents.Builder.App
                                 }
                             }
 
-                            break;
+                            if (!route.Flags.HasFlag(RouteFlags.NonTerminal))
+                            {
+                                break;
+                            }
                         }
                     }
 

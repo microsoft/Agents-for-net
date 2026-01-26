@@ -14,21 +14,44 @@ public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        // Register a route for Agentic-only Messages.
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
+        // (WITH BUILDER) Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
+        var route = RouteBuilder.Create()
+            .WithMessage("-me")
+            .WithHander(OnMeAsync)
+            .WithOAuthHandlers(OAuthHandlers)
+            .Build();
+        AddRoute(route);
 
-        // Non-agentic messages go here
+        // (COMPAT) Register a route for Agentic-only Messages.
+        OnMessage("-agentic", OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
+
+        // (COMPAT) Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+    }
+
+    private static string[] OAuthHandlers(ITurnContext turnContext)
+    {
+        if (turnContext.Activity.IsAgenticRequest())
+        {
+            return ["agentic"];
+        }
+        return ["bot"];
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
+        var aauToken = await turnContext.GetTurnTokenAsync("agentic", cancellationToken);
+        await turnContext.SendActivityAsync($"(Agentic Only) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"(No OAuth) You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+    }
+
+    private async Task OnMeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var tokens = turnContext.GetTurnTokens();
+        await turnContext.SendActivityAsync($"({tokens[0].Handler}) You said: {turnContext.Activity.Text}, token len={tokens[0].Token.Length}", cancellationToken: cancellationToken);
     }
 }
