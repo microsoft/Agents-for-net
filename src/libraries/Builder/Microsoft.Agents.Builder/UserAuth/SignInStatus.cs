@@ -12,17 +12,23 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// Sign-in not complete and requires user interaction
         /// </summary>
         Pending,
-
         /// <summary>
         /// Sign-in complete
         /// </summary>
         Complete,
-
         /// <summary>
         /// Error occurred during sign-in
         /// </summary>
         Error,
-
-        Duplicate
+        /// <summary>
+        /// Indicates that the operation is a duplicate and has already been processed.
+        /// </summary>
+        Duplicate,
+        /// <summary>
+        /// Indicates that the operation has been cancelled.
+        /// </summary>
+        /// <remarks>This status is typically used to represent an operation that was explicitly stopped 
+        /// before completion, either by user action or programmatically.</remarks>
+        Cancelled,
     }
 }

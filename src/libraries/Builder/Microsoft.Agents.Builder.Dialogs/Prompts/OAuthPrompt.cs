@@ -241,6 +241,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 // if the token fetch request times out, complete the prompt with no result.
                 return await dc.EndDialogAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
+            catch(ConsentRequiredException)
+            {
+                // noop for now
+            }
 
             return EndOfTurn;
         }
