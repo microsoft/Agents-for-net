@@ -168,6 +168,9 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);
 
+                    // Validate entryName contains only allowed directory/file characters
+                    EnsurePathIsSafe(path, Path.Combine(path, entryName));
+
                     if (string.IsNullOrEmpty(entry.Name))
                     {
                         // No Name, it is a folder

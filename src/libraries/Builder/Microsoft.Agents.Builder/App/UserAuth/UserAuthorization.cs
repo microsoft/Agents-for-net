@@ -50,11 +50,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _dispatcher = options.Dispatcher;
 
-            if (_app.Options.Adapter == null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.UserAuthorizationRequiresAdapter, null);
-            }
-
             if (_options.AutoSignIn != null)
             {
                 _startSignIn = _options.AutoSignIn;
@@ -104,9 +99,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
-                // An exchangeable token needs to be exchanged.
                 if (!turnContext.IsAgenticRequest())
                 {
+                    // An exchangeable token always needs to be exchanged.
                     if (!token.IsExchangeable)
                     {
                         var diff = token.Expiration - DateTimeOffset.UtcNow;
@@ -117,13 +112,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     }
                 }
 
-
                 // Get a new token if near expiration, or it's an exchangeable token.
                 var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
-                    _authTokens[handlerName] = response;
+                    {
+                        // Refresh cahce with the latest non-exchangeable token.
+                    }
+                    if (!token.IsExchangeable)
+                        _authTokens[handlerName] = response;
                     return response.Token;
                 }
 
@@ -265,10 +263,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             // It is important to save state now so that the continuationActivity doesn't try to continue the flow again.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            await _app.Options.Adapter.ProcessProactiveAsync(
-                                turnContext.Identity,
-                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true),
-                                _app,
+                            await turnContext.Adapter.ProcessProactiveAsync(
+                                turnContext.Identity, 
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
+                                _app, 
                                 cancellationToken).ConfigureAwait(false);
                             return false;
                         }

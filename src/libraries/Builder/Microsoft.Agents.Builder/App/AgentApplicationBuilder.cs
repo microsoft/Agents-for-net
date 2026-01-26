@@ -109,7 +109,9 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The ApplicationBuilder instance.</returns>
         public AgentApplicationBuilder WithAuthorization(IChannelAdapter channelAdapter, UserAuthorizationOptions authorizationOptions)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             Options.Adapter = channelAdapter;
+#pragma warning restore CS0618 // Type or member is obsolete
             Options.UserAuthorization = authorizationOptions;
             return this;
         }
