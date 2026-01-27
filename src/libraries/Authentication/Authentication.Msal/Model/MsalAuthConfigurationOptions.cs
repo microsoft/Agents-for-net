@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 config.MSALRequestTimeout = configurationSection.GetValue<TimeSpan>("MSALRequestTimeout", new TimeSpan(0, 0, 0, 30));
                 config.MSALRetryCount = configurationSection.GetValue<int>("MSALRetryCount", 3);
             }
-            return config; 
+            return config;
         }
 
 

@@ -25,7 +25,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities.JsonConverters
             if (readerClone.TokenType != JsonTokenType.StartObject)
             {
                 throw new JsonException();
-            };
+            }
+            ;
 
             readerClone.Read();
             if (readerClone.TokenType != JsonTokenType.PropertyName)

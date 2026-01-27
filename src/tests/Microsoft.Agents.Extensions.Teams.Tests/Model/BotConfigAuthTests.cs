@@ -35,8 +35,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                 SuggestedActions = new SuggestedActions()
                 {
                     To = ["id1", "id2"],
-                    Actions = [ 
-                        new CardAction() 
+                    Actions = [
+                        new CardAction()
                         {
                             Type = "type",
                             Title = "title",

@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             Assert.Equal("test", response.Error.Message);
 
             var history = memory.GetValue<List<ChatMessage>?>(options.HistoryVariable);
-            Assert.True(history?[0].Content  ==  message.Content);
+            Assert.True(history?[0].Content == message.Content);
         }
 
         [Fact]
@@ -388,7 +388,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
                 MaxRepairAttempts = 1
             };
             LLMClient<object> client = new(options, new TestLoggerFactory());
-            
+
             var turnContext = TurnStateConfig.CreateConfiguredTurnContext();
             var storage = new MemoryStorage();
             var memory = new TurnState(storage);

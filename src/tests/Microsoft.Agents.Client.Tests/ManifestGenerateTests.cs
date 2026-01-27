@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             var activities = new Dictionary<string, ActivityInfo>();
 
-            var app = new ManifestAgent(new AgentApplicationOptions((IStorage) null));
+            var app = new ManifestAgent(new AgentApplicationOptions((IStorage)null));
 
             foreach (var method in app.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {

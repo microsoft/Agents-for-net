@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var context = new DefaultHttpContext();
             await HttpHelper.WriteResponseAsync(context.Response, null);
-        
+
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
         }
     }

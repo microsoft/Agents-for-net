@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Storage.Transcript
                 var resultSegment = _containerClient.Value
                     .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
                     .AsPages(token).ConfigureAwait(false);
-                
+
                 token = null;
                 await foreach (var blobPage in resultSegment)
                 {
@@ -434,7 +434,7 @@ namespace Microsoft.Agents.Storage.Transcript
                             // Get the continuation token and loop until it is empty.
                             token = blobPage.ContinuationToken;
                         }
-                    } 
+                    }
                     while (!string.IsNullOrEmpty(token));
 
                     return default;
@@ -500,7 +500,7 @@ namespace Microsoft.Agents.Storage.Transcript
             await streamWriter.FlushAsync().ConfigureAwait(false);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
-            try 
+            try
             {
                 await blobClient.UploadAsync(memoryStream, options).ConfigureAwait(false);
             }

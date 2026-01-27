@@ -64,8 +64,8 @@ namespace Microsoft.Agents.Builder.App
 
     class RouteEntry
     {
-        public RouteEntry(ushort rank, Route route) 
-        { 
+        public RouteEntry(ushort rank, Route route)
+        {
             Rank = rank;
             Route = route;
             if (route.IsInvokeRoute)

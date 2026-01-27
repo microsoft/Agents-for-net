@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Video card. </summary>
     public class VideoCard
     {
-        public VideoCard() 
+        public VideoCard()
         {
             Media = [];
             Buttons = [];

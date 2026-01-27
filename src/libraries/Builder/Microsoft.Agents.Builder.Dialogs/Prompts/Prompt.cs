@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
 
             // Increment attempt count
-            state[AttemptCountKey] = (int) state[AttemptCountKey] + 1;
+            state[AttemptCountKey] = (int)state[AttemptCountKey] + 1;
 
             // Validate the return value
             var isValid = false;

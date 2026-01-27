@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
-        
+
         private static string CacheKey(string userId, string connectionName, ChannelId channelId)
         {
             return $"{userId}-{connectionName}-{channelId?.Channel}";
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     {
                         return null;
                     }
-                    
+
                     var response = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
 
                     AddTokenResponseToCache(cacheKey, response);

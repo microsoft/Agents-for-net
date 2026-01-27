@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(text, textHighlights.Text);
             Assert.Equal(occurrence, textHighlights.Occurrence);
         }
-        
+
         [Fact]
         public void TextHighlightInitsWithNoArgs()
         {

@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal(StreamingResponseResult.Success, result);
             Assert.Single(responses);
             Assert.Equal("this is a test", responses[0].Text);
-            Assert.Null(responses[0].GetStreamingEntity()); 
+            Assert.Null(responses[0].GetStreamingEntity());
         }
 
         [Fact]

@@ -10,10 +10,10 @@ namespace Microsoft.Agents.Authentication.Msal
 {
     internal class MSALHttpClientFactory : IMsalHttpClientFactory
     {
-        readonly IServiceProvider _systemServiceProvider; 
+        readonly IServiceProvider _systemServiceProvider;
         public MSALHttpClientFactory(IServiceProvider systemServiceProvider)
         {
-            _systemServiceProvider = systemServiceProvider; 
+            _systemServiceProvider = systemServiceProvider;
         }
 
         /// <summary>

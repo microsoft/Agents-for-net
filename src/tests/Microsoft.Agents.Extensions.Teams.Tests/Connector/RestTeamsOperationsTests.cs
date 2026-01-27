@@ -209,7 +209,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 ErrorCode = "404",
                 FailureReason = "Not Found"
             };
-            
+
             var notification = new MeetingNotificationResponse
             {
                 RecipientsFailureInfo = [info]
@@ -381,7 +381,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task GetOperationStateAsync_ShouldReturnOperationState()
         {
             var state = new BatchOperationState { State = "Completed" };
-            
+
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonSerializer.Serialize(state))
@@ -404,7 +404,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task GetPagedFailedEntriesAsync_ShouldReturnFailedEntries()
         {
-            var batchResponse = new BatchFailedEntriesResponse { FailedEntries = [new BatchFailedEntry { EntryId = "1", Error = "Id Not Found" }]};
+            var batchResponse = new BatchFailedEntriesResponse { FailedEntries = [new BatchFailedEntry { EntryId = "1", Error = "Id Not Found" }] };
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -488,7 +488,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 StatusCode = HttpStatusCode.InternalServerError,
                 Content = new StringContent(JsonSerializer.Serialize("Internal Error"))
             };
-            
+
             var teamsOperations = UseTeamsOperations();
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);

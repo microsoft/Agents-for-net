@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             var logger = new TraceTranscriptLogger();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>  logger.LogActivityAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => logger.LogActivityAsync(null));
         }
 
         [Fact]

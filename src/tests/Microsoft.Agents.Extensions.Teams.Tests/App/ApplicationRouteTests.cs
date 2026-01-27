@@ -729,8 +729,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             app.RegisterExtension(extension, (ext) =>
             {
                 var events = new[] { TeamsConversationUpdateEvents.TeamRenamed, TeamsConversationUpdateEvents.ChannelDeleted, ConversationUpdateEvents.MembersAdded };
-                
-                foreach(var eventName in events)
+
+                foreach (var eventName in events)
                 {
                     ext.OnConversationUpdate(eventName, (context, _, _) =>
                     {

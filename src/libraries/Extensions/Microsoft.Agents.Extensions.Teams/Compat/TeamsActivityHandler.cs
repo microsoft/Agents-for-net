@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                             return CreateInvokeResponse(await OnTeamsMessagingExtensionQueryAsync(turnContext, SafeCast<MessagingExtensionQuery>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
 
                         case "composeExtension/selectItem":
-                            return CreateInvokeResponse(await OnTeamsMessagingExtensionSelectItemAsync(turnContext, (JsonElement) turnContext.Activity.Value, cancellationToken).ConfigureAwait(false));
+                            return CreateInvokeResponse(await OnTeamsMessagingExtensionSelectItemAsync(turnContext, (JsonElement)turnContext.Activity.Value, cancellationToken).ConfigureAwait(false));
 
                         case "composeExtension/submitAction":
                             return CreateInvokeResponse(await OnTeamsMessagingExtensionSubmitActionDispatchAsync(turnContext, SafeCast<MessagingExtensionAction>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
@@ -78,11 +78,11 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
                             return CreateInvokeResponse(await OnTeamsMessagingExtensionConfigurationQuerySettingUrlAsync(turnContext, SafeCast<MessagingExtensionQuery>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
 
                         case "composeExtension/setting":
-                            await OnTeamsMessagingExtensionConfigurationSettingAsync(turnContext, (JsonElement) turnContext.Activity.Value, cancellationToken).ConfigureAwait(false);
+                            await OnTeamsMessagingExtensionConfigurationSettingAsync(turnContext, (JsonElement)turnContext.Activity.Value, cancellationToken).ConfigureAwait(false);
                             return CreateInvokeResponse();
 
                         case "composeExtension/onCardButtonClicked":
-                            await OnTeamsMessagingExtensionCardButtonClickedAsync(turnContext, (JsonElement) turnContext.Activity.Value, cancellationToken).ConfigureAwait(false);
+                            await OnTeamsMessagingExtensionCardButtonClickedAsync(turnContext, (JsonElement)turnContext.Activity.Value, cancellationToken).ConfigureAwait(false);
                             return CreateInvokeResponse();
 
                         case "task/fetch":
@@ -90,10 +90,10 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
 
                         case "task/submit":
                             return CreateInvokeResponse(await OnTeamsTaskModuleSubmitAsync(turnContext, SafeCast<TaskModuleRequest>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
-                        
+
                         case "tab/fetch":
                             return CreateInvokeResponse(await OnTeamsTabFetchAsync(turnContext, SafeCast<TabRequest>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
-                        
+
                         case "tab/submit":
                             return CreateInvokeResponse(await OnTeamsTabSubmitAsync(turnContext, SafeCast<TabSubmit>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
 
@@ -691,7 +691,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         {
             return Task.CompletedTask;
         }
-        
+
         /// <summary>
         /// Invoked when a Channel Restored event activity is received from the connector.
         /// Channel Restored correspond to the user restoring a previously deleted channel.

@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(text, signInCard.Text);
             Assert.Equal(buttons, signInCard.Buttons);
         }
-        
+
         [Fact]
         public void SignInCardInitsWithNoArgs()
         {

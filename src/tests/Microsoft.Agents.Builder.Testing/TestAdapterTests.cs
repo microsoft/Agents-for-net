@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.Testing
                       await context.SendActivityAsync(context.Activity.CreateReply("one"), cancellationToken);
                   })
                           .Test("foo", (activity) => throw new Exception(uniqueExceptionId))
-                          .StartTestAsync());  
+                          .StartTestAsync());
         }
 
         [Fact]
@@ -31,10 +31,10 @@ namespace Microsoft.Agents.Builder.Testing
         {
             string uniqueExceptionId = Guid.NewGuid().ToString();
             TestAdapter adapter = new TestAdapter(TestAdapter.CreateConversation("TestAdapter_ExceptionInBotOnReceive"));
-            await Assert.ThrowsAsync<Exception>(() => 
-                new TestFlow(adapter, (context, cancellationToken) => 
-                { 
-                    throw new Exception(uniqueExceptionId); 
+            await Assert.ThrowsAsync<Exception>(() =>
+                new TestFlow(adapter, (context, cancellationToken) =>
+                {
+                    throw new Exception(uniqueExceptionId);
                 })
                     .Test("test", activity => Assert.Null(null), "uh oh!")
                     .StartTestAsync());

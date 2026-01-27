@@ -505,7 +505,7 @@ namespace Microsoft.Agents.Model.Tests
 
         private Activity CastToActivityType(string activityType, IActivity activity)
         {
-            return (Activity) activity;
+            return (Activity)activity;
         }
 
         private void ValidateRecipientAndFrom(IActivity activity, bool createRecipient, bool createFrom)

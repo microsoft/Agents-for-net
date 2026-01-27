@@ -98,16 +98,16 @@ namespace Microsoft.Agents.Client
         public ConfigurationAgentHost(
             IConfiguration configuration,
             IServiceProvider systemServiceProvider,
-            IStorage storage, 
+            IStorage storage,
             IConnections connections,
             IHttpClientFactory httpClientFactory,
             string configSection = "Agent") : this(
-                systemServiceProvider, 
-                storage, 
-                connections, 
+                systemServiceProvider,
+                storage,
+                connections,
                 httpClientFactory,
-                configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentClientSettings>>(), 
-                configuration?.GetValue<string>($"{configSection}:Host:DefaultResponseEndpoint"), 
+                configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentClientSettings>>(),
+                configuration?.GetValue<string>($"{configSection}:Host:DefaultResponseEndpoint"),
                 configuration?.GetValue<string>($"{configSection}:ClientId"))
         {
         }
@@ -304,14 +304,14 @@ namespace Microsoft.Agents.Client
                 }
             }
 
-            await _storage.DeleteAsync([.. deleteKeys], cancellationToken).ConfigureAwait(false);   
+            await _storage.DeleteAsync([.. deleteKeys], cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task SendToAgent(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             using var client = GetClient(agentName);
-            
+
             if (string.IsNullOrEmpty(activity.DeliveryMode)
                 || !string.Equals(DeliveryModes.Normal, activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
@@ -387,7 +387,7 @@ namespace Microsoft.Agents.Client
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentTokenProviderNotFound, null, tokenProviderName, agentName);
             }
 
-            return new HttpAgentClient(this, clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
+            return new HttpAgentClient(this, clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>)_serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
         }
     }
 }

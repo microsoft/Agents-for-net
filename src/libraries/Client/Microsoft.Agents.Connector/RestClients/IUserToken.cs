@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name='cancellationToken'> The cancellation token.</param>
         /// <returns>A Task representing the <see cref="TokenResponse"/> of the HTTP operation.</returns>
         Task<IReadOnlyDictionary<string, TokenResponse>> GetAadTokensAsync(string userId, string connectionName, AadResourceUrls aadResourceUrls, ChannelId channelId = default, CancellationToken cancellationToken = default);
-        
+
         /// <summary>Sign out with HTTP message.</summary>
         /// <param name='userId'> User ID.</param>
         /// <param name='connectionName'>Connection name. </param>

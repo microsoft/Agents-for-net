@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
     public class X509StoreCertificateProviderTests
     {
         private const string SettingsSection = "Connections:Settings";
-        
+
         private static readonly Dictionary<string, string> _configSettings = new() {
             { "Connections:Settings:AuthType", "Certificate" },
             { "Connections:Settings:ClientId", "test-client-id" },
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         public void GetCertificate_ShouldReturnCertificate()
         {
             CleanUpStore("SelfSignedCert");
-            
+
             var testCertificate = CreateSelfSignedCertificate("SelfSignedCert");
 
             SaveCertificate(testCertificate);

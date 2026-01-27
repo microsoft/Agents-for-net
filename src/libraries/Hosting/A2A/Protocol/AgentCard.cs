@@ -76,7 +76,7 @@ public sealed class AgentCard
     /// A declaration of the security schemes available to authorize requests. The key is the scheme name. Follows the OpenAPI 3.0 Security Scheme Object.
     /// </summary>
     [JsonPropertyName("securitySchemes")]
-    public IReadOnlyDictionary<string, SecurityScheme>? SecuritySchemes { get; set;}
+    public IReadOnlyDictionary<string, SecurityScheme>? SecuritySchemes { get; set; }
 
     /// <summary>
     /// JSON Web Signatures computed for this AgentCard.

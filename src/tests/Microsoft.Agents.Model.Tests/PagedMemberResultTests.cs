@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var continuationToken = "myContinuationToken";
             var members = new List<ChannelAccount>()
-            { 
+            {
                 new ChannelAccount("id1", "channel1", "role1", "aadObjectId1"),
                 new ChannelAccount("id2", "channel2", "role2", "aadObjectId2"),
             };

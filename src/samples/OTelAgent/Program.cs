@@ -33,7 +33,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 
 // Application Insights connection string (appsettings or env)
-string? aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"] 
+string? aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"]
     ?? Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING");
 
 // Optional toggle via config/env to switch HttpClient instrumentation on/off

@@ -183,7 +183,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 }
 
                 var culture = DetermineCulture(turnContext.Activity);
-                
+
                 var results = ChoiceRecognizer.RecognizeBoolean(utterance, options.RecognizeLanguage ?? culture);
                 if (results.Count > 0)
                 {

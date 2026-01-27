@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Model.Tests
             {
                 IsGroup = false,
                 Agent = new ChannelAccount() { Id = "agent" },
-                Members = [new ChannelAccount() { Id = "member"} ],
+                Members = [new ChannelAccount() { Id = "member" }],
                 TopicName = "topicName",
                 Activity = new Activity() { Type = "message" },
                 TenantId = "tenantId"

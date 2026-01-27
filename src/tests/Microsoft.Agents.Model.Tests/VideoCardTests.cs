@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(value, videoCard.Value);
             Assert.Equal(duration, videoCard.Duration);
         }
-        
+
         [Fact]
         public void VideoCardInitsWithNoArgs()
         {

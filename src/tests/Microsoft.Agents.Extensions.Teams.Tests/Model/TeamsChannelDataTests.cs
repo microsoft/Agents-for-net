@@ -124,8 +124,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                 Notification = new NotificationInfo() { Alert = true, AlertInMeeting = true, ExternalResourceUrl = "resourceUrl" },
                 Tenant = new TenantInfo() { Id = "tenant_id" },
                 Meeting = new TeamsMeetingInfo() { Id = "meeting_id" },
-                Settings = new TeamsChannelDataSettings() { SelectedChannel = new ChannelInfo() { Id = "channel_id", Name = "channel_name", Type = "channel_type" }, Properties = ProtocolJsonSerializer.ToJsonElements(new { prop1 = "prop1"}) },
-                OnBehalfOf = [ new OnBehalfOf() {  DisplayName = "displayName", ItemId = 1, MentionType = "mentionType", Mri = "mri"}],
+                Settings = new TeamsChannelDataSettings() { SelectedChannel = new ChannelInfo() { Id = "channel_id", Name = "channel_name", Type = "channel_type" }, Properties = ProtocolJsonSerializer.ToJsonElements(new { prop1 = "prop1" }) },
+                OnBehalfOf = [new OnBehalfOf() { DisplayName = "displayName", ItemId = 1, MentionType = "mentionType", Mri = "mri" }],
                 Properties = ProtocolJsonSerializer.ToJsonElements(new { prop1 = "root_prop1" })
             };
 

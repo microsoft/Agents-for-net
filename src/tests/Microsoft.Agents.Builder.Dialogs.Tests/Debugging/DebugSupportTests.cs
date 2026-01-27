@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests.Debugging
         {
             var oldSourceMap = DebugSupport.SourceMap;
             var sourceMap = new SourceMap();
-            
+
             DebugSupport.SourceMap = sourceMap;
 
             Assert.Equal(sourceMap, DebugSupport.SourceMap);
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests.Debugging
             mockContext.Setup(tc => tc.Services).Returns([]);
             mockContext.Setup(tc => tc.StackState).Returns([]);
             mockContext.Object.Services.Set(debugger.Object);
-            
+
             var dialogContext = new DialogContext(new DialogSet(), mockContext.Object, new DialogState());
 
             await dialogContext.DebuggerStepAsync(mockDialog.Object, "more", CancellationToken.None);

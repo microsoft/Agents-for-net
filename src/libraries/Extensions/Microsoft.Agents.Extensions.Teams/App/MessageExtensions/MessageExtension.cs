@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
         {
-            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME);
             return OnSubmitAction(routeSelector, handler);
@@ -181,7 +181,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
         {
-            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME, "edit");
             return OnAgentMessagePreviewEdit(routeSelector, handler);
@@ -279,7 +279,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), SUBMIT_ACTION_INVOKE_NAME, "send");
             return OnAgentMessagePreviewSend(routeSelector, handler);
@@ -379,7 +379,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
         {
-            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), MessageExtensionsInvokeNames.FETCH_TASK_INVOKE_NAME);
             return OnFetchTask(routeSelector, handler);
@@ -472,7 +472,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
         {
-            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
+            AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), MessageExtensionsInvokeNames.QUERY_INVOKE_NAME);
             return OnQuery(routeSelector, handler);
@@ -784,7 +784,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
 
                 bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
 
-                bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken) 
+                bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken)
                     || string.IsNullOrEmpty(previewActionToken.ToString())
                     || string.Equals(botMessagePreviewAction, previewActionToken.ToString());
 

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         /// <summary>
         /// Initializes a new instance of the <see cref="ExecuteAction"/> class.
         /// </summary>
-        public ExecuteAction() 
+        public ExecuteAction()
             : base("Execute")
         {
             // Do nothing

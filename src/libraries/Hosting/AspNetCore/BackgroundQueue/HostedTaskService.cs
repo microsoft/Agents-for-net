@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     {
         private readonly ILogger<HostedTaskService> _logger;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
-        private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new();
+        private readonly ConcurrentDictionary<Func<CancellationToken, Task>, Task> _tasks = new();
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly int _shutdownTimeoutSeconds;
 
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _taskQueue = taskQueue;
-            _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance; ;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.{Environment.NewLine}", Environment.NewLine);
-            
+
             await BackgroundProcessing(stoppingToken);
         }
 

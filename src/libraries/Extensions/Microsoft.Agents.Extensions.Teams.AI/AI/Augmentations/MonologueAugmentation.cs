@@ -52,10 +52,10 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         {
             private static readonly string[] _requiredInnerMonologueThoughts = ["thought", "reasoning"];
 
-        /// <summary>
-        /// The LLM's current thought.
-        /// </summary>
-        [JsonPropertyName("thought")]
+            /// <summary>
+            /// The LLM's current thought.
+            /// </summary>
+            [JsonPropertyName("thought")]
             public string Thought { get; set; }
 
             /// <summary>
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Augmentations
         public MonologueAugmentation(List<ChatCompletionAction> actions)
         {
             List<ChatCompletionAction> _actions = new(actions);
-            
+
             _actions.Add(new("SAY")
             {
                 Description = "use to ask the user a question or say something",

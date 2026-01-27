@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Builder.App
                 }
 
                 using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));
-                
+
                 using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
                 request.Headers.Add("Authorization", $"Bearer {accessToken}");
 

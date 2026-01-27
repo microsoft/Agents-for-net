@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             _options.Setup(x => x.Value)
                 .Returns(_returnedOptions)
                 .Verifiable(Times.Once);
-            
+
             _service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
                 .Returns(_options.Object)
                 .Verifiable(Times.Once);

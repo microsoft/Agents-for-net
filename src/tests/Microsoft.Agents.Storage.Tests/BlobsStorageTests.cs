@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Storage.Tests
 
         private BlobsStorage _storage;
         private readonly Mock<BlobClient> _client = new Mock<BlobClient>();
-        
+
         [Fact]
         public void ConstructorValidation()
         {

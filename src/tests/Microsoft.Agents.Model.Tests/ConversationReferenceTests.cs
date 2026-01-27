@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Model.Tests
             {
                 ActivityId = "id",
                 User = new ChannelAccount() { Id = "user" },
-                Agent = new ChannelAccount() {  Id = "agent" },
+                Agent = new ChannelAccount() { Id = "agent" },
                 Conversation = new ConversationAccount() { Id = "conversation" },
                 ChannelId = "channelId",
                 Locale = "locale",

@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         public Task ResponseBegin(HttpResponse httpResponse, CancellationToken cancellationToken = default)
         {
-            httpResponse.StatusCode = (int) HttpStatusCode.OK;
+            httpResponse.StatusCode = (int)HttpStatusCode.OK;
             httpResponse.ContentType = "text/event-stream";
             return Task.CompletedTask;
         }

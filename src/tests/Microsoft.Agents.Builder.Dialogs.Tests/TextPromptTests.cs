@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             do
             {
                 naughtyString = GetNextNaughtyString(sr);
-                try 
+                try
                 {
                     await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                     {

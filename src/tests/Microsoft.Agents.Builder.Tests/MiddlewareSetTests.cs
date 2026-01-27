@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Builder.Tests
                 throw new InvalidOperationException("test");
             }));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 m.ReceiveActivityWithStatusAsync(null, null, default));
         }
 
@@ -439,10 +439,10 @@ namespace Microsoft.Agents.Builder.Tests
             bool caughtException = false;
 
             m.Use(new AnonymousReceiveMiddleware(async (context, next, cancellationToken) =>
-            {  
-               var message = await Assert.ThrowsAsync<Exception>(() => next(cancellationToken));
-               Assert.Equal("test", message.Message);
-               caughtException = true;
+            {
+                var message = await Assert.ThrowsAsync<Exception>(() => next(cancellationToken));
+                Assert.Equal("test", message.Message);
+                caughtException = true;
             }));
 
             m.Use(new AnonymousReceiveMiddleware((context, next, cancellationToken) =>
@@ -467,10 +467,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var enumerator = middlewareSet.GetEnumerator();
 
-            Assert.True(enumerator.MoveNext()); 
+            Assert.True(enumerator.MoveNext());
             Assert.Equal(callMeMiddleware, enumerator.Current);
 
-            Assert.True(enumerator.MoveNext()); 
+            Assert.True(enumerator.MoveNext());
             Assert.Equal(doNotCallNextMiddleware, enumerator.Current);
 
             Assert.False(enumerator.MoveNext()); // No more middlewares

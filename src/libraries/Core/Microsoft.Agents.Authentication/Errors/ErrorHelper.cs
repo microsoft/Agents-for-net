@@ -22,8 +22,8 @@ namespace Microsoft.Agents.Authentication.Errors
     ///         HelpLink = ErrorHelper.MissingAuthenticationConfiguration.helplink
     ///     };
     /// 
-/// </summary>
-internal static class ErrorHelper
+    /// </summary>
+    internal static class ErrorHelper
     {
         // Base error code for the authentication provider: -40000
 

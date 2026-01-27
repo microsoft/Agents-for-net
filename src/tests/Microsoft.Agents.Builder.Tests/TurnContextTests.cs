@@ -546,7 +546,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var adapter = new SimpleAdapter();
             var context = new TurnContext(adapter, new Activity());
-           
+
             await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync([]));
         }
 

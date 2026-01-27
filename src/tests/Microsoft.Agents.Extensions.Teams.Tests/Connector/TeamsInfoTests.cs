@@ -1162,7 +1162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     JsonElement root = payload.RootElement;
                     var value = root.GetProperty("value");
                     var recipients = ProtocolJsonSerializer.ToObject<List<string>>(value.GetProperty("recipients"));
-                    var channelData = ProtocolJsonSerializer.ToObject< MeetingNotificationChannelData>(root.GetProperty("channelData"));
+                    var channelData = ProtocolJsonSerializer.ToObject<MeetingNotificationChannelData>(root.GetProperty("channelData"));
                     var obo = channelData.OnBehalfOfList.First();
 
                     // hack displayname as expected status code, for testing
@@ -1459,7 +1459,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         private class TestConnector(Uri endpoint) : IConnectorClient, IRestTransport
         {
             private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-            
+
             public Uri BaseUri => throw new NotImplementedException();
 
             public IAttachments Attachments => throw new NotImplementedException();

@@ -47,7 +47,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                 AttachmentLayout = "attachmentLayout",
                 Type = "type",
                 Attachments = [new MessagingExtensionAttachment() { }],
-                SuggestedActions = new MessagingExtensionSuggestedAction() { Actions = [new CardAction() 
+                SuggestedActions = new MessagingExtensionSuggestedAction()
+                {
+                    Actions = [new CardAction()
                     {
                         Type = "type",
                         Title = "title",
@@ -57,14 +59,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                         DisplayText = "displayText",
                         Value = new { value = "value" },
                         ChannelData = new { channelData = "channelData"}
-                    }] },
+                    }]
+                },
                 Text = "text",
                 ActivityPreview = new Activity()
             };
-    
+
             var msgExtActionResponse = new MessagingExtensionActionResponse(task, composeExtension)
             {
-                CacheInfo = new CacheInfo() { CacheDuration = 1, CacheType = "cacheType"}
+                CacheInfo = new CacheInfo() { CacheDuration = 1, CacheType = "cacheType" }
             };
 
             // Known good

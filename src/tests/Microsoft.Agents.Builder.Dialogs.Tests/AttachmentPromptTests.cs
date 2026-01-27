@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                await convoState.LoadAsync(turnContext, false, cancellationToken);  
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(attachmentPrompt);

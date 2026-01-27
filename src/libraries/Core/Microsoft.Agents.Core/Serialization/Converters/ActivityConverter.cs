@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         protected override bool TryReadCollectionProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options)
         {
             PropertyInfo propertyInfo = typeof(Activity).GetProperty(propertyName);
-            if (propertyInfo != null  && propertyInfo.PropertyType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(propertyInfo.PropertyType))
+            if (propertyInfo != null && propertyInfo.PropertyType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(propertyInfo.PropertyType))
             {
                 return true;
             }

@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder
                                 turnContext.Activity.GetAgenticTenantId(),
                                 turnContext.Activity.GetAgenticInstanceId(),
                                 turnContext.Activity.GetAgenticUser(),
-                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
+                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope],
                                 cancellationToken);
                         }
                         catch (Exception ex)
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Builder
                                 ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                     }
                 },
-                typeof(RestChannelServiceClientFactory).FullName, 
+                typeof(RestChannelServiceClientFactory).FullName,
                 maxApxConversationIdLength: _iMaxApxConversationIdLength));
         }
 

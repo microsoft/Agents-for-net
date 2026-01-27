@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(type, thing.Type);
             Assert.Equal(name, thing.Name);
         }
-        
+
         [Fact]
         public void ThingInitsWithNoArgs()
         {

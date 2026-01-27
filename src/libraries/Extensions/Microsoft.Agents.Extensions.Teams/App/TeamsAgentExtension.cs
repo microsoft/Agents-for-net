@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TaskModule TaskModules { get; }
 
 #if !NETSTANDARD
-        protected AgentApplication AgentApplication { get; init;}
+        protected AgentApplication AgentApplication { get; init; }
 #else
         protected AgentApplication AgentApplication { get; set;}
 #endif
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             AssertionHelpers.ThrowIfNull(conversationUpdateEvent, nameof(conversationUpdateEvent));
-            
+
             RouteSelector routeSelector;
             switch (conversationUpdateEvent)
             {

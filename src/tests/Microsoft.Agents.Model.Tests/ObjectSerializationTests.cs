@@ -386,7 +386,7 @@ namespace Microsoft.Agents.Model.Tests
             }];
             var jsonOut = ProtocolJsonSerializer.ToJson(activities);
             var expected = "[{\"@public\":\"public\",\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[],\"listenFor\":[],\"textHighlights\":[]}]";
-            
+
             Assert.Equal(expected, jsonOut);
         }
 
@@ -473,7 +473,7 @@ namespace Microsoft.Agents.Model.Tests
 
             // Validate lists
             Assert.NotEmpty(activity.MembersAdded);
-            Assert.NotEmpty(activity.MembersRemoved);    
+            Assert.NotEmpty(activity.MembersRemoved);
             Assert.NotEmpty(activity.ReactionsAdded);
             Assert.NotEmpty(activity.ReactionsRemoved);
 
@@ -539,4 +539,4 @@ namespace Microsoft.Agents.Model.Tests
             public string MyId { get; set; }
         }
     }
-}   
+}

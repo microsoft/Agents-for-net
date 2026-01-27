@@ -16,7 +16,7 @@ namespace EvalClient
     {
         private static readonly string _keyChainServiceName = "copilot_studio_client_app";
         private static readonly string _keyChainAccountName = "copilot_studio_client";
-        
+
         private async Task<AuthenticationResult> AuthenticateAsync(CancellationToken ct = default!)
         {
             ArgumentNullException.ThrowIfNull(settings);
@@ -42,12 +42,12 @@ namespace EvalClient
             {
                 storageProperties.WithLinuxUnprotectedFile();
             }
-            
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 storageProperties.WithMacKeyChain(_keyChainServiceName, _keyChainAccountName);
             }
-            
+
             MsalCacheHelper tokenCacheHelper = await MsalCacheHelper.CreateAsync(storageProperties.Build());
             tokenCacheHelper.RegisterCache(app.UserTokenCache);
 

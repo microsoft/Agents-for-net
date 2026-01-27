@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
                     dialogs.Add(new TextPrompt("namePrompt", (promptContext, cancellationToken) => Task.FromResult(true)));
                     dialogs.Add(new WaterfallDialog("nameDialog", steps));
-                    
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                     await dc.ContinueDialogAsync(cancellationToken);

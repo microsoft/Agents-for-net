@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Client.Tests
         private readonly Mock<IHttpClientFactory> _httpClientFactory = new();
         private readonly Mock<IAccessTokenProvider> _accessTokenProvider = new Mock<IAccessTokenProvider>();
 
-        public AgentResponseExtensionTests() 
+        public AgentResponseExtensionTests()
         {
             var agent1Name = "bot1";
             var agent2Name = "bot2";

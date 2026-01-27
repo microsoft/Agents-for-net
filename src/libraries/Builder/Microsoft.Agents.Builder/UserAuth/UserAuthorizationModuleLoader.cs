@@ -21,7 +21,7 @@ using System.Runtime.Loader;
 namespace Microsoft.Agents.Builder.UserAuth
 {
 #if !NETSTANDARD
-    internal class UserAuthorizationModuleLoader( AssemblyLoadContext loadContext, ILogger logger)
+    internal class UserAuthorizationModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
 #else
@@ -59,10 +59,10 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
             }
-            
+
             // This throws for invalid assembly name.
 #if !NETSTANDARD
-                Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+            Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
 #else
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.Load(assemblyName);
@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Builder.UserAuth
                     throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
                 }
             }
-            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
+            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName);
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
 
             // Check for timeout
             var state = dc.ActiveDialog.State;
-            var expires = (DateTime) state[PersistedExpires];
+            var expires = (DateTime)state[PersistedExpires];
             var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
 
             try
@@ -210,7 +210,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 var promptOptions = (PromptOptions)state[PersistedOptions];
 
                 // Increment attempt count
-                promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
+                promptState[Prompt<int>.AttemptCountKey] = (int)promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value
                 var isValid = recognized.Succeeded;

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// </summary>
         /// <param name="user">The channel user data.</param>
         /// <param name="meeting">The user meeting details.</param>
-        public TeamsMeetingMember(TeamsChannelAccount user, UserMeetingDetails meeting) 
+        public TeamsMeetingMember(TeamsChannelAccount user, UserMeetingDetails meeting)
         {
             User = user;
             Meeting = meeting;

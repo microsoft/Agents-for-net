@@ -128,7 +128,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     return Dialog.EndOfTurn;
                 }
             };
-            
+
             waterfallParent.AddDialog(new WaterfallDialog(
                 "test",
                 steps));

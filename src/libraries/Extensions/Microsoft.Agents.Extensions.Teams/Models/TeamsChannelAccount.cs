@@ -33,15 +33,15 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <param name="agenticUserId"></param>
         /// <param name="agenticAppId"></param>
         public TeamsChannelAccount(
-            string id = default, 
-            string name = default, 
-            string givenName = default, 
-            string surname = default, 
-            string email = default, 
-            string userPrincipalName = default, 
-            string tenantId = default, 
-            string userRole = default, 
-            string agenticUserId = default, 
+            string id = default,
+            string name = default,
+            string givenName = default,
+            string surname = default,
+            string email = default,
+            string userPrincipalName = default,
+            string tenantId = default,
+            string userRole = default,
+            string agenticUserId = default,
             string agenticAppId = default)
             : base(id, name, tenantId: tenantId, agenticUserId: agenticUserId, agenticAppId: agenticAppId)
         {

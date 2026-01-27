@@ -60,7 +60,7 @@ internal class A2AException : Exception
     /// <param name="errorCode">A <see cref="A2AErrorCode"/>.</param>
     public A2AException(string message, Exception? innerException, int errorCode) : base(message, innerException)
     {
-       ErrorCode = errorCode;
+        ErrorCode = errorCode;
     }
 
     /// <summary>

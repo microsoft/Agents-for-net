@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> A thumbnail card (card with a single, small thumbnail image). </summary>
     public class ThumbnailCard
     {
-        public ThumbnailCard() 
+        public ThumbnailCard()
         {
             Images = [];
             Buttons = [];

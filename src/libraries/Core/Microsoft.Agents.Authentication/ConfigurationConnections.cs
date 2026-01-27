@@ -173,7 +173,7 @@ namespace Microsoft.Agents.Authentication
             var connection = GetTokenProvider(claimsIdentity, activity.ServiceUrl);
 
             // This is for if the Agentic BlueprintId is not the same as the AppId
-            if (connection != null 
+            if (connection != null
                 && (RoleTypes.AgenticIdentity.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)
                 || RoleTypes.AgenticUser.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)))
             {

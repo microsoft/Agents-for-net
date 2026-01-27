@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public async Task ActivityRouteAttribute_Type()
         {
-            var app = new TestApp(new AgentApplicationOptions((IStorage) null));
+            var app = new TestApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)

@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Model.Tests
             var cardVal = (Dictionary<string, string>)mediaEventValue.CardValue;
             Assert.Equal(value, cardVal[key]);
         }
-        
+
         [Fact]
         public void MediaEventValueInitsWithNoArgs()
         {

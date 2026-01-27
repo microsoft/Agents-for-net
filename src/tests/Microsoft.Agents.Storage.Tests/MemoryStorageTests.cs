@@ -66,9 +66,9 @@ namespace Microsoft.Agents.Storage.Tests
 
             var outer = new Outer()
             {
-                State = new Dictionary<string, object> 
-                { 
-                    ["key1"] = new Inner() { Name = "inner" } 
+                State = new Dictionary<string, object>
+                {
+                    ["key1"] = new Inner() { Name = "inner" }
                 }
             };
 

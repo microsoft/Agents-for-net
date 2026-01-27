@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Compat
         {
             // This is really so back-compat Agents can use the new AgentState methods without having to
             // Load or use IStatePropertyAccessor.
-            _autoLoad = true;  
+            _autoLoad = true;
             TurnState = new TurnState(agentStates);
         }
 
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.Compat
             // before turn
             if (_autoLoad)
             {
-                await TurnState.LoadStateAsync(turnContext, cancellationToken:cancellationToken, force:true).ConfigureAwait(false);
+                await TurnState.LoadStateAsync(turnContext, cancellationToken: cancellationToken, force: true).ConfigureAwait(false);
             }
 
             await next(cancellationToken).ConfigureAwait(false);

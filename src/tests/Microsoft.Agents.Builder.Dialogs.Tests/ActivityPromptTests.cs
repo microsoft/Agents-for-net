@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             // Create and add custom activity prompt to DialogSet.
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
-            
+
             // Create mock Activity for testing.
             var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
 

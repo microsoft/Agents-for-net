@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 results.Add(NumberWithUnitRecognizer.RecognizeDimension(utterance, culture));
 
                 // Filter the options that returned nothing and return the one that matched
-                return results.FirstOrDefault(r => r.Count > 0) ?? new List<ModelResult>(); 
+                return results.FirstOrDefault(r => r.Count > 0) ?? new List<ModelResult>();
             }
         }
     }

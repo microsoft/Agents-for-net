@@ -1,0 +1,38 @@
+#!/bin/bash
+# Pre-commit hook to run C# linter (dotnet format)
+# This hook will verify that code follows formatting rules before allowing a commit
+
+echo "Running dotnet format check..."
+
+# Find the main solution file
+SOLUTION="src/Microsoft.Agents.SDK.sln"
+
+# Check if solution exists
+if [ ! -f "$SOLUTION" ]; then
+    echo "Error: Solution file not found at $SOLUTION"
+    exit 1
+fi
+
+# Run dotnet format with --verify-no-changes flag
+# This will check formatting without making changes
+# Returns non-zero exit code if formatting issues are found
+dotnet format "$SOLUTION" --verify-no-changes --verbosity diagnostic
+
+# Capture the exit code
+LINT_EXIT_CODE=$?
+
+if [ $LINT_EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "❌ Pre-commit hook FAILED: Code formatting issues detected."
+    echo ""
+    echo "To fix formatting issues, run:"
+    echo "  dotnet format $SOLUTION"
+    echo ""
+    echo "To bypass this check (not recommended), use:"
+    echo "  git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo "✅ All formatting checks passed!"
+exit 0

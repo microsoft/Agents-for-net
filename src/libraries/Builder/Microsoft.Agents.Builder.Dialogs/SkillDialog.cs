@@ -242,7 +242,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // (the dialog stack won't get updated with the skillDialog and things won't work if you don't)
             await DialogOptions.ConversationState.SaveChangesAsync(context, true, cancellationToken).ConfigureAwait(false);
 
-            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, useAnonymous:AgentClaims.AllowAnonymous(context.Identity), cancellationToken:cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, useAnonymous: AgentClaims.AllowAnonymous(context.Identity), cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Inspect the skill response status
             if (!response.IsSuccessStatusCode())
@@ -286,7 +286,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                             sentInvokeResponse = true;
 
                             // Ensure the value in the invoke response is of type InvokeResponse (it gets deserialized as JObject by default).
-                            activityFromSkill.Value = ProtocolJsonSerializer.ToObject<InvokeResponse>(activityFromSkill.Value); 
+                            activityFromSkill.Value = ProtocolJsonSerializer.ToObject<InvokeResponse>(activityFromSkill.Value);
                         }
 
                         // Send the response back to the channel. 
@@ -363,7 +363,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             };
 
             // route the activity to the skill
-            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Check response status: true if success, false if failure
             return response.IsSuccessStatusCode();

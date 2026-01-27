@@ -71,7 +71,7 @@ builder.AddAgent(sp =>
     // we just want to proxy messages to/from a Copilot Studio Agent.
     app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
     {
-        
+
         var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
         var cpsClient = GetClient(app, turnContext);
 

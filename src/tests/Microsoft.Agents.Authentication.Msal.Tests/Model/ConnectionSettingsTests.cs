@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
                 { "Connections:Settings:CertificateSubjectName", "test-subject-name" },
                 { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
-            };            
+            };
         }
 
         [Fact]
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
                 { "Connections:Settings:AssertionRequestOptions:ClientCapabilities:0", "option-cap1" },
                 { "Connections:Settings:AssertionRequestOptions:ClientCapabilities:1", "option-cap2" },
             };
-            
+
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configSettings)
                 .Build();

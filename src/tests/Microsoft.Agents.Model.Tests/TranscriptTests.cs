@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.IsType<Transcript>(transcript);
             Assert.Equal(activities, transcript.Activities);
         }
-        
+
         [Fact]
         public void TranscriptInitsWithNoArgs()
         {

@@ -249,9 +249,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await turnContext.Adapter.ProcessProactiveAsync(
-                                turnContext.Identity, 
-                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
-                                _app, 
+                                turnContext.Identity,
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true),
+                                _app,
                                 cancellationToken).ConfigureAwait(false);
                             return false;
                         }

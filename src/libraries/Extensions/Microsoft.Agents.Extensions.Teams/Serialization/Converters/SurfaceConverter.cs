@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.Serialization.Converters
                 if (reader.TokenType == JsonTokenType.PropertyName)
                 {
                     var propertyName = reader.GetString();
-                    if (string.Equals("type", propertyName, StringComparison.OrdinalIgnoreCase) 
+                    if (string.Equals("type", propertyName, StringComparison.OrdinalIgnoreCase)
                         || string.Equals("surface", propertyName, StringComparison.OrdinalIgnoreCase))
                     {
                         surfaceType = JsonSerializer.Deserialize<SurfaceType>(ref reader, options);

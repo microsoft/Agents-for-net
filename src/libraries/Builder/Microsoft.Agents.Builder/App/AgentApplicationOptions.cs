@@ -122,13 +122,13 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="configKey"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
-            IConfiguration configuration, 
-            IChannelAdapter channelAdapter, 
-            IStorage storage = null, 
+            IConfiguration configuration,
+            IChannelAdapter channelAdapter,
+            IStorage storage = null,
             UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
-            string configKey = "AgentApplication") 
+            string configKey = "AgentApplication")
         {
 #pragma warning disable CS0618 // Type or member is obsolete
             Adapter = channelAdapter;

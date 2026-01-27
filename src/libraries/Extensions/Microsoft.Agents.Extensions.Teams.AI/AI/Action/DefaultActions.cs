@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
                             type = _feedbackLoopType
                         }
                     };
-                } 
+                }
                 else
                 {
                     channelData = new

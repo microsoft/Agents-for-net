@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(routeSelectors,nameof(routeSelectors));
+            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             if (routeSelectors.Strings != null)
             {

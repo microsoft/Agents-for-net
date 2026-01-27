@@ -104,7 +104,7 @@ internal static class A2AModel
         {
             return await JsonSerializer.DeserializeAsync<T>(request.Body);
         }
-        catch(A2AException)
+        catch (A2AException)
         {
             throw;
         }
@@ -122,7 +122,7 @@ internal static class A2AModel
         {
             sendParams = jsonRpcRequest.Params?.Deserialize<MessageSendParams>();
         }
-        catch(A2AException)
+        catch (A2AException)
         {
             throw;
         }

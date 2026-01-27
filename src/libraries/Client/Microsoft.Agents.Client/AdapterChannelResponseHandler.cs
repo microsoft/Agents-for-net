@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Client
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
             // Perhaps a better way to do this, but what ChannelServiceAdapterBase does in ContinueConversation.
-            var hostClaimsIdentity = AgentClaims.AllowAnonymous(claimsIdentity) 
+            var hostClaimsIdentity = AgentClaims.AllowAnonymous(claimsIdentity)
                 ? new ClaimsIdentity()
                 : new ClaimsIdentity(
                 [

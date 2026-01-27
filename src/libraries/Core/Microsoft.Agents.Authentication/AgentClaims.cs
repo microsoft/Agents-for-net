@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Authentication
         {
             // Verify we have a sensible Claims Identity
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
-            
+
             // For requests from channel App Id is in Audience claim of JWT token. For emulator it is in AppId claim. For
             // unauthenticated requests we have anonymous claimsIdentity provided auth is disabled.
             // For Activities coming from Emulator AppId claim contains the Agent's AAD AppId.

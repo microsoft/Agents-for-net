@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Model.Tests
             };
 
             var expected = "{\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[],\"citation\":[{\"position\":1,\"appearance\":{\"name\":\"name\",\"text\":\"text\",\"url\":\"url\",\"image\":{\"type\":\"ImageObject\",\"name\":\"Image\"},\"@type\":\"DigitalDocument\"},\"@type\":\"Claim\"}],\"type\":\"https://schema.org/Message\"}";
-   
+
             // Test serialize
             var jsonOut = ProtocolJsonSerializer.ToJson(entityOut);
             Assert.Equal(expected, jsonOut);

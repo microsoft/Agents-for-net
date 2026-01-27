@@ -84,7 +84,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
                     await userTokenClient.SignOutUserAsync(innerDc.Context.Activity.From.Id, ConnectionName, innerDc.Context.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
 
                     await innerDc.Context.SendActivityAsync(MessageFactory.Text("You have been signed out."), cancellationToken);
-                    return await innerDc.CancelAllDialogsAsync(cancellationToken);                    
+                    return await innerDc.CancelAllDialogsAsync(cancellationToken);
                 }
             }
 

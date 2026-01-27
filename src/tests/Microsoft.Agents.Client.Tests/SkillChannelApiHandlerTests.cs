@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Client.Tests
         public async Task TestGetConversationMemberAsync()
         {
             // Arrange
-            var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);            
+            var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
             var activity = new Activity(ActivityTypes.Message) { Text = $"Get Member." };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
@@ -289,11 +289,11 @@ namespace Microsoft.Agents.Client.Tests
 
             public Mock<ChannelAdapter> Adapter { get; }
 
-            public Mock<IChannelServiceClientFactory> Auth { get;  }
+            public Mock<IChannelServiceClientFactory> Auth { get; }
 
             public Mock<IHttpClientFactory> HttpClientFactory { get; }
 
-            public Mock<IAgent> Agent { get;  }
+            public Mock<IAgent> Agent { get; }
 
             public IStorage Storage { get; }
 
@@ -303,7 +303,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Gets the TurnContext created to call the bot.
             public TurnContext TurnContext { get; private set; }
-            
+
             /// <summary>
             /// Gets the Activity sent to the channel.
             /// </summary>
@@ -439,7 +439,7 @@ namespace Microsoft.Agents.Client.Tests
                 var httpFactory = new Mock<IHttpClientFactory>();
                 httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
                     .Returns(httpClient);
-                
+
                 var client = new RestConnectorClient(new Uri("http://testbot/api/messages"), httpFactory.Object, () => Task.FromResult<string>("test"));
 
                 return client;

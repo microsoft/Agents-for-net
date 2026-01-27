@@ -78,10 +78,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <param name="autoSignInSelector"></param>
         /// <param name="configKey"></param>
         public UserAuthorizationOptions(
-            IServiceProvider sp, 
-            IConfiguration configuration, 
+            IServiceProvider sp,
+            IConfiguration configuration,
             IStorage storage = null,
-            AutoSignInSelector autoSignInSelector = null, 
+            AutoSignInSelector autoSignInSelector = null,
             string configKey = "UserAuthorization")
         {
             var section = configuration.GetSection(configKey);
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <summary>
         /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
-        public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
+        public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } =
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];
     }
 }

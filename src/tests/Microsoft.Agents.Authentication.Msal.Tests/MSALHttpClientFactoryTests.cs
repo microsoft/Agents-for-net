@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public void GetHttpClient_ShouldThrowOnNullIHttpClientFactory()
         {
             var factory = new MSALHttpClientFactory(_service.Object);
-            
+
             Assert.Throws<InvalidOperationException>(factory.GetHttpClient);
         }
 
@@ -32,11 +32,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public void GetHttpClient_ShouldReturnClient()
         {
             var baseAddress = new Uri("https://botframework.com");
-            
+
             _service.Setup(x => x.GetService(typeof(IHttpClientFactory)))
                 .Returns(new TestHttpClientFactory())
                 .Verifiable(Times.Once);
-            
+
             var factory = new MSALHttpClientFactory(_service.Object);
             var client = factory.GetHttpClient();
 

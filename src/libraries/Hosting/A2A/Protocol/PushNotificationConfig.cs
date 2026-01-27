@@ -32,5 +32,5 @@ public sealed class PushNotificationConfig
     /// 
     /// </summary>
     [JsonPropertyName("authentication")]
-    public PushNotificationAuthenticationInfo? Authentication {  get; set; }
+    public PushNotificationAuthenticationInfo? Authentication { get; set; }
 }

@@ -21,11 +21,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <param name="role">Role of the participant in the current meeting.</param>
         /// <param name="inMeeting">True, if the participant is in the meeting.</param>
         public MeetingParticipantInfo(string role = default, bool? inMeeting = null)
-        { 
+        {
             Role = role;
             InMeeting = inMeeting;
         }
-        
+
         /// <summary>
         /// Gets or sets a value indicating whether the participant is in the meeting or not.
         /// </summary>

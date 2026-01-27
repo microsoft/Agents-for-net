@@ -33,7 +33,7 @@ namespace DialogRootBot.Dialogs
         private readonly IStatePropertyAccessor<string> _activeSkillProperty;
         private readonly IAgentHost _agentHost;
         private readonly ConversationState _conversationState;
-        
+
         private readonly string _selectedSkillKey = $"{typeof(MainDialog).FullName}.SelectedSkillKey";
 
         // Dependency injection uses this constructor to instantiate MainDialog.
@@ -141,7 +141,7 @@ namespace DialogRootBot.Dialogs
         // Starts the SkillDialog based on the user's selections.
         private async Task<DialogTurnResult> CallSkillActionStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            var selectedSkill = (string) stepContext.Values[_selectedSkillKey];
+            var selectedSkill = (string)stepContext.Values[_selectedSkillKey];
 
             IActivity skillActivity;
             switch (selectedSkill)
@@ -260,7 +260,7 @@ namespace DialogRootBot.Dialogs
             {
                 activity = (Activity)Activity.CreateEventActivity();
                 activity.Name = SkillActionGetWeather;
-                activity.Value = new { latitude = 47.614891, longitude = -122.195801};
+                activity.Value = new { latitude = 47.614891, longitude = -122.195801 };
             }
 
             if (activity == null)

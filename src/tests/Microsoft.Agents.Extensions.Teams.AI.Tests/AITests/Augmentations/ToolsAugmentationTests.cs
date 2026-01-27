@@ -41,13 +41,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Augmentations
             TurnContext context = TurnStateConfig.CreateConfiguredTurnContext();
             TurnState state = await TurnStateConfig.GetTurnStateWithConversationStateAsync(context);
             PromptResponse response = new PromptResponse();
-            response.Message = new ChatMessage(ChatRole.Assistant) { 
+            response.Message = new ChatMessage(ChatRole.Assistant)
+            {
                 Content = "testMessage",
-                ActionCalls = new List<ActionCall>() { 
-                    new ActionCall("id", new ActionFunction("testFunction", "{ \"key\": \"value\" }")) 
+                ActionCalls = new List<ActionCall>() {
+                    new ActionCall("id", new ActionFunction("testFunction", "{ \"key\": \"value\" }"))
                 }
             };
-            
+
 
             // Act
             Plan? plan = await augmentation.CreatePlanFromResponseAsync(context, state, response);

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests.Debugging
         private const int EndLine = 6;
         private const int StartChar = 1;
         private const int EndChar = 120;
-        
+
         [Fact]
         public void Constructor_ShouldSetPropertiesWithProvidedValues()
         {
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests.Debugging
         [Fact]
         public void Equals_ShouldReturnFalseOnDifferentObject()
         {
-            object other = new SourceRange(Path+".Method", StartLine, StartChar, EndLine, EndChar);
+            object other = new SourceRange(Path + ".Method", StartLine, StartChar, EndLine, EndChar);
 
             var sourceRange = new SourceRange(Path, StartLine, StartChar, EndLine, EndChar);
 

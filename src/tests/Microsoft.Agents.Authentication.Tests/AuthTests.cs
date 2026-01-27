@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Auth.Tests
 {
     public class AuthTests
     {
-        ITestOutputHelper _output = null; 
+        ITestOutputHelper _output = null;
         public AuthTests(ITestOutputHelper output)
         {
             _output = output;
@@ -28,11 +28,11 @@ namespace Microsoft.Agents.Auth.Tests
         {
             // Setup service provider for DI
             IServiceProvider serviceProvider = SetupServiceCollection.GenerateAuthMinServiceProvider("testMSALappsettings.json", _output);
-            IConfiguration config = serviceProvider.GetService<IConfiguration>(); 
-            
+            IConfiguration config = serviceProvider.GetService<IConfiguration>();
+
             // Create a new instance of MSAL Auth flow
             MsalAuth authClient = new MsalAuth(serviceProvider, config.GetSection("ServiceConnection"));
-            
+
             // Create empty Scopes List
             List<string> scopes = new List<string>();
 
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Auth.Tests
         /// <param name="configName"></param>
         /// <param name="expectedErrorString"></param>
         /// <param name="testFailure"></param>
-        private void TestAuthConfig(IServiceProvider serviceProvider, IConfiguration config, string configName , string expectedErrorString, bool testFailure=true)
+        private void TestAuthConfig(IServiceProvider serviceProvider, IConfiguration config, string configName, string expectedErrorString, bool testFailure = true)
         {
             // Success Path. 
 

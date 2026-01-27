@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         {
             // Do nothing
         }
-        
+
         /// <summary>
         /// Gets or Sets the action parameters of type <see cref="QuickViewActionParameters"/>.
         /// </summary>

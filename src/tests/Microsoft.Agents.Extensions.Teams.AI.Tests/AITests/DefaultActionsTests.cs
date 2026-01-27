@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             // Arrange
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>();
             var activity = MessageFactory.Text("hello");
-            
+
             // Mock the IChannelAdapter
             var mockAdapter = new Mock<IChannelAdapter>();
 

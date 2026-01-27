@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
-            
+
             var activityToSend = (Activity)Activity.CreateMessageActivity();
             activityToSend.DeliveryMode = deliveryMode;
             activityToSend.Text = Guid.NewGuid().ToString();
@@ -546,7 +546,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "EOC testing" };
 
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1"} })
+                .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } })
                 .Verifiable(Times.Exactly(8));
             _context.SetupGet(e => e.Services)
                 .Returns([]);
@@ -640,7 +640,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             return dialogOptions;
         }
 
-        private static Mock<IAgentClient> CreateMockSkillClient(Action<string, IActivity, IActivity,CancellationToken> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
+        private static Mock<IAgentClient> CreateMockSkillClient(Action<string, IActivity, IActivity, CancellationToken> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
         {
             var mockSkillClient = new Mock<IAgentClient>();
             var activityList = new ExpectedReplies(expectedReplies ?? new List<IActivity> { MessageFactory.Text("dummy activity") });

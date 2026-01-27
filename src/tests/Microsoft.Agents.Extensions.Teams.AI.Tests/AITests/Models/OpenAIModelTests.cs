@@ -298,7 +298,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
             Assert.NotNull(result.Message.ActionCalls);
             Assert.Single(result.Message.ActionCalls);
             Assert.Equal("testAction", result.Message.ActionCalls[0].Function!.Name);
-            
+
             Assert.Null(result.Error);
             Assert.Equal(ChatRole.Assistant, result.Message.Role);
             Assert.Null(result.Message.Content);

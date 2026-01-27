@@ -20,14 +20,14 @@ public class TransportProtocol : IEquatable<TransportProtocol>
     private static readonly TransportProtocol _grpc = new("GRPC");
     private static readonly TransportProtocol _httpjson = new("HTTP+JSON");
 
-    public static TransportProtocol JsonRpc 
+    public static TransportProtocol JsonRpc
     {
-        get { return _jsonrpc; } 
+        get { return _jsonrpc; }
     }
 
     public static TransportProtocol GRpc
     {
-        get { return _grpc; } 
+        get { return _grpc; }
     }
 
     public static TransportProtocol HttpJson

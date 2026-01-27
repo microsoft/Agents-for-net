@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
             /// <summary>
             /// Audio
             /// </summary>
-            Audio = 4, 
+            Audio = 4,
 
             /// <summary>
             /// Document

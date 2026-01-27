@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Auth.Tests
             IConfiguration configuration = new ConfigurationBuilder()
                 .Build();
 
-           Assert.Throws<ArgumentException>(() => new TestConnectionSettings(configuration.GetSection("EmptySection")));
+            Assert.Throws<ArgumentException>(() => new TestConnectionSettings(configuration.GetSection("EmptySection")));
         }
 
         private class TestConnectionSettings(IConfigurationSection configurationSection) : ConnectionSettingsBase(configurationSection)

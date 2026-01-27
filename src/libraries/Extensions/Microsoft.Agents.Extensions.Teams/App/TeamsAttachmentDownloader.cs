@@ -12,8 +12,8 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// </summary>
     [Obsolete("Use Microsoft.Agents.Builder.App.M365AttachmentDownloader instead.")]
     public class TeamsAttachmentDownloader(
-        Builder.App.M365AttachmentDownloaderOptions options, 
-        IConnections connections, 
+        Builder.App.M365AttachmentDownloaderOptions options,
+        IConnections connections,
         IHttpClientFactory httpClientFactory) : Microsoft.Agents.Builder.App.M365AttachmentDownloader(connections, httpClientFactory, options)
     {
     }

@@ -377,7 +377,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         /// Used to create the object when deserializing.
         /// </summary>
         [JsonConstructor]
-        internal ActionCall() {}
+        internal ActionCall() { }
 
         /// <summary>
         /// Creates an instance of <see cref="ActionCall"/> from <see cref="ChatToolCall"/>
@@ -390,7 +390,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
             {
                 throw new TeamsAIException($"Invalid ActionCall type: {toolCall.GetType().Name}");
             }
-            
+
             Id = toolCall.Id;
             Function = new ActionFunction(toolCall.FunctionName, toolCall.FunctionArguments.ToString());
         }

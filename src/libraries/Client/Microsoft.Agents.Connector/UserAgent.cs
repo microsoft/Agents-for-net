@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Connector
         {
             if (httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
-                return;    
+                return;
             }
 
             // This is the expected order for our User-Agent.

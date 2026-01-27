@@ -14,9 +14,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             return JsonSerializer.Deserialize<M>(ref reader, options);
         }
 
-        public override void Write(Utf8JsonWriter writer, I value, JsonSerializerOptions options) 
-        { 
-            JsonSerializer.Serialize(writer, (M) value, options);
+        public override void Write(Utf8JsonWriter writer, I value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, (M)value, options);
         }
     }
 }

@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 
             var clientMock = new Mock<ContentSafetyClient>(new Uri(endpoint), new AzureKeyCredential(apiKey));
             var analyses = new List<TextCategoriesAnalysis>() { ContentSafetyModelFactory.TextCategoriesAnalysis(TextCategory.Hate, 0) };
-            AnalyzeTextResult analyzeTextResult = ContentSafetyModelFactory.AnalyzeTextResult(null, analyses); 
+            AnalyzeTextResult analyzeTextResult = ContentSafetyModelFactory.AnalyzeTextResult(null, analyses);
             Response? response = null;
             clientMock.Setup(client => client.AnalyzeTextAsync(It.IsAny<AnalyzeTextOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(Response.FromValue(analyzeTextResult, response));
 

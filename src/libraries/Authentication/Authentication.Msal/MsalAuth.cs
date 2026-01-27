@@ -446,7 +446,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
         [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
-    
+
         [JsonPropertyName("ext_expires_in")]
         public int ExtExpiresIn { get; set; }
 

@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Auth.Tests
         {
             var claims = new ClaimsIdentity(
             [
-                new(AuthenticationConstants.VersionClaim, "3.0"),                
+                new(AuthenticationConstants.VersionClaim, "3.0"),
             ]);
 
             Assert.Null(AgentClaims.GetOutgoingAppId(claims));
@@ -173,12 +173,12 @@ namespace Microsoft.Agents.Auth.Tests
             var claims = new ClaimsIdentity(
             [
                 new(AuthenticationConstants.VersionClaim, string.Empty),
-                new(AuthenticationConstants.AppIdClaim, "appId")                
+                new(AuthenticationConstants.AppIdClaim, "appId")
             ]);
 
             Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
         }
-        
+
         [Fact]
         public void GetOutgoingAppId_ValidV1VersionAppId()
         {
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId") // not a valid claim on a v2 token
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));            
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
         }
 
 
@@ -263,7 +263,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AuthorizedParty, "party"), 
 
                 // For some reason, this is invalid. Coding it here to make sure behavior doesn't change. 
-                new(AuthenticationConstants.AudienceClaim, AuthenticationConstants.BotFrameworkTokenIssuer) 
+                new(AuthenticationConstants.AudienceClaim, AuthenticationConstants.BotFrameworkTokenIssuer)
             ]);
 
             Assert.False(AgentClaims.IsAgentClaim(claims));

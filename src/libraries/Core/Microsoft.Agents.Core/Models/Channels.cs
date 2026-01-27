@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Core.Models
 
                 // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                 // https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-messages?tabs=dotnet1%2Cdotnet2%2Cdotnet3%2Cdotnet4%2Cdotnet5%2Cdotnet#send-suggested-actions
-                case Msteams:  
+                case Msteams:
                     if (conversationType == "personal")
                     {
                         return buttonCnt <= 3;
@@ -416,7 +416,7 @@ namespace Microsoft.Agents.Core.Models
                 case Msteams:  // any "msteams" channel regardless of subchannel since the switch is on channelId.Channel
                     return true;
 
-                default: 
+                default:
                     return false;
             }
         }

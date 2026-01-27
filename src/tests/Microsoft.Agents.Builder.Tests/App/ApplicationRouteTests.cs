@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 rank: 1
             );
 
-            foreach ( var route in routes.Enumerate())
+            foreach (var route in routes.Enumerate())
             {
                 await route.Handler(null, null, CancellationToken.None);
             }
