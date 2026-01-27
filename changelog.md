@@ -19,11 +19,7 @@ This release focuses on enhanced authentication capabilities, improved telemetry
 - **TokenResponse Expiration**: Only set `Expiration` in `TokenResponse` when a non-default value is present, preventing incorrect expiration timestamps. ([#544](https://github.com/microsoft/Agents-for-net/pull/544))
 
 ### Telemetry & Diagnostics
-- **Activity Telemetry Management**: Introduced comprehensive Activity telemetry support including proper cloning of `Activity.Current` for background queue processing to maintain distributed tracing context. ([#630](https://github.com/microsoft/Agents-for-net/pull/630))
-- **Renamed TelemetryActivity**: Renamed `DiagnosticsActivity` to `TelemetryActivity` for clarity and consistency with OpenTelemetry conventions. ([#630](https://github.com/microsoft/Agents-for-net/pull/630))
-- **Activity Lifecycle Management**: Ensured `TelemetryActivity` is properly stopped after activity processing completes, preventing resource leaks. ([#630](https://github.com/microsoft/Agents-for-net/pull/630))
-- **Updated Activity Cloning**: Modified Activity cloning to use `TraceId`/`SpanId` and removed start time copying for better distributed tracing correlation. ([#630](https://github.com/microsoft/Agents-for-net/pull/630))
-- **Enhanced Logging**: Added debug logging for incoming activities and improved error logging throughout the SDK. ([#495](https://github.com/microsoft/Agents-for-net/pull/495), [#483](https://github.com/microsoft/Agents-for-net/pull/483))
+- **Activity Telemetry Management**: We are preserving System.Diagnostics.Activity.Current across thread boundaries. ([#630](https://github.com/microsoft/Agents-for-net/pull/630), [#495](https://github.com/microsoft/Agents-for-net/pull/495), [#483](https://github.com/microsoft/Agents-for-net/pull/483))
 
 ### Streaming Response Improvements
 - **Public StreamId Property**: Exposed `IStreamingResponse.StreamId` as a public property for better streaming response tracking and correlation. ([#631](https://github.com/microsoft/Agents-for-net/pull/631))
