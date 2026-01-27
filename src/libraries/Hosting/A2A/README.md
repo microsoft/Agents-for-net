@@ -3,7 +3,7 @@
 ## Changelog
 | Version | Date | Changelog |
 |------|----|------------|
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md#microsoft-365-agents-sdk-for-net---release-notes-v130) |
 | 1.4.0 | 2026-01-27 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
 
 ## Preview package for A2A Hosting endpoint for Agents SDK

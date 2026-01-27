@@ -6,7 +6,7 @@ Defines core Authentication and token retrieval functionality.
 | Version | Date | Changelog |
 |------|----|------------|
 | 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md#microsoft-365-agents-sdk-for-net---release-notes-v130) |
 | 1.4.0 | 2026-01-27 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
 
 ## Main Types
