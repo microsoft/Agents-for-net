@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -16,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Security.Claims;
@@ -82,7 +80,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksResubscribe))
                 {
-                    await OnTasksResubscribeAsync(jsonRpcRequest, httpResponse, true, cancellationToken).ConfigureAwait(false);
+                    await OnTasksResubscribeAsync(jsonRpcRequest, httpResponse, cancellationToken).ConfigureAwait(false);
                 }
                 else if (jsonRpcRequest.Method.Equals(A2AMethods.TasksGet))
                 {
@@ -241,22 +239,16 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await responseHandler.ResponseEnd(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task OnTasksResubscribeAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken = default)
+    private async Task OnTasksResubscribeAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, CancellationToken cancellationToken = default)
     {
-        object response;
         var queryParams = A2AModel.ReadParams<TaskIdParams>(jsonRpcRequest);
         var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
 
-        if (task == null)
-        {
-            response = JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.");
-        }
-        else
-        {
-            response = JsonRpcResponse.CreateJsonRpcResponse(jsonRpcRequest.Id, task);
-        }
+        var response = task == null
+            ? JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.")
+            : JsonRpcResponse.CreateJsonRpcResponse(jsonRpcRequest.Id, task);
 
-        await A2AResponseHandler.WriteResponseAsync(httpResponse, jsonRpcRequest.Id, response, streamed, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
+        await A2AResponseHandler.WriteResponseAsync(httpResponse, jsonRpcRequest.Id, response, true, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task OnTasksGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
