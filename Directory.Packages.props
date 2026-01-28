@@ -20,7 +20,7 @@
 	<Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
 	<Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>  </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
 	  
     <PackageVersion Include="Microsoft.Identity.Client" Version="$(Microsoft_IdentityClient_PkgVer)" />
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="$(Microsoft_IdentityClient_PkgVer)" />
@@ -89,12 +89,12 @@
     <PackageVersion Include="Microsoft.Recognizers.Text.Choice" Version="1.3.2" />
     <PackageVersion Include="Microsoft.Recognizers.Text.DateTime" Version="1.3.2" />
     <PackageVersion Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.3.2" />
-	<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
+	<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		<PrivateAssets>all</PrivateAssets>
 	</PackageVersion>
-	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp"             Version="4.5.0" />
-	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"  Version="4.5.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp"             Version="5.0.0" />
+	<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"  Version="5.0.0" />
 	<PackageVersion Include="Microsoft.CodeAnalysis.Common"             Version="4.5.0" />
 	<PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"  Version="4.5.0" />
 	<PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.5.0" />
