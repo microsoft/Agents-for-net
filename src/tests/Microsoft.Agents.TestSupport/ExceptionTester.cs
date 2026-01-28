@@ -14,7 +14,7 @@ namespace Microsoft.Agents.TestSupport
         /// <typeparam name="T"></typeparam>
         /// <param name="e"></param>
         /// <param name="output"></param>
-        public static void IsException<T>(Exception e, int expectedErrorCode,  ITestOutputHelper output)
+        public static void IsException<T>(Exception e, int expectedErrorCode, ITestOutputHelper output)
         {
             StringBuilder stringBuilder = new(1024);
             int level = 0;

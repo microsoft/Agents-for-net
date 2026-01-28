@@ -113,13 +113,14 @@ namespace Microsoft.Agents.Extensions.Teams
             if (activity.ChannelData != null)
                 return false;
             else
-                activity.ChannelData = new 
+                activity.ChannelData = new
+                {
+                    feedbackLoop = new
                     {
-                    feedbackLoop = new { 
-                            type = feedbackLoopType
-                        }
-                    };
-            return true; 
+                        type = feedbackLoopType
+                    }
+                };
+            return true;
         }
     }
 }

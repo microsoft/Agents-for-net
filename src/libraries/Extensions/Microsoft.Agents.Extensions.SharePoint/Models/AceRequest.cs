@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         /// <param name="data">ACE request data.</param>
         /// <param name="properties">ACE properties data.</param>
         public AceRequest(object data = default, object properties = default)
-        { 
+        {
             Data = data;
             Properties = properties;
         }

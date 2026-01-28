@@ -69,14 +69,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         }
 
         [Theory]
-        [InlineData(PowerPlatformCloud.Other, AgentType.Published, "Bot01" , "A47151CF-4F34-488F-B377-EBE84E17B478", "foo.api.com" , "" , "https://a47151cf4f34488fb377ebe84e17b47.8.environment.foo.api.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Other, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "foo.api.com", "", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.foo.api.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.Preprod, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.api.preprod.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.Prod, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.FirstRelease, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.FirstRelease, AgentType.Published, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/dataverse-backed/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.Prod, AgentType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview")]
         [InlineData(PowerPlatformCloud.Other, AgentType.Prebuilt, "Bot01", "A47151CF-4F34-488F-B377-EBE84E17B478", "Blah+1_ Blah", "1234", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/prebuilt/authenticated/bots/Bot01/conversations/1234?api-version=2022-03-01-preview", true)]
-        public void VerifyConnectionUrl( PowerPlatformCloud cloud, AgentType botType, string botId, string envId, string customCloud, string conversationId , string expectedResult,bool shouldthrow = false )
+        public void VerifyConnectionUrl(PowerPlatformCloud cloud, AgentType botType, string botId, string envId, string customCloud, string conversationId, string expectedResult, bool shouldthrow = false)
         {
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
@@ -109,20 +109,20 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         [InlineData(PowerPlatformCloud.FirstRelease, "", "https://api.powerplatform.com/.default", false)]
         [InlineData(PowerPlatformCloud.Other, "fido.com", "https://fido.com/.default", false)]
         [InlineData(PowerPlatformCloud.Unknown, "", "", true)]
-        public void VerifyAgentScopeTest(PowerPlatformCloud cloud , string cloudBaseAddress, string expectedAuthority, bool shouldthrow = false)
+        public void VerifyAgentScopeTest(PowerPlatformCloud cloud, string cloudBaseAddress, string expectedAuthority, bool shouldthrow = false)
         {
             ConnectionSettings settings = new ConnectionSettings(null)
             {
                 EnvironmentId = "A47151CF-4F34-488F-B377-EBE84E17B478",
                 Cloud = cloud,
-                SchemaName = "Bot01", 
+                SchemaName = "Bot01",
                 CopilotAgentType = AgentType.Published,
                 CustomPowerPlatformCloud = cloudBaseAddress
             };
 
             if (shouldthrow)
             {
-                Assert.Throws<ArgumentException>(() => CopilotClient.ScopeFromSettings(settings)); 
+                Assert.Throws<ArgumentException>(() => CopilotClient.ScopeFromSettings(settings));
             }
             else
             {

@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
     class CommandBot : AgentApplication
     {
-        public CommandBot(AgentApplicationOptions options) : base(options) 
+        public CommandBot(AgentApplicationOptions options) : base(options)
         {
             OnActivity(ActivityTypes.Command, OnCommandAsync);
         }

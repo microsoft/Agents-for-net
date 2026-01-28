@@ -142,7 +142,8 @@ namespace Microsoft.Agents.Connector.Tests
         {
             var conversationsClient = UseConversation();
 
-            var resourceResponse = new ConversationResourceResponse { 
+            var resourceResponse = new ConversationResourceResponse
+            {
                 ActivityId = "test-activity",
                 ServiceUrl = "http://localHost",
                 Id = "test-id"
@@ -155,7 +156,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
-            var result = await conversationsClient.CreateConversationAsync(new ConversationParameters { IsGroup = true});
+            var result = await conversationsClient.CreateConversationAsync(new ConversationParameters { IsGroup = true });
 
             Assert.Equal(resourceResponse.ActivityId, result.ActivityId);
             Assert.Equal(resourceResponse.ServiceUrl, result.ServiceUrl);

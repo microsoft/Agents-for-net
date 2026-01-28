@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(token, tokenExchangeInvokeRequest.Token);
             Assert.Equal(properties, tokenExchangeInvokeRequest.Properties);
         }
-        
+
         [Fact]
         public void TokenExchangeInvokeResponseInits()
         {
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(uri, tokenExchangeRequest.Uri);
             Assert.Equal(token, tokenExchangeRequest.Token);
         }
-        
+
         [Fact]
         public void TokenExchangeRequestInitsWithNoArgs()
         {
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(uri, tokenExchangeResource.Uri);
             Assert.Equal(providerId, tokenExchangeResource.ProviderId);
         }
-        
+
         [Fact]
         public void TokenExchangeResourceInitsWithNoArgs()
         {
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(botUrl, tokenExchangeState.AgentUrl);
             Assert.Equal(msAppId, tokenExchangeState.MsAppId);
         }
-        
+
         [Fact]
         public void TokenExchangeStateInitsWithNoArgs()
         {
@@ -190,7 +190,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(provider, tokenRequest.Provider);
             Assert.Equal(settings, tokenRequest.Settings);
         }
-        
+
         [Fact]
         public void TokenRequestInitsWithNoArgs()
         {
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(expiration, tokenResponse.Expiration);
             Assert.Equal(properties, tokenResponse.Properties);
         }
-        
+
         [Fact]
         public void TokenResponseInitsWithNoArgs()
         {
@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(hasToken, tokenStatus.HasToken);
             Assert.Equal(serviceProviderDisplayName, tokenStatus.ServiceProviderDisplayName);
         }
-        
+
         [Fact]
         public void TokenStatusInitsWithNoArgs()
         {

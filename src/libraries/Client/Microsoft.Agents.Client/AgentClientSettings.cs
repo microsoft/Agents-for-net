@@ -12,8 +12,8 @@ namespace Microsoft.Agents.Client
 
         public string DisplayName { get; set; }
 
-        public virtual void ValidateClientSettings() 
-        { 
+        public virtual void ValidateClientSettings()
+        {
             if (string.IsNullOrWhiteSpace(Name))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, nameof(Name));

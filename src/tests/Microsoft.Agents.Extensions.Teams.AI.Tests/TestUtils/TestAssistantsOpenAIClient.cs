@@ -71,7 +71,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.TestUtils
             else
             {
                 Messages.Add(threadId, new() { newMessage });
-            };
+            }
+            ;
 
             return newMessage;
         }

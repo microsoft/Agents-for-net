@@ -31,7 +31,7 @@ namespace Microsoft.Agents.State.Tests
             var turnContext = TestUtilities.CreateEmptyContext();
             {
                 var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
-                await turnState.LoadStateAsync(turnContext, cancellationToken: CancellationToken.None, force:false);
+                await turnState.LoadStateAsync(turnContext, cancellationToken: CancellationToken.None, force: false);
 
                 var userCount = turnState.GetValue("user.userCount", () => 0);
                 Assert.Equal(0, userCount);
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.State.Tests
                 Assert.Equal(10, turnState.GetValue("user.userCount", () => 0));
                 Assert.Equal(20, turnState.GetValue("conversation.convCount", () => 0));
 
-                await turnState.SaveStateAsync(turnContext, cancellationToken: CancellationToken.None, force:false);
+                await turnState.SaveStateAsync(turnContext, cancellationToken: CancellationToken.None, force: false);
             }
 
             {
@@ -175,14 +175,14 @@ namespace Microsoft.Agents.State.Tests
             }
         }
         */
-         
+
         [Fact]
         public async Task TurnState_ReturnsDefaultForNullValueType()
         {
             var storage = new MemoryStorage();
             var turnContext = TestUtilities.CreateEmptyContext();
             var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
-            await turnState.LoadStateAsync(turnContext, cancellationToken: CancellationToken.None, force:false);
+            await turnState.LoadStateAsync(turnContext, cancellationToken: CancellationToken.None, force: false);
 
             var userObject = turnState.GetValue<string>("user.userStateObject");
             Assert.Null(userObject);

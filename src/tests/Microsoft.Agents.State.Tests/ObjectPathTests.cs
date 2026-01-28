@@ -226,7 +226,7 @@ namespace Microsoft.Agents.State.Tests
                 Age = 22,
                 Location = new Location() { Lat = 1.2312312F, Long = 3.234234F }
             });
-            
+
             dynamic overlay = JsonSerializer.SerializeToNode(new Options() { });
 
             var result = ObjectPath.Assign<Options>(defaultOptions, overlay);

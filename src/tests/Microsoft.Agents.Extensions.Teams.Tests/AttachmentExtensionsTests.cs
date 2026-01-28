@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             Assert.Equal(content, messagingExtensionAttachment.Content);
             Assert.Equal(name, messagingExtensionAttachment.Name);
             Assert.Equal(thumbnailUrl, messagingExtensionAttachment.ThumbnailUrl);
-            
+
             if (previewAttachment != null)
             {
                 Assert.Equal(previewAttachment, messagingExtensionAttachment.Preview);

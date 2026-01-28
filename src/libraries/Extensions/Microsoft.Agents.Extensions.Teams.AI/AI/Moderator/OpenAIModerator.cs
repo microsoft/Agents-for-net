@@ -42,11 +42,11 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
             {
                 case ModerationType.Input:
                 case ModerationType.Both:
-                {
-                    string input = turnState.Temp?.GetValue<string>("input") ?? turnContext.Activity.Text;
+                    {
+                        string input = turnState.Temp?.GetValue<string>("input") ?? turnContext.Activity.Text;
 
-                    return await _HandleTextModerationAsync(input, true, cancellationToken);
-                }
+                        return await _HandleTextModerationAsync(input, true, cancellationToken);
+                    }
                 default:
                     break;
             }
@@ -61,22 +61,22 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
             {
                 case ModerationType.Output:
                 case ModerationType.Both:
-                {
-                    foreach (IPredictedCommand command in plan.Commands)
                     {
-                        if (command is PredictedSayCommand sayCommand)
+                        foreach (IPredictedCommand command in plan.Commands)
                         {
-                            string output = sayCommand.Response.GetContent<string>();
+                            if (command is PredictedSayCommand sayCommand)
+                            {
+                                string output = sayCommand.Response.GetContent<string>();
 
-                            // If plan is flagged it will be replaced
-                            Plan? newPlan = await _HandleTextModerationAsync(output, false, cancellationToken);
+                                // If plan is flagged it will be replaced
+                                Plan? newPlan = await _HandleTextModerationAsync(output, false, cancellationToken);
 
-                            return newPlan ?? plan;
+                                return newPlan ?? plan;
+                            }
                         }
-                    }
 
-                    break;
-                }
+                        break;
+                    }
                 default:
                     break;
             }

@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <see cref="Activity"/> to be processed.
         /// </summary>
         public IActivity Activity { get; set; }
-        
+
         public bool IsProactive { get; set; }
         public string ProactiveAudience { get; set; }
 

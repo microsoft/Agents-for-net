@@ -31,7 +31,7 @@
 //             var storage = new MemoryStorage();
 //             var turnState = new AssistantsState(storage);
 //             await turnState.LoadStateAsync(turnContext);
-            
+
 //             turnState.Temp!.SetValue("input", "hello");
 
 //             var aiOptions = new AIOptions(planner);
@@ -254,7 +254,7 @@
 //             var actionOutputs = turnState.Temp.GetValue<Dictionary<string, string>>("actionOutputs");
 //             actionOutputs["test-action"] = "test-output";
 //             turnState.Temp.SetValue("actionOutputs", actionOutputs);
-            
+
 //             var plan2 = await planner.ContinueTaskAsync(turnContext, turnState, ai, CancellationToken.None);
 
 //             // Assert

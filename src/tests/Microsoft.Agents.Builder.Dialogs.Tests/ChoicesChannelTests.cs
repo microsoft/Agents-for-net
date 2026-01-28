@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var supports = Channels.SupportsCardActions(Channels.Skype, 5);
             Assert.False(supports);
         }
-        
+
         [Fact]
         public void ShouldReturnTrueForSupportsCardActionsWithTeamsAnd50()
         {

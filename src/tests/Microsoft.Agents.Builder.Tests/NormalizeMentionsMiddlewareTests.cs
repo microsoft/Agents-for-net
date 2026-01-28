@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Builder.Tests
                     Name = "User",
                 }
             };
-            
+
             return entity;
         }
     }

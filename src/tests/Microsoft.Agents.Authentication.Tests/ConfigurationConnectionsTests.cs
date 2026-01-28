@@ -242,7 +242,7 @@ namespace Microsoft.Agents.Auth.Tests
             catch (IndexOutOfRangeException e)
             {
                 ExceptionTester.IsException<IndexOutOfRangeException>(e, ErrorHelper.ConnectionNotFoundByName.code, _outputListener);
-                return; 
+                return;
             }
             throw new Exception("Should not reach this point");
         }
@@ -298,7 +298,7 @@ namespace Microsoft.Agents.Auth.Tests
             {
                 assemblyLoader.GetProviderConstructor("name", null, "type-name");
             }
-            catch(InvalidOperationException ex)
+            catch (InvalidOperationException ex)
             {
                 ExceptionTester.IsException<InvalidOperationException>(ex, ErrorHelper.AuthProviderTypeNotFound.code, _outputListener);
                 return;

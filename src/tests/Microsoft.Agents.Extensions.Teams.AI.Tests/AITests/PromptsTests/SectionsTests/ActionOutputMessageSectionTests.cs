@@ -56,14 +56,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.PromptsTests.Sectio
             var historyVariable = "temp.history";
             var turnContext = TurnStateConfig.CreateConfiguredTurnContext();
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            turnState.SetValue(historyVariable, new List<ChatMessage>() { 
-                new ChatMessage(ChatRole.Assistant) { 
+            turnState.SetValue(historyVariable, new List<ChatMessage>() {
+                new ChatMessage(ChatRole.Assistant) {
                     ActionCalls = new List<ActionCall> { new ActionCall("testId", new ActionFunction("testName", "{}")) }
                 }
             });
             turnState.SetValue("actionOutputs", new Dictionary<string, string>()
             {
-                {  "testId", "testOutput" } 
+                {  "testId", "testOutput" }
             });
             var section = new ActionOutputMessageSection(historyVariable);
 

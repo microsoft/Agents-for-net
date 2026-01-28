@@ -6,7 +6,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     /// <summary>
     /// Sharepoint Location object.
     /// </summary>
-    public class Location 
+    public class Location
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Location"/> class.

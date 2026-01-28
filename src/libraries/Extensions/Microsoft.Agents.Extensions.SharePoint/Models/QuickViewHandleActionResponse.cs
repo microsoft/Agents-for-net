@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         /// <summary>
         /// Initializes a new instance of the <see cref="QuickViewHandleActionResponse"/> class.
         /// </summary>
-        public QuickViewHandleActionResponse() 
+        public QuickViewHandleActionResponse()
             : base(ViewResponseType.QuickView)
         {
             // Do nothing

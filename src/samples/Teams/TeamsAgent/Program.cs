@@ -17,7 +17,7 @@ builder.AddAgentApplicationOptions();
 // Add File downloaders
 builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
 {
-    return 
+    return
     [
         new Microsoft.Agents.Builder.App.M365AttachmentDownloader(
             sp.GetService<IConnections>()!,

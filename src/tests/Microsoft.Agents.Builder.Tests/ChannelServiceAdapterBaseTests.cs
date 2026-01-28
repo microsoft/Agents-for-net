@@ -117,10 +117,10 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-                  
+
             //Act
             await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
-            
+
             //Assert
             Assert.True(_callbackInvoked);
         }
@@ -390,5 +390,5 @@ namespace Microsoft.Agents.Builder.Tests
             {
             }
         }
-    } 
+    }
 }

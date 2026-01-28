@@ -223,7 +223,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
                 chatCompletionOptions.Temperature = 1;
                 chatCompletionOptions.TopP = 1;
                 chatCompletionOptions.PresencePenalty = 0;
-            } else
+            }
+            else
             {
                 // `MaxOutputTokenCount` is not supported for non-o1 Azure OpenAI models, hence it needs to be set for it to work.
                 SetMaxTokens(completion.MaxTokens, chatCompletionOptions);
@@ -344,7 +345,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
                         _logger.LogTrace("STREAM COMPLETED");
                     }
                 }
-                else {
+                else
+                {
                     chatCompletionsResponse = await _openAIClient.GetChatClient(model).CompleteChatAsync(chatMessages, chatCompletionOptions, cancellationToken);
                     rawResponse = chatCompletionsResponse.GetRawResponse();
                     promptResponse.Message = new ChatMessage(chatCompletionsResponse.Value);

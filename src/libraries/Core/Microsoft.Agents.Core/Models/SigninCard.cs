@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> A card representing a request to sign in. </summary>
     public class SigninCard
     {
-        public SigninCard() 
+        public SigninCard()
         {
             Buttons = [];
         }

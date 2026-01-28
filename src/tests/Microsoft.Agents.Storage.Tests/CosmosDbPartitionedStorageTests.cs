@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Storage.Tests
     {
         private CosmosDbPartitionedStorage _storage;
         private readonly Mock<Container> _container = new Mock<Container>();
-        
+
         [Fact]
         public void ConstructorValidation()
         {
@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Storage.Tests
                 CompatibilityMode = false
             }));
         }
-        
+
         [Fact]
         public async Task ReadAsyncValidation()
         {
@@ -412,7 +412,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             public override CosmosDbPartitionedStorage.DocumentStoreItem Resource { get; }
         }
-        
+
         private class StoreItem : IStoreItem
         {
             public int Id { get; set; } = 0;

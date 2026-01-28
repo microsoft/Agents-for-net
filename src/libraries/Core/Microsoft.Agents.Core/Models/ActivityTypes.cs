@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Models
         /// The type value for end of conversation activities.
         /// </summary>
         public const string EndOfConversation = "endOfConversation";
-        
+
         /// <summary>
         /// The type value for event activities.
         /// </summary>
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Core.Models
         /// The type value for message update activities.
         /// </summary>
         public const string MessageUpdate = "messageUpdate";
-        
+
         /// <summary>
         /// The type value for suggestion activities.
         /// </summary>

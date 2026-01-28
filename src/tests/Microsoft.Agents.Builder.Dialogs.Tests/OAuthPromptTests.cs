@@ -67,9 +67,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             await Assert.ThrowsAsync<ArgumentException>(async () =>
             {
                 var prompt = new OAuthPrompt("abc", new OAuthPromptSettings()
-                    {
-                        AzureBotOAuthConnectionName = "abc",
-                    });
+                {
+                    AzureBotOAuthConnectionName = "abc",
+                });
                 var convoState = new ConversationState(new MemoryStorage());
 
                 var adapter = new TestAdapter()
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var dialogState = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", new OAuthPromptSettings() { Text = "Please sign in", AzureBotOAuthConnectionName = ConnectionName, Title = "Sign in" }));
-                
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync(cancellationToken);
@@ -637,7 +637,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 })
                 .StartTestAsync();
         }
-        
+
         // old adapter
         /*
         [Fact]
@@ -701,7 +701,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                   await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = MessageFactory.Text(retryPromptText) }, cancellationToken: cancellationToken);
+                    await dc.PromptAsync("OAuthPrompt", new PromptOptions() { RetryPrompt = MessageFactory.Text(retryPromptText) }, cancellationToken: cancellationToken);
                 }
             };
 
@@ -725,9 +725,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task OAuthPromptSasUrlPresentInOAuthCard(TestAdapter testAdapter, bool containsSasurl)
         {
             var oAuthPromptSettings = new OAuthPromptSettings()
-                {
-                    AzureBotOAuthConnectionName = "test",
-                };
+            {
+                AzureBotOAuthConnectionName = "test",
+            };
 
             var convoState = new ConversationState(new MemoryStorage());
 
@@ -971,7 +971,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     Assert.NotNull(body.FailureDetail);
                 });
             }
-            
+
             await flow.AssertReply("ended")
                 .StartTestAsync();
         }

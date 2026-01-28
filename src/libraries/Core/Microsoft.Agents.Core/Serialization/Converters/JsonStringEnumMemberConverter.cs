@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             }
 
             var stringToEnumMap = GetStringToEnumMap();
-            
+
             if (stringToEnumMap.TryGetValue(stringValue, out var enumValue))
             {
                 return enumValue;
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
             var enumToStringMap = GetEnumToStringMap();
-            
+
             if (enumToStringMap.TryGetValue(value, out var stringValue))
             {
                 writer.WriteStringValue(stringValue);
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var field = typeof(T).GetField(enumValue.ToString());
                     var enumMemberAttribute = field?.GetCustomAttribute<EnumMemberAttribute>();
-                    
+
                     if (enumMemberAttribute?.Value != null)
                     {
                         map[enumMemberAttribute.Value] = (T)enumValue;
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var field = typeof(T).GetField(enumValue.ToString());
                     var enumMemberAttribute = field?.GetCustomAttribute<EnumMemberAttribute>();
-                    
+
                     if (enumMemberAttribute?.Value != null)
                     {
                         map[(T)enumValue] = enumMemberAttribute.Value;

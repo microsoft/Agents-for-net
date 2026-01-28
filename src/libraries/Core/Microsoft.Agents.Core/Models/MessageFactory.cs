@@ -390,7 +390,7 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
-        public static IActivity CreateMessageActivity( string messageText , string textFormat = TextFormatTypes.Plain)
+        public static IActivity CreateMessageActivity(string messageText, string textFormat = TextFormatTypes.Plain)
         {
             return new Activity()
             {

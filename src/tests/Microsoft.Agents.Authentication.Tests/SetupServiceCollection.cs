@@ -33,8 +33,8 @@ namespace Microsoft.Agents.Auth.Tests
             services.AddSingleton(loggerFactory);
             services.AddSingleton(config);
 
-            services.AddDefaultMsalAuth(config); 
-            
+            services.AddDefaultMsalAuth(config);
+
             return services.BuildServiceProvider();
         }
     }

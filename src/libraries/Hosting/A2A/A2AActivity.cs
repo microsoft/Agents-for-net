@@ -40,7 +40,7 @@ internal static class A2AActivity
 
         // taskId is our conversationId
         var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
-        
+
         var activity = CreateActivity(taskId, sendParams.Message.Parts, true, isStreaming);
         activity.RequestId = jsonRpcRequest.Id.ToString();
 
@@ -205,7 +205,7 @@ internal static class A2AActivity
     public static bool HasA2AMessageContent(this IActivity activity)
     {
         return !string.IsNullOrEmpty(activity.Text)
-            || (bool) activity.Attachments?.Any();
+            || (bool)activity.Attachments?.Any();
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)

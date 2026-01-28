@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Builder.State
                 }
             }
 
-            return (T) value;
+            return (T)value;
         }
 
         public void SetValue<T>(string name, T value)

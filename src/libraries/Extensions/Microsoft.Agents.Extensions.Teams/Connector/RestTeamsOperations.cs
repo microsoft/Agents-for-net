@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             url = url.Replace("{participantId}", System.Uri.EscapeDataString(participantId));
             url = url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
 
-            return await GetResponseAsync<TeamsMeetingParticipant>("FetchParticipant", url, HttpMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false); 
+            return await GetResponseAsync<TeamsMeetingParticipant>("FetchParticipant", url, HttpMethod.Get, customHeaders: customHeaders, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
                 TeamId = teamId,
                 TenantId = tenantId,
             };
-     
+
             var apiUrl = "v3/batch/conversation/team/";
 
             // In case of throttling, it will retry the operation with default values (10 retries every 50 milliseconds).

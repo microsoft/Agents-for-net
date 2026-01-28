@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Client.Tests
                     new(AuthenticationConstants.AppIdClaim, host.HostClientId),
                 ])
             };
-            
+
             var turnState = new TurnState(_storage);
             await turnState.LoadStateAsync(turnContext);
 

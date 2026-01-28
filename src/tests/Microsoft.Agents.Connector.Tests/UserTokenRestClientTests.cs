@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Connector.Tests
         public async Task GetTokenAsync_ShouldReturnNullOnNotFound()
         {
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
-            
+
             var client = UseClient();
 
             Assert.Null(await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Connector.Tests
         public async Task GetAadTokensAsync_ShouldReturnTokens()
         {
             var tokens = new Dictionary<string, TokenResponse>();
-            tokens.Add("firstToken", 
+            tokens.Add("firstToken",
             new TokenResponse
             {
                 Token = "test-token1"
@@ -535,7 +535,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             MockHttpClient
                 .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<HttpRequestMessage, CancellationToken>((request,ct) =>
+                .Callback<HttpRequestMessage, CancellationToken>((request, ct) =>
                 {
                     sendCalled = true;
                     Assert.Contains($"channelId=channel-id", request.RequestUri.ToString());

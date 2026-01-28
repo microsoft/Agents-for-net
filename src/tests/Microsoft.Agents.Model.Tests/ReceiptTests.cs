@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(vat, receiptCard.Vat);
             Assert.Equal(buttons, receiptCard.Buttons);
         }
-        
+
         [Fact]
         public void ReceiptCardInitsWithNoArgs()
         {
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(quantity, receiptItems.Quantity);
             Assert.Equal(tap, receiptItems.Tap);
         }
-        
+
         [Fact]
         public void ReceiptItemInitsWithNoArgs()
         {

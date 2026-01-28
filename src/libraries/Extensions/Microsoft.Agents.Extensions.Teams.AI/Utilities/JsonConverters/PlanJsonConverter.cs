@@ -21,7 +21,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities.JsonConverters
             if (reader.TokenType != JsonTokenType.StartObject)
             {
                 return null;
-            };
+            }
+            ;
 
             List<IPredictedCommand> commands = new();
             bool typeIsPlan = false;
@@ -61,7 +62,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities.JsonConverters
                         {
                             // the `commands` property should be an array
                             throw new JsonException("The `commands` property should be an array");
-                        };
+                        }
+                        ;
 
                         while (reader.Read())
                         {
@@ -80,7 +82,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities.JsonConverters
                         }
                     }
                 }
-            };
+            }
+            ;
 
             if (!typeIsPlan)
             {

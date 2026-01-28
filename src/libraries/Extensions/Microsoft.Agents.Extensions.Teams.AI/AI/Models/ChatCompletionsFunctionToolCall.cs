@@ -5,7 +5,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
     /// <summary>
     /// Represents a function tool call in a chat message.
     /// </summary>
-    [Obsolete(message:"TBD Message")]
+    [Obsolete(message: "TBD Message")]
     public class ChatCompletionsFunctionToolCall : ChatCompletionsToolCall
     {
         /// <summary>

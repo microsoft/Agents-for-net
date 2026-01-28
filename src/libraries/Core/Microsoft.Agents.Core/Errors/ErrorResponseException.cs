@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Core.Errors
         /// <value>The body.</value>
         public ErrorResponse Body { get; set; }
 
-        public static ErrorResponseException CreateErrorResponseException(AgentErrorDefinition message, System.Exception innerException = null, params string[] errors) 
+        public static ErrorResponseException CreateErrorResponseException(AgentErrorDefinition message, System.Exception innerException = null, params string[] errors)
         {
             string errorMessageToSend = string.Empty;
             if (errors != null && errors.Length > 0)
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Core.Errors
         public static ErrorResponseException CreateErrorResponseException(HttpResponseMessage httpResponse, AgentErrorDefinition message, System.Exception innerException = null, CancellationToken cancellationToken = default, params string[] errors)
         {
             var ex = CreateErrorResponseException(message, innerException, errors);
-            ex.StatusCode = (int) httpResponse.StatusCode;
+            ex.StatusCode = (int)httpResponse.StatusCode;
 
             try
             {
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Core.Errors
             {
                 // Ignore the exception
             }
-            return ex; 
+            return ex;
         }
 
     }

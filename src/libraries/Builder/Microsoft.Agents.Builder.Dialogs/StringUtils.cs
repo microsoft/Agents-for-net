@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             {
                 return text;
             }
-            
+
             return $"{text.Substring(0, length)}...";
         }
 

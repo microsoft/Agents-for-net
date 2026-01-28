@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Builder
     public interface IAgentExtension
     {
 #if !NETSTANDARD
-        ChannelId ChannelId { get; init;}
+        ChannelId ChannelId { get; init; }
 #else
         ChannelId ChannelId { get; set; }
 #endif

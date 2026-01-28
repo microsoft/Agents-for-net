@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Model.Tests
             {
                 Kind = kind,
                 Context = context,
-                QueryOptions = options, 
+                QueryOptions = options,
                 QueryText = text
             };
 
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Model.Tests
                 Skip = skip,
                 Top = top
             };
-            
+
             Assert.Equal(skip, options.Skip);
             Assert.Equal(top, options.Top);
         }

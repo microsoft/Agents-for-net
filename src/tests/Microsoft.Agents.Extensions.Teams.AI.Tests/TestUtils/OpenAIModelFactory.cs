@@ -189,9 +189,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.TestUtils
 
         protected async override IAsyncEnumerable<T> GetValuesFromPageAsync(ClientResult page)
         {
-            foreach (T item in Items) 
-            { 
-                yield return await Task.FromResult(item); 
+            foreach (T item in Items)
+            {
+                yield return await Task.FromResult(item);
             }
 
         }

@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(url, thumbnailUrl.Url);
             Assert.Equal(alt, thumbnailUrl.Alt);
         }
-        
+
         [Fact]
         public void ThumbnailUrlInitsWithNoArgs()
         {

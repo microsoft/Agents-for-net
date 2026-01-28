@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             .Build();
 
         private const string ResourceUrl = "https://example.com";
-        private readonly List<string>  _scopes = ["scope1"];
+        private readonly List<string> _scopes = ["scope1"];
 
         [Fact]
         public void Constructor_ShouldInstantiateCorrectly()
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public void Constructor_ShouldThrowOnNullConfiguration()
         {
-            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, (IConfigurationSection) null));
+            Assert.Throws<ArgumentNullException>(() => new MsalAuth(_service.Object, (IConfigurationSection)null));
         }
 
         [Fact]
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                 .Verifiable(Times.AtLeast(1));
 
             var msalAuth = new MsalAuth(service.Object, _configuration.GetSection(SettingsSection));
-            
+
             // Use reflection to set the private _cacheList property
             var cacheListField = typeof(MsalAuth).GetField("_cacheList", BindingFlags.NonPublic | BindingFlags.Instance);
             cacheListField.SetValue(msalAuth, cacheList);

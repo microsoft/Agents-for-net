@@ -461,7 +461,7 @@ namespace Microsoft.Agents.Builder.State
                     var number = valValue.GetValue<int>();
                     return ProtocolJsonSerializer.ToObject<T>(number.ToString());
                 }
-                
+
                 if (valValue.GetValueKind() == JsonValueKind.String && typeof(T) == typeof(int))
                 {
                     var str = valValue.GetValue<string>();

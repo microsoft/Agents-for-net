@@ -239,7 +239,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         await httpResponse.Body.FlushAsync(cancellationToken);
     }
 
-    public static async Task WriteResponseAsync(HttpResponse response, JsonRpcId requestId, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, ILogger logger = null,  CancellationToken cancellationToken = default)
+    public static async Task WriteResponseAsync(HttpResponse response, JsonRpcId requestId, object payload, bool streamed = false, HttpStatusCode code = HttpStatusCode.OK, ILogger logger = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(response);
         ArgumentNullException.ThrowIfNull(payload);

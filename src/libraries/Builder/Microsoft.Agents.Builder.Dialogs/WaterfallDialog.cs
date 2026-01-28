@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Increment step index and run step
             var state = dc.ActiveDialog.State;
 
-            var index = (int) state[StepIndex];
+            var index = (int)state[StepIndex];
             return await RunStepAsync(dc, index + 1, reason, result, cancellationToken).ConfigureAwait(false);
         }
 
@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 var state = new Dictionary<string, object>((Dictionary<string, object>)instance.State);
 
                 // Create step context
-                var index = (int) state[StepIndex];
+                var index = (int)state[StepIndex];
                 var stepName = WaterfallStepName(index);
                 var instanceId = state[PersistedInstanceId]?.ToString();
 
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
                 // Create step context
                 var options = state[PersistedOptions];
-                var values = (IDictionary<string, object>) state[PersistedValues];
+                var values = (IDictionary<string, object>)state[PersistedValues];
                 var stepContext = new WaterfallStepContext(this, dc, options, values, index, reason, result);
 
                 try

@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Builder
         /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
-        
+
         /// <summary>
         /// Channel Adapter Logger
         /// </summary>

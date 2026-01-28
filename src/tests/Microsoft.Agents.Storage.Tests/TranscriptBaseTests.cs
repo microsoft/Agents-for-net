@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Storage.Tests
             };
 
             var listener = new TestTraceListener();
-            Trace.Listeners.Add(listener);            
+            Trace.Listeners.Add(listener);
 
             await Store.LogActivityAsync(activity);
 

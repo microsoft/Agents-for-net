@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutoSignIn;
+
 public class AuthAgent : AgentApplication
 {
     /// <summary>
@@ -35,7 +36,7 @@ public class AuthAgent : AgentApplication
         // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent.
 
         // This constructor should only register events and setup state as it will be called for each request. 
-        
+
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
@@ -77,7 +78,7 @@ public class AuthAgent : AgentApplication
         // In this example, we will send a welcome message to the user when they join the conversation.
         // We do this by iterating over the incoming activity members added to the conversation and checking if the member is not the agent itself.
         // Then a greeting notice is provided to each new member of the conversation.
-        
+
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
@@ -152,7 +153,7 @@ public class AuthAgent : AgentApplication
 
         // If successful, the user will be the token will be available from the UserAuthorization.GetTurnTokenAsync(turnContext, DefaultHandlerName) call. 
         // If not successful, this handler won't be reached.  Instead, OnUserSignInFailure handler would have been called. 
-        
+
         // We have the access token, now try to get your user name from graph. 
         string displayName = await GetDisplayName(turnContext);
         if (displayName.Equals(_defaultDisplayName))

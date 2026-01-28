@@ -68,7 +68,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
             if (httpRequest.Method == HttpMethods.Post)
             {
-                if (   jsonRpcRequest.Method.Equals(A2AMethods.MessageStream) 
+                if (jsonRpcRequest.Method.Equals(A2AMethods.MessageStream)
                     || jsonRpcRequest.Method.Equals(A2AMethods.MessageSend))
                 {
                     await OnMessageAsync(
@@ -107,7 +107,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 _logger.LogDebug("Turn End: RequestId={RequestId}", jsonRpcRequest.Id);
             }
         }
-        catch(OperationCanceledException)
+        catch (OperationCanceledException)
         {
             // TODO: probably need to cleanup to ChannelResponseQueue?
             _logger.LogDebug("ProcessAsync: OperationCanceledException");
@@ -166,7 +166,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 }
             ],
             PreferredTransport = TransportProtocol.JsonRpc,
-           
+
         };
 
         // AgentApplication should implement IAgentCardHandler to set agent specific values.  But if
@@ -214,7 +214,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, incoming.IsNewTask, _logger);
 
         InvokeResponse invokeResponse = null;
-        
+
         _responseQueue.StartHandlerForRequest(activity.RequestId);
         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
@@ -257,7 +257,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             response = JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.");
         }
-        else 
+        else
         {
             if (queryParams?.HistoryLength != null && queryParams.HistoryLength.Value < 0)
             {

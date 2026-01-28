@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.IsType<ResourceResponse>(resourceResponse);
             Assert.Equal(id, resourceResponse.Id);
         }
-        
+
         [Fact]
         public void ResponseResponseInitWithNoArgs()
         {

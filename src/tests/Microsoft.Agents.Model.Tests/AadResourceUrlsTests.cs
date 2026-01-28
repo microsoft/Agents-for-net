@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.IsType<AadResourceUrls>(aadResourceUrls);
             Assert.Equal(resourceUrls, aadResourceUrls.ResourceUrls);
         }
-        
+
         [Fact]
         public void AadResourceUrlsInitsWithNoArgs()
         {

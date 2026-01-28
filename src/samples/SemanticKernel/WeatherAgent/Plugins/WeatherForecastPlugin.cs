@@ -19,10 +19,10 @@ public class WeatherForecastPlugin(ITurnContext turnContext)
     /// <param name="location">The location to get the weather for</param>
     /// <returns></returns>
     [KernelFunction]
-    public async Task<WeatherForecast> GetForecastForDate(string date,  string location)
+    public async Task<WeatherForecast> GetForecastForDate(string date, string location)
     {
         string searchingForDate = date;
-        if ( DateTime.TryParse(date, out DateTime searchingDate) )
+        if (DateTime.TryParse(date, out DateTime searchingDate))
         {
             searchingForDate = searchingDate.ToLongDateString();
         }

@@ -312,7 +312,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 var (t, insensitive, _) = key;
                 var comparer = insensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-                var metadata  = new Dictionary<string, (PropertyInfo, bool)>(comparer);
+                var metadata = new Dictionary<string, (PropertyInfo, bool)>(comparer);
 
                 foreach (var prop in GetCachedProperties(t))
                 {
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         );
                     }
 
-                    metadata [resolvedName] = (prop, prop.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always);
+                    metadata[resolvedName] = (prop, prop.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always);
                 }
 
                 return metadata;

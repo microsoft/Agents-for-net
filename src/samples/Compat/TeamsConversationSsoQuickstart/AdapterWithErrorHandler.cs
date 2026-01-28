@@ -16,7 +16,7 @@ namespace TeamsConversationSsoQuickstart
     public class AdapterWithErrorHandler : CloudAdapter
     {
         public AdapterWithErrorHandler(
-            IChannelServiceClientFactory channelServiceClientFactory, 
+            IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             IConfiguration configuration,
             ILogger<CloudAdapter> logger,

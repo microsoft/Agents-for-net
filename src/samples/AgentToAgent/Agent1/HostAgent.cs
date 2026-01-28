@@ -20,7 +20,7 @@ public class HostAgent : AgentApplication
 {
     // This provides access to other Agents.
     private readonly IAgentHost _agentHost;
-    
+
     // The Agent this sample will communicate with.  This name matches AgentHost:Agents config.
     private const string Agent2Name = "Echo";
 

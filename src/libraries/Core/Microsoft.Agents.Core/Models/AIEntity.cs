@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Core.Models
     /// </summary>
     public class AIEntity : Entity
     {
-        public AIEntity() : base("https://schema.org/Message") {}
+        public AIEntity() : base("https://schema.org/Message") { }
 
         // document this property
         /// <summary>
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Core.Models
         public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationsIconNameEnum? imageName, bool useDefaultAdaptiveCard = true)
         {
             Position = position;
-            
+
             if (!string.IsNullOrEmpty(title) && title.Length > MaxTitleLength)
             {
                 // trim title to 80 characters
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Core.Models
         /// Optional. Encoding format of the `citation.appearance.text` field. 
         /// It should be one of <see cref="ContentTypes.Html"/> or <see cref="ContentTypes.AdaptiveCard"/>.
         /// </summary>
-        public string? EncodingFormat { get; set; } 
+        public string? EncodingFormat { get; set; }
 
         /// <summary>
         /// The icon provided in the citation ui.

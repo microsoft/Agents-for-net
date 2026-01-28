@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Null(entity.Type);
 
             var entityType = "entity";
-            var obj = new 
+            var obj = new
             {
                 name = "Esper",
                 eyes = "Brown",
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.IsAssignableFrom<Entity>(entity);
             Assert.Equal("unknown", entity.Type);
             Assert.NotEmpty(entity.Properties);
-            Assert.True(entity.Properties.ContainsKey("name")); 
+            Assert.True(entity.Properties.ContainsKey("name"));
         }
 
         private class EntityToObjectData : IEnumerable<object[]>

@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var storage = new MemoryStorage();
             var state = new TurnState(storage);
             await state.LoadStateAsync(turnContext);
-            
+
             state.Temp.SetValue("input", "test");
             var planner = new ActionPlanner<ITurnState>(options, new TestLoggerFactory());
             var ai = new AISystem(new(planner));
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var storage = new MemoryStorage();
             var state = new TurnState(storage);
             await state.LoadStateAsync(turnContext);
-            
+
             state.Temp.SetValue("input", "test");
             var planner = new ActionPlanner<ITurnState>(options, new TestLoggerFactory());
             var ai = new AISystem(new(planner) { EnableFeedbackLoop = true });
@@ -392,7 +392,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             var storage = new MemoryStorage();
             var state = new TurnState(storage);
             await state.LoadStateAsync(turnContext);
-            
+
             state.Temp.SetValue("input", "test");
             var planner = new ActionPlanner<ITurnState>(options, new TestLoggerFactory());
             var ai = new AISystem(new(planner));
@@ -490,7 +490,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
                 prompts,
                 (context, state, planner) => Task.FromResult(promptTemplate)
             );
-            
+
             var turnContext = TurnStateConfig.CreateConfiguredTurnContext();
             var storage = new MemoryStorage();
             var state = new TurnState(storage);

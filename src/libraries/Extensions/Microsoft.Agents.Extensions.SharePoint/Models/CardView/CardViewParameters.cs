@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
         /// <summary>
         /// Initializes a new instance of the <see cref="CardViewParameters"/> class.
         /// </summary>
-        protected CardViewParameters() 
+        protected CardViewParameters()
         {
         }
 
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
             else if (componentsCount == 2)
             {
                 // both components should be buttons.
-                hasError = !(footer[0] is CardButtonComponent) || !(footer[1] is CardButtonComponent); 
+                hasError = !(footer[0] is CardButtonComponent) || !(footer[1] is CardButtonComponent);
             }
             else
             {

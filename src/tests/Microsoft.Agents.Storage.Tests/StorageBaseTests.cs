@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests
 {
-    public class StorageBaseTests 
+    public class StorageBaseTests
     {
         public static async Task ReadValidation(IStorage storage)
         {
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Storage.Tests
             }
 
             // write with old etag should FAIL for storeitem
-            
+
             updatePocoStoreItem.Count = 123;
 
             await Assert.ThrowsAnyAsync<Exception>(() => storage.WriteAsync(

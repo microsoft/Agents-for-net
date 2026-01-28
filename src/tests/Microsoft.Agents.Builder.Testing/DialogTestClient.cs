@@ -147,10 +147,10 @@ namespace Microsoft.Agents.Builder.Testing
                         DialogTurnResult = await DialogContext.BeginDialogAsync(targetDialog.Id, initialDialogOptions, cancellationToken).ConfigureAwait(false);
                         break;
                     case DialogTurnStatus.Complete:
-                    {
-                        // Dialog has ended
-                        break;
-                    }
+                        {
+                            // Dialog has ended
+                            break;
+                        }
                 }
             };
 

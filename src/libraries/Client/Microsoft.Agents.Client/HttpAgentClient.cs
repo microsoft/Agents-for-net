@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Client
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogInformation("SendActivityAsync: RequestId={RequestId}, AgentId={AgentClientId}, Endpoint={AgentEndpoint}, Activity={Activity}", 
+                _logger.LogInformation("SendActivityAsync: RequestId={RequestId}, AgentId={AgentClientId}, Endpoint={AgentEndpoint}, Activity={Activity}",
                     activity.RequestId, _settings.ConnectionSettings.ClientId, _settings.ConnectionSettings.Endpoint.ToString(), ProtocolJsonSerializer.ToJson(activity));
             }
 
@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Client
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("SendActivityAsync: Channel request unsuccessful to '{ChannelName}' at '{ChannelEndpoint}' returned '{ChannelResponse}'", 
+                _logger.LogError("SendActivityAsync: Channel request unsuccessful to '{ChannelName}' at '{ChannelEndpoint}' returned '{ChannelResponse}'",
                     Name, _settings.ConnectionSettings.Endpoint.ToString(), (int)response.StatusCode);
 
                 if (response.StatusCode == HttpStatusCode.Forbidden)

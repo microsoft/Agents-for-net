@@ -12,13 +12,15 @@ namespace Microsoft.Agents.Builder
     public abstract class AgentExtension : IAgentExtension
     {
 #if !NETSTANDARD
-        public virtual ChannelId ChannelId { get; init;}
+        public virtual ChannelId ChannelId { get; init; }
 #else
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false) {
-            var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
-                bool isForChannel = false; 
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) =>
+            {
+                bool isForChannel = false;
                 if (turnContext.Activity.ChannelId != null && ChannelId != null)
                 {
                     if (!string.IsNullOrEmpty(ChannelId.SubChannel) && ChannelId.SubChannel.Equals("*"))

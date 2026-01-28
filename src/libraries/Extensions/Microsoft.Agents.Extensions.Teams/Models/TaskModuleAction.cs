@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
                 }
                 else if (value is JsonElement)
                 {
-                    data = JsonNode.Parse(((JsonElement) value).ToString());
+                    data = JsonNode.Parse(((JsonElement)value).ToString());
                 }
                 else
                 {

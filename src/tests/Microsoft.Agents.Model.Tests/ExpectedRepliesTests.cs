@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Model.Tests
         public void ExpectedRepliesInits()
         {
             var activities = new List<IActivity>() { new Activity() };
-            
+
             var expectedReplies = new ExpectedReplies(activities);
 
             Assert.NotNull(expectedReplies);

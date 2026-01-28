@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <value>
         /// The user in meeting indicator.
         /// </value>
-        public bool InMeeting { get;  set; }
+        public bool InMeeting { get; set; }
 
         /// <summary>
         /// Gets or sets the value of the user's role.

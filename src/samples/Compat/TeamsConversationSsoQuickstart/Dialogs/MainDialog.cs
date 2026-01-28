@@ -72,7 +72,8 @@ namespace TeamsConversationSsoQuickstart.Dialogs
 
                     var photo = await client.GetPhotoAsync();
 
-                    if (photo !="") {
+                    if (photo != "")
+                    {
                         var cardImage = new CardImage(photo);
                         var card = new ThumbnailCard(images: new List<CardImage>() { cardImage });
                         var reply = MessageFactory.Attachment(card.ToAttachment());

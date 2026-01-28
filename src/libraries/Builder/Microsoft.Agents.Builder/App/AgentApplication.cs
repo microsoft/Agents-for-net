@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
-        
+
         public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
             _routes.AddRoute(selector, handler, isAgenticOnly, isInvokeRoute, rank, autoSignInHandlers);
- 
+
             return this;
         }
 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult(context.Activity.IsType(type) && (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)));
             AddRoute(routeSelector, handler, type == ActivityTypes.Invoke, rank, autoSignInHandlers, isAgenticOnly);
@@ -184,7 +184,8 @@ namespace Microsoft.Agents.Builder.App
             var rs = routeSelector;
             if (isAgenticOnly)
             {
-                rs = new RouteSelector(async (turnContext, cancellationToken) => {
+                rs = new RouteSelector(async (turnContext, cancellationToken) =>
+                {
                     return AgenticAuthorization.IsAgenticRequest(turnContext) && await routeSelector(turnContext, cancellationToken);
                 });
             }
@@ -718,7 +719,7 @@ namespace Microsoft.Agents.Builder.App
             return this;
         }
 
-#endregion
+        #endregion
 
         #region ShowTyping
         /// <summary>
@@ -784,7 +785,8 @@ namespace Microsoft.Agents.Builder.App
                 if (Options.StartTypingTimer)
                 {
                     StartTypingTimer(turnContext);
-                };
+                }
+                ;
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))

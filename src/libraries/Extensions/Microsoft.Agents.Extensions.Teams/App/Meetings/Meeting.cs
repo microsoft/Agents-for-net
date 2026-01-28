@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnEnd(MeetingEndHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler)); ;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnParticipantsJoin(MeetingParticipantsEventHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler)); ;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnParticipantsLeave(MeetingParticipantsEventHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler)); ;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)

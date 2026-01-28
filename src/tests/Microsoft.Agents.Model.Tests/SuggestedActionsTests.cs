@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(to, suggestedAction.To);
             Assert.Equal(actions, suggestedAction.Actions);
         }
-        
+
         [Fact]
         public void SuggestedActionsInitsWithNoArgs()
         {
@@ -53,8 +53,8 @@ namespace Microsoft.Agents.Model.Tests
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        } 
-        
+        }
+
         private class SuggestedActionEnumerableActions : IEnumerable<CardAction>
         {
             public IEnumerator<CardAction> GetEnumerator()

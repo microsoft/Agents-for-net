@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly int _interval;
 
         // For synchronizing SendActivity and Typing to prevent race
-        private static AutoResetEvent _send;  
+        private static AutoResetEvent _send;
 
         /// <summary>
         /// Initial delay before first typing is sent.

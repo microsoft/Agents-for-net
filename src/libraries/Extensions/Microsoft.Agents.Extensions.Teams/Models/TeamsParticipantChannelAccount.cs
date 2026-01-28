@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
             InMeeting = inMeeting;
             Conversation = conversation;
         }
-        
+
         /// <summary>
         /// Gets or sets a value indicating whether the participant is in the meeting or not.
         /// </summary>

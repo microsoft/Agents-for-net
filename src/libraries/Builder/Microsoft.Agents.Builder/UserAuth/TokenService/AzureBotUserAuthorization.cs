@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
-        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings) 
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings)
             : base(connections)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));

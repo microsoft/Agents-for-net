@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
 
             return storeItems;
         }
-        
+
         //<inheritdoc/>
         public async Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
         {
@@ -477,7 +477,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                         var json = sr.ReadToEnd();
                         var jsonObject = JsonObject.Parse(json);
 
-                        return (T) jsonObject.Deserialize<T>(_serializerSettings);
+                        return (T)jsonObject.Deserialize<T>(_serializerSettings);
                     }
                 }
             }
@@ -491,7 +491,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             public override Stream ToStream<T>(T input)
             {
                 var streamPayload = new MemoryStream();
-                
+
                 JsonSerializer.Serialize(streamPayload, input, _serializerSettings);
                 streamPayload.Seek(0, SeekOrigin.Begin);
                 streamPayload.Position = 0;

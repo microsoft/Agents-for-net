@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             // No tokenCredential. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsTranscriptStore(blobServiceUri, null, "containerName"));
-            
+
             // No containerName. Should throw.
             Assert.Throws<ArgumentNullException>(() => new BlobsTranscriptStore(blobServiceUri, mockCredential.Object, null));
             Assert.Throws<ArgumentNullException>(() => new BlobsTranscriptStore(blobServiceUri, mockCredential.Object, string.Empty));

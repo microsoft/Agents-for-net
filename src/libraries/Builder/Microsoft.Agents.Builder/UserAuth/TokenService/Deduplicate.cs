@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Status = (int)HttpStatusCode.OK,
                         },
-                    }, 
+                    },
                     cancellationToken).ConfigureAwait(false);
                 return true;
             }

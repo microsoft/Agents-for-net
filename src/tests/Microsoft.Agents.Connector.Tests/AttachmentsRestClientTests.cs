@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             var result = await attachmentClient.GetAttachmentInfoAsync(AttachmentId, CancellationToken.None);
-            
+
             Assert.Equal(attachmentInfo.Name, result.Name);
             Assert.Equal(attachmentInfo.Type, result.Type);
         }
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
             var attachmentClient = UseAttachment();
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
-            
+
             var exMessage = $"GetAttachmentInfo operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try

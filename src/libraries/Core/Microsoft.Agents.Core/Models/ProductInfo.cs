@@ -3,7 +3,7 @@
 
 namespace Microsoft.Agents.Core.Models
 {
-    public class ProductInfo :Entity
+    public class ProductInfo : Entity
     {
         public ProductInfo() : base(EntityTypes.ProductInfo)
         {

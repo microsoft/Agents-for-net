@@ -57,19 +57,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void Test_DefaultHandlerNameNotFound()
         {
-            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions((IStorage) null) 
-            { 
-                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) 
-                { 
-                    DefaultHandlerName = "notfound" 
-                } 
+            Assert.Throws<IndexOutOfRangeException>(() => new AgentApplication(new AgentApplicationOptions((IStorage)null)
+            {
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
+                {
+                    DefaultHandlerName = "notfound"
+                }
             }));
         }
 
         [Fact]
         public void Test_DefaultHandlerFirst()
         {
-            var app = new AgentApplication(new AgentApplicationOptions((IStorage) null)
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null)
             {
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
             });
@@ -81,9 +81,9 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_AutoSignIn_Default()
         {
             // arrange
-            var options = new TestApplicationOptions((IStorage)null) 
-            { 
-                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object) 
+            var options = new TestApplicationOptions((IStorage)null)
+            {
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
             };
             var app = new TestApplication(options);
 

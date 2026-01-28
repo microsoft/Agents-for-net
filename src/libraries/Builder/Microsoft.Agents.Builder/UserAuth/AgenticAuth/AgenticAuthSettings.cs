@@ -11,6 +11,6 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
     public class AgenticAuthSettings
     {
         public IList<string> Scopes { get; set; }
-        public string AlternateBlueprintConnectionName { get; set; } = null; 
+        public string AlternateBlueprintConnectionName { get; set; } = null;
     }
 }

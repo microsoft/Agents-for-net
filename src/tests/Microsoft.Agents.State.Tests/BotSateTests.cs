@@ -678,7 +678,7 @@ namespace Microsoft.Agents.State.Tests
 
             // Turn 0
             var botState1 = new ConversationState(storage);
-            await botState1.LoadAsync(turnContext, false); 
+            await botState1.LoadAsync(turnContext, false);
             var value1 = botState1
                 .GetValue("test-name", () => new TestPocoState());
             value1.Value = "test-value";

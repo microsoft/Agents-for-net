@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Authentication
 #endif
 
         // Default auth lib for AgentSDK authentication.  
-        private readonly string _defaultAuthenticationLib = "Microsoft.Agents.Authentication.Msal"; 
+        private readonly string _defaultAuthenticationLib = "Microsoft.Agents.Authentication.Msal";
         private readonly string _defaultAuthenticationLibEntryType = "MsalAuth";
 
         public ConstructorInfo GetProviderConstructor(string name, string assemblyName, string typeName)
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Authentication
             {
                 // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
                 logger.LogInformation("No assembly name given in config for connection `{name}`.  Using default assembly lib: `{assemblyName}`", name, _defaultAuthenticationLib);
-                assemblyName = _defaultAuthenticationLib; 
+                assemblyName = _defaultAuthenticationLib;
             }
 
 
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Authentication
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AuthProviderTypeNotFound, null, typeName, assemblyName, name);
                 }
             }
-            return GetConstructor(type) ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, null, typeName, assemblyName); 
+            return GetConstructor(type) ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, null, typeName, assemblyName);
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

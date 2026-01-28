@@ -47,7 +47,7 @@ namespace Microsoft.Agents.TestSupport
         protected XUnitLogger(
             ITestOutputHelper output,
             string categoryName = null,
-            LogLevel? level = LogLevel.Trace ,
+            LogLevel? level = LogLevel.Trace,
             IExternalScopeProvider scopeProvider = null)
         {
             _scopeProvider = scopeProvider ?? new LoggerExternalScopeProvider();

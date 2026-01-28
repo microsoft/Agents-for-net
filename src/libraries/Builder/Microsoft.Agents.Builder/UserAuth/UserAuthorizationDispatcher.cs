@@ -49,9 +49,9 @@ namespace Microsoft.Agents.Builder.UserAuth
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
             }
 
-            foreach(var authenticator in userAuthHandlers)
+            foreach (var authenticator in userAuthHandlers)
             {
-                _userAuthHandlers.Add(authenticator.Name, new UserAuthorizationDefinition() {  Instance = authenticator });
+                _userAuthHandlers.Add(authenticator.Name, new UserAuthorizationDefinition() { Instance = authenticator });
             }
         }
 
@@ -104,8 +104,8 @@ namespace Microsoft.Agents.Builder.UserAuth
         }
 
         /// <inheritdoc/>
-        public IUserAuthorization Default => _userAuthHandlers.Count > 0 
-            ? GetHandlerInstance(_userAuthHandlers.First().Key) 
+        public IUserAuthorization Default => _userAuthHandlers.Count > 0
+            ? GetHandlerInstance(_userAuthHandlers.First().Key)
             : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationHandlerNotFound, null);
 
         /// <inheritdoc/>
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
-            catch(DuplicateExchangeException)
+            catch (DuplicateExchangeException)
             {
                 return new SignInResponse(SignInStatus.Duplicate);
             }

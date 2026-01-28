@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(suffix)) 
+            if (!string.IsNullOrWhiteSpace(suffix))
             {
                 sanitizedKeyBuilder.Append(suffix);
             }

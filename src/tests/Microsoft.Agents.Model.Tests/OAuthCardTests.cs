@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(buttons, oAuthCard.Buttons);
             Assert.Equal(tokenExchangeResource, oAuthCard.TokenExchangeResource);
         }
-        
+
         [Fact]
         public void OAuthCardInitsWithNoArgs()
         {

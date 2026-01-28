@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Core.Errors
 
         public override string ToString()
         {
-            if ( Error == null)
+            if (Error == null)
             {
                 return string.Empty;
             }

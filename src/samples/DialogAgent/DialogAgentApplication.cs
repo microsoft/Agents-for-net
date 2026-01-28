@@ -57,7 +57,7 @@ public class DialogAgentApplication : AgentApplication
         {
             var dialog = new UserProfileDialog(turnState);
             var dialogResult = await dialog.RunAsync(turnContext, turnState.Conversation, cancellationToken);
-            if (   dialogResult?.Status == DialogTurnStatus.Complete
+            if (dialogResult?.Status == DialogTurnStatus.Complete
                 || dialogResult?.Status == DialogTurnStatus.CompleteAndWait
                 || dialogResult?.Status == DialogTurnStatus.Cancelled)
             {

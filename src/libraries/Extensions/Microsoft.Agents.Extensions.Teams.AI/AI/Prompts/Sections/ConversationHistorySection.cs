@@ -127,9 +127,9 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections
             }
 
             // Remove completed partial action outputs
-            while (messages.Count > 0 && messages[0].Role == ChatRole.Tool) 
+            while (messages.Count > 0 && messages[0].Role == ChatRole.Tool)
             {
-                messages.RemoveAt(0); 
+                messages.RemoveAt(0);
             }
 
             return await Task.FromResult(new RenderedPromptSection<List<ChatMessage>>(output, tokens, tokens > budget));

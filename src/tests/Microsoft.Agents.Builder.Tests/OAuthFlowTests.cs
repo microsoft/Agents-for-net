@@ -24,8 +24,8 @@ namespace Microsoft.Agents.Builder.Tests
             _flow = new OAuthFlow(new OAuthSettings()
             {
                 AzureBotOAuthConnectionName = "connection name",
-                Title = "Test flow", 
-                Text = "testing oauth flow", 
+                Title = "Test flow",
+                Text = "testing oauth flow",
                 Timeout = 1000
             });
         }
@@ -34,9 +34,9 @@ namespace Microsoft.Agents.Builder.Tests
         public async Task SignOutUserAsync_ShouldThrowOnNullUserTokenClient()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            await Assert.ThrowsAsync<NotSupportedException>(async() => await _flow.SignOutUserAsync(context, CancellationToken.None));
+            await Assert.ThrowsAsync<NotSupportedException>(async () => await _flow.SignOutUserAsync(context, CancellationToken.None));
         }
-        
+
         [Fact]
         public async Task SignOutUserAsync_ShouldLogOutSuccessfully()
         {
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.Tests
             var activity = new Activity
             {
                 Type = ActivityTypes.Invoke,
-                Name= SignInConstants.VerifyStateOperationName,
+                Name = SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
                 Text = "invoke",

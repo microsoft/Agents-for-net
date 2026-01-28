@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
         {
-            lock(_optionsLock)
+            lock (_optionsLock)
             {
                 var newOptions = SerializationOptions;
                 if (newOptions.IsReadOnly)

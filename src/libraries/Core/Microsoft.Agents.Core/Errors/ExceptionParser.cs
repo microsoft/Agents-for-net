@@ -35,8 +35,8 @@ namespace Microsoft.Agents.Core.Errors
                 firstIteration = true;
                 lastErrorMsg ??= new StringBuilder(1024);
             }
-            
-            string localErrorMessage = 
+
+            string localErrorMessage =
                 generalEx is ErrorResponseException errorResponse ?
                 DecodeErrorResponseExceptionMessage(errorResponse).ToString().Trim() : generalEx.Message.ToString().Trim();
 
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Core.Errors
 
             level++;
             if (generalEx.InnerException != null)
-                GetExceptionDetail(generalEx.InnerException, sw, level, lastErrorMsg , includeStackTrace);
+                GetExceptionDetail(generalEx.InnerException, sw, level, lastErrorMsg, includeStackTrace);
 
             if (firstIteration)
                 sw.Insert(0, lastErrorMsg);

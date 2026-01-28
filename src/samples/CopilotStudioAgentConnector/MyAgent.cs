@@ -19,7 +19,7 @@ namespace CopilotStudioAgentConnector
         public MyAgent(AgentApplicationOptions options) : base(options)
         {
             // Handle Messages from MCS with auth
-            OnActivity((tc,ct) => Task.FromResult(tc.Activity.IsType(ActivityTypes.Message) && tc.Activity.Recipient.Role == RoleTypes.ConnectorUser), OnMCSMessage);
+            OnActivity((tc, ct) => Task.FromResult(tc.Activity.IsType(ActivityTypes.Message) && tc.Activity.Recipient.Role == RoleTypes.ConnectorUser), OnMCSMessage);
         }
 
         private async Task OnMCSMessage(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

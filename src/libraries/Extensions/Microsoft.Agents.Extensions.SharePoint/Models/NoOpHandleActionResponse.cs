@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         /// <summary>
         /// Initializes a new instance of the <see cref="NoOpHandleActionResponse"/> class.
         /// </summary>
-        public NoOpHandleActionResponse() 
+        public NoOpHandleActionResponse()
             : base(ViewResponseType.NoOp)
         {
             // Do nothing
@@ -22,9 +22,9 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         /// </summary>
         /// <value>Card view render arguments.</value>
         public static new object RenderArguments
-        { 
-            get => null; 
-            set { } 
+        {
+            get => null;
+            set { }
         }
     }
 }

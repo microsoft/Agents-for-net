@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
-        public AgenticUserAuthorization(string name, IStorage storage, IConnections connections, AgenticAuthSettings settings) 
+        public AgenticUserAuthorization(string name, IStorage storage, IConnections connections, AgenticAuthSettings settings)
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
 

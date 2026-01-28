@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Represents a reference to a programmatic action. </summary>
     public class SemanticAction
     {
-        public SemanticAction() 
+        public SemanticAction()
         {
             Entities = new Dictionary<string, Entity>();
         }

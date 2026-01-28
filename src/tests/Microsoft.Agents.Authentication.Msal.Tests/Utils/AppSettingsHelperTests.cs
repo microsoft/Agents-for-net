@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         public void GetAppSettingTimeSpan_ShouldReturnDefaultValueOnMissingConfig()
         {
             var defaultSetting = new TimeSpan(0, 0, 0, 45);
-            
+
             var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting4", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
