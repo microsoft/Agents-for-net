@@ -211,12 +211,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             return;
         }
 
-        var writer = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, incoming.IsNewTask, _logger);
+        var responseHandler = new A2AResponseHandler(_taskStore, jsonRpcRequest.Id, incoming.Task, sendParams, isStreaming, incoming.IsNewTask, _logger);
 
         InvokeResponse invokeResponse = null;
         
         _responseQueue.StartHandlerForRequest(activity.RequestId);
-        await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
+        await responseHandler.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
         // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
         // turn is done.
@@ -233,17 +233,22 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         // MessageSendParams.Blocking is ignored.
         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (activity) =>
         {
-            await writer.OnResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+            await responseHandler.OnResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
 
-        await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
+        await responseHandler.ResponseEnd(httpResponse, invokeResponse, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task OnTasksResubscribeAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, CancellationToken cancellationToken = default)
     {
-        // TODO: tasks/resubscribe
-        JsonRpcResponse response = JsonRpcResponse.MethodNotFoundResponse(jsonRpcRequest.Id, $"{jsonRpcRequest.Method} not supported");
-        await A2AResponseHandler.WriteResponseAsync(httpResponse, jsonRpcRequest.Id, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
+        var queryParams = A2AModel.ReadParams<TaskIdParams>(jsonRpcRequest);
+        var task = await _taskStore.GetTaskAsync(queryParams.Id, cancellationToken).ConfigureAwait(false);
+
+        var response = task == null
+            ? JsonRpcResponse.TaskNotFoundResponse(jsonRpcRequest.Id, $"Task '{queryParams.Id}' not found.")
+            : JsonRpcResponse.CreateJsonRpcResponse(jsonRpcRequest.Id, task);
+
+        await A2AResponseHandler.WriteResponseAsync(httpResponse, jsonRpcRequest.Id, response, true, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task OnTasksGetAsync(JsonRpcRequest jsonRpcRequest, HttpResponse httpResponse, bool streamed, CancellationToken cancellationToken)
