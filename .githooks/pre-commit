@@ -5,9 +5,15 @@
 
 echo "Running dotnet format check..."
 
-# Find the main solution file
-SOLUTION="src/Microsoft.Agents.SDK.sln"
+# Determine the Git repository root so the hook works from any directory
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$REPO_ROOT" ]; then
+    echo "Error: Unable to determine git repository root. Are you running this inside a git repository?"
+    exit 1
+fi
 
+# Find the main solution file relative to the repository root
+SOLUTION="$REPO_ROOT/src/Microsoft.Agents.SDK.sln"
 # Check if solution exists
 if [ ! -f "$SOLUTION" ]; then
     echo "Error: Solution file not found at $SOLUTION"
