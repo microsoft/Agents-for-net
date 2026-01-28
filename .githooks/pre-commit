@@ -1,4 +1,5 @@
 #!/bin/bash
+# NOTE: This file must be committed with executable permissions (chmod +x .githooks/pre-commit)
 # Pre-commit hook to run C# linter (dotnet format)
 # This hook will verify that code follows formatting rules before allowing a commit
 
