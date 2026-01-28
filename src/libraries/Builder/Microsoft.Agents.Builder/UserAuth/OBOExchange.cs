@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             // Can we even exchange this?
             if (!token.IsExchangeable)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [token.ConnectionName]);
             }
 
             // Can the named Connection even do this?
