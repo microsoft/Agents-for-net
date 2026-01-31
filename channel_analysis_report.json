@@ -1,0 +1,608 @@
+{
+  "summary": {
+    "total_issues": 211,
+    "open_issues": 39,
+    "closed_issues": 172,
+    "issues_mentioning_channels": 32,
+    "channel_mention_percentage": 15.165876777251185
+  },
+  "channel_statistics": {
+    "msteams": {
+      "count": 25,
+      "percentage_of_all_issues": 11.848341232227488,
+      "percentage_of_channel_mentions": 58.139534883720934,
+      "open": 5,
+      "closed": 20
+    },
+    "webchat": {
+      "count": 12,
+      "percentage_of_all_issues": 5.687203791469194,
+      "percentage_of_channel_mentions": 27.906976744186046,
+      "open": 2,
+      "closed": 10
+    },
+    "directline": {
+      "count": 4,
+      "percentage_of_all_issues": 1.8957345971563981,
+      "percentage_of_channel_mentions": 9.30232558139535,
+      "open": 0,
+      "closed": 4
+    },
+    "line": {
+      "count": 2,
+      "percentage_of_all_issues": 0.9478672985781991,
+      "percentage_of_channel_mentions": 4.651162790697675,
+      "open": 0,
+      "closed": 2
+    }
+  },
+  "msteams_details": {
+    "issues": [
+      {
+        "number": 656,
+        "title": "When IsStreamingChannel=False, just abort the endstream instead of still sending a message",
+        "state": "OPEN",
+        "created_at": "2026-01-21T19:44:43Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/656"
+      },
+      {
+        "number": 399,
+        "title": "StreamingResponse.FinalMessage.SuggestedActions are not working on Teams",
+        "state": "OPEN",
+        "created_at": "2025-08-10T10:37:09Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/399"
+      },
+      {
+        "number": 274,
+        "title": "ConversationUpdate not triggered on first-time app installation on Teams channel",
+        "state": "OPEN",
+        "created_at": "2025-05-12T12:36:18Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/274"
+      },
+      {
+        "number": 177,
+        "title": "Add support for Targeted messages in a group setting",
+        "state": "OPEN",
+        "created_at": "2025-04-03T21:14:14Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/177"
+      },
+      {
+        "number": 145,
+        "title": "Issue fetching the access token using Token Exchange URL as part of OAuth Connection for Azure Bot Service",
+        "state": "OPEN",
+        "created_at": "2025-03-25T11:03:32Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/145"
+      },
+      {
+        "number": 623,
+        "title": "System.Diagnostics.Activity.Current is null in OnTurnContext",
+        "state": "CLOSED",
+        "created_at": "2026-01-15T08:31:48Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/623"
+      },
+      {
+        "number": 588,
+        "title": "Sent Activity ID not set to Response ID returned from ABS",
+        "state": "CLOSED",
+        "created_at": "2026-01-02T14:58:42Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/588"
+      },
+      {
+        "number": 530,
+        "title": "LongRunningMessages does not bypass 2-minute Teams streaming timeout",
+        "state": "CLOSED",
+        "created_at": "2025-12-08T08:04:59Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/530"
+      },
+      {
+        "number": 526,
+        "title": "Inconsistent SSO and authentication behaviors between MS Teams and M365 Copilot",
+        "state": "CLOSED",
+        "created_at": "2025-11-27T14:59:12Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/526"
+      },
+      {
+        "number": 516,
+        "title": "Agentic Request + Teams channel does not support streaming responses",
+        "state": "CLOSED",
+        "created_at": "2025-11-13T05:53:24Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/516"
+      },
+      {
+        "number": 502,
+        "title": "Bot token validation error (TenantId missing)",
+        "state": "CLOSED",
+        "created_at": "2025-11-05T08:55:12Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/502"
+      },
+      {
+        "number": 423,
+        "title": "StreamingResponse Fails when an Agent is attempting to communicate with a Teams Channel",
+        "state": "CLOSED",
+        "created_at": "2025-08-21T19:29:42Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/423"
+      },
+      {
+        "number": 386,
+        "title": "&#39;Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer&#39; threw an exception",
+        "state": "CLOSED",
+        "created_at": "2025-07-29T01:49:27Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/386"
+      },
+      {
+        "number": 384,
+        "title": "Support for bots and agents in shared channels",
+        "state": "CLOSED",
+        "created_at": "2025-07-23T19:26:24Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/384"
+      },
+      {
+        "number": 381,
+        "title": "SkillBot breaks when used in Copilot Agent published to Teams",
+        "state": "CLOSED",
+        "created_at": "2025-07-23T14:46:06Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/381"
+      },
+      {
+        "number": 380,
+        "title": "Excessive Cosmos DB Calls Post-Turn Completion in Agents SDK Bot on Teams Channel",
+        "state": "CLOSED",
+        "created_at": "2025-07-22T10:21:20Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/380"
+      },
+      {
+        "number": 378,
+        "title": "Streaming Adaptive Card StreamResult Shows Error",
+        "state": "CLOSED",
+        "created_at": "2025-07-17T23:49:29Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/378"
+      },
+      {
+        "number": 351,
+        "title": "JsonReaderException when serializing Activity.Value containing simple string and UnpackObjectStrings = false",
+        "state": "CLOSED",
+        "created_at": "2025-07-07T14:19:03Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/351"
+      },
+      {
+        "number": 349,
+        "title": "Method turnContext.StreamingResponse.EndStreamAsync() doesn&#39;t end message stream",
+        "state": "CLOSED",
+        "created_at": "2025-07-02T12:48:36Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/349"
+      },
+      {
+        "number": 343,
+        "title": "Agent responding randomly with &#34;You don&#39;t have access to talk to this bot, contact the owner.&#34;",
+        "state": "CLOSED",
+        "created_at": "2025-06-27T18:18:46Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/343"
+      },
+      {
+        "number": 316,
+        "title": "Proactive messages (adapter.CreateConversationAsync) are not stored in ITurnState",
+        "state": "CLOSED",
+        "created_at": "2025-06-04T11:36:35Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/316"
+      },
+      {
+        "number": 224,
+        "title": "Microsoft 365 Copilot Channel Support",
+        "state": "CLOSED",
+        "created_at": "2025-04-24T09:56:17Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/224"
+      },
+      {
+        "number": 216,
+        "title": "Auto Sign-In Requires Multiple User Messages to Succeed with Authorization Agent Token Exchange on Teams Channel",
+        "state": "CLOSED",
+        "created_at": "2025-04-22T11:27:29Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/216"
+      },
+      {
+        "number": 107,
+        "title": "How to capture the Teams chat uploaded attachment on the CopilotStudioEchoSkill Sample",
+        "state": "CLOSED",
+        "created_at": "2025-02-20T19:14:52Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/107"
+      },
+      {
+        "number": 23,
+        "title": "Anonymous Authentication Support",
+        "state": "CLOSED",
+        "created_at": "2025-01-10T05:29:01Z",
+        "url": "https://github.com/microsoft/Agents-for-net/issues/23"
+      }
+    ],
+    "count": 25,
+    "percentage_of_all_issues": 11.848341232227488,
+    "open": 5,
+    "closed": 20
+  },
+  "all_channel_issues": [
+    {
+      "number": 656,
+      "title": "When IsStreamingChannel=False, just abort the endstream instead of still sending a message",
+      "state": "OPEN",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/656"
+    },
+    {
+      "number": 399,
+      "title": "StreamingResponse.FinalMessage.SuggestedActions are not working on Teams",
+      "state": "OPEN",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/399"
+    },
+    {
+      "number": 274,
+      "title": "ConversationUpdate not triggered on first-time app installation on Teams channel",
+      "state": "OPEN",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/274"
+    },
+    {
+      "number": 177,
+      "title": "Add support for Targeted messages in a group setting",
+      "state": "OPEN",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/177"
+    },
+    {
+      "number": 145,
+      "title": "Issue fetching the access token using Token Exchange URL as part of OAuth Connection for Azure Bot Service",
+      "state": "OPEN",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/145"
+    },
+    {
+      "number": 623,
+      "title": "System.Diagnostics.Activity.Current is null in OnTurnContext",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/623"
+    },
+    {
+      "number": 588,
+      "title": "Sent Activity ID not set to Response ID returned from ABS",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat",
+        "directline",
+        "line"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/588"
+    },
+    {
+      "number": 530,
+      "title": "LongRunningMessages does not bypass 2-minute Teams streaming timeout",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/530"
+    },
+    {
+      "number": 527,
+      "title": "Problem with OAuth SignIn token response event",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline",
+        "line"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/527"
+    },
+    {
+      "number": 526,
+      "title": "Inconsistent SSO and authentication behaviors between MS Teams and M365 Copilot",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/526"
+    },
+    {
+      "number": 516,
+      "title": "Agentic Request + Teams channel does not support streaming responses",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/516"
+    },
+    {
+      "number": 502,
+      "title": "Bot token validation error (TenantId missing)",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/502"
+    },
+    {
+      "number": 434,
+      "title": "[Guidance] Unable to use AutoSignin feature with local debug on Teams / WebChat",
+      "state": "CLOSED",
+      "channels": [
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/434"
+    },
+    {
+      "number": 423,
+      "title": "StreamingResponse Fails when an Agent is attempting to communicate with a Teams Channel",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/423"
+    },
+    {
+      "number": 386,
+      "title": "&#39;Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer&#39; threw an exception",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/386"
+    },
+    {
+      "number": 384,
+      "title": "Support for bots and agents in shared channels",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/384"
+    },
+    {
+      "number": 381,
+      "title": "SkillBot breaks when used in Copilot Agent published to Teams",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/381"
+    },
+    {
+      "number": 380,
+      "title": "Excessive Cosmos DB Calls Post-Turn Completion in Agents SDK Bot on Teams Channel",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/380"
+    },
+    {
+      "number": 378,
+      "title": "Streaming Adaptive Card StreamResult Shows Error",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/378"
+    },
+    {
+      "number": 372,
+      "title": "Migrating from BotFrameWork with Network Isolation",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/372"
+    },
+    {
+      "number": 357,
+      "title": "Web Chat 4.18.1 + renders &#34;TYPEING&#34; when receiving a typing timer update from Agent SDK.",
+      "state": "CLOSED",
+      "channels": [
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/357"
+    },
+    {
+      "number": 351,
+      "title": "JsonReaderException when serializing Activity.Value containing simple string and UnpackObjectStrings = false",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/351"
+    },
+    {
+      "number": 349,
+      "title": "Method turnContext.StreamingResponse.EndStreamAsync() doesn&#39;t end message stream",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/349"
+    },
+    {
+      "number": 343,
+      "title": "Agent responding randomly with &#34;You don&#39;t have access to talk to this bot, contact the owner.&#34;",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/343"
+    },
+    {
+      "number": 326,
+      "title": "OAuth: Continuation Activity not preserved when token found in UserTokenService",
+      "state": "CLOSED",
+      "channels": [
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/326"
+    },
+    {
+      "number": 316,
+      "title": "Proactive messages (adapter.CreateConversationAsync) are not stored in ITurnState",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/316"
+    },
+    {
+      "number": 224,
+      "title": "Microsoft 365 Copilot Channel Support",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/224"
+    },
+    {
+      "number": 216,
+      "title": "Auto Sign-In Requires Multiple User Messages to Succeed with Authorization Agent Token Exchange on Teams Channel",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/216"
+    },
+    {
+      "number": 107,
+      "title": "How to capture the Teams chat uploaded attachment on the CopilotStudioEchoSkill Sample",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/107"
+    },
+    {
+      "number": 23,
+      "title": "Anonymous Authentication Support",
+      "state": "CLOSED",
+      "channels": [
+        "msteams"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/23"
+    },
+    {
+      "number": 6,
+      "title": "Microsoft.Agents.Authentication.Msal: AddJwtBearer should returns JsonWebToken",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/6"
+    },
+    {
+      "number": 4,
+      "title": "Deserialization Failure with WaterfallStepContext.Values",
+      "state": "CLOSED",
+      "channels": [
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/4"
+    }
+  ],
+  "multi_channel_issues": [
+    {
+      "number": 656,
+      "title": "When IsStreamingChannel=False, just abort the endstream instead of still sending a message",
+      "state": "OPEN",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/656"
+    },
+    {
+      "number": 399,
+      "title": "StreamingResponse.FinalMessage.SuggestedActions are not working on Teams",
+      "state": "OPEN",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/399"
+    },
+    {
+      "number": 588,
+      "title": "Sent Activity ID not set to Response ID returned from ABS",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat",
+        "directline",
+        "line"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/588"
+    },
+    {
+      "number": 527,
+      "title": "Problem with OAuth SignIn token response event",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline",
+        "line"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/527"
+    },
+    {
+      "number": 386,
+      "title": "&#39;Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer&#39; threw an exception",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/386"
+    },
+    {
+      "number": 372,
+      "title": "Migrating from BotFrameWork with Network Isolation",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/372"
+    },
+    {
+      "number": 351,
+      "title": "JsonReaderException when serializing Activity.Value containing simple string and UnpackObjectStrings = false",
+      "state": "CLOSED",
+      "channels": [
+        "msteams",
+        "webchat"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/351"
+    },
+    {
+      "number": 6,
+      "title": "Microsoft.Agents.Authentication.Msal: AddJwtBearer should returns JsonWebToken",
+      "state": "CLOSED",
+      "channels": [
+        "webchat",
+        "directline"
+      ],
+      "url": "https://github.com/microsoft/Agents-for-net/issues/6"
+    }
+  ]
+}
