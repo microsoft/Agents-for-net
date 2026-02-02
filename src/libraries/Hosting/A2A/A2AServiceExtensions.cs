@@ -92,9 +92,8 @@ public static class A2AServiceExtensions
     public static IEndpointConventionBuilder MapWellKnownAgentCard(this IEndpointRouteBuilder endpoints, bool requireAuth = false, [StringSyntax("Route")] string pattern = "/a2a")
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        ArgumentException.ThrowIfNullOrEmpty(pattern);
 
-        var routeGroup = endpoints.MapGroup(pattern);
+        var routeGroup = endpoints.MapGroup(pattern ?? string.Empty);
         if (requireAuth)
         {
             routeGroup.RequireAuthorization();
@@ -109,6 +108,14 @@ public static class A2AServiceExtensions
             return adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
         });
 
+        // This is for the TCK which hits root
+        endpoints.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        {
+            return adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
+        });
+
+
         return routeGroup;
     }
+
 }

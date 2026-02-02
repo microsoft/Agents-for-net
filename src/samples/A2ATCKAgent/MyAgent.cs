@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Agents.Hosting.A2A.Protocol;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Reflection;
 using System.Threading.Tasks;
 
