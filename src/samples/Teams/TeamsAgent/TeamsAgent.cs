@@ -8,8 +8,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.Connector;
-using Microsoft.Agents.Extensions.Teams.Models;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -29,26 +27,25 @@ public class TeamsAgent : AgentApplication
             tae.MessageExtensions.OnQuery("findNuGetPackage", OnQuery);
             tae.MessageExtensions.OnSelectItem(OnSelectItem);
             tae.MessageExtensions.OnQueryLink(OnQueryLink);
-#pragma warning disable CS0618 // Type or member is obsolete
-            tae.OnFeedbackLoop(MyFeedbackLoopHandler);
-#pragma warning restore CS0618 // Type or member is obsolete
         });
+
+        OnFeedbackLoop(MyFeedbackLoopHandler);
         AdaptiveCards.OnSearch("dataset", OnSearchDS);
         OnMessageReactionsAdded(OnMessageReaction);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync);
     }
 
-    private Task MyFeedbackLoopHandler(ITurnContext turnContext, ITurnState turnState, FeedbackLoopData feedbackLoopData, CancellationToken cancellationToken)
+    private Task MyFeedbackLoopHandler(ITurnContext turnContext, ITurnState turnState, FeedbackData feedbackLoopData, CancellationToken cancellationToken)
     {
         // Do something with FeedbackLoopData
         System.Diagnostics.Trace.WriteLine("FeedbackLoop handler");
         return Task.CompletedTask;
     }
 
-    private Task<MessagingExtensionResult> OnQueryLink(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+    private Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryLink(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
     {
-        return Task.FromResult(new MessagingExtensionResult() { Text = "On Query Link" });
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result() { Text = "On Query Link" });
     }
 
     private Task<IList<AdaptiveCardsSearchResult>> OnSearchDS(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
@@ -61,7 +58,7 @@ public class TeamsAgent : AgentApplication
         return Task.FromResult(result);
     }
 
-    private async Task<MessagingExtensionResult> OnSelectItem(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken)
+    private async Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItem(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken)
     {
         PackageItem? package = JsonSerializer.Deserialize<PackageItem>((JsonElement)item);
         if (package is null)
@@ -88,27 +85,27 @@ public class TeamsAgent : AgentApplication
             card.Images = [new(package.IconUrl, "Icon")];
         }
 
-        MessagingExtensionAttachment attachment = new()
+        Microsoft.Teams.Api.MessageExtensions.Attachment attachment = new()
         {
-            ContentType = ThumbnailCard.ContentType,
+            ContentType = Microsoft.Teams.Api.ContentType.ThumbnailCard,
             Content = card,
         };
 
-        return await Task.FromResult(new MessagingExtensionResult
+        return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            Type = "result",
-            AttachmentLayout = "list",
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
             Attachments = [attachment]
         });
     }
 
-    private async Task<MessagingExtensionResult> OnQuery(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken)
+    private async Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQuery(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken)
     {
         CommandValue<string> cmd = ProtocolJsonSerializer.ToObject<CommandValue<string>>(turnContext.Activity.Value);
         if (cmd.CommandId != "findNuGetPackage")
         {
             _logger.LogWarning("Received unexpected commandID {cmdName}", cmd.CommandId);
-            return await Task.FromResult(new MessagingExtensionResult());
+            return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result());
         }
         JsonElement el = default;
         if (query.Parameters.TryGetValue("NuGetPackageName", out var elObj))
@@ -120,25 +117,25 @@ public class TeamsAgent : AgentApplication
             else
             {
                 _logger.LogWarning("Received unexpected type for NuGetPackageName: {type}", elObj.GetType());
-                return await Task.FromResult(new MessagingExtensionResult());
+                return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result());
             }
         }
         else
         {
             _logger.LogWarning("Query Parameters does not include NuGetPackageName");
-            return await Task.FromResult(new MessagingExtensionResult());
+            return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result());
         }
 
         if (el.ValueKind == JsonValueKind.Undefined)
         {
-            return await Task.FromResult(new MessagingExtensionResult());
+            return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result());
         }
 
         string text = el.GetString() ?? string.Empty;
 
 
         IEnumerable<PackageItem> packages = await FindPackages(text);
-        List<MessagingExtensionAttachment> attachments = [.. packages.Select(package =>
+        List<Microsoft.Teams.Api.MessageExtensions.Attachment> attachments = [.. packages.Select(package =>
         {
             string cardValue = $$$"""
             {
@@ -156,9 +153,9 @@ public class TeamsAgent : AgentApplication
                 previewCard.Images = [new CardImage(package.IconUrl, "Icon")];
             }
 
-            MessagingExtensionAttachment attachment = new()
+            Microsoft.Teams.Api.MessageExtensions.Attachment attachment = new()
             {
-                ContentType = HeroCard.ContentType,
+                ContentType = Microsoft.Teams.Api.ContentType.HeroCard,
                 Content = new HeroCard { Title = package.Id },
                 Preview = previewCard.ToAttachment()
             };
@@ -166,10 +163,10 @@ public class TeamsAgent : AgentApplication
             return attachment;
         })];
 
-        return new MessagingExtensionResult
+        return new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            Type = "result",
-            AttachmentLayout = "list",
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
             Attachments = attachments
 
         };

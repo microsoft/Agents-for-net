@@ -5,6 +5,7 @@
 		<ComponentAreaName>CplTeams</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<!-- Set to true to see generated file in obj/Debug/.../Generated folder -->
 	    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
 	</PropertyGroup>
@@ -25,6 +26,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
 		<PackageReference Include="System.Text.Json" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
+		<PackageReference Include="Microsoft.Teams.Api" />
     </ItemGroup>
 
 	<ItemGroup>
@@ -36,6 +38,10 @@
 	  <ProjectReference Include="..\..\Client\Microsoft.Agents.Connector\Microsoft.Agents.Connector.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Serialization\Converters\" />
 	</ItemGroup>
 
 </Project>

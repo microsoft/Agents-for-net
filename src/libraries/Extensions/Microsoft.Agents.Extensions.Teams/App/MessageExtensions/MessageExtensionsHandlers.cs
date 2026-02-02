@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Teams.Api.MessageExtensions;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionActionResponse.</returns>
-    public delegate Task<MessagingExtensionActionResponse> SubmitActionHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
+    public delegate Task<Response> SubmitActionHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension botMessagePreview edit events.
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionActionResponse.</returns>
-    public delegate Task<MessagingExtensionActionResponse> BotMessagePreviewEditHandlerAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
+    public delegate Task<Response> BotMessagePreviewEditHandlerAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension botMessagePreview send events.
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of TaskModuleResponse.</returns>
-    public delegate Task<TaskModuleResponse> FetchTaskHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
+    public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchTaskHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension query events.
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionResult.</returns>
-    public delegate Task<MessagingExtensionResult> QueryHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken);
+    public delegate Task<Result> QueryHandlerAsync(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension selecting item events.
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionResult.</returns>
-    public delegate Task<MessagingExtensionResult> SelectItemHandlerAsync(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken);
+    public delegate Task<Result> SelectItemHandlerAsync(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension link unfurling events.
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionResult.</returns>
-    public delegate Task<MessagingExtensionResult> QueryLinkHandlerAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken);
+    public delegate Task<Result> QueryLinkHandlerAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension configuring query setting url events.
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of MessagingExtensionResult.</returns>
-    public delegate Task<MessagingExtensionResult> QueryUrlSettingHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
+    public delegate Task<Result> QueryUrlSettingHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Message Extension configuring settings events.

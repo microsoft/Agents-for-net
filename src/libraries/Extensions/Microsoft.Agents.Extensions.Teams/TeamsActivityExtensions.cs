@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Teams.Api;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.Teams
@@ -20,19 +20,8 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <returns>The current activity's team's selected channel, or empty string.</returns>
         public static string TeamsGetSelectedChannelId(this IActivity activity)
         {
-            var channelData = activity.GetChannelData<TeamsChannelData>();
+            var channelData = activity.GetChannelData<ChannelData>();
             return channelData?.Settings?.SelectedChannel?.Id;
-        }
-
-        /// <summary>
-        /// Gets the TeamsMeetingInfo object from the current activity.
-        /// </summary>
-        /// <param name="activity">This activity.</param>
-        /// <returns>The current activity's team's meeting, or null.</returns>
-        public static TeamsMeetingInfo TeamsGetMeetingInfo(this IActivity activity)
-        {
-            var channelData = activity.GetChannelData<TeamsChannelData>();
-            return channelData?.Meeting;
         }
 
         /// <summary>
@@ -42,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <returns>The current activity's team's channel, or empty string.</returns>
         public static string TeamsGetChannelId(this IActivity activity)
         {
-            var channelData = activity.GetChannelData<TeamsChannelData>();
+            var channelData = activity.GetChannelData<ChannelData>();
             return channelData?.Channel?.Id;
         }
 
@@ -51,9 +40,9 @@ namespace Microsoft.Agents.Extensions.Teams
         /// </summary>
         /// <param name="activity">This activity.</param>
         /// <returns>The current activity's team's Id, or an empty string.</returns>
-        public static TeamInfo TeamsGetTeamInfo(this IActivity activity)
+        public static Team TeamsGetTeamInfo(this IActivity activity)
         {
-            var channelData = activity.GetChannelData<TeamsChannelData>();
+            var channelData = activity.GetChannelData<ChannelData>();
             return channelData?.Team;
         }
 
@@ -66,14 +55,14 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="externalResourceUrl">Url to external resource. Must be included in manifest's valid domains.</param>
         public static void TeamsNotifyUser(this IActivity activity, bool alertInMeeting, string externalResourceUrl = null)
         {
-            var teamsChannelData = activity.ChannelData as TeamsChannelData;
+            var teamsChannelData = activity.ChannelData as ChannelData;
             if (teamsChannelData == null)
             {
-                teamsChannelData = new TeamsChannelData();
+                teamsChannelData = new ChannelData();
                 activity.ChannelData = teamsChannelData;
             }
 
-            teamsChannelData.Notification = new NotificationInfo
+            teamsChannelData.Notification = new Notification
             {
                 Alert = !alertInMeeting,
                 AlertInMeeting = alertInMeeting,
@@ -97,7 +86,7 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <returns>The current activity's OnBehalfOf list, or null.</returns>
         public static IList<OnBehalfOf> TeamsGetTeamOnBehalfOf(this IActivity activity)
         {
-            var channelData = activity.GetChannelData<TeamsChannelData>();
+            var channelData = activity.GetChannelData<ChannelData>();
             return channelData?.OnBehalfOf;
         }
 

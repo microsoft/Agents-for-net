@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Teams</ComponentAreaName>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />

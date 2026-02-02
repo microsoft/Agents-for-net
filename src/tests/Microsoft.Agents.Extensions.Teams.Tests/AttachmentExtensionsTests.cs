@@ -4,6 +4,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;
 
