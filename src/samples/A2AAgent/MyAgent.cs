@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Agents.Hosting.A2A.Protocol;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;

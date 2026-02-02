@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         /// <param name="value">The object to be decomposed into JSON elements.</param>
         /// <returns>A dictionary of JSON elements keyed by property name.</returns>
-        public static IDictionary<string, JsonElement> ToJsonElements(this object value)
+        public static Dictionary<string, JsonElement> ToJsonElements(this object value)
         {
             if (value == null)
             {

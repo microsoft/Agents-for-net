@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.AI;
 using System.Text.Json.Serialization.Metadata;
-using static Microsoft.Agents.Hosting.A2A.A2AJsonUtilities;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A
 {
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
             // Enable reflection fallback
             ProtocolJsonSerializer.ApplyExtensionOptions(options =>
             {
-                options.TypeInfoResolver = JsonTypeInfoResolver.Combine(JsonContext.Default, new DefaultJsonTypeInfoResolver());
+                options.TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver());
                 return options;
             });
         }

@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A.AspNetCore;
+using A2AAgent;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Threading;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Extensions.Hosting;
-using A2AAgent;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -54,7 +55,8 @@ var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, Htt
 });
 
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2A(requireAuth: !app.Environment.IsDevelopment());
+app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
+app.MapWellKnownAgentCard();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -67,4 +69,4 @@ else
     app.Urls.Add($"http://localhost:3978");
 }
 
-app.Run();
+await app.RunAsync();
