@@ -24,9 +24,6 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// </summary>
     public class TeamsAgentExtension : AgentExtension
     {
-        //private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
-        //private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
-
         /// <summary>
         /// Creates a new TeamsAgentExtension instance.
         /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.

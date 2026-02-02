@@ -122,13 +122,8 @@
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.1.1-preview.1.25612.2" />
-    <!-- TeamsAI -->
-    <PackageVersion Include="JsonSchema.Net" Version="6.1.2" />
-    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.1" />
-    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.1" />
-    <PackageVersion Include="Azure.AI.ContentSafety" Version="1.0.0" />
-    <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="Google.Protobuf" Version="3.33.4" />
+    <!-- Teams -->
+    <PackageVersion Include="Microsoft.Teams.Api" Version="2.0.5" />
 	<!-- MCP -->
 	<PackageVersion Include="ModelContextProtocol" Version="0.2.0-preview.2" />
 	<PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
