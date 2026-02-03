@@ -58,12 +58,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
             {
                 if ((bool)!task?.IsTerminal())
                 {
-                    // Push current status message to history
-                    //if (task?.Status?.Message != null)
-                    //{
-                    //    task.History = AppendMessage(task.History, task.Status.Message);
-                    //}
-
                     task.Status = new AgentTaskStatus
                     {
                         Message = message,

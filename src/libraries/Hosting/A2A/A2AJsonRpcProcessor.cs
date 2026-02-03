@@ -55,6 +55,11 @@ internal static class A2AJsonRpcProcessor
             activity?.AddTag("request.id", rpcRequest!.Id.ToString());
             activity?.AddTag("request.method", rpcRequest!.Method);
 
+            if (string.IsNullOrEmpty(rpcRequest.Id.ToString()))
+            {
+                throw new A2AException("Missing Request ID", A2AErrorCode.InvalidParams);
+            }
+
             var taskManager = taskManagerFactory(rpcRequest.Id.ToString());
 
             // Dispatch based on return type

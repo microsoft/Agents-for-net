@@ -39,18 +39,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 /// </remarks>
 public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {
-    private readonly IStorage _storage;
-    private readonly ILogger<A2AAdapter> _logger;
+    private readonly ITaskStore _taskStore;
     private static readonly ConcurrentDictionary<string, AgentShim> _a2aAgentContext = new();
 
-    public A2AAdapter(IStorage storage, ILogger<A2AAdapter> logger = null) : base(logger)
+    public A2AAdapter(IStorage storage, ILogger<A2AAdapter> logger = null) : base(logger ?? NullLogger<A2AAdapter>.Instance)
     {
-        _storage = storage ?? new MemoryStorage();
-        _logger = logger ?? NullLogger<A2AAdapter>.Instance;
+        AssertionHelpers.ThrowIfNull(storage, nameof(storage));
+        _taskStore = new InMemoryTaskStore();    //new StorageTaskStore(storage);
 
         OnTurnError = (turnContext, exception) =>
         {
-            _logger.LogError(exception, "A2AAdapter.OnTurnError: An error occurred during turn processing.");
+            Logger.LogError(exception, "A2AAdapter.OnTurnError: An error occurred during turn processing.");
             return Task.CompletedTask;
         };
     }
@@ -69,7 +68,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             httpRequest, 
             (requestId) =>
             {
-                var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _storage, ExecuteAgentTaskAsync);
+                var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
                 _a2aAgentContext[requestId] = shim;
                 return shim.GetTaskManager();
             },
@@ -133,7 +132,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             }
         }
 
-        // AgentApplication should implement IAgentCardHandler to set agent specific values.  But if
+        // AgentApplication could implement IAgentCardHandler to set agent specific values.  But if
         // it doesn't, the default card will be used.
         if (agent is IAgentCardHandler agentCardHandler)
         {
@@ -142,9 +141,9 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         var json = ProtocolJsonSerializer.ToJson(agentCard);
 
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug("AgentCard: {AgentCard}", json);
+            Logger.LogDebug("AgentCard: {AgentCard}", json);
         }
 
         httpResponse.ContentType = "application/json";
@@ -184,12 +183,30 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             }
             else
             {
-                _logger.LogDebug("A2AResponseHandler.OnResponse: Unhandled Activity Type: {ActivityType}", activity.Type);
+                Logger.LogDebug("A2AResponseHandler.OnResponse: Unhandled Activity Type: {ActivityType}", activity.Type);
             }
         }
         return [];
     }
     #endregion
+
+    private async Task ExecuteAgentTaskCancelAsync(string requestId, ClaimsIdentity identity, IAgent agent, TaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
+    {
+        var eoc = new Activity()
+        {
+            Type = ActivityTypes.EndOfConversation,
+            Code = EndOfConversationCodes.UserCancelled,
+        };
+
+        try
+        {
+            _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken);
+        }
+        finally
+        {
+            _a2aAgentContext.TryRemove(requestId, out _);
+        }
+    }
 
     private async Task ExecuteAgentTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, TaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
     {
@@ -198,14 +215,6 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             throw new A2AException($"Invalid Activity for RequestId={requestId}", A2AErrorCode.InternalError);
         }
-
-        //if (task.IsTerminal())
-        //{
-        //!!!
-        //JsonRpcResponse response = JsonRpcResponse.UnsupportedOperationResponse(jsonRpcRequest.Id, $"Task '{taskId}' is in a terminal state");
-        //await A2AResponseHandler.WriteResponseAsync(httpResponse, jsonRpcRequest.Id, response, false, HttpStatusCode.OK, _logger, cancellationToken).ConfigureAwait(false);
-        //    return;
-        //}
 
         try
         {

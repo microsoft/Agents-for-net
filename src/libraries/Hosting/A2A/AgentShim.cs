@@ -3,7 +3,6 @@
 
 using A2A;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Storage;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -15,14 +14,21 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
     {
         private readonly TaskManager _taskManager;
 
-        public AgentShim(string requestId, ClaimsIdentity identity, IAgent agent, IStorage storage, Func<string, ClaimsIdentity, IAgent, TaskManager, AgentTask, CancellationToken, Task> onTask)
+        public AgentShim(
+            string requestId, 
+            ClaimsIdentity identity, 
+            IAgent agent, 
+            ITaskStore taskStore, 
+            Func<string, ClaimsIdentity, IAgent, TaskManager, AgentTask, CancellationToken, Task> onTask,
+            Func<string, ClaimsIdentity, IAgent, TaskManager, AgentTask, CancellationToken, Task> onCancel)
         {
             Task onExec(AgentTask task, CancellationToken ct) => onTask(requestId, identity, agent, _taskManager, task, ct);
 
-            _taskManager = new TaskManager(taskStore: new InMemoryTaskStore()) // new StorageTaskStore(storage))
+            _taskManager = new TaskManager(taskStore: taskStore)
             {
                 OnTaskCreated = onExec,
-                //OnTaskUpdated = onExec
+                OnTaskUpdated = onExec,
+                OnTaskCancelled = (task, ct) => onCancel(requestId, identity, agent, _taskManager, task, ct)
             };
         }
 
