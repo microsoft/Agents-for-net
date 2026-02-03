@@ -132,6 +132,25 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             }
         }
 
+        var skills = agent.GetType().GetCustomAttributes<A2ASkillAttribute>();
+        if (skills != null)
+        {
+            foreach (var skillAttr in skills)
+            {
+                var skill = new AgentSkill()
+                {
+                    Id = skillAttr.Id,
+                    Name = skillAttr.Name,
+                    Description = skillAttr.Description,
+                    Tags = skillAttr.Tags,
+                    Examples = skillAttr.Examples,
+                    InputModes = skillAttr.InputModes,
+                    OutputModes = skillAttr.OutputModes,
+                };
+                agentCard.Skills.Add(skill);
+            }
+        }
+
         // AgentApplication could implement IAgentCardHandler to set agent specific values.  But if
         // it doesn't, the default card will be used.
         if (agent is IAgentCardHandler agentCardHandler)

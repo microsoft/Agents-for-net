@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 namespace A2AAgent;
 
 [Agent(name: "MyAgent", description: "Agent with A2A Sample")]
+[A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
 public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
