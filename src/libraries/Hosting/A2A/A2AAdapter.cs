@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using A2A;
-using Azure.Core;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
@@ -11,7 +10,6 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -52,7 +50,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         OnTurnError = (turnContext, exception) =>
         {
             Logger.LogError(exception, "A2AAdapter.OnTurnError: An error occurred during turn processing.");
-            return Task.CompletedTask;
+            throw new A2AException($"A2AAdapter.OnTurnError: An error occurred during turn processing: {exception.Message}", exception);
         };
     }
 
@@ -76,54 +74,53 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<IResult> GetTaskAsync(HttpRequest httpRequest, HttpResponse response, IAgent agent, string id, int? historyLength, string? metadata, CancellationToken cancellationToken)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.GetTaskAsync(shim.GetTaskManager(), Logger, id, historyLength, metadata, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<IResult> CancelTaskAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.CancelTaskAsync(shim.GetTaskManager(), Logger, id, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<IResult> SendMessageAsync(HttpRequest httpRequest, HttpResponse response, IAgent agent, MessageSendParams sendParams, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.SendMessageAsync(shim.GetTaskManager(), Logger, sendParams, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public IResult SendMessageStream(HttpRequest httpRequest, HttpResponse response, IAgent agent, MessageSendParams sendParams, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.SendMessageStream(shim.GetTaskManager(), Logger, sendParams, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public IResult SubscribeToTask(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.SubscribeToTask(shim.GetTaskManager(), Logger, id, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<IResult> SetPushNotificationAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.SetPushNotificationAsync(shim.GetTaskManager(), Logger, id, pushNotificationConfig, cancellationToken);
     }
 
+    /// <inheritdoc/>
     public Task<IResult> GetPushNotificationAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken = default)
     {
         var shim = CreateShim(httpRequest, agent);
         return A2AHttpProcessor.GetPushNotificationAsync(shim.GetTaskManager(), Logger, id, notificationConfigId, cancellationToken);
-    }
-
-    private AgentShim CreateShim(HttpRequest httpRequest, IAgent agent, string requestId = null)
-    {
-        requestId ??= Guid.NewGuid().ToString("N");
-        var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
-        _a2aAgentContext[requestId] = shim;
-        return shim;
     }
 
     /// <inheritdoc/>
@@ -255,6 +252,14 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     }
     #endregion
 
+    private AgentShim CreateShim(HttpRequest httpRequest, IAgent agent, string requestId = null)
+    {
+        requestId ??= Guid.NewGuid().ToString("N");
+        var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
+        _a2aAgentContext[requestId] = shim;
+        return shim;
+    }
+
     private async Task ExecuteAgentTaskCancelAsync(string requestId, ClaimsIdentity identity, IAgent agent, TaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
     {
         var eoc = new Activity()
@@ -294,7 +299,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private static async Task OnMessageResponse(TaskManager taskManager, ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
         var incomingMessage = (AgentMessage)turnContext.Activity.ChannelData;
-        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, activity.GetA2ATaskState(), A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), false, cancellationToken);
+        var state = activity.GetA2ATaskState();
+
+        // TODO a2a-dotnet doesn't close the stream if final isn't true.  This will need more thought.
+        var final = state == TaskState.InputRequired;
+
+        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, activity.GetA2ATaskState(), A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), final, cancellationToken);
     }
 
     private static async Task OnStreamingResponse(TaskManager taskManager, ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)

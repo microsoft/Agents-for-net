@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,6 +14,8 @@ namespace A2AAgent;
 
 [Agent(name: "MyAgent", description: "Agent with A2A Sample")]
 [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
+[A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
+[A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
 public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
@@ -80,7 +81,7 @@ public class MyAgent : AgentApplication
     private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
-        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = turnContext.Activity });
+        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Message = turnContext.Activity.Text });
 
         if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
@@ -92,8 +93,8 @@ public class MyAgent : AgentApplication
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
             };
 
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.CloneTo<IActivity>(eoc) });
-            eoc.Value = multi;  // optional, added to Task Artifacts
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = eoc.Text });
+            eoc.Value = multi; 
 
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
@@ -104,7 +105,7 @@ public class MyAgent : AgentApplication
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = activity });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = activity.Text });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
     }
@@ -114,7 +115,7 @@ public class MyAgent : AgentApplication
 class ActivityMessage
 {
     public required string Role { get; set; }
-    public required IActivity Activity { get; set; }
+    public required string Message { get; set; }
 }
 
 class MultiResult

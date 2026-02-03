@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 /// Provides methods for processing agent card queries, task operations, message sending,
 /// and push notification configuration through HTTP endpoints.
 /// </remarks>
-internal static class A2AHttpProcessor
+public static class A2AHttpProcessor
 {
     /// <summary>
     /// OpenTelemetry ActivitySource for tracing HTTP processor operations.
