@@ -14,9 +14,6 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 
-/// <summary>
-/// Concerning A2A model helpers for extensions, creation, serialization.
-/// </summary>
 internal static class A2AExtensions
 {
     private static readonly ConcurrentDictionary<string, JsonNode> _schemas = new();

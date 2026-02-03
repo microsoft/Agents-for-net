@@ -5,7 +5,6 @@ using A2A;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +14,7 @@ using System.Text.Json;
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 
 /// <summary>
-/// Concerning A2A to/from Activity
+/// A2A to/from Activity
 /// </summary>
 internal static class A2AActivity
 {
@@ -37,49 +36,6 @@ internal static class A2AActivity
         message.TaskId = taskId;
 
         return activity;
-    }
-
-    public static TaskStatusUpdateEvent CreateStatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
-    {
-        var artifact = CreateArtifact(activity, artifactId);
-
-        return new TaskStatusUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Status = new AgentTaskStatus()
-            {
-                State = taskState,
-                Timestamp = DateTimeOffset.UtcNow,
-                Message = artifact == null ? null : new AgentMessage() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = MessageRole.Agent },
-            },
-            Final = isFinal
-        };
-    }
-
-    public static TaskStatusUpdateEvent CreateStatusUpdate(string contextId, string taskId, AgentTaskStatus status, bool isFinal = false)
-    {
-        return new TaskStatusUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Status = status,
-            Final = isFinal
-        };
-    }
-
-    public static TaskArtifactUpdateEvent CreateArtifactUpdate(string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
-    {
-        var artifact = CreateArtifact(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
-
-        return new TaskArtifactUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Artifact = artifact,
-            Append = append,
-            LastChunk = lastChunk
-        };
     }
 
     public static AgentMessage CreateMessage(string contextId, string taskId, IActivity activity, bool includeEntities = true)

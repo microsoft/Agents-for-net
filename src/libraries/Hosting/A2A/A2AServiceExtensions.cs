@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -23,9 +22,6 @@ public static class A2AServiceExtensions
     /// <param name="services"></param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        // !!! A2AAdapter still needs this?
-        services.AddAsyncAdapterSupport();
-
         services.AddSingleton<A2AAdapter>();
         services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
     }
@@ -114,8 +110,6 @@ public static class A2AServiceExtensions
             return adapter.ProcessAgentCardAsync(request, response, agent, pattern, cancellationToken);
         });
 
-
         return routeGroup;
     }
-
 }

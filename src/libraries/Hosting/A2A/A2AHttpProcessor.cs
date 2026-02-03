@@ -1,3 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//
+// This is a copy of the A2AJsonRpcProcessor from the A2A ASP.NET Core hosting library.
+//
+
 using A2A;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;

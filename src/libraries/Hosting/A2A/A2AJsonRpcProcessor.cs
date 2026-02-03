@@ -1,8 +1,14 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//
+// This is a copy of the A2AJsonRpcProcessor from the A2A ASP.NET Core hosting library.
+//
+
 using A2A;
 using A2A.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
@@ -17,30 +23,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 /// Provides methods for processing JSON-RPC 2.0 protocol requests including message sending,
 /// task operations, streaming responses, and push notification configuration.
 /// </remarks>
-public static class A2AJsonRpcProcessor
+internal static class A2AJsonRpcProcessor
 {
     /// <summary>
     /// OpenTelemetry ActivitySource for tracing JSON-RPC processor operations.
     /// </summary>
     public static readonly ActivitySource ActivitySource = new("A2A.Processor", "1.0.0");
-
-    private static readonly ConcurrentDictionary<string, A2ARequestContext> _a2aAgentContext = new();
-
-    internal static Func<JsonRpcRequest, A2ARequestContext> OnRequest { get; set; } = (req) =>
-    {
-        var context = new A2ARequestContext();
-        _a2aAgentContext[req.Id.ToString()] = context;
-        return context;
-    };
-
-    internal static A2ARequestContext? GetRequestContext(string requestId)
-    {
-        if (_a2aAgentContext.TryGetValue(requestId.ToString(), out var context))
-        {
-            return context;
-        }
-        return null;
-    }
 
     /// <summary>
     /// Processes an incoming JSON-RPC request and routes it to the appropriate handler.
@@ -51,9 +39,10 @@ public static class A2AJsonRpcProcessor
     /// </remarks>
     /// <param name="taskManager">The task manager instance for handling A2A operations.</param>
     /// <param name="request">Http request containing the JSON-RPC request body.</param>
+    /// <param name="taskManagerFactory">in: string requestId, out: ITaskManager</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation if needed.</param>
     /// <returns>An HTTP result containing either a single JSON-RPC response or a streaming SSE response.</returns>
-    internal static async Task<IResult> ProcessRequestAsync(ITaskManager taskManager, HttpRequest request, CancellationToken cancellationToken)
+    internal static async Task<IResult> ProcessRequestAsync(HttpRequest request, Func<string, ITaskManager> taskManagerFactory, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("HandleA2ARequest", ActivityKind.Server);
 
@@ -66,7 +55,7 @@ public static class A2AJsonRpcProcessor
             activity?.AddTag("request.id", rpcRequest!.Id.ToString());
             activity?.AddTag("request.method", rpcRequest!.Method);
 
-            A2AAdapter.A2AContext.Value.RequestId = rpcRequest.Id;
+            var taskManager = taskManagerFactory(rpcRequest.Id.ToString());
 
             // Dispatch based on return type
             if (A2AMethods.IsStreamingMethod(rpcRequest!.Method))
