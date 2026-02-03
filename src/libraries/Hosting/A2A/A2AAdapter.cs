@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using A2A;
+using Azure.Core;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
@@ -10,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -68,20 +70,64 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             httpRequest, 
             (requestId) =>
             {
-                var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
-                _a2aAgentContext[requestId] = shim;
+                var shim = CreateShim(httpRequest, agent, requestId);
                 return shim.GetTaskManager();
             },
             cancellationToken);
     }
 
-    public Task<IResult> ProcessHttpJsonAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
+    public Task<IResult> GetTaskAsync(HttpRequest httpRequest, HttpResponse response, IAgent agent, string id, int? historyLength, string? metadata, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.GetTaskAsync(shim.GetTaskManager(), Logger, id, historyLength, metadata, cancellationToken);
+    }
+
+    public Task<IResult> CancelTaskAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.CancelTaskAsync(shim.GetTaskManager(), Logger, id, cancellationToken);
+    }
+
+    public Task<IResult> SendMessageAsync(HttpRequest httpRequest, HttpResponse response, IAgent agent, MessageSendParams sendParams, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.SendMessageAsync(shim.GetTaskManager(), Logger, sendParams, cancellationToken);
+    }
+
+    public IResult SendMessageStream(HttpRequest httpRequest, HttpResponse response, IAgent agent, MessageSendParams sendParams, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.SendMessageStream(shim.GetTaskManager(), Logger, sendParams, cancellationToken);
+    }
+
+    public IResult SubscribeToTask(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.SubscribeToTask(shim.GetTaskManager(), Logger, id, cancellationToken);
+    }
+
+    public Task<IResult> SetPushNotificationAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.SetPushNotificationAsync(shim.GetTaskManager(), Logger, id, pushNotificationConfig, cancellationToken);
+    }
+
+    public Task<IResult> GetPushNotificationAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken = default)
+    {
+        var shim = CreateShim(httpRequest, agent);
+        return A2AHttpProcessor.GetPushNotificationAsync(shim.GetTaskManager(), Logger, id, notificationConfigId, cancellationToken);
+    }
+
+    private AgentShim CreateShim(HttpRequest httpRequest, IAgent agent, string requestId = null)
+    {
+        requestId ??= Guid.NewGuid().ToString("N");
+        var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
+        _a2aAgentContext[requestId] = shim;
+        return shim;
     }
 
     /// <inheritdoc/>
-    public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string messagePrefix, CancellationToken cancellationToken = default)
+    public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string pathPrefix, CancellationToken cancellationToken = default)
     {
         var agentCard = new AgentCard()
         {
@@ -89,7 +135,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             Description = "Agents SDK A2A",
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
             ProtocolVersion = "0.3.0",
-            Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/",
+            Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{pathPrefix}/",
             SecuritySchemes = new Dictionary<string, SecurityScheme>
                     {
                         {
@@ -109,7 +155,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 new AgentInterface()
                     {
                         Transport = AgentTransport.JsonRpc,
-                        Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{messagePrefix}/"
+                        Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{pathPrefix}/"
                     }
             ],
             PreferredTransport = AgentTransport.JsonRpc,

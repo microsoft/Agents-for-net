@@ -57,6 +57,7 @@ var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, Htt
 // Map A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
 app.MapWellKnownAgentCard();
+app.MapA2AHttp(requireAuth: !app.Environment.IsDevelopment());
 
 if (!app.Environment.IsDevelopment())
 {
