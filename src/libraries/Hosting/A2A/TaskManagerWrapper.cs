@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
             // This is some hackery to get a2a-dotnet to close the stream.  Otherwise the
             // request is blocked waiting for something that will never come.  We can't
             // know when to set final=true when responses are sent.
-            // This will only work given that the TaskManager in this Adapter is transient.
+            // This will only work given that the TaskManager in A2AAdapter is transient.
             // This also means that tasks/resubscribe won't work (because of the transient TaskManager).
             if (taskManager.GetType().GetField("_taskUpdateEventEnumerators", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.GetValue(taskManager) is ConcurrentDictionary<string, TaskUpdateEventEnumerator> enumerators)

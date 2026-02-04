@@ -298,7 +298,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             if (taskManager is TaskManagerWrapper wrapper)
             {
-                wrapper.CloseStream(task.Id);
+                //wrapper.CloseStream(task.Id);
             }
 
             _a2aAgentContext.TryRemove(requestId, out _);
