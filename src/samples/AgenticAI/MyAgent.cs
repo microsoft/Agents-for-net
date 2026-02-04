@@ -31,8 +31,8 @@ public class MyAgent : AgentApplication
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(aauToken);
 
-        // Send back and adaptive card with token details. 
-         var template = new AdaptiveCardTemplate(System.IO.File.ReadAllText("JWTDecodeCard.json"));
+        // Send back an adaptive card with token details. 
+        var template = new AdaptiveCardTemplate(System.IO.File.ReadAllText("JWTDecodeCard.json"));
         var payloadData = new
         {
             length = aauToken.Length,
@@ -48,7 +48,7 @@ public class MyAgent : AgentApplication
             ContentType = ContentTypes.AdaptiveCard,
             Content = cardString
         });
-        await turnContext.SendActivityAsync(msgActivity); 
+        await turnContext.SendActivityAsync(msgActivity);
 
     }
 
