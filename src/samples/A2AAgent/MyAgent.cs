@@ -89,7 +89,7 @@ public class MyAgent : AgentApplication
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Text = "All done. Activity list result in Artifacts", // optional, added as a message is TaskStatus
+                Text = "All done. Activity list result in Artifacts", // optional, added as a message in TaskStatus
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
             };
 

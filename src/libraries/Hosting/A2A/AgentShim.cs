@@ -12,19 +12,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
 {
     internal class AgentShim
     {
-        private readonly TaskManager _taskManager;
+        private readonly TaskManagerWrapper _taskManager;
 
         public AgentShim(
             string requestId, 
             ClaimsIdentity identity, 
             IAgent agent, 
             ITaskStore taskStore, 
-            Func<string, ClaimsIdentity, IAgent, TaskManager, AgentTask, CancellationToken, Task> onTask,
-            Func<string, ClaimsIdentity, IAgent, TaskManager, AgentTask, CancellationToken, Task> onCancel)
+            Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onTask,
+            Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onCancel)
         {
             Task onExec(AgentTask task, CancellationToken ct) => onTask(requestId, identity, agent, _taskManager, task, ct);
 
-            _taskManager = new TaskManager(taskStore: taskStore)
+            _taskManager = new TaskManagerWrapper(new TaskManager(taskStore: taskStore))
             {
                 OnTaskCreated = onExec,
                 OnTaskUpdated = onExec,
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
             };
         }
 
-        public TaskManager GetTaskManager()
+        public ITaskManager GetTaskManager()
         {
             return _taskManager;
         }

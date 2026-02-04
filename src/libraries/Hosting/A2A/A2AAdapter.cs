@@ -45,7 +45,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     public A2AAdapter(IStorage storage, ILogger<A2AAdapter> logger = null) : base(logger ?? NullLogger<A2AAdapter>.Instance)
     {
         AssertionHelpers.ThrowIfNull(storage, nameof(storage));
-        _taskStore = new InMemoryTaskStore();    //new StorageTaskStore(storage);
+        _taskStore = new StorageTaskStore(storage);
 
         OnTurnError = (turnContext, exception) =>
         {
@@ -71,7 +71,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 var shim = CreateShim(httpRequest, agent, requestId);
                 return shim.GetTaskManager();
             },
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -209,8 +209,8 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         httpResponse.ContentType = "application/json";
-        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken);
-        await httpResponse.Body.FlushAsync(cancellationToken);
+        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken).ConfigureAwait(false);
+        await httpResponse.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     #region ChannelAdapter
@@ -260,17 +260,21 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return shim;
     }
 
-    private async Task ExecuteAgentTaskCancelAsync(string requestId, ClaimsIdentity identity, IAgent agent, TaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
+    private async Task ExecuteAgentTaskCancelAsync(string requestId, ClaimsIdentity identity, IAgent agent, ITaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
     {
         var eoc = new Activity()
         {
             Type = ActivityTypes.EndOfConversation,
             Code = EndOfConversationCodes.UserCancelled,
+            ChannelId = Channels.A2A,
+            Conversation = new ConversationAccount() { Id = task.Id },
+            Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
+            From = new ChannelAccount { Id = A2AActivity.DefaultUserId, Role = RoleTypes.User }
         };
 
         try
         {
-            _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken);
+            _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -278,7 +282,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
-    private async Task ExecuteAgentTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, TaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
+    private async Task ExecuteAgentTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, ITaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
     {
         var activity = A2AActivity.ActivityFromMessage(requestId, task, task.History!.Last());
         if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
@@ -288,26 +292,28 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         try
         {
-            _ = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken);
+            _ = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
+            if (taskManager is TaskManagerWrapper wrapper)
+            {
+                wrapper.CloseStream(task.Id);
+            }
+
             _a2aAgentContext.TryRemove(requestId, out _);
         }
     }
 
-    private static async Task OnMessageResponse(TaskManager taskManager, ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
+    private static async Task OnMessageResponse(ITaskManager taskManager, ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
         var incomingMessage = (AgentMessage)turnContext.Activity.ChannelData;
         var state = activity.GetA2ATaskState();
-
-        // TODO a2a-dotnet doesn't close the stream if final isn't true.  This will need more thought.
-        var final = state == TaskState.InputRequired;
-
-        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, activity.GetA2ATaskState(), A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), final, cancellationToken);
+        var response = A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity);
+        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, state, response, false, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task OnStreamingResponse(TaskManager taskManager, ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
+    private static async Task OnStreamingResponse(ITaskManager taskManager, ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
     {
         var incomingMessage = (AgentMessage)turnContext.Activity.ChannelData;
 
@@ -317,17 +323,17 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         if (isInformative)
         {
             // Informative is a Status update with a Message
-            await taskManager.UpdateStatusAsync(incomingMessage.TaskId, TaskState.Working, A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), false, cancellationToken);
+            await taskManager.UpdateStatusAsync(incomingMessage.TaskId, TaskState.Working, A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), false, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             // This is using entity.StreamId for the artifactId.
             var artifact = A2AActivity.CreateArtifact(activity, artifactId: entity.StreamId);
-            await taskManager.ReturnArtifactAsync(incomingMessage.TaskId, artifact, cancellationToken);
+            await taskManager.ReturnArtifactAsync(incomingMessage.TaskId, artifact, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private static async Task OnEndOfConversationResponse(TaskManager taskManager, ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
+    private static async Task OnEndOfConversationResponse(ITaskManager taskManager, ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
         var incomingMessage = (AgentMessage)turnContext.Activity.ChannelData;
 
@@ -340,7 +346,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 description: "Task completion result",
                 mediaType: "application/json");
 
-            await taskManager.ReturnArtifactAsync(incomingMessage.TaskId, artifact, cancellationToken);
+            await taskManager.ReturnArtifactAsync(incomingMessage.TaskId, artifact, cancellationToken).ConfigureAwait(false);
         }
 
         // Upate status to terminal.  Status event sent in ResponseEnd
@@ -361,7 +367,8 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             // Value was set as Artifact on Task
             statusMessage.Value = null;
         }
+        var response = A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, statusMessage);
 
-        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, taskState, A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, statusMessage), true, cancellationToken);
+        await taskManager.UpdateStatusAsync(incomingMessage.TaskId, taskState, response, true, cancellationToken).ConfigureAwait(false);
     }
 }
