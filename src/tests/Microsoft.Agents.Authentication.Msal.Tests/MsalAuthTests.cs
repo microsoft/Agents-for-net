@@ -386,11 +386,13 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public async Task MSALProvider_Agentic_GuidTenantIdReplacement()
         {
+            const string guidTenantId = "12345678-1234-1234-1234-123456789abc";
+            
             Dictionary<string, string> configSettings = new Dictionary<string, string> {
                 { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
                 { "Connections:ServiceConnection:Settings:ClientId", "test-id-guid" },
                 { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
-                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://login.microsoftonline.com/12345678-1234-1234-1234-123456789abc" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", $"https://login.microsoftonline.com/{guidTenantId}" },
             };
             string settingsSection = "Connections:ServiceConnection:Settings";
 
@@ -419,7 +421,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                 .Returns(new TestHttpClientFactory((httpRequest) =>
                 {
                     string uri;
-                    if (httpRequest.RequestUri.ToString().Contains("/12345678-1234-1234-1234-123456789abc/discovery"))
+                    if (httpRequest.RequestUri.ToString().Contains($"/{guidTenantId}/discovery"))
                     {
                         uri = httpRequest.RequestUri.Query;
                     }
@@ -428,7 +430,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                         uri = httpRequest.RequestUri.ToString();
                     }
 
-                    Assert.DoesNotContain("12345678-1234-1234-1234-123456789abc", uri);
+                    Assert.DoesNotContain(guidTenantId, uri);
                     Assert.Contains("new-tenant", uri);
                 }))
                 .Verifiable(Times.Exactly(5));
