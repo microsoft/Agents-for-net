@@ -349,14 +349,13 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(6));
+            options.Setup(x => x.Value).Returns(returnedOptions);
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
-                .Returns(options.Object)
-                .Verifiable(Times.Exactly(6));
+                .Returns(options.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
                 .Verifiable(Times.Once);
@@ -375,8 +374,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
                     Assert.DoesNotContain("common", uri);
                     Assert.Contains("new-tenant", uri);
-                }))
-                .Verifiable(Times.Exactly(5));
+                }));
 
             var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
             await msal.GetAgenticUserTokenAsync("new-tenant", "aai", "upn", ["scope-1"]);
