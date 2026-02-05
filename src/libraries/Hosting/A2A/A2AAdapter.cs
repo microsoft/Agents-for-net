@@ -65,7 +65,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     public async Task<IResult> ProcessJsonRpcAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
     {
         return await A2AJsonRpcProcessor.ProcessRequestAsync(
-            httpRequest, 
+            httpRequest,
             (requestId) =>
             {
                 var shim = CreateShim(httpRequest, agent, requestId);
@@ -309,7 +309,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     {
         var incomingMessage = (AgentMessage)turnContext.Activity.ChannelData;
         var state = activity.GetA2ATaskState();
-        var response = A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity);
+        var response = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, activity);
         await taskManager.UpdateStatusAsync(incomingMessage.TaskId, state, response, false, cancellationToken).ConfigureAwait(false);
     }
 
@@ -323,7 +323,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         if (isInformative)
         {
             // Informative is a Status update with a Message
-            await taskManager.UpdateStatusAsync(incomingMessage.TaskId, TaskState.Working, A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, activity), false, cancellationToken).ConfigureAwait(false);
+            await taskManager.UpdateStatusAsync(incomingMessage.TaskId, TaskState.Working, A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, activity), false, cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -367,7 +367,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             // Value was set as Artifact on Task
             statusMessage.Value = null;
         }
-        var response = A2AActivity.CreateMessage(incomingMessage.ContextId, incomingMessage.TaskId, statusMessage);
+        var response = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, statusMessage);
 
         await taskManager.UpdateStatusAsync(incomingMessage.TaskId, taskState, response, true, cancellationToken).ConfigureAwait(false);
     }

@@ -24,10 +24,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
         private readonly TaskManagerWrapper _taskManager;
 
         public AgentShim(
-            string requestId, 
-            ClaimsIdentity identity, 
-            IAgent agent, 
-            ITaskStore taskStore, 
+            string requestId,
+            ClaimsIdentity identity,
+            IAgent agent,
+            ITaskStore taskStore,
             Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onTask,
             Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onCancel)
         {

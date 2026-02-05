@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
     {
         private readonly IStorage _storage;
 
-        public StorageTaskStore(IStorage storage) 
-        { 
+        public StorageTaskStore(IStorage storage)
+        {
             AssertionHelpers.ThrowIfNull(storage, nameof(storage));
             _storage = storage;
         }

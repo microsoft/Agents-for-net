@@ -38,7 +38,7 @@ internal static class A2AActivity
         return activity;
     }
 
-    public static AgentMessage CreateMessage(string contextId, string taskId, IActivity activity, bool includeEntities = true)
+    public static AgentMessage MessageFromActivity(string contextId, string taskId, IActivity activity, bool includeEntities = true)
     {
         var artifact = CreateArtifact(activity, includeEntities: includeEntities) ?? throw new ArgumentException("Invalid activity to convert to payload");
 
@@ -89,17 +89,17 @@ internal static class A2AActivity
 
             artifact.Parts.Add(new FilePart()
             {
-                File = string.IsNullOrEmpty(attachment.ContentUrl)
-                ? new FileContent(attachment.ContentUrl)
-                    {
-                        MimeType = attachment.ContentType,
-                        Name = attachment.Name,
-                    }
-                : new FileContent(attachment.Content as string)
-                    {
-                        MimeType = attachment.ContentType,
-                        Name = attachment.Name,
-                    }
+                File = !string.IsNullOrEmpty(attachment.ContentUrl)
+                    ? new FileContent(new Uri(attachment.ContentUrl))
+                        {
+                            MimeType = attachment.ContentType,
+                            Name = attachment.Name,
+                        }
+                    : new FileContent(attachment.Content as string)
+                        {
+                            MimeType = attachment.ContentType,
+                            Name = attachment.Name,
+                        }
             });
         }
 
@@ -150,7 +150,7 @@ internal static class A2AActivity
     public static bool HasA2AMessageContent(this IActivity activity)
     {
         return !string.IsNullOrEmpty(activity.Text)
-            || (bool) activity.Attachments?.Any();
+            || (bool)activity.Attachments?.Any();
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)

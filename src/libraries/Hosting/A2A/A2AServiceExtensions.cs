@@ -150,7 +150,7 @@ public static class A2AServiceExtensions
             adapter.CancelTaskAsync(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}:subscribe endpoint
-        routeGroup.MapGet("/v1/tasks/{id}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) => 
+        routeGroup.MapGet("/v1/tasks/{id}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.SubscribeToTask(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - POST
