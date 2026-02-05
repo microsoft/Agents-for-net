@@ -5,19 +5,18 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A
+namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+
+[SerializationInit]
+internal class SerializationInit
 {
-    [SerializationInit]
-    internal class SerializationInit
+    public static void Init()
     {
-        public static void Init()
+        // Enable reflection fallback
+        ProtocolJsonSerializer.ApplyExtensionOptions(options =>
         {
-            // Enable reflection fallback
-            ProtocolJsonSerializer.ApplyExtensionOptions(options =>
-            {
-                options.TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver());
-                return options;
-            });
-        }
+            options.TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver());
+            return options;
+        });
     }
 }
