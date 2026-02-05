@@ -27,6 +27,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Hosting\A2A\Microsoft.Agents.Hosting.AspNetCore.A2A.csproj" />
       <ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
+      <ProjectReference Include="..\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

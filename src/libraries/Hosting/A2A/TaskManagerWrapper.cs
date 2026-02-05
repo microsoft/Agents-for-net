@@ -21,7 +21,7 @@ internal class TaskManagerWrapper(TaskManager taskManager) : ITaskManager
 
     public async Task<AgentTask?> CancelTaskAsync(TaskIdParams taskIdParams, CancellationToken cancellationToken = default)
     {
-        // This is because TaskManager.CancelTaskAsync does not return the updated task when using a non-InMemoryTaskStore based TaskStore.
+        // This is because TaskManager.CancelTaskAsync does not return the updated task when using a non-InMemoryTaskStore based ITaskStore.
         await taskManager.CancelTaskAsync(taskIdParams, cancellationToken).ConfigureAwait(false);
         return await taskManager.GetTaskAsync(new TaskQueryParams() { Id = taskIdParams.Id, Metadata = taskIdParams.Metadata }, cancellationToken).ConfigureAwait(false);
     }
@@ -46,9 +46,12 @@ internal class TaskManagerWrapper(TaskManager taskManager) : ITaskManager
         return taskManager.ReturnArtifactAsync(taskId, artifact, cancellationToken);
     }
 
-    public Task<A2AResponse?> SendMessageAsync(MessageSendParams messageSendParams, CancellationToken cancellationToken = default)
+    public async Task<A2AResponse?> SendMessageAsync(MessageSendParams messageSendParams, CancellationToken cancellationToken = default)
     {
-        return taskManager.SendMessageAsync(messageSendParams, cancellationToken);
+        await taskManager.SendMessageAsync(messageSendParams, cancellationToken);
+
+        // This is because TaskManager.SendMessageAsync does not return the updated task when using a non-InMemoryTaskStore based ITaskStore.
+        return await taskManager.GetTaskAsync(new TaskQueryParams() { Id = messageSendParams.Message.TaskId, HistoryLength = messageSendParams.Configuration?.HistoryLength, Metadata = messageSendParams.Metadata }, cancellationToken).ConfigureAwait(false);
     }
 
     public IAsyncEnumerable<A2AEvent> SendMessageStreamingAsync(MessageSendParams messageSendParams, CancellationToken cancellationToken = default)

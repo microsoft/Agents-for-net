@@ -4,23 +4,19 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core;
+using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests;
 
@@ -175,6 +171,71 @@ public class A2AAdapterTests
 
     #endregion
 
+    #region
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync()
+    {
+        // Arrange
+        var record = UseRecord((record) =>
+        {
+            var options = new TestApplicationOptions(record.Storage);
+            var agent = new TestApplication(options);
+
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
+            });
+
+            return agent;
+        });
+
+        var jsonRpcRequest = new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = A2AMethods.MessageSend,
+            Params = JsonSerializer.SerializeToElement(new MessageSendParams
+            {
+                Message = new AgentMessage
+                {
+                    ContextId = "context-1234",
+                    Parts = [new TextPart() { Text = "Hello" }]
+                },
+                Configuration = new MessageSendConfiguration
+                {
+                    HistoryLength = 10,
+                }
+            })
+        };
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(jsonRpcRequest));
+
+        // Act
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        // Assert
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var reader = new StreamReader(context.Response.Body);
+        var streamText = reader.ReadToEnd();
+        var jsonRpcResponse = JsonSerializer.Deserialize<JsonRpcResponse>(streamText);
+        Assert.NotNull(jsonRpcResponse);
+        var task = JsonSerializer.Deserialize<AgentTask>(jsonRpcResponse.Result);
+        Assert.NotNull(task);
+        Assert.Equal("context-1234", task.ContextId);
+        Assert.NotEmpty(task.Id);
+        Assert.Single(task.History);
+        Assert.Equal("Hello", task.History[0].Parts[0].AsTextPart().Text);
+        Assert.NotNull(task.Status.Message);
+        Assert.Equal("Echo: Hello", task.Status.Message.Parts[0].AsTextPart().Text);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private Mock<HttpRequest> CreateMockHttpRequest(string scheme = "https", string host = "localhost:3978")
@@ -205,7 +266,7 @@ public class A2AAdapterTests
     {
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<InvokeResponse>(null);
+            return Task.CompletedTask;
         }
     }
 
@@ -215,7 +276,7 @@ public class A2AAdapterTests
     {
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<InvokeResponse>(null);
+            return Task.CompletedTask;
         }
     }
 
@@ -225,7 +286,7 @@ public class A2AAdapterTests
 
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<InvokeResponse>(null);
+            return Task.CompletedTask;
         }
 
         public Task<AgentCard> GetAgentCard(AgentCard defaultCard)
@@ -237,4 +298,47 @@ public class A2AAdapterTests
     }
 
     #endregion
+
+    private static DefaultHttpContext CreateHttpContext(string requestContent = null)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestContent));
+        context.Request.Method = HttpMethods.Post;
+        context.Response.StatusCode = 0;
+        context.Response.Body = new MemoryStream();
+        return context;
+    }
+
+    private static Record UseRecord(Func<Record, IAgent> createAgent)
+    {
+        var queueLogger = new Mock<ILogger<A2AAdapter>>();
+
+        var sp = new Mock<IServiceProvider>();
+        var storage = new MemoryStorage();
+        var adapter = new A2AAdapter(storage, queueLogger.Object);
+        var record = new Record(storage, adapter, null, queueLogger);
+
+        if (createAgent != null)
+        {
+            record.Agent = createAgent(record);
+        }
+
+        return record;
+    }
+
+    private record Record(
+        IStorage Storage,
+        A2AAdapter Adapter,
+        IAgent Agent,
+        Mock<ILogger<A2AAdapter>> QueueLogger)
+    {
+        public void VerifyMocks()
+        {
+            Mock.Verify(QueueLogger);
+        }
+
+        public IAgent Agent { get; set; } = Agent;
+        public IStorage Storage { get; set; } = Storage;
+    }
+
 }

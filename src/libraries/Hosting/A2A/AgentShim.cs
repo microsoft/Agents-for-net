@@ -28,15 +28,14 @@ internal class AgentShim
         ClaimsIdentity identity,
         IAgent agent,
         ITaskStore taskStore,
-        Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onTask,
+        Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onTaskCreated,
+        Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onTaskUpdated,
         Func<string, ClaimsIdentity, IAgent, ITaskManager, AgentTask, CancellationToken, Task> onCancel)
     {
-        Task onExec(AgentTask task, CancellationToken ct) => onTask(requestId, identity, agent, _taskManager, task, ct);
-
         _taskManager = new TaskManagerWrapper(new TaskManager(taskStore: taskStore))
         {
-            OnTaskCreated = onExec,
-            OnTaskUpdated = onExec,
+            OnTaskCreated = (task, ct) => onTaskCreated(requestId, identity, agent, _taskManager, task, ct),
+            OnTaskUpdated = (task, ct) => onTaskUpdated(requestId, identity, agent, _taskManager, task, ct),
             OnTaskCancelled = (task, ct) => onCancel(requestId, identity, agent, _taskManager, task, ct)
         };
     }

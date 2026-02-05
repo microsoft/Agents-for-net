@@ -260,7 +260,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private AgentShim CreateShim(HttpRequest httpRequest, IAgent agent, string requestId = null)
     {
         requestId ??= Guid.NewGuid().ToString("N");
-        var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
+        var shim = new AgentShim(requestId, HttpHelper.GetClaimsIdentity(httpRequest), agent, _taskStore, ExecuteAgentTaskCreatedAsync, ExecuteAgentTaskAsync, ExecuteAgentTaskCancelAsync);
         _a2aAgentContext[requestId] = shim;
         return shim;
     }
@@ -285,6 +285,14 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             _a2aAgentContext.TryRemove(requestId, out _);
         }
+    }
+
+    private async Task ExecuteAgentTaskCreatedAsync(string requestId, ClaimsIdentity identity, IAgent agent, ITaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
+    {
+        // this is to compensate for TaskManager not saving the task on creation when using a non-InMemoryTaskStore based TaskStore. 
+        await _taskStore.SetTaskAsync(task, cancellationToken).ConfigureAwait(false);
+
+        await ExecuteAgentTaskAsync(requestId, identity, agent, taskManager, task, cancellationToken);
     }
 
     private async Task ExecuteAgentTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, ITaskManager taskManager, AgentTask task, CancellationToken cancellationToken)
