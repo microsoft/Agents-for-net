@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
 
         public async Task<AgentTask?> GetTaskAsync(string taskId, CancellationToken cancellationToken = default)
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
+            AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
             cancellationToken.ThrowIfCancellationRequested();
 
             var key = GetTaskKey(taskId);
@@ -98,25 +98,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
             // TODO ETag SetPushNotificationConfigAsync
             var key = GetPushKey(pushNotificationConfig.TaskId);
             var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-            if (items.TryGetValue(key, out var existingItem) && existingItem is List<TaskPushNotificationConfig> existingConfigs)
+            if (items.TryGetValue(key, out var existingItem) && existingItem is PushNotifications existingConfigs)
             {
-                existingConfigs.Add(pushNotificationConfig);
-
-                await _storage.WriteAsync(new Dictionary<string, object> { { key, existingConfigs } }, cancellationToken).ConfigureAwait(false);
+                existingConfigs.Configs.Add(pushNotificationConfig);
             }
+            else
+            {
+                existingConfigs = new PushNotifications([pushNotificationConfig]);
+            }
+
+            items[key] = existingConfigs;
+            await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IEnumerable<TaskPushNotificationConfig>> GetPushNotificationsAsync(string taskId, CancellationToken cancellationToken = default)
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
+            AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
             cancellationToken.ThrowIfCancellationRequested();
 
             var key = GetPushKey(taskId);
             var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-            if (items.TryGetValue(key, out var existingItem) && existingItem is List<TaskPushNotificationConfig> existingConfigs)
+            if (items.TryGetValue(key, out var existingItem) && existingItem is PushNotifications existingConfigs)
             {
-                return existingConfigs;
+                return existingConfigs.Configs;
             }
 
             return [];
@@ -130,6 +135,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A
         private static string GetPushKey(string taskId)
         {
             return $"a2apush/{taskId}";
+        }
+
+        internal class PushNotifications
+        {
+            public PushNotifications(List<TaskPushNotificationConfig> configs = null) 
+            {
+                Configs = configs ?? [];
+            }
+
+            public List<TaskPushNotificationConfig> Configs { get; set; } = [];
         }
     }
 }
