@@ -42,10 +42,15 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private readonly ITaskStore _taskStore;
     private static readonly ConcurrentDictionary<string, AgentShim> _a2aAgentContext = new();
 
-    public A2AAdapter(IStorage storage, ILogger<A2AAdapter> logger = null) : base(logger ?? NullLogger<A2AAdapter>.Instance)
+    public A2AAdapter(IStorage storage, ILogger<A2AAdapter> logger = null) : this(new StorageTaskStore(storage), logger)
     {
-        AssertionHelpers.ThrowIfNull(storage, nameof(storage));
-        _taskStore = new StorageTaskStore(storage);
+    }
+
+    public A2AAdapter(ITaskStore taskStore, ILogger<A2AAdapter> logger = null) : base(logger ?? NullLogger<A2AAdapter>.Instance)
+    {
+        AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
+
+        _taskStore = taskStore;
 
         OnTurnError = (turnContext, exception) =>
         {

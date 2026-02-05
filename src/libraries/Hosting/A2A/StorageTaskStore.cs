@@ -1,4 +1,7 @@
-﻿using A2A;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using A2A;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Storage;
 using System;
