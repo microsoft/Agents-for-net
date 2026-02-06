@@ -10,8 +10,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -62,6 +62,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // There can only be one TAgent.
                 builder.Services.AddTransient<TAgent>();
+            }
+
+            if (typeof(TAgent) is IProactiveAgent)
+            {
+                // Add the Proactive class, which contains logic for starting new conversations proactively and continuing existing conversations.
+                if (!builder.Services.Any(x => x.ServiceType == typeof(IProactiveAgent)))
+                {
+                    builder.Services.AddTransient(typeof(IProactiveAgent), typeof(TAgent));
+                }
             }
 
             return builder;

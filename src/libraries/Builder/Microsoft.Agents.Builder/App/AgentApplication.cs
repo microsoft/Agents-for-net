@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
@@ -24,7 +25,7 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent
+    public class AgentApplication : IAgent, IProactiveAgent
     {
         private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
