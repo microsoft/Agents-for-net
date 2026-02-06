@@ -234,6 +234,59 @@ public class A2AAdapterTests
         Assert.Equal("Echo: Hello", task.Status.Message.Parts[0].AsTextPart().Text);
     }
 
+    [Fact]
+    public async Task ProcessJsonRpcMessageStreamAsync()
+    {
+        // Arrange
+        var record = UseRecord((record) =>
+        {
+            var options = new TestApplicationOptions(record.Storage);
+            var agent = new TestApplication(options);
+
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
+            });
+
+            return agent;
+        });
+
+        var jsonRpcRequest = new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = A2AMethods.MessageStream,
+            Params = JsonSerializer.SerializeToElement(new MessageSendParams
+            {
+                Message = new AgentMessage
+                {
+                    ContextId = "context-1234",
+                    Parts = [new TextPart() { Text = "Hello" }]
+                },
+                Configuration = new MessageSendConfiguration
+                {
+                    HistoryLength = 10,
+                }
+            })
+        };
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(jsonRpcRequest));
+
+        // Act
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        // Assert
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var reader = new StreamReader(context.Response.Body);
+        var streamText = reader.ReadToEnd();
+        Assert.NotEmpty(streamText);
+        Assert.Contains("Echo: Hello", streamText);
+    }
+
     #endregion
 
     #region Helper Methods
