@@ -24,10 +24,10 @@ public class MyAgent : AgentApplication
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity<IMessageActivity>(OnMessageAsync, rank: RouteRank.Last);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("agent.welcome_message");
 
@@ -70,7 +70,7 @@ public class MyAgent : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("agent.message_handler");
         var routeStopwatch = Stopwatch.StartNew();

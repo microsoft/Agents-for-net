@@ -21,7 +21,7 @@ public class Echo : AgentApplication
     }
 
     [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
-    protected async Task ConversationUpdate(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task ConversationUpdate(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -33,7 +33,7 @@ public class Echo : AgentApplication
     }
 
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last )]
-    protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var result = turnState.Conversation.GetValue("log", () => new EchoResult());
 
@@ -42,7 +42,7 @@ public class Echo : AgentApplication
             // Send End of conversation at the end.
             result.Messages.Add(turnContext.Activity.Text);
             await turnContext.SendActivityAsync(new MessageActivity("Ending conversation..."), cancellationToken);
-            var endOfConversation = Activity.CreateEndOfConversationActivity();
+            var endOfConversation = new EndOfConversationActivity();
             endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
             endOfConversation.Value = result;
             await turnContext.SendActivityAsync(endOfConversation, cancellationToken);
@@ -71,7 +71,7 @@ public class Echo : AgentApplication
     private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
     {
         // Send an EndOfConversation activity to the caller with the error to end the conversation.
-        var endOfConversation = Activity.CreateEndOfConversationActivity();
+        var endOfConversation = new EndOfConversationActivity();
         endOfConversation.Code = EndOfConversationCodes.Error;
         endOfConversation.Text = exception.Message;
         await turnContext.SendActivityAsync(endOfConversation, CancellationToken.None);

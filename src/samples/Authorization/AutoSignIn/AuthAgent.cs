@@ -56,7 +56,7 @@ public class AuthAgent : AgentApplication
         }, rank: RouteRank.Last);
 
         // Registers a general event handler that will pick up any message activity that is not covered by the previous events handlers. 
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity<IMessageActivity>(OnMessageAsync, rank: RouteRank.Last);
 
         // The UserAuthorization Class provides methods and properties to manage and access user authorization tokens
         // You can use this class to interact with the UserAuthorization process, including signing in and signing out users, accessing tokens, and handling authorization events.
@@ -73,7 +73,7 @@ public class AuthAgent : AgentApplication
     /// <param name="turnContext"><see cref="ITurnContext"/></param>
     /// <param name="turnState"><see cref="ITurnState"/></param>
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // In this example, we will send a welcome message to the user when they join the conversation.
         // We do this by iterating over the incoming activity members added to the conversation and checking if the member is not the agent itself.
@@ -107,7 +107,7 @@ public class AuthAgent : AgentApplication
     /// <param name="turnContext"><see cref="ITurnContext"/></param>
     /// <param name="turnState"><see cref="ITurnState"/></param>
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
-    private async Task OnMe(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMe(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // If successful, the user will be the token will be available from the UserAuthorization.GetTurnTokenAsync(turnContext, DefaultHandlerName) call. 
         // If not successful, this handler won't be reached.  Instead, OnUserSignInFailure handler would have been called. 
@@ -144,7 +144,7 @@ public class AuthAgent : AgentApplication
     /// <param name="turnState"><see cref="ITurnState"/></param>
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     /// <returns></returns>
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // When Auto Sign in is properly configured, the user will be automatically signed in when they first connect to the agent using the default
         // handler chosen in the UserAuthorization configuration.

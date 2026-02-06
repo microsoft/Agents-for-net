@@ -30,7 +30,7 @@ public class StreamingAgent : AgentApplication
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
         // Register an event to handle messages from the client.
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity<IMessageActivity>(OnMessageAsync, rank: RouteRank.Last);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public class StreamingAgent : AgentApplication
     /// <param name="turnState"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -58,7 +58,7 @@ public class StreamingAgent : AgentApplication
     /// <param name="turnState"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         try
         {
