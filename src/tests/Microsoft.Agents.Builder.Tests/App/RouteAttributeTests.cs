@@ -26,10 +26,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var storage = new MemoryStorage();
             var adapter = new TestAdapter();
 
-            var options = new TestApplicationOptions(storage)
-            {
-                Adapter = adapter,
-            };
+            var options = new TestApplicationOptions(storage);
             var app = new TestActivityTypeApp(options);
 
             // act
@@ -59,10 +56,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var storage = new MemoryStorage();
             var adapter = new TestAdapter();
 
-            var options = new TestApplicationOptions(storage)
-            {
-                Adapter = adapter,
-            };
+            var options = new TestApplicationOptions(storage);
             var app = new TestMessageApp(options);
 
             // act
@@ -90,10 +84,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // arrange
             var storage = new MemoryStorage();
-            var options = new TestApplicationOptions(storage)
-            {
-                Adapter = new TestAdapter(),
-            };
+            var options = new TestApplicationOptions(storage);
 
             try
             {
@@ -114,10 +105,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // arrange
             var storage = new MemoryStorage();
-            var options = new TestApplicationOptions(storage)
-            {
-                Adapter = new TestAdapter(),
-            };
+            var options = new TestApplicationOptions(storage);
 
             try
             {
@@ -138,10 +126,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // arrange
             var storage = new MemoryStorage();
-            var options = new TestApplicationOptions(storage)
-            {
-                Adapter = new TestAdapter(),
-            };
+            var options = new TestApplicationOptions(storage);
 
             try
             {

@@ -129,8 +129,10 @@ namespace Microsoft.Agents.Builder.App
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             string configKey = "AgentApplication") 
-        { 
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
             Adapter = channelAdapter;
+#pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
 
@@ -170,6 +172,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// An Adapter would be required to use IChannelAdapter.ContinueConversationAsync or IChannelAdapter.CreateConversation.
         /// </remarks>
+        [Obsolete("Use ITurnContext.Adapter property instead.")]
         public IChannelAdapter? Adapter { get; set; }
 
         /// <summary>

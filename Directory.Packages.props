@@ -12,8 +12,8 @@
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
   <PropertyGroup>
-    <Microsoft_Extentions_PkgVer>10.0.1</Microsoft_Extentions_PkgVer>
-    <Microsoft_AspNetCore_PkgVer>8.0.22</Microsoft_AspNetCore_PkgVer>
+    <Microsoft_Extentions_PkgVer>10.0.2</Microsoft_Extentions_PkgVer>
+    <Microsoft_AspNetCore_PkgVer>8.0.23</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.15.0</Microsoft_IdentityModel_PkgVer>
 	<Microsoft_IdentityClient_PkgVer>4.80.0</Microsoft_IdentityClient_PkgVer>
 	<OpenTelemetry_PkgVer>1.14.0</OpenTelemetry_PkgVer>
@@ -45,10 +45,10 @@
 	<PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
 	  
-	<PackageVersion Include="System.Text.Json" Version="10.0.1" />
-    <PackageVersion Include="System.Memory.Data" Version="10.0.1" />
-	<PackageVersion Include="System.Runtime.Caching" Version="10.0.1" />
-	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
+	<PackageVersion Include="System.Text.Json" Version="10.0.2" />
+    <PackageVersion Include="System.Memory.Data" Version="10.0.2" />
+	<PackageVersion Include="System.Runtime.Caching" Version="10.0.2" />
+	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 	  
 	<!-- ASP.net Core support -->
@@ -80,8 +80,8 @@
     <PackageVersion Include="xunit.v3.extensibility.core"                                                  Version="$(Xunit_v3_PackageVersion)" />      
 
     <!-- SDK Core -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />
-	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.2" />
+	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.2" />
 	<PackageVersion Include="Azure.Identity" Version="1.17.1" />
 	<PackageVersion Include="Azure.Core" Version="1.50.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
@@ -128,7 +128,7 @@
     <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.1" />
     <PackageVersion Include="Azure.AI.ContentSafety" Version="1.0.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="Google.Protobuf" Version="3.30.2" />
+    <PackageVersion Include="Google.Protobuf" Version="3.33.4" />
 	<!-- MCP -->
 	<PackageVersion Include="ModelContextProtocol" Version="0.2.0-preview.2" />
 	<PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />

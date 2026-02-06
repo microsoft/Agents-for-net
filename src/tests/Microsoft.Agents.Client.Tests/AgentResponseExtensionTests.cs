@@ -184,8 +184,8 @@ namespace Microsoft.Agents.Client.Tests
         public async Task ResponseHandler_NoConversationTest()
         {
             // Setup AgentApplication
-            var app = new AgentApplication(new AgentApplicationOptions(_storage) { Adapter = new TestAdapter() });
-            var responseHandler = new AdapterChannelResponseHandler(app.Options.Adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
+            var app = new AgentApplication(new AgentApplicationOptions(_storage));
+            var responseHandler = new AdapterChannelResponseHandler(new TestAdapter(), app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
 
             // Act
 
@@ -224,7 +224,8 @@ namespace Microsoft.Agents.Client.Tests
             var agent2ConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, "bot1");
 
             // Setup AgentApplication
-            var app = new AgentApplication(new AgentApplicationOptions(_storage) { Adapter = new TestAdapter() });
+            var adapter = new TestAdapter();
+            var app = new AgentApplication(new AgentApplicationOptions(_storage));
 
             app.OnActivity(ActivityTypes.Event, (turnContext, turnState, cancellationToken) =>
             {
@@ -241,7 +242,7 @@ namespace Microsoft.Agents.Client.Tests
                 return Task.CompletedTask;
             });
 
-            var responseHandler = new AdapterChannelResponseHandler(app.Options.Adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
+            var responseHandler = new AdapterChannelResponseHandler(adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
 
             // Act
 

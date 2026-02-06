@@ -12,19 +12,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.AppConfig;
+using Microsoft.Identity.Client.Extensibility;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Runtime.Caching;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace Microsoft.Agents.Authentication.Msal
 {
@@ -38,8 +36,6 @@ namespace Microsoft.Agents.Authentication.Msal
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
     public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider, IAgenticTokenProvider
     {
-        private readonly static MemoryCache _agenticTokenCache = new MemoryCache(nameof(MsalAuth));
-
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
         private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList;
@@ -211,27 +207,13 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
 
-            var cacheKey = $"{agentAppInstanceId}/{agenticUserId}/{DelimitedScopes(scopes, ";")}";
-            var value = _agenticTokenCache.Get(cacheKey);
-            if (value != null)
-            {
-                return ((HttpMsalResponse)value).AccessToken;
-            }
-
             var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
-            /*
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentToken))
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
-                .WithExtraQueryParameters(new Dictionary<string,string>()
-                    {
-                        { "username", upn },
-                        { "user_federated_identity_credential", instanceToken },
-                        { "grant_type", "user_fic" }
-                    })
+                .WithAuthority(ResolveAuthority(_connectionSettings, tenantId))
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
@@ -240,60 +222,16 @@ namespace Microsoft.Agents.Authentication.Msal
 
             var aauToken = await instanceApp
                 .AcquireTokenForClient(scopes)
+                .OnBeforeTokenRequest(request =>
+                {
+                    request.BodyParameters["user_id"] = agenticUserId;
+                    request.BodyParameters["user_federated_identity_credential"] = instanceToken;
+                    request.BodyParameters["grant_type"] = "user_fic";
+                    return Task.CompletedTask;
+                })
                 .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
             return aauToken.AccessToken;
-            */
-
-            // ConfidentialClientApplication does not work for this, at least in the version of Microsoft.Identity.Client currently being
-            // used.  It does work in Python.  This should be retested using ConfidentialClientApplication when the Msal package is updated.
-            var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
-            using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
-
-            
-            var tokenEndpoint = _connectionSettings.Authority != null 
-                ? $"{ResolveAuthority(_connectionSettings, tenantId)}/oauth2/v2.0/token" // update to use tenantId if "common" but retain original host for regionalization purposes
-                : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
-
-            var parameters = new Dictionary<string, string>
-            {
-                { "client_id", agentAppInstanceId },
-                { "scope", DelimitedScopes(scopes, " ") },
-                { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
-                { "client_assertion", agentToken },
-                { "user_id", agenticUserId },
-                { "user_federated_identity_credential", instanceToken },
-                { "grant_type", "user_fic" }
-            };
-
-            using var content = new FormUrlEncodedContent(parameters);
-            using var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
-
-#if !NETSTANDARD
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-#else
-            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new InvalidOperationException($"Failed to acquire Agentic User token: AAI={agentAppInstanceId}, AgenticUserId={agenticUserId}, Scopes={string.Join(";", scopes)}, Response={response.StatusCode}/{responseContent}");
-            }
-
-            var acccessTokenResult = System.Text.Json.JsonSerializer.Deserialize<HttpMsalResponse>(responseContent);
-            if (string.IsNullOrEmpty(acccessTokenResult.AccessToken))
-            {
-                throw new InvalidOperationException("Failed to parse access token from response");
-            }
-
-            _agenticTokenCache.Add(
-                new CacheItem(cacheKey) { Value = acccessTokenResult },
-                new CacheItemPolicy()
-                {
-                    AbsoluteExpiration = DateTime.UtcNow.AddSeconds(acccessTokenResult.ExpiresIn).Subtract(TimeSpan.FromMinutes(5))
-                });
-
-            return acccessTokenResult.AccessToken;
         }
 
         /// <summary>
@@ -310,8 +248,8 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return !string.IsNullOrEmpty(connectionSettings.Authority)
-                ? Regex.Replace(connectionSettings.Authority, @"/common(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
-                : $"https://login.microsoftonline.com/{tenantId}";
+                            ? Regex.Replace(connectionSettings.Authority, @"/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
+                            : $"https://login.microsoftonline.com/{tenantId}";
         }
 
         /// <summary>
@@ -327,16 +265,6 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return connectionSettings.TenantId;
-        }
-
-        private static string DelimitedScopes(IList<string> scopes, string separator)
-        {
-            var scp = "";
-            if (scopes != null)
-            {
-                scp = string.Join(separator, scopes);
-            }
-            return scp;
         }
         #endregion
 

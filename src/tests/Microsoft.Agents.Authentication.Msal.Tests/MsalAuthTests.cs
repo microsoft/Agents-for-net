@@ -349,14 +349,13 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+            options.Setup(x => x.Value).Returns(returnedOptions);
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
-                .Returns(options.Object)
-                .Verifiable(Times.Exactly(5));
+                .Returns(options.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
                 .Verifiable(Times.Once);
@@ -375,11 +374,67 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
                     Assert.DoesNotContain("common", uri);
                     Assert.Contains("new-tenant", uri);
+                }));
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+            await msal.GetAgenticUserTokenAsync("new-tenant", "aai", "upn", ["scope-1"]);
+            Mock.Verify(options, service);
+        }
+
+        [Fact]
+        public async Task MSALProvider_Agentic_GuidTenantIdReplacement()
+        {
+            const string guidTenantId = "12345678-1234-1234-1234-123456789abc";
+            
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id-guid" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", $"https://login.microsoftonline.com/{guidTenantId}" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(6));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(6));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory((httpRequest) =>
+                {
+                    string uri;
+                    if (httpRequest.RequestUri.ToString().Contains($"/{guidTenantId}/discovery"))
+                    {
+                        uri = httpRequest.RequestUri.Query;
+                    }
+                    else
+                    {
+                        uri = httpRequest.RequestUri.ToString();
+                    }
+
+                    Assert.DoesNotContain(guidTenantId, uri);
+                    Assert.Contains("new-tenant", uri);
                 }))
                 .Verifiable(Times.Exactly(5));
 
             var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
-            await msal.GetAgenticUserTokenAsync("new-tenant", "aai", "upn", ["scope-1"]);
+            await msal.GetAgenticUserTokenAsync("new-tenant", "aai-guid", "upn-guid", ["scope-guid"]);
             Mock.Verify(options, service);
         }
 
@@ -404,14 +459,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(5));
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(6));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
                 .Returns(options.Object)
-                .Verifiable(Times.Exactly(5));
+                .Verifiable(Times.Exactly(6));
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
                 .Verifiable(Times.Once);

@@ -37,6 +37,11 @@ namespace Microsoft.Agents.Builder
         int Interval { get; set; }
 
         /// <summary>
+        /// The unique identifier for the stream.
+        /// </summary>
+        string StreamId { get; }
+
+        /// <summary>
         /// The time in milliseconds that EndStream or Reset wait.  After this period expires, the
         /// final message will be sent.
         /// </summary>

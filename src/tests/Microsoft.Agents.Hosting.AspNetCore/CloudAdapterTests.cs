@@ -445,10 +445,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Arrange
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(new MemoryStorage())
-                {
-                    Adapter = record.Adapter,
-                };
+                var options = new TestApplicationOptions(new MemoryStorage());
                 var agent = new TestApplication(options);
 
                 // This is the scenario where a new "inner" turn is needed, using the ConversationReference of the 
@@ -529,10 +526,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(new MemoryStorage())
-                {
-                    Adapter = record.Adapter,
-                };
+                var options = new TestApplicationOptions(new MemoryStorage());
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -621,10 +615,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var serviceUrl = "https://service.com";
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(memoryStorage)
-                {
-                    Adapter = record.Adapter,
-                };
+                var options = new TestApplicationOptions(memoryStorage);
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -748,10 +739,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(memoryStorage)
-                {
-                    Adapter = record.Adapter,
-                };
+                var options = new TestApplicationOptions(memoryStorage);
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -868,7 +856,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 var options = new TestApplicationOptions(new MemoryStorage())
                 {
-                    Adapter = record.Adapter,
                     UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) { AutoSignIn = UserAuthorizationOptions.AutoSignInOff }
                 };
                 var agent = new TestApplication(options);
