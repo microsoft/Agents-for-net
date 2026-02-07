@@ -29,6 +29,7 @@ namespace Microsoft.Agents.Builder.App
 
     public enum RouteFlags
     {
+        None = 0,
         Agentic = 1,
         Invoke = 2,
         NonTerminal = 4

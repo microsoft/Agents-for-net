@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
@@ -126,7 +127,9 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            var route = RouteBuilder.Create(isInvokeRoute, isAgenticOnly)
+            var route = RouteBuilder.Create()
+                .AsAgentic(isAgenticOnly)
+                .AsInvoke(isInvokeRoute)
                 .WithSelector(selector)
                 .WithHander(handler)
                 .WithOrderRank(rank)

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
@@ -15,8 +16,8 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // (WITH BUILDER) Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
-        var route = RouteBuilder.Create()
-            .WithMessage("-me")
+        var route = MessageRouteBuilder.Create()
+            .WithText("-me")
             .WithHander(OnMeAsync)
             .WithOAuthHandlers(OAuthHandlers)
             .Build();

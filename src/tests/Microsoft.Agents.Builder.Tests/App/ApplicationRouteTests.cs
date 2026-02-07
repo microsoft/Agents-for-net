@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
@@ -94,21 +95,26 @@ namespace Microsoft.Agents.Builder.Tests.App
             );
 
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: true)
+                RouteBuilder.Create()
+                    .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; })
                     .Build()
             );
 
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: true, isAgentic: true)
+                RouteBuilder.Create()
+                    .AsAgentic()
+                    .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke2"); return Task.CompletedTask; })
                     .Build()
             );
 
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: true, isAgentic: true)
+                RouteBuilder.Create()
+                    .AsAgentic()
+                    .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke1"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.First)
@@ -116,7 +122,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             );
 
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: false, isAgentic: true)
+                RouteBuilder.Create()
+                    .AsAgentic()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agentic"); return Task.CompletedTask; })
                     .Build()
@@ -161,14 +168,16 @@ namespace Microsoft.Agents.Builder.Tests.App
             );
 
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: true)
+                RouteBuilder.Create()
+                    .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.Last)
                     .Build()
             );
             routes.AddRoute(
-                RouteBuilder.Create(isInvoke: true)
+                RouteBuilder.Create()
+                    .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
                     .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; })
                     .WithOrderRank(0)
