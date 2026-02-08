@@ -16,12 +16,20 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // (WITH BUILDER) Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
-        var route = MessageRouteBuilder.Create()
+        AddRoute(MessageRouteBuilder.Create()
             .WithText("-me")
-            .WithHander(OnMeAsync)
+            .WithHandler(OnMeAsync)
             .WithOAuthHandlers(OAuthHandlers)
-            .Build();
-        AddRoute(route);
+            .Build());
+
+        // (WITH BUILDER C# extension)  Weird because it requires `this.` but demonstrates how a new builder could be added as an extension
+        // and used in a more concise way, while still allowing for additional Route configuration.
+        this.OnMessage("-meExt", OnMeAsync, ["bot"]);
+        this.OnMessage("-meExtConfig", OnMeAsync, ["bot"], (builder) => builder.WithOrderRank(RouteRank.Last));
+
+        // (WITH BUILDER with AgentApplication method) Last argument is optional.  This demonstrates how we could provide the more common
+        // route additiona, while still allowing for a more easily expandable number of route options.
+        OnMessage("-meAppMethod", OnMeAsync, oAuthHandlers: ["bot"], configure: (builder) => builder.WithOrderRank(RouteRank.First).WithChannelId(Channels.Webchat));
 
         // (COMPAT) Register a route for Agentic-only Messages.
         OnMessage("-agentic", OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);

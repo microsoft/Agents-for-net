@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -67,38 +68,42 @@ builder.AddAgent(sp =>
 
     // By the time this is called the token is already available via ITurnContext.GetTurnTokenAsync or
     // ITurnContext.ExchangeTurnTokenAsync.
-    app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
-    {
-        
-        var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
-        var cpsClient = GetClient(turnContext);
-
-        if (string.IsNullOrEmpty(mcsConversationId))
+    app.AddRoute(RouteBuilder.Create()
+        .WithSelector((turnContext, cancellationToken) => Task.FromResult(true))
+        .WithHandler(async (turnContext, turnState, cancellationToken) =>
         {
-            // Regardless of the Activity  Type, start the conversation.
-            await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
-            {
-                if (activity.IsType(ActivityTypes.Message))
-                {
-                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
 
-                    // Record the conversationId MCS is sending. It will be used this for subsequent messages.
-                    turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+            var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
+            var cpsClient = GetClient(turnContext);
+
+            if (string.IsNullOrEmpty(mcsConversationId))
+            {
+                // Regardless of the Activity  Type, start the conversation.
+                await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+                {
+                    if (activity.IsType(ActivityTypes.Message))
+                    {
+                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+
+                        // Record the conversationId MCS is sending. It will be used this for subsequent messages.
+                        turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+                    }
                 }
             }
-        }
-        else if (turnContext.Activity.IsType(ActivityTypes.Message))
-        {
-            // Send the Copilot Studio Agent whatever the sent and send the responses back.
-            await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
+            else if (turnContext.Activity.IsType(ActivityTypes.Message))
             {
-                if (activity.IsType(ActivityTypes.Message))
+                // Send the Copilot Studio Agent whatever the sent and send the responses back.
+                await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
                 {
-                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                    if (activity.IsType(ActivityTypes.Message))
+                    {
+                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                    }
                 }
             }
-        }
-    });
+        })
+        .Build()
+    );
 
     // Called when the OAuth flow fails
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>

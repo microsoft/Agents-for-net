@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,8 @@ namespace Microsoft.Agents.Builder.App
 
     public class Route()
     {
+        public ChannelId? ChannelId;
+
         public RouteSelector Selector;
 
         public RouteHandler Handler;
@@ -46,5 +49,10 @@ namespace Microsoft.Agents.Builder.App
         public ushort Rank = RouteRank.Unspecified;
 
         public Func<ITurnContext, string[]> OAuthHandlers = context => [];
+
+        public bool IsChannelIdMatch(ChannelId channelId)
+        {
+            return ChannelId == null || channelId == ChannelId;
+        }
     }
 }

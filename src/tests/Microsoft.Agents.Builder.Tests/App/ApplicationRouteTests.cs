@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
                     .WithOrderRank(2)
                     .Build()
             );
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
                     .WithOrderRank(0)
                     .Build()
             );
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
                     .WithOrderRank(1)
                     .Build()
             );
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("4"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("4"); return Task.CompletedTask; })
                     .WithOrderRank(1)
                     .Build()
             );
@@ -75,21 +75,21 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
                     .Build()
             );
 
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
                     .Build()
             );
 
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.First)
                     .Build()
             );
@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 RouteBuilder.Create()
                     .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; })
                     .Build()
             );
 
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     .AsAgentic()
                     .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke2"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke2"); return Task.CompletedTask; })
                     .Build()
             );
 
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     .AsAgentic()
                     .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke1"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke1"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.First)
                     .Build()
             );
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 RouteBuilder.Create()
                     .AsAgentic()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("agentic"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agentic"); return Task.CompletedTask; })
                     .Build()
             );
 
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.Unspecified)
                     .Build()
             );
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(
                 RouteBuilder.Create()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
                     .WithOrderRank(0)
                     .Build()
             );
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 RouteBuilder.Create()
                     .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; })
                     .WithOrderRank(RouteRank.Last)
                     .Build()
             );
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 RouteBuilder.Create()
                     .AsInvoke()
                     .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
-                    .WithHander((turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; })
                     .WithOrderRank(0)
                     .Build()
             );
@@ -684,18 +684,22 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticTypes = new List<string>();
 
             // agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
             {
                 agenticTypes.Add(context.Activity.Type);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // non-agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
             {
                 types.Add(context.Activity.Type);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -751,6 +755,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var types = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity(new MultipleRouteSelector
             {
                 Strings = new[] { ActivityTypes.Invoke },
@@ -762,6 +767,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 types.Add(context.Activity.Type);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -1248,18 +1254,22 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticTexts = new List<string>();
 
             // agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
             {
                 agenticTexts.Add(context.Activity.Text);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // non-agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
             {
                 texts.Add(context.Activity.Text);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -1318,6 +1328,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var texts = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnMessage(new MultipleRouteSelector
             {
                 Strings = new[] { "hello" },
@@ -1329,6 +1340,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 texts.Add(context.Activity.Text);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);

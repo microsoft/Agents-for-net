@@ -8,7 +8,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
+using Microsoft.Agents.Builder.App.Builders;
 
 namespace Microsoft.Agents.Client
 {
@@ -37,15 +37,13 @@ namespace Microsoft.Agents.Client
                 await handler(turnContext, turnState, channelResponse.ChannelConversationReference, channelResponse.Activity, cancellationToken).ConfigureAwait(false);
             }
 
-            agentApplication.OnActivity(
-                (turnContext, CancellationToken) =>
-                {
-                    var isReply = turnContext.Activity.IsType(ActivityTypes.Event)
-                        && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase);
-                    return Task.FromResult(isReply);
-                },
-                routeHandler,
-                rank);
+            agentApplication.AddRoute(
+                EventRouteBuilder.Create()
+                    .WithName(AdapterChannelResponseHandler.ChannelReplyEventName)
+                    .WithHandler(routeHandler)
+                    .WithOrderRank(rank)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -71,10 +69,13 @@ namespace Microsoft.Agents.Client
                 await agentHost.EndAllConversations(turnContext, cancellationToken).ConfigureAwait(false);
             }
 
-            agentApplication.OnActivity(
-                (turnContext, CancellationToken) => Task.FromResult(turnContext.Activity.IsType(ActivityTypes.EndOfConversation)),
-                eocHandler,
-                rank);
+            agentApplication.AddRoute(
+                TypeRouteBuilder.Create()
+                    .WithType(ActivityTypes.EndOfConversation)
+                    .WithHandler(eocHandler)
+                    .WithOrderRank(rank)
+                    .Build()
+            );
 
 
             // On error, end all active Agent conversations and delete ConversationState.
@@ -105,6 +106,11 @@ namespace Microsoft.Agents.Client
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
             agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
+        }
+
+        public void AddRoute(AgentApplication agentApplication, Route route)
+        {
+            agentApplication.AddRoute(route);
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.Builders
@@ -11,6 +13,22 @@ namespace Microsoft.Agents.Builder.App.Builders
     /// <summary>
     /// RouteBuilder for routing Message activities in an AgentApplication.
     /// </summary>
+    /// <remarks>
+    /// Use <see cref="MessageRouteBuilder"/> to create and configure routes that respond to message
+    /// activities. This builder allows matching event activities by text value or regular expression, and supports 
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
+    /// and further configured using one of <see cref="WithText(string)"/> or <see cref="WithText(Regex)"/> 
+    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Example usage:<br/><br/>
+    /// <code>
+    /// var route = MessageRouteBuilder.Create()
+    ///    .WithText("hello")
+    ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Hi!", cancellationToken: ct)))
+    ///    .Build();
+    ///    
+    /// app.AddRoute(route);
+    /// </code>
+    /// </remarks>
     public class MessageRouteBuilder : RouteBuilderBase<MessageRouteBuilder>
     {
         /// <summary>
@@ -23,16 +41,18 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// values.</remarks>
         /// <param name="text">The text to match against the incoming activity's message content. Comparison is case-insensitive. Cannot be
         /// null.</param>
-        /// <returns>A RouteBuilder instance with the added selector for matching message text.</returns>
+        /// <returns>A MessageRouteBuilder instance with the added selector for matching Activity.Text.</returns>
         public MessageRouteBuilder WithText(string text)
         {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
-                    (!_route.Flags.HasFlag(RouteFlags.Agentic) || AgenticAuthorization.IsAgenticRequest(context))
+                    IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
-                    && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
+                    && text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase)
                 );
+
             return this;
         }
 
@@ -45,16 +65,48 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// messages whose text matches a specific pattern.</remarks>
         /// <param name="textPattern">The regular expression used to match the text of incoming message activities. Cannot be null. The selector
         /// will only match activities whose text property is not null and matches this pattern.</param>
-        /// <returns>A RouteBuilder instance configured with the specified text pattern selector.</returns>
+        /// <returns>A MessageRouteBuilder instance configured with the specified Activity.Text pattern selector.</returns>
         public MessageRouteBuilder WithText(Regex textPattern)
         {
+            AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
-                    (!_route.Flags.HasFlag(RouteFlags.Agentic) || AgenticAuthorization.IsAgenticRequest(context))
+                    IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
+
+            return this;
+        }
+
+        /// <summary>
+        /// Sets a custom route selector used to determine how incoming requests are matched to this route builder.
+        /// </summary>
+        /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
+        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
+        /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "message" is enforced.</param>
+        /// <returns>The current instance of <see cref="MessageRouteBuilder"/> with the specified selector applied.</returns>
+        public override MessageRouteBuilder WithSelector(RouteSelector selector)
+        {
+            async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
+            {
+                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
+            }
+
+            _route.Selector = ensureMessage;
+            return this;
+        }
+
+        /// <summary>
+        /// Assigns the specified route handler to the current route and returns the updated builder instance.
+        /// </summary>
+        /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
+        /// <returns>The current MessageRouteBuilder instance with the handler set, enabling method chaining.</returns>
+        public MessageRouteBuilder WithHandler(RouteHandler handler)
+        {
+            _route.Handler = handler;
             return this;
         }
 
@@ -66,9 +118,56 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
         /// <returns>The current instance of <see cref="MessageRouteBuilder"/>.</returns>
-        public new MessageRouteBuilder AsInvoke(bool isInvoke = true)
+        public override MessageRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;
+        }
+    }
+
+    public static class MessageRouteBuilderExtensions
+    {
+        public static void OnMessage(this AgentApplication app, string text, RouteHandler handler, Action<MessageRouteBuilder> configure = null)
+        {
+            var builder = MessageRouteBuilder.Create().WithText(text).WithHandler(handler);
+            configure?.Invoke(builder);
+            app.AddRoute(builder.Build());
+        }
+
+        public static void OnMessage(this AgentApplication app, string text, RouteHandler handler, Func<ITurnContext, string[]> oauthHandlers, Action<MessageRouteBuilder> configure = null)
+        {
+            var builder = MessageRouteBuilder.Create().WithText(text).WithHandler(handler).WithOAuthHandlers(oauthHandlers);
+            configure?.Invoke(builder);
+            app.AddRoute(builder.Build());
+        }
+
+        /// <summary>
+        /// Extension method to add a message route to an AgentApplication using a MessageRouteBuilder.
+        /// </summary>
+        /// <param name="app">The AgentApplication to which the route will be added.</param>
+        /// <param name="text"></param>
+        /// <param name="handler"></param>
+        /// <param name="oauthHandlers"></param>
+        /// <param name="configure">A delegate that configures the MessageRouteBuilder instance.</param>
+        public static void OnMessage(this AgentApplication app, string text, RouteHandler handler, string[] oauthHandlers, Action<MessageRouteBuilder> configure = null)
+        {
+            var builder = MessageRouteBuilder.Create().WithText(text).WithHandler(handler).WithOAuthHandlers(oauthHandlers);
+            configure?.Invoke(builder);
+            app.AddRoute(builder.Build());
+        }
+
+
+        /// <summary>
+        /// Extension method to add a message route to an AgentApplication using a MessageRouteBuilder.
+        /// </summary>
+        /// <param name="app">The AgentApplication to which the route will be added.</param>
+        /// <param name="pattern"></param>
+        /// <param name="handler"></param>
+        /// <param name="configure">A delegate that configures the MessageRouteBuilder instance.</param>
+        public static void OnMessage(this AgentApplication app, Regex pattern, RouteHandler handler, Action<MessageRouteBuilder> configure = null)
+        {
+            var builder = MessageRouteBuilder.Create().WithText(pattern).WithHandler(handler);
+            configure?.Invoke(builder);
+            app.AddRoute(builder.Build());
         }
     }
 }

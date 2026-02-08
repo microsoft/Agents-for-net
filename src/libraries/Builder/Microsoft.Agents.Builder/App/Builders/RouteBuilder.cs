@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using System;
 
 namespace Microsoft.Agents.Builder.App.Builders
@@ -9,15 +10,14 @@ namespace Microsoft.Agents.Builder.App.Builders
     public class RouteBuilder : RouteBuilderBase<RouteBuilder>
     {
         /// <summary>
-        /// Sets the route selector used to determine how incoming requests are matched to this route builder.
+        /// Assigns the specified route handler to the current route and returns the updated builder instance.
         /// </summary>
-        /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
-        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
-        /// <param name="selector">The route selector that defines the criteria for matching requests to the route.</param>
-        /// <returns>The current instance of <see cref="RouteBuilder"/> with the specified selector applied.</returns>
-        public RouteBuilder WithSelector(RouteSelector selector)
+        /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
+        /// <returns>The current RouteBuilder instance with the handler set, enabling method chaining.</returns>
+        public RouteBuilder WithHandler(RouteHandler handler)
         {
-            _route.Selector = selector;
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+            _route.Handler = handler;
             return this;
         }
     }
@@ -43,14 +43,61 @@ namespace Microsoft.Agents.Builder.App.Builders
         }
 
         /// <summary>
-        /// Assigns the specified route handler to the current route and returns the updated builder instance.
+        /// Sets the route selector used to determine how incoming requests are matched to this route builder.
         /// </summary>
-        /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
-        /// <returns>The current RouteBuilder instance with the handler set, enabling method chaining.</returns>
-        public TBuilder WithHander(RouteHandler handler)
+        /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
+        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// <param name="selector">The route selector that defines the criteria for matching requests to the route.</param>
+        /// <returns>The current instance of <see cref="RouteBuilder"/> with the specified selector applied.</returns>
+        public virtual TBuilder WithSelector(RouteSelector selector)
         {
-            _route.Handler = handler;
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+
+            _route.Selector = new RouteSelector(async (turnContext, cancellationToken) => {
+                return IsContextMatch(turnContext, _route) && await selector(turnContext, cancellationToken);
+            });
+
             return (TBuilder)this;
+        }
+
+        /// <summary>
+        /// Sets the channel identifier for the route and returns the builder instance for method chaining.
+        /// </summary>
+        /// <param name="channelId">The channel identifier to associate with the route.</param>
+        /// <returns>The current builder instance with the updated channel identifier.</returns>
+        public TBuilder WithChannelId(ChannelId channelId)
+        {
+            _route.ChannelId = channelId;
+            return (TBuilder)this;
+        }
+
+        /// <summary>
+        /// Configures the builder to use one or more OAuth authentication handlers specified in a delimited string.
+        /// </summary>
+        /// <remarks>Handler names are parsed from the input string using comma, space, or semicolon
+        /// delimiters. This method is useful for enabling multiple OAuth providers in a single call.</remarks>
+        /// <param name="delimitedHandlers">A string containing the names of OAuth handlers, separated by commas, spaces, or semicolons. Can be null or
+        /// empty to indicate no handlers.</param>
+        /// <returns>The builder instance configured with the specified OAuth handlers.</returns>
+        public TBuilder WithOAuthHandlers(string delimitedHandlers)
+        {
+            return WithOAuthHandlers(GetOAuthHandlers(delimitedHandlers));
+        }
+
+        internal static string[] GetOAuthHandlers(string delimitedHandlers)
+        {
+#if !NETSTANDARD
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(delimitedHandlers) ? delimitedHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+#else
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(delimitedHandlers) ? delimitedHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+#endif
+            return autoSignInHandlers;
+        }
+
+        public static bool IsContextMatch(ITurnContext context, Route route)
+        {
+            return (!route.Flags.HasFlag(RouteFlags.Agentic) || AgenticAuthorization.IsAgenticRequest(context))
+                && route.IsChannelIdMatch(context.Activity.ChannelId);
         }
 
         /// <summary>
@@ -86,7 +133,7 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// Flags the route for Invoke handling.
         /// </summary>
         /// <returns>The current <see cref="RouteBuilder"/> instance with the invocation flag updated.</returns>
-        public TBuilder AsInvoke(bool isInvoke = true)
+        public virtual TBuilder AsInvoke(bool isInvoke = true)
         {
             if (isInvoke)
             {
