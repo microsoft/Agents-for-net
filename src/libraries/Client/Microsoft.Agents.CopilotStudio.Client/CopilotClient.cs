@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.CopilotStudio.Client.Discovery;
+using Microsoft.Agents.CopilotStudio.Client.Interfaces;
 using Microsoft.Agents.CopilotStudio.Client.Models;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -26,78 +27,78 @@ using Diag = System.Diagnostics;
 namespace Microsoft.Agents.CopilotStudio.Client
 {
     /// <summary>
-    /// This Client is used to connect to DirectToEngine API endpoint for Copilot Studio.
+    /// This client is used to connect to the Direct-to-Engine API endpoint for Copilot Studio.
     /// </summary>
-    public class CopilotClient
+    public class CopilotClient : ICopilotClient
     {
         /// <summary>
-        /// Header key for conversation ID. 
+        /// Header key for conversation ID.
         /// </summary>
         private static readonly string _conversationIdHeaderKey = "x-ms-conversationid";
         private static readonly string _clientRequestIdHeaderKey = "x-ms-conversation-id";
         /// <summary>
-        /// Conversation ID being used for the current conversation.
+        /// The conversation ID being used for the current conversation.
         /// </summary>
         private string _conversationId = string.Empty;
         /// <summary>
-        /// Content Type for Event Stream
+        /// The content type for event stream.
         /// </summary>
         private static readonly MediaTypeWithQualityHeaderValue s_EventStream = new("text/event-stream");
         /// <summary>
-        /// Content Type for Conversation Start
+        /// The content type for conversation start.
         /// </summary>
         private static readonly MediaTypeWithQualityHeaderValue s_ApplicationJson = new("application/json");
         /// <summary>
-        /// Http Client Factory to use for connecting to Copilot Studio
+        /// The HTTP client factory to use for connecting to Copilot Studio.
         /// </summary>
         private IHttpClientFactory _httpClientFactory;
         /// <summary>
-        /// Http Client name to use from the factory
+        /// The HTTP client name to use from the factory.
         /// </summary>
         private readonly string _httpClientName = string.Empty;
         /// <summary>
-        /// ILogger to log events on for DirectToEngine operations.
+        /// The logger for Direct-to-Engine operations.
         /// </summary>
         private readonly ILogger _logger;
         /// <summary>
-        /// Token Provider Function to get the access token for the request.
+        /// The token provider function to get the access token for the request.
         /// </summary>
         private readonly Func<string, Task<string>>? _tokenProviderFunction = null;
         /// <summary>
-        /// Island Header key
+        /// The island header key.
         /// </summary>
         private static readonly string _islandExperimentalUrlHeaderKey = "x-ms-d2e-experimental";
         /// <summary>
-        /// Island Experimental URL for Copilot Studio
+        /// The island experimental URL for Copilot Studio.
         /// </summary>
         private string _IslandExperimentalUrl = string.Empty;
         /// <summary>
-        /// Connection Settings for Copilot Studio
+        /// The connection settings for Copilot Studio.
         /// </summary>
         public ConnectionSettings Settings;
 
 
         /// <summary>
-        /// Returns the Scope URL need to connect to Copilot Studio from the Connection Settings
+        /// Returns the scope URL needed to connect to Copilot Studio from the connection settings.
         /// </summary>
-        /// <param name="settings">Copilot Studio Connection Settings</param>
-        /// <returns></returns>
+        /// <param name="settings">The Copilot Studio connection settings.</param>
+        /// <returns>The token audience scope URL as a string.</returns>
         public static string ScopeFromSettings(ConnectionSettings settings) => PowerPlatformEnvironment.GetTokenAudience(settings);
 
         /// <summary>
-        /// Returns the Scope URL need to connect to Copilot Studio from Power Platform Cloud
+        /// Returns the scope URL needed to connect to Copilot Studio from the Power Platform cloud.
         /// </summary>
-        /// <param name="cloud">PowerPlatform Cloud to use</param>
-        /// <returns></returns>
+        /// <param name="cloud">The Power Platform cloud to use.</param>
+        /// <returns>The token audience scope URL as a string, or null if not available.</returns>
         public static string? ScopeFromCloud(PowerPlatformCloud cloud) => PowerPlatformEnvironment.GetTokenAudience(null, cloud);
 
         /// <summary>
-        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted bots. 
+        /// Creates a Direct-to-Engine client for Microsoft Copilot Studio hosted bots.
         /// </summary>
-        /// <param name="settings">Configuration Settings for Connecting to Copilot Studio</param>
-        /// <param name="httpClientFactory">Http Client Factory to use when connecting to Copilot Studio</param>
-        /// <param name="httpClientName">Name of HttpClient to use from the factory</param>
-        /// <param name="logger">ILogger to log events on for DirectToEngine operations. </param>
+        /// <param name="settings">The configuration settings for connecting to Copilot Studio.</param>
+        /// <param name="httpClientFactory">The HTTP client factory to use when connecting to Copilot Studio.</param>
+        /// <param name="httpClientName">The name of the HTTP client to use from the factory.</param>
+        /// <param name="logger">The logger for Direct-to-Engine operations.</param>
         public CopilotClient(ConnectionSettings settings, IHttpClientFactory httpClientFactory, ILogger logger, string httpClientName = "mcs")
         {
             Settings = settings;
@@ -108,13 +109,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
 
         /// <summary>
-        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted Agents. 
+        /// Creates a Direct-to-Engine client for Microsoft Copilot Studio hosted agents.
         /// </summary>
-        /// <param name="settings">Configuration Settings for Connecting to Copilot Studio</param>
-        /// <param name="httpClientFactory">Http Client Factory to use when connecting to Copilot Studio</param>
-        /// <param name="logger">ILogger to log events on for DirectToEngine operations. </param>
-        /// <param name="httpClientName">Name of HttpClient to use from the factory</param>
-        /// <param name="tokenProviderFunction">Function pointer for a async function that will accept an URL and return an AccessToken</param>
+        /// <param name="settings">The configuration settings for connecting to Copilot Studio.</param>
+        /// <param name="httpClientFactory">The HTTP client factory to use when connecting to Copilot Studio.</param>
+        /// <param name="tokenProviderFunction">The function pointer for an async function that will accept a URL and return an access token.</param>
+        /// <param name="logger">The logger for Direct-to-Engine operations.</param>
+        /// <param name="httpClientName">The name of the HTTP client to use from the factory.</param>
         public CopilotClient(ConnectionSettings settings, IHttpClientFactory httpClientFactory, Func<string, Task<string>> tokenProviderFunction, ILogger logger, string httpClientName)
         {
             Settings = settings;
@@ -126,12 +127,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
         #region Start Conversation Overloads
 
-        /// <summary>
-        /// Used to start a conversation with MCS. 
-        /// </summary>
-        /// <param name="emitStartConversationEvent">Should ask remote bot to emit start event</param>
-        /// <param name="cancellationToken">Event Cancellation Token</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async IAsyncEnumerable<IActivity> StartConversationAsync(bool emitStartConversationEvent = true, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             StartRequest req = new() { EmitStartConversationEvent = emitStartConversationEvent };
@@ -144,6 +140,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             }
         }
 
+        /// <inheritdoc/>
         public async IAsyncEnumerable<IActivity> StartConversationAsync(StartRequest startRequest, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using (_logger.BeginScope("D2E:StartConversationAsync"))
@@ -184,14 +181,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         #endregion
 
         #region SendActivity Overloads
-        /// <summary>
-        /// Sends a String question to the remote bot and returns the response as an IAsyncEnumerable of IActivity
-        /// </summary>
-        /// <param name="question">String Question to send to copilot</param>
-        /// <param name="conversationId">Conversation ID to reference, Optional. If not set it will pick up the current conversation id</param>
-        /// <param name="ct">Event Cancellation Token</param>
-        /// <returns></returns>
-        public IAsyncEnumerable<IActivity> AskQuestionAsync(string question, string? conversationId = default, CancellationToken ct = default)
+        /// <inheritdoc/>
+        public IAsyncEnumerable<IActivity> AskQuestionAsync(string question, string? conversationId = default, CancellationToken cancellationToken = default)
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
@@ -201,11 +192,12 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     Text = question,
                     Conversation = new ConversationAccount { Id = conversationId }
                 };
-                return SendActivityAsync(activity, ct);
+                return SendActivityAsync(activity, cancellationToken);
             }
         }
 
 
+        /// <inheritdoc/>
         public async IAsyncEnumerable<IActivity> ExecuteAsync(string conversationId, IActivity activityToSend, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _ = activityToSend ?? throw new ArgumentNullException(nameof(activityToSend), "An Activity is required to use this method.");
@@ -230,29 +222,18 @@ namespace Microsoft.Agents.CopilotStudio.Client
             }
         }
 
-        /// <summary>
-        /// Sends an activity the remote bot and returns the response as an IAsyncEnumerable of IActivity
-        /// </summary>
-        /// <param name="activity" >Activity to send</param>
-        /// <param name="ct">Event Cancellation Token</param>
-        /// <returns></returns>
-        public IAsyncEnumerable<IActivity> SendActivityAsync(IActivity activity, CancellationToken ct = default)
+        /// <inheritdoc/>
+        public IAsyncEnumerable<IActivity> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             _ = activity ?? throw new ArgumentNullException(nameof(activity), "An Activity is required to use this method.");
             using (_logger.BeginScope("D2E:SendActivityAsync"))
             {
-                return ExecuteRequestAction(activity, ct);
+                return ExecuteRequestAction(activity, cancellationToken);
             }
         }
 
 
-        /// <summary>
-        /// [Deprecated] Use SendActivityAsync(IActivity, CancellationToken) instead.
-        /// Sends an activity to the remote bot and returns the response as an IAsyncEnumerable of IActivity
-        /// </summary>
-        /// <param name="activity" >Activity to send</param>
-        /// <param name="ct">Event Cancellation Token</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         [Obsolete("AskQuestionAsync(IActivity, CancellationToken) is deprecated. Use SendActivityAsync(IActivity, CancellationToken) instead.", false)]
         public IAsyncEnumerable<IActivity> AskQuestionAsync(IActivity activity, CancellationToken ct = default)
         {
@@ -264,6 +245,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
         #endregion
 
+        /// <inheritdoc/>
         [Obsolete("SubscribeAsync is Available to MSFT only at this time.", false)]
         public async IAsyncEnumerable<SubscribeEvent> SubscribeAsync(string conversationId, string? lastReceivedEventId, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
@@ -388,14 +370,14 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
 
         /// <summary>
-        /// Posts a request to Copilot Studio and returns the response as an IAsyncEnumerable of IActivity
+        /// Posts a request to Copilot Studio and returns the response as an async enumerable stream of activities.
         /// </summary>
-        /// <param name="req">Request Object to send to Copilot Studio</param>
-        /// <param name="ct">CancellationToken used to handle interruption request</param>
-        /// <param name="requestType">Type of the request being sent, used for logging purposes</param>
-        /// <returns></returns>
-        /// <exception cref="System.ArgumentException"></exception>
-        /// <exception cref="System.HttpRequestException"></exception>
+        /// <param name="req">The request object to send to Copilot Studio.</param>
+        /// <param name="ct">The cancellation token used to handle interruption requests.</param>
+        /// <param name="requestType">The type of the request being sent, used for logging purposes.</param>
+        /// <returns>An async enumerable stream of activities.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when required parameters are null.</exception>
+        /// <exception cref="System.HttpRequestException">Thrown when the HTTP request fails.</exception>
         private async IAsyncEnumerable<IActivity> PostActivityRequestAsync(HttpRequestMessage req, RequestTypes requestType, [EnumeratorCancellation] CancellationToken ct = default)
         {
             AssertionHelpers.ThrowIfNull(req, nameof(req));
