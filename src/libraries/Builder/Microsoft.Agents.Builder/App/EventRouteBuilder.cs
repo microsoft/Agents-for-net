@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -8,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing Event activities in an AgentApplication.
@@ -37,17 +39,23 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <remarks>This method restricts the route to only handle event activities whose name matches
         /// the specified value. If the route is marked as agentic, only agentic requests will be considered for
         /// matching.</remarks>
-        /// <param name="text">The name of the event activity to match. Comparison is case-insensitive. Cannot be null.</param>
+        /// <param name="name">The name of the event activity to match. Comparison is case-insensitive. Cannot be null.</param>
         /// <returns>A EventRouteBuilder instance with the added selector for matching Activity.Name.</returns>
-        public EventRouteBuilder WithName(string text)
+        public EventRouteBuilder WithName(string name)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name})");
+            }
 
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Event)
-                    && text.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity.Name != null
+                    && name.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
                 );
 
             return this;
@@ -59,17 +67,23 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// </summary>
         /// <remarks>This method restricts the route to event activities whose name matches the provided
         /// pattern. If the route is marked as agentic, only agentic requests will be considered for matching.</remarks>
-        /// <param name="textPattern">The regular expression used to match the name of incoming event activities. Cannot be null.</param>
+        /// <param name="namePattern">The regular expression used to match the name of incoming event activities. Cannot be null.</param>
         /// <returns>A EventRouteBuilder instance configured with the specified Activity.Name pattern selector.</returns>
-        public EventRouteBuilder WithName(Regex textPattern)
+        public EventRouteBuilder WithName(Regex namePattern)
         {
-            AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
+            AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern}))");
+            }
 
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Event)
-                    && textPattern.IsMatch(context.Activity.Name)
+                    && context.Activity.Name != null
+                    && namePattern.IsMatch(context.Activity.Name)
                 );
 
             return this;
@@ -85,6 +99,13 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>A EventRouteBuilder instance configured with the custom selector.</returns>
         public override EventRouteBuilder WithSelector(RouteSelector selector)
         {
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithSelector()");
+            }
+
             async Task<bool> ensureEvent(ITurnContext context, CancellationToken cancellationToken)
             {
                 return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Event) && await selector(context, cancellationToken).ConfigureAwait(false);
@@ -101,13 +122,13 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current RouteBuilder instance with the handler set, enabling method chaining.</returns>
         public EventRouteBuilder WithHandler(RouteHandler handler)
         {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = handler;
             return this;
         }
 
         /// <summary>
-        /// Returns the current event route builder instance. For event routes, the invoke flag is ignored to
-        /// prevent misconfiguration.
+        /// For event routes, the invoke flag is ignored to prevent misconfiguration.
         /// </summary>
         /// <remarks>Events cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>

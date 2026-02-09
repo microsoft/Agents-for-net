@@ -8,7 +8,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Agents.Builder.App.Builders;
 
 namespace Microsoft.Agents.Client
 {

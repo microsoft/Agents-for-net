@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing ConversationUpdate activities in an AgentApplication.
@@ -40,6 +43,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         public ConversationUpdateRouteBuilder WithUpdateEvent(string eventName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(eventName, nameof(eventName));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"ConversationUpdateRouteBuilder.WithUpdateEvent({eventName})");
+            }
 
             if (ConversationUpdateEvents.MembersAdded.Equals(eventName))
             {
@@ -81,6 +89,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current instance of <see cref="ConversationUpdateRouteBuilder"/> with the specified selector applied.</returns>
         public override ConversationUpdateRouteBuilder WithSelector(RouteSelector selector)
         {
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"ConversationUpdateRouteBuilder.WithSelector()");
+            }
+
             async Task<bool> ensureConversationUpdate(ITurnContext context, CancellationToken cancellationToken)
             {
                 return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.ConversationUpdate) && await selector(context, cancellationToken).ConfigureAwait(false);

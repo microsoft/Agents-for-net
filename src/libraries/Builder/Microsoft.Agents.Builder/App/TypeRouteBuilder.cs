@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing activities of a specific type in an AgentApplication.
@@ -41,6 +44,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type})");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
@@ -63,9 +71,15 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern}))");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
+                    && context.Activity.Type != null
                     && typePattern.IsMatch(context.Activity.Type)
                 );
 
@@ -82,6 +96,13 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>A TypeRouteBuilder instance configured with the specified custom selector.</returns>
         public override TypeRouteBuilder WithSelector(RouteSelector selector)
         {
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithSelector()");
+            }
+
             async Task<bool> ensureRouteMatch(ITurnContext context, CancellationToken cancellationToken)
             {
                 return IsContextMatch(context, _route) && await selector(context, cancellationToken).ConfigureAwait(false);
@@ -98,6 +119,7 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current RouteBuilder instance with the handler set, enabling method chaining.</returns>
         public TypeRouteBuilder WithHandler(RouteHandler handler)
         {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = handler;
             return (TypeRouteBuilder)this;
         }

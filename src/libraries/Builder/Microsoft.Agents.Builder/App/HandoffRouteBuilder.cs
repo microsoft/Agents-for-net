@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing Handoff activities in an AgentApplication.
@@ -41,12 +42,12 @@ namespace Microsoft.Agents.Builder.App.Builders
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(context.Activity?.Name, "handoff/action")
+                    && string.Equals(context.Activity?.Name, "handoff/action", System.StringComparison.OrdinalIgnoreCase)
                 );
 
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                string token = turnContext.Activity.Value.GetType().GetProperty("Continuation").GetValue(turnContext.Activity.Value) as string ?? "";
+                string token = turnContext.Activity.Value?.GetType()?.GetProperty("Continuation")?.GetValue(turnContext.Activity.Value) as string ?? "";
                 await handler(turnContext, turnState, token, cancellationToken);
                 await turnContext.SendActivityAsync(Activity.CreateInvokeResponseActivity(), cancellationToken);
             }

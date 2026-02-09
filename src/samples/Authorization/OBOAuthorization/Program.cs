@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;

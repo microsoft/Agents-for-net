@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -8,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing Message activities in an AgentApplication.
@@ -46,6 +48,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText({text})");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
@@ -70,10 +77,16 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText(Regex({textPattern}))");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Message)
+                    && context.Activity.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
 
@@ -90,6 +103,13 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current instance of <see cref="MessageRouteBuilder"/> with the specified selector applied.</returns>
         public override MessageRouteBuilder WithSelector(RouteSelector selector)
         {
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithSelector()");
+            }
+
             async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
                 return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
@@ -106,13 +126,13 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current MessageRouteBuilder instance with the handler set, enabling method chaining.</returns>
         public MessageRouteBuilder WithHandler(RouteHandler handler)
         {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = handler;
             return this;
         }
 
         /// <summary>
-        /// Returns the current message route builder instance. For message routes, the invoke flag is ignored to
-        /// prevent misconfiguration.
+        /// For message routes, the invoke flag is ignored to prevent misconfiguration.
         /// </summary>
         /// <remarks>Messages cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>

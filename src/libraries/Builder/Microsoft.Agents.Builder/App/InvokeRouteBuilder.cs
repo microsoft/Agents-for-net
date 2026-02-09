@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -8,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing Invoke activities in an AgentApplication.
@@ -36,6 +38,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name})");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
@@ -59,6 +66,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({namePattern})");
+            }
+
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
@@ -79,6 +91,11 @@ namespace Microsoft.Agents.Builder.App.Builders
         /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with the specified selector applied.</returns>
         public override InvokeRouteBuilder WithSelector(RouteSelector selector)
         {
+            if (_route.Selector != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithSelector()");
+            }
+
             async Task<bool> ensureInvoke(ITurnContext context, CancellationToken cancellationToken)
             {
                 return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Invoke) && await selector(context, cancellationToken).ConfigureAwait(false);

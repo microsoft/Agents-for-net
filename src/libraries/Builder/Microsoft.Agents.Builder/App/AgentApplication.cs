@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.AdaptiveCards;
-using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
@@ -358,16 +357,6 @@ namespace Microsoft.Agents.Builder.App
                     .AsAgentic(isAgenticOnly)
                     .Build()
             );
-        }
-
-        public AgentApplication OnMessage(string text, RouteHandler handler, string[] oAuthHandlers = null, Action<MessageRouteBuilder> configure = null)
-        {
-            var builder = MessageRouteBuilder.Create()
-                    .WithText(text)
-                    .WithHandler(handler)
-                    .WithOAuthHandlers(oAuthHandlers);
-            configure?.Invoke(builder);
-            return AddRoute(builder.Build());
         }
 
         /// <summary>

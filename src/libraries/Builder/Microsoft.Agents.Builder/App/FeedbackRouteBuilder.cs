@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -9,7 +10,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.App.Builders
+namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// RouteBuilder for routing Feedback Loop activities in an AgentApplication.
@@ -67,13 +68,7 @@ namespace Microsoft.Agents.Builder.App.Builders
                 feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
 
                 await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
+                await turnContext.SendActivityAsync(Activity.CreateInvokeResponseActivity(), cancellationToken);
             }
 
             _route.Selector = routeSelector;

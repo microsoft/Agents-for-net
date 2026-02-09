@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
@@ -26,10 +25,6 @@ public class MyAgent : AgentApplication
         // and used in a more concise way, while still allowing for additional Route configuration.
         this.OnMessage("-meExt", OnMeAsync, ["bot"]);
         this.OnMessage("-meExtConfig", OnMeAsync, ["bot"], (builder) => builder.WithOrderRank(RouteRank.Last));
-
-        // (WITH BUILDER with AgentApplication method) Last argument is optional.  This demonstrates how we could provide the more common
-        // route additiona, while still allowing for a more easily expandable number of route options.
-        OnMessage("-meAppMethod", OnMeAsync, oAuthHandlers: ["bot"], configure: (builder) => builder.WithOrderRank(RouteRank.First).WithChannelId(Channels.Webchat));
 
         // (COMPAT) Register a route for Agentic-only Messages.
         OnMessage("-agentic", OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);

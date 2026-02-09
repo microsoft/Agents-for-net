@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.Builders;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
@@ -1026,12 +1025,21 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var nullTextActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var agenticTurnContext = new TurnContext(adapter, agenticActivity);
+            var nullTextContext = new TurnContext(adapter, nullTextActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -1060,6 +1068,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(nullTextContext, CancellationToken.None);
 
             // Assert
             Assert.Equal(2, texts.Count);
