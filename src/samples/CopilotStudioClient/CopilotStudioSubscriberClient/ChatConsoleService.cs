@@ -1,7 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models;
+/*************************************************
+ * 
+ * THIS SAMPLE IS NON-FUNCTIONAL OUTSIDE OF THE MICROSOFT NETWORK. 
+ * IT IS INTENDED TO BE USED AS A REFERENCE FOR INTERAL DEVELOPERS LOOKING TO UNDERSTAND HOW TO INTERACT WITH THE COPILOT STUDIO CLIENT LIBRARY,  AND IS NOT INTENDED TO BE A FULLY FUNCTIONAL SAMPLE.
+ * 
+ */
+
+
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Agents.CopilotStudio.Client.Models;
 
@@ -13,10 +20,10 @@ namespace CopilotStudioClientSample;
 /// <param name="copilotClient">Connection Settings for connecting to Copilot Studio</param>
 internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
 {
-    string convo = $"Sample-{Guid.NewGuid().ToString()}";
+    string? convo;
 
     /// <summary>
-    /// This is the main thread loop that manages the back and forth communication with the Copilot Studio Agent. 
+    /// This is the main thread loop that manages the communication from the Copilot Studio Agent. 
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -24,38 +31,22 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
-        Console.Write("\nagent> ");
-        // Attempt to connect to the copilot studio hosted agent here
-        // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
-        //await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
-        await foreach (Activity act in copilotClient.StartConversationAsync(new StartRequest()
-        { 
-            EmitStartConversationEvent = true,
-            ConversationId = $"Sample-{convo.ToString()}"
-        },
-            cancellationToken))
+        Console.WriteLine("Please provide the conversation ID to connect to an existing conversation"); 
+        convo = Console.ReadLine();
+
+        if (string.IsNullOrEmpty(convo))
         {
-            System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
-            sw.Restart();
-            if (act is null)
-            {
-                throw new InvalidOperationException("Activity is null");
-            }
-            // for each response,  report to the UX
-            PrintActivity(act);
+            Console.WriteLine("No conversation ID provided. Exiting.");
+            return; 
         }
+        Console.WriteLine($"Listening to conversation ID: {convo}");
+        Console.Write("\nagent> ");
 
         // Once we are connected and have initiated the conversation,  begin the message loop with the Console. 
         while (!cancellationToken.IsCancellationRequested)
         {
-            Console.Write("\nuser> ");
-            string question = Console.ReadLine()!; // Get user input from the console to send. 
-            Console.Write("\nagent> ");
-            // Send the user input to the Copilot Studio agent and await the response.
-            // In this case we are not sending a conversation ID, as the agent is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
             sw.Restart();
-//            await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
-            await foreach (Activity act in copilotClient.ExecuteAsync(convo, MessageFactory.CreateMessageActivity(question), cancellationToken))
+            await foreach (SubscribeEvent act in copilotClient.SubscribeAsync(conversationId:convo, lastReceivedEventId:string.Empty, cancellationToken:cancellationToken))
             {
                 System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
                 // for each response,  report to the UX
@@ -71,8 +62,15 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// This method does not handle all of the possible activity types and formats, it is focused on just a few common types. 
     /// </summary>
     /// <param name="act"></param>
-    static void PrintActivity(IActivity act)
+    static void PrintActivity(SubscribeEvent evnt)
     {
+        Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
+        if (!string.IsNullOrEmpty(evnt.EventId))
+        {
+            Console.WriteLine($"\n[EventId: {evnt.EventId}]");
+        }
+        var act = evnt.Activity;
         switch (act.Type)
         {
             case "message":
@@ -101,6 +99,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
                 Console.Write($"[{act.Type}]");
                 break;
         }
+        Console.WriteLine("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

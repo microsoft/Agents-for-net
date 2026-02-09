@@ -1,21 +1,25 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.CopilotStudio.Client.Discovery;
+using Microsoft.Agents.CopilotStudio.Client.Models;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using Microsoft.Agents.Core.Models;
-using System.Threading.Tasks;
-using Microsoft.Agents.CopilotStudio.Client.Discovery;
-using Microsoft.Agents.Core.Serialization;
 using System.Text;
-using System.Linq;
-using Microsoft.Agents.Core;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Diag = System.Diagnostics;
 
 [assembly: InternalsVisibleTo("Microsoft.Agents.CopilotStudio.Client.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67871e773a8fde8938c81dd402ba65b9201d60593e96c492651e889cc13f1415ebb53fac1131ae0bd333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307e8e33b8426143daec9f596836f97c8f74750e5975c64e2189f45def46b2a2b1247adc3652bf5c308055da9")]
 
@@ -30,6 +34,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// Header key for conversation ID. 
         /// </summary>
         private static readonly string _conversationIdHeaderKey = "x-ms-conversationid";
+        private static readonly string _clientRequestIdHeaderKey = "x-ms-conversation-id";
         /// <summary>
         /// Conversation ID being used for the current conversation.
         /// </summary>
@@ -119,20 +124,35 @@ namespace Microsoft.Agents.CopilotStudio.Client
             _tokenProviderFunction = tokenProviderFunction;
         }
 
+        #region Start Conversation Overloads
+
         /// <summary>
         /// Used to start a conversation with MCS. 
         /// </summary>
         /// <param name="emitStartConversationEvent">Should ask remote bot to emit start event</param>
-        /// <param name="cancellationToken">Event Cancelation Token</param>
+        /// <param name="cancellationToken">Event Cancellation Token</param>
         /// <returns></returns>
-        public IAsyncEnumerable<IActivity> StartConversationAsync(bool emitStartConversationEvent = true, CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<IActivity> StartConversationAsync(bool emitStartConversationEvent = true, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            StartRequest req = new() { EmitStartConversationEvent = emitStartConversationEvent };
+            using (_logger.BeginScope("D2E:StartConversationAsync"))
+            {
+                await foreach (var result in StartConversationAsync(req, cancellationToken))
+                {
+                    yield return result;
+                }
+            }
+        }
+
+        public async IAsyncEnumerable<IActivity> StartConversationAsync(StartRequest startRequest, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using (_logger.BeginScope("D2E:StartConversationAsync"))
             {
                 _logger.LogTrace("Starting conversation");
-                Uri uriStart = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, null);
-                var body = new { EmitStartConversationEvent = emitStartConversationEvent };
 
+                _ = startRequest ?? throw new ArgumentNullException(nameof(startRequest));
+
+                Uri uriStart = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, null);
                 HttpRequestMessage req = new()
                 {
                     Method = HttpMethod.Post,
@@ -141,7 +161,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     {
                         Accept = { s_EventStream }
                     },
-                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(body)))
+                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(startRequest)))
                     {
                         Headers =
                         {
@@ -150,68 +170,79 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }
                 };
                 req.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
-                return PostRequestAsync(req, cancellationToken);
+                if (!string.IsNullOrEmpty(startRequest.ConversationId))
+                {
+                    req.Headers.Add(_clientRequestIdHeaderKey, startRequest.ConversationId);
+                }
+                await foreach (var activity in PostActivityRequestAsync(req, RequestTypes.StartSession, cancellationToken))
+                {
+                    yield return activity;
+                }
             }
         }
 
+        #endregion
+
+        #region SendActivity Overloads
         /// <summary>
         /// Sends a String question to the remote bot and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="question">String Question to send to copilot</param>
         /// <param name="conversationId">Conversation ID to reference, Optional. If not set it will pick up the current conversation id</param>
-        /// <param name="ct">Event Cancelation Token</param>
+        /// <param name="ct">Event Cancellation Token</param>
         /// <returns></returns>
         public IAsyncEnumerable<IActivity> AskQuestionAsync(string question, string? conversationId = default, CancellationToken ct = default)
         {
-            var activity = new Activity
+            using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
-                Type = "message",
-                Text = question,
-                Conversation = new ConversationAccount { Id = conversationId }
-            };
-            return SendActivityAsync(activity, ct);
+                var activity = new Activity
+                {
+                    Type = "message",
+                    Text = question,
+                    Conversation = new ConversationAccount { Id = conversationId }
+                };
+                return SendActivityAsync(activity, ct);
+            }
+        }
+
+
+        public async IAsyncEnumerable<IActivity> ExecuteAsync(string conversationId, IActivity activityToSend, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _ = activityToSend ?? throw new ArgumentNullException(nameof(activityToSend), "An Activity is required to use this method.");
+            _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required to use this method.");
+
+            using (_logger.BeginScope("D2E:ExecuteAsync"))
+            {
+                // Force conversation ID to be the one provided in the parameter, this is to avoid any confusion on which conversation ID is being used as the reference for this method.
+                if (activityToSend.Conversation is null)
+                {
+                    activityToSend.Conversation = new ConversationAccount { Id = conversationId };
+                }
+                else
+                {
+                    activityToSend.Conversation.Id = conversationId;
+                }
+
+                await foreach (var activity in ExecuteRequestAction(activityToSend, cancellationToken))
+                {
+                    yield return activity;
+                }
+            }
         }
 
         /// <summary>
         /// Sends an activity the remote bot and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="activity" >Activity to send</param>
-        /// <param name="ct">Event Cancelation Token</param>
+        /// <param name="ct">Event Cancellation Token</param>
         /// <returns></returns>
         public IAsyncEnumerable<IActivity> SendActivityAsync(IActivity activity, CancellationToken ct = default)
         {
+            _ = activity ?? throw new ArgumentNullException(nameof(activity), "An Activity is required to use this method.");
             using (_logger.BeginScope("D2E:SendActivityAsync"))
             {
-                AssertionHelpers.ThrowIfNull(activity, nameof(activity));
-
-                string localConversationId = "";
-                if (!string.IsNullOrEmpty(activity.Conversation?.Id))
-                    localConversationId = activity.Conversation!.Id;
-                else
-                    localConversationId = _conversationId;
-
-                Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
-                ExecuteTurnRequest qbody = new() { Activity = (Activity)activity };
-                HttpRequestMessage qreq = new()
-                {
-                    Method = HttpMethod.Post,
-                    RequestUri = uriExecute,
-                    Headers =
-                {
-                    Accept = { s_EventStream }
-                },
-                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
-                    {
-                        Headers =
-                    {
-                        ContentType = s_ApplicationJson,
-                    }
-                    }
-                };
-                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
-                return PostRequestAsync(qreq, ct);
+                return ExecuteRequestAction(activity, ct);
             }
-
         }
 
 
@@ -231,18 +262,214 @@ namespace Microsoft.Agents.CopilotStudio.Client
             }
         }
 
+        #endregion
+
+        [Obsolete("SubscribeAsync is Available to MSFT only at this time.", false)]
+        public async IAsyncEnumerable<SubscribeEvent> SubscribeAsync(string conversationId, string? lastReceivedEventId, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required to use this method.");
+
+            Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: true);
+
+            var qbody = new SubscribeRequest();
+            HttpRequestMessage qreq = new()
+            {
+                Method = HttpMethod.Post,
+                RequestUri = uriExecute,
+                Headers =
+                {
+                    Accept = { s_EventStream }
+                },
+                Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
+                {
+                    Headers =
+                    {
+                        ContentType = s_ApplicationJson,
+                    }
+                }
+            };
+
+            // Setup headers. 
+            qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
+            if (!string.IsNullOrEmpty(lastReceivedEventId))
+            {
+                // Add the last event Id header. This is used by the server to determine which events to send back in case of a disconnect.
+                qreq.Headers.Add("Last-Event-Id", lastReceivedEventId);
+            }
+
+            await foreach (var activity in PostSubscribeRequestAsync(qreq, RequestTypes.ExecuteAction, cancellationToken))
+            {
+                yield return activity;
+            }
+
+        }
+
+
+        private async IAsyncEnumerable<IActivity> ExecuteRequestAction(IActivity request_activity, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            using (_logger.BeginScope("D2E:ExecuteRequestAction"))
+            {
+                AssertionHelpers.ThrowIfNull(request_activity, nameof(request_activity));
+                string localConversationId = "";
+                if (!string.IsNullOrEmpty(request_activity.Conversation?.Id))
+                    localConversationId = request_activity.Conversation!.Id;
+                else
+                    localConversationId = _conversationId;
+
+                Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
+                ExecuteTurnRequest qbody = new() { Activity = (Activity)request_activity };
+                HttpRequestMessage qreq = new()
+                {
+                    Method = HttpMethod.Post,
+                    RequestUri = uriExecute,
+                    Headers =
+                {
+                    Accept = { s_EventStream }
+                },
+                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
+                    {
+                        Headers =
+                    {
+                        ContentType = s_ApplicationJson,
+                    }
+                    }
+                };
+                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
+                await foreach (var activity in PostActivityRequestAsync(qreq, RequestTypes.ExecuteAction, ct))
+                {
+                    yield return activity;
+                }
+            }
+        }
+
+
+        private async IAsyncEnumerable<SubscribeEvent> PostSubscribeRequestAsync(HttpRequestMessage req, RequestTypes requestType, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            AssertionHelpers.ThrowIfNull(req, nameof(req));
+
+            using HttpResponseMessage resp = await SetupAndExecutePostRequest(req, ct).ConfigureAwait(false);
+
+#if !NETSTANDARD
+            using Stream stream = await resp.Content.ReadAsStreamAsync(ct);
+#else
+            using Stream stream = await resp.Content.ReadAsStreamAsync();
+#endif
+            if (resp.Content?.Headers != null && resp.Content.Headers.ContentType!.Equals(s_EventStream))
+            {
+                // we requested a stream and got a stream, this is the expected path.
+                var parser = SseParser.Create(stream);
+                await foreach (var item in parser.EnumerateAsync(ct))
+                {
+                    if (item.EventType == "activity")
+                    {
+                        Activity activity = ProtocolJsonSerializer.ToObject<Activity>(item.Data);
+                        yield return new SubscribeEvent(activity, item.EventId);
+                    }
+                }
+            }
+            else
+            {
+                // we requested a stream but did not get a stream, this is unexpected but we should try to parse any content we got back. 
+                _logger.LogWarning("Expected an event stream but did not receive one. Attempting to parse response content as JSON.");
+                if (requestType == RequestTypes.ContinueSession)
+                {
+                    var subscribeResponse = ProtocolJsonSerializer.ToObject<SubscribeResponse>(stream);
+                    if (subscribeResponse is null)
+                    {
+                        throw new JsonException($"Response is empty. Expected {nameof(SubscribeResponse)} or `text/event-stream`");
+                    }
+                    foreach (var item in subscribeResponse.Activities)
+                    {
+                        yield return new SubscribeEvent(item, null);
+                    }
+                }
+            }
+        }
+
+
         /// <summary>
         /// Posts a request to Copilot Studio and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="req">Request Object to send to Copilot Studio</param>
         /// <param name="ct">CancellationToken used to handle interruption request</param>
+        /// <param name="requestType">Type of the request being sent, used for logging purposes</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentException"></exception>
         /// <exception cref="System.HttpRequestException"></exception>
-        private async IAsyncEnumerable<IActivity> PostRequestAsync(HttpRequestMessage req, [EnumeratorCancellation] CancellationToken ct = default)
+        private async IAsyncEnumerable<IActivity> PostActivityRequestAsync(HttpRequestMessage req, RequestTypes requestType, [EnumeratorCancellation] CancellationToken ct = default)
         {
             AssertionHelpers.ThrowIfNull(req, nameof(req));
 
+            using HttpResponseMessage resp = await SetupAndExecutePostRequest(req, ct).ConfigureAwait(false);
+
+#if !NETSTANDARD
+            using Stream stream = await resp.Content.ReadAsStreamAsync(ct);
+#else
+            using Stream stream = await resp.Content.ReadAsStreamAsync();
+#endif
+
+            if (resp.Content?.Headers != null && resp.Content.Headers.ContentType!.Equals(s_EventStream))
+            {
+                // we requested a stream and got a stream, this is the expected path.
+                var parser = SseParser.Create(stream);
+                await foreach (var item in parser.EnumerateAsync(ct))
+                {
+                    if (item.EventType == "activity")
+                    {
+                        Activity activity = ProtocolJsonSerializer.ToObject<Activity>(item.Data);
+                        switch (activity.Type)
+                        {
+                            case "message":
+                                if (string.IsNullOrEmpty(_conversationId))
+                                {
+                                    // Only set the conversation Id locally the first time we see it, either from the header or the activity.
+                                    // This is to handle the case where the conversation Id is not provided in the header but is provided in the activity.
+                                    // We don't want to overwrite it if we already have it from the header.
+                                    _conversationId = activity.Conversation.Id;
+                                    _logger.LogInformation("Conversation ID: {ConversationId}", _conversationId);
+                                }
+                                yield return activity;
+                                break;
+                            default:
+                                yield return activity;
+                                break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // we requested a stream but did not get a stream, this is unexpected but we should try to parse any content we got back. 
+                _logger.LogWarning("Expected an event stream but did not receive one. Attempting to parse response content as JSON.");
+                if (requestType == RequestTypes.StartSession)
+                {
+                    var startResponse = ProtocolJsonSerializer.ToObject<StartResponse>(stream);
+                    if (startResponse is null)
+                    {
+                        throw new JsonException($"Response is empty. Expected {nameof(StartResponse)} or `text/event-stream`");
+                    }
+                    foreach (var item in startResponse.Activities)
+                    {
+                        yield return item;
+                    }
+                }
+                if (requestType == RequestTypes.ExecuteAction)
+                {
+                    var executeResponse = ProtocolJsonSerializer.ToObject<ExecuteTurnResponse>(stream);
+                    if (executeResponse is null)
+                    {
+                        throw new JsonException($"Response is empty. Expected {nameof(ExecuteTurnResponse)} or `text/event-stream`");
+                    }
+                    foreach (var item in executeResponse.Activities)
+                    {
+                        yield return item;
+                    }
+                }
+            }
+        }
+
+        private async Task<HttpResponseMessage> SetupAndExecutePostRequest(HttpRequestMessage req, CancellationToken ct)
+        {
             HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
             {
@@ -261,7 +488,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             if (_tokenProviderFunction != null)
             {
                 // Set the access token header when its provided via an external token provider. 
-                // If not done here the expecation is that the Token will be provided by an httpclient handler.
+                // If not done here the expectation is that the Token will be provided by an httpclient handler.
                 string accessToken = string.Empty;
                 if (req?.RequestUri != null)
                 {
@@ -284,8 +511,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             {
                 _logger.LogDebug(">>> SEND TO {RequestUri}", req!.RequestUri);
             }
-
-            using HttpResponseMessage resp = await httpClient.SendAsync(req!, HttpCompletionOption.ResponseHeadersRead, ct);
+            HttpResponseMessage resp = await httpClient.SendAsync(req!, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)
             {
                 _logger.LogError("Error sending request: {Status}", resp.StatusCode);
@@ -338,57 +564,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 }
                 _logger.LogDebug("=====================================================");
             }
-
-#if !NETSTANDARD
-            using Stream stream = await resp.Content.ReadAsStreamAsync(ct);
-#else
-            using Stream stream = await resp.Content.ReadAsStreamAsync();
-#endif
-            using StreamReader sr = new(stream);
-            string streamType = string.Empty;
-            while (!sr.EndOfStream)
-            {
-                //JsonDocument jsonDoc = null!;
-                string line = sr.ReadLine()!;
-                if (line!.StartsWith("event:", StringComparison.InvariantCulture))
-                {
-#if !NETSTANDARD
-                    streamType = line[7..];
-#else
-                    streamType = line.Substring(7);
-#endif
-                }
-                else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "activity")
-                {
-#if !NETSTANDARD
-                    string jsonRaw = line[6..];
-#else
-                    string jsonRaw = line.Substring(6);
-#endif
-                    _logger.LogTrace("Received JSON raw data: {JsonRaw}", jsonRaw);
-                    Activity activity = ProtocolJsonSerializer.ToObject<Activity>(jsonRaw);
-                    switch (activity.Type)
-                    {
-                        case "message":
-                            if (string.IsNullOrEmpty(_conversationId))
-                            {
-                                // Did not get it from the header. 
-                                _conversationId = activity.Conversation.Id;
-                                _logger.LogInformation("Conversation ID: {ConversationId}", _conversationId);
-                            }
-                            yield return activity;
-                            break;
-                        default:
-                            yield return activity;
-                            break;
-                    }
-                }
-                else
-                {
-                    _logger.LogTrace(".");
-                }
-            }
+            return resp;
         }
-
     }
 }
