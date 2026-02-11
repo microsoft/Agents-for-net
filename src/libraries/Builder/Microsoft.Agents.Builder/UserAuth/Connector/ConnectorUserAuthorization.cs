@@ -6,6 +6,8 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
     public class ConnectorUserAuthorization : OBOExchange, IUserAuthorization
     {
         private readonly OBOSettings _settings;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
@@ -29,8 +32,9 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         /// <param name="storage">The storage provider used for user authorization data.</param>
         /// <param name="connections"></param>
         /// <param name="configurationSection"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConnectorUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+        public ConnectorUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
             : this(name, connections, GetOBOSettings(configurationSection))
         {
         }
@@ -41,10 +45,12 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         /// <param name="name"></param>
         /// <param name="connections"></param>
         /// <param name="settings"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConnectorUserAuthorization(string name, IConnections connections, OBOSettings settings) : base(connections)
+        public ConnectorUserAuthorization(string name, IConnections connections, OBOSettings settings, ILogger logger = null) : base(connections)
         {
             _settings = settings;
+            _logger = logger ?? NullLogger<ILogger>.Instance;
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 

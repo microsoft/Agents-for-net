@@ -192,10 +192,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     exchangeScopes: signInState.RuntimeOBOScopes,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
+                #if TEAMS_DEDUPE
                 if (response.Status == SignInStatus.Duplicate)
                 {
                     return false;
                 }
+                #endif
 
                 if (response.Status == SignInStatus.Pending)
                 {
@@ -220,6 +222,34 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
                     DeleteSignInState(turnState);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    if (turnContext.Activity.IsType(ActivityTypes.Invoke))
+                    {
+                        if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
+                        {
+                            // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
+                            await turnContext.SendActivityAsync(new Activity
+                            {
+                                Type = ActivityTypes.InvokeResponse,
+                                Value = new InvokeResponse
+                                {
+                                    Status = 500,
+                                    Body = new 
+                                    {
+                                        activity = new
+                                        {
+                                            id = turnContext.Activity.Id,
+                                            type = turnContext.Activity.Type,
+                                            name = turnContext.Activity.Name,
+                                        },
+                                        cause = response.Cause.ToString(),
+                                        failureDetail = response.Error?.Message ?? string.Empty
+                                    }
+                                }
+                            }, cancellationToken).ConfigureAwait(false);
+                        }
+                        return false;
+                    }
 
                     if (_userSignInFailureHandler != null)
                     {
