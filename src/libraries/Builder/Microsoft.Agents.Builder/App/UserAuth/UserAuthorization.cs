@@ -192,13 +192,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     exchangeScopes: signInState.RuntimeOBOScopes,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                #if TEAMS_DEDUPE
-                if (response.Status == SignInStatus.Duplicate)
-                {
-                    return false;
-                }
-                #endif
-
                 if (response.Status == SignInStatus.Pending)
                 {
                     if (!flowContinuation)

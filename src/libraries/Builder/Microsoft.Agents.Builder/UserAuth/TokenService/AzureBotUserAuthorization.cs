@@ -27,10 +27,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
 
-#if TEAMS_DEDUPE
-        private readonly Deduplicate _dedupe;
-#endif
-
         /// <summary>
         /// Required constructor for UserAuthorizationDispatcher.
         /// </summary>
@@ -61,9 +57,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(settings);
             _logger = logger ?? NullLogger<ILogger>.Instance;
-#if TEAMS_DEDUPE
-            _dedupe = new Deduplicate(_storage, logger);
-#endif
         }
 
         public string Name { get; private set; }
@@ -190,17 +183,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 return null;
             }
 
-#if TEAMS_DEDUPE
-            // Duplication check is done after successful token exchange to allow MS Teams show the consent prompt per platform (e.g., web, mobile) in case of failing the token exchange.
-            // If the duplication check is done before, only one platform will show the consent prompt.
-            // Note: in case this check needs to be done before token exchange, consider adding the isSsoUserConsentFlow === undefined flag,
-            // to allow multiple token exchanges when the flag is set (indicating user consent flow), duplicated across platforms will still apply (showing one consent prompt).
-            if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
-            {
-                throw new DuplicateExchangeException();
-            }
-#endif
-
             return tokenResponse;
         }
 
@@ -215,11 +197,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             // If a TokenResponse is returned, there was a cached token already.  Otherwise, start the process of getting a new token.
             if (tokenResponse == null)
             {
-#if TEAMS_DEDUPE
-
-                await _dedupe.DeleteTokenExchangeAsync(turnContext);
-#endif
-
                 var expires = DateTime.UtcNow.AddMilliseconds(_settings.Timeout ?? OAuthSettings.DefaultTimeoutValue.TotalMilliseconds);
 
                 state.FlowStarted = true;
