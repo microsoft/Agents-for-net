@@ -534,18 +534,13 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
-            (
-                (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
-                && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsAdded != null
-                && context.Activity.ReactionsAdded.Count > 0
+            return AddRoute(MessageReactionsAddedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
             );
-
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
-            return this;
         }
 
         /// <summary>
@@ -558,18 +553,13 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
-            (
-                (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context))
-                && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsRemoved != null
-                && context.Activity.ReactionsRemoved.Count > 0
+            return AddRoute(MessageReactionsRemovedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
             );
-
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
-            return this;
         }
 
         /// <summary>
