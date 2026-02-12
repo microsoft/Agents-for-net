@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AdaptiveCards.Templating;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,48 +17,44 @@ public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        // (WITH BUILDER) Register a route for any channel including Agentic, with a dynamic autoSignInHandler list.
-        AddRoute(MessageRouteBuilder.Create()
-            .WithText("-me")
-            .WithHandler(OnMeAsync)
-            .WithOAuthHandlers(OAuthHandlers)
-            .Build());
+        // Register a route for Agentic-only Messages.
+        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
 
-        // (WITH BUILDER C# extension)  Weird because it requires `this.` but demonstrates how a new builder could be added as an extension
-        // and used in a more concise way, while still allowing for additional Route configuration.
-        this.OnMessage("-meExt", OnMeAsync, ["bot"]);
-        this.OnMessage("-meExtConfig", OnMeAsync, ["bot"], (builder) => builder.WithOrderRank(RouteRank.Last));
-
-        // (COMPAT) Register a route for Agentic-only Messages.
-        OnMessage("-agentic", OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
-
-        // (COMPAT) Non-agentic messages go here
+        // Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private static string[] OAuthHandlers(ITurnContext turnContext)
-    {
-        if (turnContext.Activity.IsAgenticRequest())
-        {
-            return ["agentic"];
-        }
-        return ["bot"];
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var aauToken = await turnContext.GetTurnTokenAsync("agentic", cancellationToken);
-        await turnContext.SendActivityAsync($"(Agentic Only) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
+        var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(aauToken);
+
+        // Send back an adaptive card with token details. 
+        var template = new AdaptiveCardTemplate(System.IO.File.ReadAllText("JWTDecodeCard.json"));
+        var payloadData = new
+        {
+            length = aauToken.Length,
+            nameclaim = jwt.Claims.Where(c => c.Type == "name").FirstOrDefault()?.Value,
+            upnclaim = jwt.Claims.Where(c => c.Type == "upn").FirstOrDefault()?.Value,
+            oidclaim = jwt.Claims.Where(c => c.Type == "oid").FirstOrDefault()?.Value,
+            tidclaim = jwt.Claims.Where(c => c.Type == "tid").FirstOrDefault()?.Value,
+        };
+
+        var cardString = template.Expand(payloadData);
+        var msgActivity = MessageFactory.Attachment(new Attachment()
+        {
+            ContentType = ContentTypes.AdaptiveCard,
+            Content = cardString
+        });
+        await turnContext.SendActivityAsync(msgActivity);
+
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"(No OAuth) You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
-    private async Task OnMeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        var tokens = turnContext.GetTurnTokens();
-        await turnContext.SendActivityAsync($"({tokens[0].Handler}) You said: {turnContext.Activity.Text}, token len={tokens[0].Token.Length}", cancellationToken: cancellationToken);
-    }
 }
