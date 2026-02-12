@@ -209,14 +209,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
             else
             {
-                if (createSubscribeLink)
-                {
-                    builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}/subscribe";
-                }
-                else
-                {
-                    builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}";
-                }
+                var conversationSuffix = createSubscribeLink ? "/subscribe" : string.Empty;
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}{conversationSuffix}";
             }
             return builder.Uri;
         }
@@ -255,14 +249,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
             else
             {
-                if(createSubscribeLink)
-                {
-                    builder.Path = $"{builder.Path}/conversations/{conversationId}/subscribe";
-                }
-                 else
-                 {
-                     builder.Path = $"{builder.Path}/conversations/{conversationId}";
-                }
+                builder.Path = createSubscribeLink
+                    ? $"{builder.Path}/conversations/{conversationId}/subscribe"
+                    : $"{builder.Path}/conversations/{conversationId}";
             }
 
             return builder.Uri;

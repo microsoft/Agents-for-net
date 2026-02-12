@@ -61,7 +61,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// This method is responsible for writing formatted data to the console.
     /// This method does not handle all of the possible activity types and formats, it is focused on just a few common types. 
     /// </summary>
-    /// <param name="act"></param>
+    /// <param name="evnt"></param>
     static void PrintActivity(SubscribeEvent evnt)
     {
         Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
