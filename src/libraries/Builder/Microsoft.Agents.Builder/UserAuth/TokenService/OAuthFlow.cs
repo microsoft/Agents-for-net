@@ -362,7 +362,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             {
                                 Id = tokenExchangeRequest.Id,
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
-                                FailureDetail = Error.ConsentRequiredCode,
+                                FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
 
                         throw new ConsentRequiredException();

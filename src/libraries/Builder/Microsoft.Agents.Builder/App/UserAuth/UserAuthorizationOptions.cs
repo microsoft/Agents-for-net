@@ -86,7 +86,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             var section = configuration.GetSection(configKey);
             DefaultHandlerName = section.GetValue<string>(nameof(DefaultHandlerName));
-            Dispatcher = new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
+            Storage = storage ?? sp.GetService<IStorage>();
+            Dispatcher = new UserAuthorizationDispatcher(sp, configuration, Storage, configKey: $"{configKey}:Handlers");
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelector>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
@@ -122,15 +123,19 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         ///   };
         /// </code>
         /// </remarks>
+        /// <param name="storage">The IStorage to use for UserAutorization flow state. This can be the same storage as elsewhere.</param>
         /// <param name="connections"></param>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
+        public UserAuthorizationOptions(IStorage storage, IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
+            Storage = storage ?? throw new ArgumentNullException(nameof(storage));
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
             AutoSignIn = AutoSignInOnForAny;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
+
+        internal IStorage Storage { get; set; }
 
         /// <summary>
         /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is
