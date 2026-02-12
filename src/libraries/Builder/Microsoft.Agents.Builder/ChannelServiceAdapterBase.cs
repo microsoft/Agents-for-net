@@ -9,12 +9,10 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 
 namespace Microsoft.Agents.Builder
 {
@@ -240,7 +238,7 @@ namespace Microsoft.Agents.Builder
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target.ToString(), ProtocolJsonSerializer.ToJson(activity));
+                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
             }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))

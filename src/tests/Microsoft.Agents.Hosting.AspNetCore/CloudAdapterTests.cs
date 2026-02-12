@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -853,7 +854,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 var options = new TestApplicationOptions(record.Storage)
                 {
-                    UserAuthorization = new UserAuthorizationOptions(record.Storage, MockConnections.Object, MockGraph.Object) { AutoSignIn = UserAuthorizationOptions.AutoSignInOff }
+                    UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, record.Storage, MockConnections.Object, MockGraph.Object) { AutoSignIn = UserAuthorizationOptions.AutoSignInOff }
                 };
                 var agent = new TestApplication(options);
                 agent.OnMessage("-signin", async (context, state, ct) =>

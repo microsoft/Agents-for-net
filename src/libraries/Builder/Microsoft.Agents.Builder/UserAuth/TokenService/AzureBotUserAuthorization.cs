@@ -157,24 +157,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             var state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
-            //!!!
-            //state.FlowStarted = true;
-            //state.FlowExpires = DateTime.UtcNow.AddMilliseconds(_settings.Timeout ?? OAuthSettings.DefaultTimeoutValue.TotalMilliseconds);
-
             // Handle start or continue of the flow.
             // Either path can throw.  This is intentionally not trapping the exception to give the caller the chance
             // to determine if a retry is applicable.  Otherwise, caller should call ResetState.
-            TokenResponse tokenResponse;
-            if (!state.FlowStarted)
-            {
-                // If the user is already signed in, tokenResponse will be non-null
-                tokenResponse = await OnGetOrStartFlowAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                // For non-Teams Agents, the user sends the "magic code" that will be used to exchange for a token.
-                tokenResponse = await OnContinueFlow(turnContext, state, cancellationToken);
-            }
+            var flowTask = !state.FlowStarted
+                            ? OnGetOrStartFlowAsync(turnContext, state, cancellationToken)
+                            : OnContinueFlow(turnContext, state, cancellationToken);
+            var tokenResponse = await flowTask.ConfigureAwait(false);
 
             await SaveFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
 

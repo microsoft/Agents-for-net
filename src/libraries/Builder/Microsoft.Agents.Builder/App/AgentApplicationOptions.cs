@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.App
     /// <seealso cref="UserAuthorizationOptions"/>
     public class AgentApplicationOptions
     {
-        internal static ILoggerFactory DefaultLoggerFactory => Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning).AddConsole());
+        internal static ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning).AddConsole());
 
         /// <summary>
         /// Constructs AgentApplicationOptions programmatically.
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (section.GetSection("UserAuthorization").Exists())
             {
-                UserAuthorization = new UserAuthorizationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthorization");
+                UserAuthorization = new UserAuthorizationOptions(sp, loggerFactory, configuration, storage, configKey: $"{configKey}:UserAuthorization");
             }
 
             section = section.GetSection("AdaptiveCards");

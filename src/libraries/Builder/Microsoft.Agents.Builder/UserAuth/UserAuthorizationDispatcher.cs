@@ -15,6 +15,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
+using Microsoft.Agents.Builder.App;
+
+
 
 #if !NETSTANDARD
 using System.Runtime.Loader;
@@ -31,6 +34,7 @@ namespace Microsoft.Agents.Builder.UserAuth
     internal class UserAuthorizationDispatcher : IUserAuthorizationDispatcher
     {
         private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<UserAuthorizationDispatcher> _logger;
         private readonly IStorage _storage;
         private readonly IConnections _connections;
@@ -38,10 +42,13 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="loggerFactory"></param>
         /// <param name="connections"></param>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthorizationDispatcher(IConnections connections, params IUserAuthorization[] userAuthHandlers)
+        public UserAuthorizationDispatcher(ILoggerFactory loggerFactory, IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
+            _loggerFactory = loggerFactory ?? AgentApplicationOptions.DefaultLoggerFactory;
+            _logger = loggerFactory.CreateLogger<UserAuthorizationDispatcher>();
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
 
             if (userAuthHandlers == null || userAuthHandlers.Length == 0)
@@ -74,12 +81,14 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// the Azure Bot Token Service using `OAuth Connections` defined on the Azure Bot.
         /// </remarks>
         /// <param name="sp"></param>
+        /// <param name="loggerFactory"></param>
         /// <param name="configuration"></param>
         /// <param name="storage"></param>
         /// <param name="configKey"></param>
-        public UserAuthorizationDispatcher(IServiceProvider sp, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
+        public UserAuthorizationDispatcher(IServiceProvider sp, ILoggerFactory loggerFactory, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
         {
-            _logger = (ILogger<UserAuthorizationDispatcher>)sp.GetService(typeof(ILogger<UserAuthorizationDispatcher>));
+            _loggerFactory = loggerFactory ?? AgentApplicationOptions.DefaultLoggerFactory;
+            _logger = loggerFactory.CreateLogger<UserAuthorizationDispatcher>();
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _connections = sp.GetService<IConnections>();
 
@@ -212,7 +221,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings, _logger]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings, _loggerFactory.CreateLogger(handlerDefinition.Constructor.DeclaringType)]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

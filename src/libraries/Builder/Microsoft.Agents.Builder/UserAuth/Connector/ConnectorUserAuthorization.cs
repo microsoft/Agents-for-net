@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public ConnectorUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
-            : this(name, connections, GetOBOSettings(configurationSection))
+            : this(name, connections, GetOBOSettings(configurationSection), logger)
         {
         }
 
