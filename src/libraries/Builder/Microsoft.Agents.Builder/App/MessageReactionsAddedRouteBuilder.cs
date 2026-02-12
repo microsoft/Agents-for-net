@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.App
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = MessageReactionsAddedRouteBuilder.Create()
-    ///    .WithHandler(async (context, state, continuation, ct) => Task.FromResult(context.SendActivityAsync("Reactions removed", cancellationToken: ct)))
+    ///    .WithHandler(async (context, state, continuation, ct) => Task.FromResult(context.SendActivityAsync("Reactions added", cancellationToken: ct)))
     ///    .Build();
     ///    
     /// app.AddRoute(route);
