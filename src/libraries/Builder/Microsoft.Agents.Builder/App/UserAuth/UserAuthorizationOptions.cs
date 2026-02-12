@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             AutoSignIn = AutoSignInOnForAny;
         }
 
-        [Obsolete("This constructor is deprecated. Use UserAuthorizationOptions(ILoggerFactory, IConnections, params IUserAuthorization[])")]
+        [Obsolete("This constructor is deprecated. Use UserAuthorizationOptions(ILoggerFactory, IStorage, IConnections, params IUserAuthorization[])")]
         public UserAuthorizationOptions(IStorage storage, IConnections connections, params IUserAuthorization[] userAuthHandlers) : this(NullLoggerFactory.Instance, storage, connections, userAuthHandlers)
         {
         }

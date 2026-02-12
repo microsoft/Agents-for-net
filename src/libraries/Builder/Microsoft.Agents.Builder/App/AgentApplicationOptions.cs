@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.App
     /// <seealso cref="UserAuthorizationOptions"/>
     public class AgentApplicationOptions
     {
-        internal static ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning).AddConsole());
+        internal static readonly ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning).AddConsole());
 
         /// <summary>
         /// Constructs AgentApplicationOptions programmatically.
