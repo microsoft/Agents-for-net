@@ -1,4 +1,6 @@
-# Copilot Studio Client Console Sample
+# Copilot Studio Subscriber Client Console Sample
+
+This sample demonstrates how to create a simple console application that connects to a Agent created in Copilot Studio using the CopilotStudio Client SDK. The sample will connect to the Agent Stream Traffic from an existing conversation.
 
 ## Instructions - Setup
 
@@ -50,9 +52,9 @@ This step will require permissions to Create application identities in your Azur
 
 ### Instructions - Configure the Example Application - User Interactive Login
 
-With the above information, you can now run the client `CopilostStudioClientSample`.
+With the above information, you can now run the client `CopilostStudioSubscribeClient`.
 
-1. Open the appSettings.json file for the CopilotStudioClientSample, or rename launchSettings.TEMPLATE.json to launchSettings.json.
+1. Open the appSettings.json file for the CopilostStudioSubscribeClient, or rename launchSettings.TEMPLATE.json to launchSettings.json.
 1. Configured the placeholder values for the various key's based on what was recorded during the setup phase.
 
 ```json
@@ -120,9 +122,9 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 
 
 
-3. Run the CopilotStudioClientSample.exe program.
+3. Run the CopilotStudioSubscribeClient.exe program.
 
-This should challenge you for login in a new browser window or tab and once completed, connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
+This should challenge you for login in a new browser window or tab and once completed, connect to the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
 
 ## Authentication
 
