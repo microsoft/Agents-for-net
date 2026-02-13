@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
@@ -24,25 +23,40 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         // TODO: CreateConversation method to start new conversations proactively
 
-        public Task SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken)
+        public async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken)
         {
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
             if (string.IsNullOrEmpty(activity.Type))
             {
                 activity.Type = ActivityTypes.Message;
             }
 
-            return ContinueConversationAsync(adapter, conversationId, (turnContext, turnState, ct) =>
+            ResourceResponse response = null;
+            await ContinueConversationAsync(adapter, conversationId, async (turnContext, turnState, ct) =>
             {
-                return turnContext.SendActivityAsync(activity, ct);
+                response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
             }, cancellationToken);
+
+            return response;
         }
 
-        public Task SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken)
+        public async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken)
         {
-            return ContinueConversationAsync(adapter, record.Identity, record.Reference, (turnContext, turnState, ct) =>
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
+            if (string.IsNullOrEmpty(activity.Type))
             {
-                return turnContext.SendActivityAsync(activity, ct);
+                activity.Type = ActivityTypes.Message;
+            }
+
+            ResourceResponse response = null;
+            await ContinueConversationAsync(adapter, record.Identity, record.Reference, async (turnContext, turnState, ct) =>
+            {
+                response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
             }, cancellationToken);
+
+            return response;
         }
 
         public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken)
@@ -77,7 +91,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             var key = ConversationReferenceRecord.GetKey(turnContext.Activity.Conversation.Id);
             var record = new ConversationReferenceRecord(turnContext.Identity, turnContext.Activity.GetConversationReference());
-            var json = ProtocolJsonSerializer.ToJson(record);
             return _app.Options.Proactive.Storage.WriteAsync(
                 new Dictionary<string, object>
                 {

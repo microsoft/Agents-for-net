@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -11,6 +12,8 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -51,18 +54,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/sendactivity/{conversationId}",
-                async (HttpRequest request, HttpResponse response, IChannelAdapter adapter, IProactiveAgent agent, string conversationId, CancellationToken cancellationToken) =>
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, IProactiveAgent agent, string conversationId, CancellationToken cancellationToken) =>
                 {
-                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(request).ConfigureAwait(false);
+                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
 
                     try
                     {
-                        await agent.SendActivityAsync(adapter, conversationId, activity, cancellationToken).ConfigureAwait(false);
+                        var response = await agent.SendActivityAsync(adapter, conversationId, activity, cancellationToken).ConfigureAwait(false);
+
+                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                        httpResponse.Headers.ContentType = "application/json";
+                        await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                     }
                     catch (KeyNotFoundException)
                     {
-                        response.StatusCode = StatusCodes.Status404NotFound;
-                        await response.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
+                        httpResponse.StatusCode = StatusCodes.Status404NotFound;
+                        await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
                 })
@@ -70,25 +77,29 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/sendactivity",
-                async (HttpRequest request, HttpResponse response, IChannelAdapter adapter, IProactiveAgent agent, CancellationToken cancellationToken) =>
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, IProactiveAgent agent, CancellationToken cancellationToken) =>
                 {
-                    var recordRequest = await HttpHelper.ReadRequestAsync<SendToConversationRecord>(request).ConfigureAwait(false);
+                    var recordRequest = await HttpHelper.ReadRequestAsync<SendToConversationRecord>(httpRequest).ConfigureAwait(false);
 
                     if (recordRequest.ConversationReferenceRecord == null)
                     {
-                        response.StatusCode = StatusCodes.Status400BadRequest;
-                        await response.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
                     if (recordRequest.Activity == null)
                     {
-                        response.StatusCode = StatusCodes.Status400BadRequest;
-                        await response.WriteAsJsonAsync(new { error = "Activity is required." }, cancellationToken).ConfigureAwait(false);
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "Activity is required." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
-                     await agent.SendActivityAsync(adapter, recordRequest.ConversationReferenceRecord, recordRequest.Activity, cancellationToken).ConfigureAwait(false);
+                    var response = await agent.SendActivityAsync(adapter, recordRequest.ConversationReferenceRecord, recordRequest.Activity, cancellationToken).ConfigureAwait(false);
+
+                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                    httpResponse.Headers.ContentType = "application/json";
+                    await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                 })
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 

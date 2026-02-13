@@ -770,11 +770,11 @@ namespace Microsoft.Agents.Builder.App
 
         #region IProactiveAgent
         /// <inheritdoc/>
-        public Task SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken = default) 
+        public Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken = default) 
             => Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken);
 
         /// <inheritdoc/>
-        public Task SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
             => Proactive.SendActivityAsync(adapter, record, activity, cancellationToken);
 
         /// <inheritdoc/>
