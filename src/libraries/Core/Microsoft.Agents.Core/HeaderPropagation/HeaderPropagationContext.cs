@@ -19,7 +19,7 @@ public class HeaderPropagationContext()
 
     static HeaderPropagationContext()
     {
-        HeaderPropagationAttribute.LoadHeaders();
+        HeaderPropagationAssemblyAttribute.InitHeaderPropagation();
     }
 
     /// <summary>
