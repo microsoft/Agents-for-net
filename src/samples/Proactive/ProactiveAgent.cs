@@ -20,6 +20,8 @@ public class ProactiveAgent : AgentApplication
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        await Proactive.StoreConversationAsync(turnContext, cancellationToken).ConfigureAwait(false);
+
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
             if (member.Id != turnContext.Activity.Recipient.Id)

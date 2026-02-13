@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 builder.Services.AddTransient<TAgent>();
             }
 
-            if (typeof(TAgent) is IProactiveAgent)
+            if (typeof(IProactiveAgent).IsAssignableFrom(typeof(TAgent)))
             {
                 // Add the Proactive class, which contains logic for starting new conversations proactively and continuing existing conversations.
                 if (!builder.Services.Any(x => x.ServiceType == typeof(IProactiveAgent)))

@@ -165,6 +165,7 @@ namespace Microsoft.Agents.Builder.App
 
             Proactive = new ProactiveOptions
             {
+                // TODO: Change after PR #712 merges, use Options.Storage
                 Storage = storage ?? sp.GetService<IStorage>()
             };
 

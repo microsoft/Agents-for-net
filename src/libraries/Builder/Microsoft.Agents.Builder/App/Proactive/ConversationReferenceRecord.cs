@@ -5,6 +5,7 @@ using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
@@ -25,6 +26,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         public IDictionary<string, string>? Claims { get; set; }
         public ConversationReference? Reference { get; set; }
+
+        [JsonIgnore]
         public ClaimsIdentity Identity => new(Claims?.Select(kv => new Claim(kv.Key, kv.Value)).ToList());
     }
 }

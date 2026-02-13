@@ -13,6 +13,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -62,6 +63,7 @@ namespace Microsoft.Agents.Builder.App
             // Application Features
 
             AdaptiveCards = new AdaptiveCard(this);
+            Proactive = new Proactive.Proactive(this);
 
             if (options.UserAuthorization != null)
             {
@@ -77,6 +79,8 @@ namespace Microsoft.Agents.Builder.App
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
+
+        public Proactive.Proactive Proactive { get; }
 
         /// <summary>
         /// The application's configured options.
@@ -764,6 +768,23 @@ namespace Microsoft.Agents.Builder.App
 
         #endregion
 
+        #region IProactiveAgent
+        /// <inheritdoc/>
+        public Task SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken = default) 
+            => Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken);
+
+        /// <inheritdoc/>
+        public Task SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
+            => Proactive.SendActivityAsync(adapter, record, activity, cancellationToken);
+
+        /// <inheritdoc/>
+        public Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken = default)
+            => Proactive.ContinueConversationAsync(adapter, conversationId, handler, cancellationToken);
+
+        /// <inheritdoc/>
+        public Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, RouteHandler handler, CancellationToken cancellationToken = default)
+            => Proactive.ContinueConversationAsync(adapter, identity, reference, handler, cancellationToken);
+        #endregion
         #region Turn Handling
 
         /// <summary>
