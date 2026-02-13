@@ -775,7 +775,7 @@ namespace Microsoft.Agents.Builder.App
 
         /// <inheritdoc/>
         public Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
-            => Proactive.SendActivityAsync(adapter, record, activity, cancellationToken);
+            => App.Proactive.Proactive.SendActivityAsync(adapter, record, activity, cancellationToken);
 
         /// <inheritdoc/>
         public Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken = default)
