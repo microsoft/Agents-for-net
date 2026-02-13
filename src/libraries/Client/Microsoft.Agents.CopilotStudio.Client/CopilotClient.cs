@@ -253,7 +253,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
             Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: true);
 
             var qbody = new SubscribeRequest();
-            HttpRequestMessage qreq = new()
+            
+            using HttpRequestMessage qreq = new()
             {
                 Method = HttpMethod.Post,
                 RequestUri = uriExecute,
