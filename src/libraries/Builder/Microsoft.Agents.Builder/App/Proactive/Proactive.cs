@@ -27,7 +27,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sends an activity to an existing conversation using the specified channel adapter.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send the activity. Cannot be null.</param>
-        /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be null or empty.</param>
+        /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be 
+        /// null or empty. The conversation must have been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/></param>
         /// <param name="activity">The activity to send to the conversation. Must not be null. If the activity's Type property is null or
         /// empty, it defaults to a message activity.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
@@ -120,8 +121,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 var turnState = _app.Options.TurnStateFactory!();
                 await turnState.LoadStateAsync(turnContext, false, ct).ConfigureAwait(false);
-
-                // OAuth?
 
                 await handler(turnContext, turnState, ct).ConfigureAwait(false);
 

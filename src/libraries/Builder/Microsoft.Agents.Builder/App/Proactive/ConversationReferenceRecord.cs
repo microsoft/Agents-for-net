@@ -20,7 +20,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         public ConversationReferenceRecord(ClaimsIdentity identity, ConversationReference reference)
         {
-            Claims = identity.Claims.ToDictionary(c => c.Type, c => c.Value);
+            Claims = identity.Claims.Where(c =>
+            {
+                return c.Type == "aud" 
+                    || c.Type == "azp"
+                    || c.Type == "appid"
+                    || c.Type == "idtyp"
+                    || c.Type == "ver";
+            }).ToDictionary(c => c.Type, c => c.Value);
             Reference = reference;
         }
 
