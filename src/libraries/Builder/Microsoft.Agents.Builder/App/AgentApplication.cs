@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent, IProactiveAgent
+    public class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
@@ -768,23 +768,6 @@ namespace Microsoft.Agents.Builder.App
 
         #endregion
 
-        #region IProactiveAgent
-        /// <inheritdoc/>
-        public Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken = default) 
-            => Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken);
-
-        /// <inheritdoc/>
-        public Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
-            => App.Proactive.Proactive.SendActivityAsync(adapter, record, activity, cancellationToken);
-
-        /// <inheritdoc/>
-        public Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken = default)
-            => Proactive.ContinueConversationAsync(adapter, conversationId, handler, cancellationToken);
-
-        /// <inheritdoc/>
-        public Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, RouteHandler handler, CancellationToken cancellationToken = default)
-            => Proactive.ContinueConversationAsync(adapter, identity, reference, handler, cancellationToken);
-        #endregion
         #region Turn Handling
 
         /// <summary>
