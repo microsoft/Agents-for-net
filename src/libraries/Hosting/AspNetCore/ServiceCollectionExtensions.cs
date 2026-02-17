@@ -15,6 +15,15 @@ using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
+    /// <summary>
+    /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
+    /// injection containers and application builders.
+    /// </summary>
+    /// <remarks>These extension methods simplify the setup of agent applications by enabling the registration
+    /// of agents, adapters, options, and supporting middleware. They are intended to be used during application startup
+    /// to configure required services for agent-based architectures, such as those using CloudAdapter and
+    /// AgentApplication. Methods in this class support both default and custom agent/adapters, and facilitate
+    /// integration with ASP.NET Core's dependency injection and middleware pipelines.</remarks>
     public static class ServiceCollectionExtensions
     {
         /// <summary>
@@ -123,7 +132,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// added as a singleton.
         /// </remarks>
         /// <param name="builder"></param>
-        /// <param name="fileDownloaders"></param>
         /// <param name="autoSignIn"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
@@ -144,7 +152,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add the default CloudAdapter.
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="async"></param>
         public static void AddCloudAdapter(this IServiceCollection services)
         {
             services.AddCloudAdapter<CloudAdapter>();
@@ -154,7 +161,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add a derived CloudAdapter.
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="async"></param>
         public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
         {
             AddAsyncAdapterSupport(services);
@@ -193,6 +199,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder.AddAgentCore<CloudAdapter>();
         }
 
+        /// <summary>
+        /// Adds core services required for Bot Framework Agent functionality, including the specified cloud adapter, to
+        /// the application's dependency injection container.
+        /// </summary>
+        /// <remarks>This method registers essential services such as IConnections and
+        /// IChannelServiceClientFactory if they are not already present. It also adds the specified CloudAdapter
+        /// implementation, enabling integration with Azure Bot Service and Activity Protocol Agents.</remarks>
+        /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
+        /// <param name="builder">The host application builder to which the agent core services will be added.</param>
+        /// <returns>The same IHostApplicationBuilder instance for chaining further configuration.</returns>
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder)
             where TAdapter : CloudAdapter
         {
@@ -214,6 +230,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
+        /// <summary>
+        /// Adds background task and activity processing support to the specified service collection, enabling
+        /// asynchronous task execution via hosted services and task queues.
+        /// </summary>
+        /// <remarks>This method registers hosted services and singleton task queues required for
+        /// background and activity processing. It is safe to call multiple times; services are only added if not
+        /// already present. Use this method to enable asynchronous task and activity handling in applications that
+        /// require background processing.</remarks>
+        /// <param name="services">The service collection to which the background task and activity processing services will be added. Cannot
+        /// be null.</param>
         public static void AddAsyncAdapterSupport(this IServiceCollection services)
         {
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))

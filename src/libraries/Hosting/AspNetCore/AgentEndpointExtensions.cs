@@ -23,6 +23,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
+    /// <summary>
+    /// Provides extension methods for mapping HTTP endpoints related to Agent applications, including activity protocol
+    /// endpoints, proactive messaging, and root informational endpoints, to ASP.NET Core applications.
+    /// </summary>
+    /// <remarks>These extension methods simplify the integration of Agent-based bots and services into
+    /// ASP.NET Core applications by registering standardized endpoints for message processing, proactive operations,
+    /// and diagnostics. The methods support configuration of authentication requirements, custom request processing
+    /// delegates, and route patterns. Use these extensions to quickly expose bot functionality over HTTP in a
+    /// consistent and maintainable manner.</remarks>
     public static class AgentEndpointExtensions
     {
         /// <summary>
@@ -34,12 +43,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         public delegate Task ProcessRequestDelegate(HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Represents an asynchronous method that processes an HTTP request using the specified adapter and agent.
+        /// </summary>
+        /// <typeparam name="TAdapter">The type of the HTTP adapter used to handle the request. Must implement <see cref="IAgentHttpAdapter"/>.</typeparam>
+        /// <typeparam name="TAgent">The type of the agent that processes the request. Must implement <see cref="IAgent"/>.</typeparam>
+        /// <param name="request">The HTTP request to be processed.</param>
+        /// <param name="response">The HTTP response to be sent.</param>
+        /// <param name="adapter">The adapter instance used to facilitate communication between the HTTP layer and the agent.</param>
+        /// <param name="agent">The agent instance responsible for handling the request logic.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public delegate Task ProcessRequestDelegate<TAdapter, TAgent>(HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken)
             where TAgent : IAgent
             where TAdapter : IAgentHttpAdapter;
 
         /// <summary>
-        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="ServiceCollectionExtensions.AddAgent{TAgent}(Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>

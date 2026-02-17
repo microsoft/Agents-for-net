@@ -41,6 +41,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <remarks>It is assumed these claims have already been authenticated.</remarks>
         Task<ActivityWithClaims> WaitForActivityAsync(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Stops the operation, optionally waiting for all pending items to be processed before completing.
+        /// </summary>
+        /// <param name="waitForEmpty">true to wait until all pending items have been processed before stopping; otherwise, false to stop
+        /// immediately.</param>
         void Stop(bool waitForEmpty = true);
     }
 }
