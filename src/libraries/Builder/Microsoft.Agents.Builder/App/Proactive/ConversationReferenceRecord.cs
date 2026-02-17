@@ -11,11 +11,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
 {
     public class ConversationReferenceRecord
     {
-        public static string GetKey(string conversationId)
-        {
-            return $"conversationreferences/{conversationId}";
-        }
-
         public ConversationReferenceRecord() { }
 
         public ConversationReferenceRecord(ClaimsIdentity identity, ConversationReference reference)

@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
-            if (string.Equals(turnContext.Activity.Recipient.Role, RoleTypes.ConnectorUser, StringComparison.OrdinalIgnoreCase))
+            if (turnContext.Activity.IsConnectorUser())
             {
                 return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
             }

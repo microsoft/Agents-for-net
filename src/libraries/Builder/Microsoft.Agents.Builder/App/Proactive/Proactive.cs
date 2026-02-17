@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a ResourceResponse with
         /// information about the sent activity.</returns>
-        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken)
+        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
             AssertionHelpers.ThrowIfNull(record, nameof(record));
@@ -81,7 +81,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
-        /// ID.
+        /// ID. The conversation must have previously been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/>.<br/><br/>
+        /// 
+        /// See <see cref="ContinueConversationAsync(IChannelAdapter, ClaimsIdentity, ConversationReference, RouteHandler, CancellationToken)"/>.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
         /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
@@ -89,20 +91,29 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
-        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler handler, CancellationToken cancellationToken = default)
         {
-            var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false) 
+            var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
             await ContinueConversationAsync(adapter, record.Identity, record.Reference, handler, cancellationToken);
         }
 
         /// <summary>
         /// Continues an existing conversation by invoking the specified route handler within the context of the
-        /// provided conversation reference.
+        /// provided conversation reference.  This method will provide TurnState relative to the original conversation
+        /// context, allowing the route handler to process activities and operations as if they were occurring within 
+        /// the original conversation.  This is particularly useful for scenarios such as proactive messaging or 
+        /// background event handling, where activities need to be processed in the context of an existing conversation 
+        /// without direct user interaction.  The route handler will be invoked with a TurnContext that is properly 
+        /// initialized with the conversation reference, and a TurnState that has been loaded with any relevant state 
+        /// information from the original conversation context.  After the route handler completes, any changes to the 
+        /// TurnState will be saved back to the underlying storage, ensuring that state remains consistent across both 
+        /// proactive and reactive interactions within the conversation.
         /// </summary>
         /// <remarks>This method loads and saves turn state before and after invoking the route handler.
         /// It is typically used to process additional activities or operations in the context of an existing
-        /// conversation, such as proactive messaging or background event handling.</remarks>
+        /// conversation, such as proactive messaging or background event handling.<br/><br/>
+        /// NOTE:  OAuth is not availble withing the turn when using this.</remarks>
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
         /// <param name="identity">The claims identity representing the user or bot on whose behalf the conversation is continued. Must not be
         /// null.</param>
@@ -110,7 +121,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="handler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public async Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, RouteHandler handler, CancellationToken cancellationToken)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, RouteHandler handler, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
@@ -128,21 +139,85 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }, cancellationToken).ConfigureAwait(false);
         }
 
-        public Task StoreConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        /// <summary>
+        /// Continues an existing conversation by starting proactive turn.  <see cref="AddContinueConversationRoute(RouteHandler, RouteSelector, string[])"/>
+        /// MUST have been called to register a route handler for the <c>ContinueConversation</c> Event prior to calling this method. The registered route 
+        /// handler will be called with the same TurnState in the context of the original conversation, and if specified on the route the OAuth tokens.
+        /// </summary>
+        /// <param name="adapter">The channel adapter used to process the proactive activity. Cannot be null.</param>
+        /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.  The 
+        /// conversation should have originally been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/></exception>
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, CancellationToken cancellationToken = default)
         {
-            var key = ConversationReferenceRecord.GetKey(turnContext.Activity.Conversation.Id);
+            var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
+                ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
+            await adapter.ProcessProactiveAsync(record!.Identity, record.Reference!.GetContinuationActivity(), _app, cancellationToken);
+        }
+
+        /// <summary>
+        /// Registers a route handler for the ContinueConversation event, enabling the application to process conversation continuation activities.
+        /// </summary>
+        /// <remarks>Use this method to add custom logic for handling proactive messaging. If no selector is provided, the handler will apply to
+        /// all ContinueConversation Events.</remarks>
+        /// <param name="handler">The handler to execute when a ContinueConversation event is received. Cannot be null.</param>
+        /// <param name="autoSignInHandlers">An optional array of handler names that require automatic sign-in before the route handler is invoked.</param>
+        /// <param name="selector">An optional route selector that determines which events the handler should respond to. If null, the handler
+        /// is registered for all ContinueConversation Events.</param>
+        public void AddContinueConversationRoute(RouteHandler handler, string[] autoSignInHandlers = null, RouteSelector selector = null)
+        {
+            // TODO Proactive should fail if user not signed in if autoSignInHandlers are specified.
+            //   a) Fail selector and log
+            //   b) or, Report to user they need to sign in?
+
+            if (selector == null)
+            {
+                _app.OnEvent(ActivityEventNames.ContinueConversation, handler, rank: RouteRank.Last, autoSignInHandlers: autoSignInHandlers);
+            }
+            else
+            {
+                _app.OnEvent(selector, handler, autoSignInHandlers: autoSignInHandlers);
+            }
+        }
+
+        /// <summary>
+        /// Stores the current conversation reference in the proactive storage and returns the conversation identifier.
+        /// </summary>
+        /// <remarks>Use this method to enable proactive messaging scenarios by persisting conversation
+        /// references. The returned conversation identifier can be used to retrieve or reference the conversation in
+        /// future operations.</remarks>
+        /// <param name="turnContext">The context object for the current turn, containing activity and conversation information. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A string containing the conversation identifier for the stored conversation reference.</returns>
+        public async Task<string> StoreConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            var key = GetRecordKey(turnContext.Activity.Conversation.Id);
             var record = new ConversationReferenceRecord(turnContext.Identity, turnContext.Activity.GetConversationReference());
-            return _app.Options.Proactive.Storage.WriteAsync(
+            await _app.Options.Proactive.Storage.WriteAsync(
                 new Dictionary<string, object>
                 {
                     { key, record }
                 },
                 cancellationToken);
+            return turnContext.Activity.Conversation.Id;
         }
 
+        /// <summary>
+        /// Retrieves the conversation reference record associated with the specified conversation identifier
+        /// asynchronously.
+        /// </summary>
+        /// <remarks>If no conversation reference exists for the specified identifier, the method returns
+        /// <see langword="null"/>. This method is thread-safe and does not modify storage.</remarks>
+        /// <param name="conversationId">The unique identifier of the conversation for which to retrieve the reference record. Cannot be null or
+        /// empty.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A <see cref="ConversationReferenceRecord"/> representing the conversation reference if found; otherwise,
+        /// <see langword="null"/>.</returns>
         public async Task<ConversationReferenceRecord?> GetConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
-            var key = ConversationReferenceRecord.GetKey(conversationId);
+            var key = GetRecordKey(conversationId);
             var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
             if (items != null && items.TryGetValue(key, out var item) && item is ConversationReferenceRecord record)
@@ -150,6 +225,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 return record;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Deletes the conversation reference associated with the specified conversation ID from persistent storage
+        /// asynchronously.
+        /// </summary>
+        /// <remarks>If the conversation reference does not exist for the specified conversation ID, no
+        /// action is taken. This method is thread-safe and can be called concurrently.</remarks>
+        /// <param name="conversationId">The unique identifier of the conversation whose reference is to be deleted. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the delete operation.</param>
+        /// <returns>A task that represents the asynchronous delete operation.</returns>
+        public Task DeleteConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
+        {
+            var key = GetRecordKey(conversationId);
+            return _options.Storage.DeleteAsync([key], cancellationToken);
+        }
+
+        private static string GetRecordKey(string conversationId)
+        {
+            return $"conversationreferences/{conversationId}";
         }
     }
 }
