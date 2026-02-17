@@ -328,10 +328,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/createconversation",
-                async (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
                     // TODO: call IProactiveAgent
                     // request -> IProactiveAgent -> AgentApplication.Proactive.CreateConversation
+                    return Task.CompletedTask;
                 })
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 

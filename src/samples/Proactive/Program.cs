@@ -2,14 +2,11 @@
 // Licensed under the MIT License.
 
 using Proactive;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
