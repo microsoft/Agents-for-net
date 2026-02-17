@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/createconversation",
-                async (HttpRequest request, HttpResponse response, IChannelAdapter adapter, IProactiveAgent agent, CancellationToken cancellationToken) =>
+                async (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
                     // TODO: call IProactiveAgent
                     // request -> IProactiveAgent -> AgentApplication.Proactive.CreateConversation
