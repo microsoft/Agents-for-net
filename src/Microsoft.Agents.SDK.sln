@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11222.15
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36915.13 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4269F3C3-6B42-419B-B64A-3E6DC0F1574A}"
 EndProject
@@ -148,6 +148,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioAgentConnector", "samples\CopilotStudioAgentConnector\CopilotStudioAgentConnector.csproj", "{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTelAgent", "samples\OTelAgent\OTelAgent.csproj", "{E49D17AD-D0D2-4E27-223A-EAC12AED4653}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioSubscriberClient", "samples\CopilotStudioClient\CopilotStudioSubscriberClient\CopilotStudioSubscriberClient.csproj", "{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Hosting.AspNetCore.A2A.Tests", "tests\Microsoft.Agents.Hosting.AspNetCore.A2A.Tests\Microsoft.Agents.Hosting.AspNetCore.A2A.Tests.csproj", "{300BA24C-DFE1-E78D-75F3-89EBD9B7451E}"
 EndProject
@@ -845,6 +847,18 @@ Global
 		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x64.Build.0 = Release|Any CPU
 		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x86.ActiveCfg = Release|Any CPU
 		{E49D17AD-D0D2-4E27-223A-EAC12AED4653}.Release|x86.Build.0 = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|x64.Build.0 = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Debug|x86.Build.0 = Debug|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|x64.ActiveCfg = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|x64.Build.0 = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}.Release|x86.Build.0 = Release|Any CPU
 		{300BA24C-DFE1-E78D-75F3-89EBD9B7451E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{300BA24C-DFE1-E78D-75F3-89EBD9B7451E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{300BA24C-DFE1-E78D-75F3-89EBD9B7451E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -932,6 +946,7 @@ Global
 		{8E21BC5B-1E3C-313D-2F5B-4F0181A27AB3} = {674A812C-7287-4883-97F9-697D83750648}
 		{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED} = {674A812C-7287-4883-97F9-697D83750648}
 		{E49D17AD-D0D2-4E27-223A-EAC12AED4653} = {674A812C-7287-4883-97F9-697D83750648}
+		{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA} = {295CD61D-DB20-4DF5-A917-2665DB79A6E4}
 		{300BA24C-DFE1-E78D-75F3-89EBD9B7451E} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

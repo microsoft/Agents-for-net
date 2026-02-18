@@ -152,15 +152,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             {
                 Streaming = true,
             },
-            AdditionalInterfaces =
-            [
-                new AgentInterface()
-                    {
-                        Transport = AgentTransport.JsonRpc,
-                        Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{pathPrefix}/"
-                    }
-            ],
-            PreferredTransport = AgentTransport.JsonRpc,
+            AdditionalInterfaces = [],
         };
 
         var agentAttribute = agent.GetType().GetCustomAttribute<AgentAttribute>();
@@ -178,6 +170,33 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             {
                 agentCard.Version = agentAttribute.Version;
             }
+        }
+
+        var agentInterfaces = agent.GetType().GetCustomAttributes<AgentInterfaceAttribute>();
+        if (agentInterfaces == null)
+        {
+            agentCard.AdditionalInterfaces.Add(new AgentInterface()
+            {
+                Transport = AgentTransport.JsonRpc,
+                Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{pathPrefix}/"
+            });
+            agentCard.PreferredTransport = AgentTransport.JsonRpc;
+        }
+        else
+        {
+            foreach (var agentInterface in agentInterfaces)
+            {
+                if (agentInterface.Protocol == A2AAgentTransportProtocol.HttpJson || agentInterface.Protocol == A2AAgentTransportProtocol.JsonRpc)
+                {
+                    agentCard.AdditionalInterfaces.Add(new AgentInterface()
+                    {
+                        Transport = new AgentTransport(agentInterface.Protocol),
+                        Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{agentInterface.Path}/"
+                    });
+                }
+            }
+
+            agentCard.PreferredTransport = agentCard.AdditionalInterfaces.First().Transport;
         }
 
         var skills = agent.GetType().GetCustomAttributes<A2ASkillAttribute>();

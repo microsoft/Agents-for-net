@@ -1,18 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using A2A.AspNetCore;
 using A2AAgent;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -48,22 +44,15 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// This receives incoming messages from Azure Bot Service or other SDK Agents
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+app.MapAgentRootEndpoint();
 
-// Map A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
-app.MapWellKnownAgentCard();
-app.MapA2AHttp(requireAuth: !app.Environment.IsDevelopment());
+// Map Agent ActivityProtocol endpoints to /api/messages.
+app.MapAgentApplicationEndpoints(!app.Environment.IsDevelopment());
 
-if (!app.Environment.IsDevelopment())
-{
-    incomingRoute.RequireAuthorization();
-}
-else
+// Map A2A endpoints to /a2a.
+app.MapA2AApplicationEndpoints(!app.Environment.IsDevelopment());
+
+if (app.Environment.IsDevelopment())
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.

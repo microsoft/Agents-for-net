@@ -3,6 +3,7 @@
 
 using A2A;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -10,7 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
@@ -27,6 +31,92 @@ public static class A2AServiceExtensions
         services.AddSingleton<A2AAdapter>();
         services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
     }
+
+    /// <summary>
+    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+    /// </summary>
+    /// <param name="endpoints"></param>
+    /// <param name="requireAuth"></param>
+    /// <param name="defaultPath"></param>
+    /// <exception cref="InvalidOperationException"/>
+    public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        bool requireAuth = true,
+        [StringSyntax("Route")] string defaultPath = "/a2a")
+    {
+        if (string.IsNullOrEmpty(defaultPath))
+        {
+            defaultPath = "/a2a";
+        }
+
+        var a2aGroup = endpoints.MapGroup("");
+        if (requireAuth)
+        {
+            a2aGroup.RequireAuthorization();
+        }
+        else
+        {
+            a2aGroup.AllowAnonymous();
+        }
+
+        var allAgents = Assembly.GetCallingAssembly().GetTypes().Where(t => typeof(AgentApplication).IsAssignableFrom(t)).ToList();
+        if (allAgents.Count == 0)
+        {
+            // This is to handle declaring an AgentApplication in an AddTransient lambda.
+            var inlineAgent = endpoints.ServiceProvider.GetService<IAgent>()
+                ?? throw new InvalidOperationException("No AgentApplications were found in the calling assembly. Ensure that at least one AgentApplication is defined.");
+            allAgents.Add(inlineAgent.GetType());
+        }
+
+        foreach (var agent in allAgents)
+        {
+            var interfaces = agent.GetCustomAttributes<AgentInterfaceAttribute>(true)?.ToList();
+            if (interfaces?.Count == 0)
+            {
+                if (allAgents.Count == 1)
+                {
+                    // If there is only one AgentApplication, we can default
+                    interfaces = new List<AgentInterfaceAttribute>()
+                        {
+                            new(A2AAgentTransportProtocol.JsonRpc, defaultPath)
+                        };
+                }
+                else
+                {
+                    throw new InvalidOperationException($"No AgentInterfaceAttribute was found on Agent '{agent.FullName}'. When multiple AgentApplications are defined, each must have at least one AgentInterfaceAttribute.");
+                }
+            }
+
+            foreach (var agentInterface in interfaces)
+            {
+                if (agentInterface.Protocol != A2AAgentTransportProtocol.JsonRpc && agentInterface.Protocol != A2AAgentTransportProtocol.HttpJson)
+                {
+                    continue;
+                }
+
+                if (agentInterface.Protocol == A2AAgentTransportProtocol.JsonRpc)
+                {
+                    a2aGroup.MapJsonRpcMethods(agentInterface.Path);
+                    a2aGroup.MapGet($"{agentInterface.Path}/.well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+                    {
+                        return adapter.ProcessAgentCardAsync(request, response, agent, agentInterface.Path, cancellationToken);
+                    });
+                }
+                else if (agentInterface.Protocol == A2AAgentTransportProtocol.HttpJson)
+                {
+                    a2aGroup.MapHttpMethods(agentInterface.Path);
+                }
+            }
+
+            a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+            {
+                return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
+            });
+        }
+
+        return a2aGroup;
+    }
+
 
     /*
     /// <summary>
@@ -54,7 +144,7 @@ public static class A2AServiceExtensions
         ArgumentNullException.ThrowIfNull(endpoints);
         ArgumentException.ThrowIfNullOrEmpty(path);
 
-        var a2aGroup = endpoints.MapGroup(path);
+        var a2aGroup = endpoints.MapGroup("");
         if (requireAuth)
         {
             a2aGroup.RequireAuthorization();
@@ -64,9 +154,13 @@ public static class A2AServiceExtensions
             a2aGroup.AllowAnonymous();
         }
 
-        // JSONRPC
-        a2aGroup.MapPost(
-            "",
+        return a2aGroup.MapJsonRpcMethods(path);
+    }
+
+    private static RouteGroupBuilder MapJsonRpcMethods(this RouteGroupBuilder routeGroup, string prefixPath = "")
+    {
+        routeGroup.MapPost(
+            prefixPath,
             async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
             {
                 return await adapter.ProcessJsonRpcAsync(request, response, agent, cancellationToken);
@@ -75,7 +169,7 @@ public static class A2AServiceExtensions
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
 
-        return a2aGroup;
+        return routeGroup;
     }
 
     /// <summary>
@@ -127,7 +221,7 @@ public static class A2AServiceExtensions
         ArgumentNullException.ThrowIfNull(endpoints);
         ArgumentException.ThrowIfNullOrEmpty(path);
 
-        var routeGroup = endpoints.MapGroup(path);
+        var routeGroup = endpoints.MapGroup("");
         if (requireAuth)
         {
             routeGroup.RequireAuthorization();
@@ -137,39 +231,43 @@ public static class A2AServiceExtensions
             routeGroup.AllowAnonymous();
         }
 
+        return routeGroup.MapHttpMethods(path);
+    }
+
+    private static RouteGroupBuilder MapHttpMethods(this RouteGroupBuilder routeGroup, string prefixPath = "/a2a")
+    {
         // /v1/card endpoint - Agent discovery
-        routeGroup.MapGet("/v1/card", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-            await adapter.ProcessAgentCardAsync(request, response, agent, path, cancellationToken));
+        routeGroup.MapGet($"{prefixPath}/v1/card", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+            await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken));
 
         // /v1/tasks/{id} endpoint
-        routeGroup.MapGet("/v1/tasks/{id}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int? historyLength, [FromQuery] string? metadata, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int? historyLength, [FromQuery] string? metadata, CancellationToken cancellationToken) =>
             adapter.GetTaskAsync(request, response, agent, id, historyLength, metadata, cancellationToken));
 
         // /v1/tasks/{id}:cancel endpoint
-        routeGroup.MapPost("/v1/tasks/{id}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/v1/tasks/{{id}}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.CancelTaskAsync(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}:subscribe endpoint
-        routeGroup.MapGet("/v1/tasks/{id}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.SubscribeToTask(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - POST
-        routeGroup.MapPost("/v1/tasks/{id}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/v1/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken) =>
             adapter.SetPushNotificationAsync(request, response, agent, id, pushNotificationConfig, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
-        routeGroup.MapGet("/v1/tasks/{id}/pushNotificationConfigs/{notificationConfigId?}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}/pushNotificationConfigs/{{notificationConfigId?}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
             adapter.GetPushNotificationAsync(request, response, agent, id, notificationConfigId, cancellationToken));
 
         // /v1/message:send endpoint
-        routeGroup.MapPost("/v1/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/v1/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
             adapter.SendMessageAsync(request, response, agent, sendParams, cancellationToken));
 
         // /v1/message:stream endpoint
-        routeGroup.MapPost("/v1/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/v1/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
             adapter.SendMessageStream(request, response, agent, sendParams, cancellationToken));
 
         return routeGroup;
     }
-
 }

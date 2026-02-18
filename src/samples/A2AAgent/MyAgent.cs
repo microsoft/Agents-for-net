@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
@@ -13,6 +14,9 @@ using System.Threading.Tasks;
 namespace A2AAgent;
 
 [Agent(name: "MyAgent", description: "Agent with A2A Sample")]
+[AgentInterface(AgentTransportProtocol.ActivityProtocol, "/api/messages")]
+[AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
+[AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
 [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
 [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
 [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]

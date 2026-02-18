@@ -50,6 +50,7 @@
 	<PackageVersion Include="System.Runtime.Caching" Version="10.0.2" />
 	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+    <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.2" />
 	  
 	<!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft_AspNetCore_PkgVer)" />
