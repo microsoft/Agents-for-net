@@ -173,7 +173,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         var agentInterfaces = agent.GetType().GetCustomAttributes<AgentInterfaceAttribute>();
-        if (agentInterfaces == null)
+        if (agentInterfaces == null || !agentInterfaces.Any())
         {
             agentCard.AdditionalInterfaces.Add(new AgentInterface()
             {
@@ -200,7 +200,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
 
         var skills = agent.GetType().GetCustomAttributes<A2ASkillAttribute>();
-        if (skills != null)
+        if (skills != null && skills.Any())
         {
             foreach (var skillAttr in skills)
             {
