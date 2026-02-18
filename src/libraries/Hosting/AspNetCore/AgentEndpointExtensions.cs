@@ -260,12 +260,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// endpoints expect JSON payloads and are grouped under the specified route pattern.</remarks>
         /// <param name="app">The WebApplication to which the proactive messaging endpoints are added.</param>
         /// <param name="requireAuth">true to require authentication for the mapped endpoints; otherwise, false. The default is true.</param>
-        /// <param name="pattern">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
+        /// <param name="defaultPath">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
         /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
         /// endpoints.</returns>
-        public static IEndpointConventionBuilder MapAgentProactive<TAgent>(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/proactive") where TAgent : AgentApplication
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
-            var routeGroup = app.MapGroup(pattern);
+            var routeGroup = app.MapGroup(defaultPath);
             if (requireAuth)
             {
                 routeGroup.RequireAuthorization();
