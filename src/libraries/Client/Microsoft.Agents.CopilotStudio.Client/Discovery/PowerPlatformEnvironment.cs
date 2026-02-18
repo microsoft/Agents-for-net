@@ -21,6 +21,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="conversationId">Optional, Conversation ID to address</param>
         /// <param name="agentType">Type of Agent being addressed. <see cref="AgentType"/></param>
         /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
+        /// <param name="createSubscribeLink">Whether to create a subscribe link for the conversation</param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
@@ -30,6 +31,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 string? conversationId,
                 AgentType agentType = AgentType.Published,
                 PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
+                bool createSubscribeLink = false,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
@@ -40,6 +42,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
                 }
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
                 if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
                     throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
@@ -48,6 +51,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
                 }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
                     cloud = settings.Cloud.Value;
@@ -79,14 +83,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
                 var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId!, cloudBaseAddress);
-                return CreateUri(settings.SchemaName!, host, agentType, conversationId);
+                return CreateUri(settings.SchemaName!, host, agentType, conversationId, createSubscribeLink);
             }
             else
             {
                 directConnectUrl ??= settings.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    return CreateUri(directConnectUrl!, conversationId);
+                    return CreateUri(directConnectUrl!, conversationId, createSubscribeLink);
                 }
                 else
                 {
@@ -184,7 +188,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <summary>
         /// Creates the PowerPlatform API connection URL for the given settings.
         /// </summary>
-        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId)
+        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId, bool createSubscribeLink = false)
         {
             string agentPathName;
             if (AgentType.Published == agentType)
@@ -200,9 +204,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             builder.Host = host;
             builder.Query = $"api-version={ApiVersion}";
             if (string.IsNullOrEmpty(conversationId))
+            {
                 builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations";
+            }
             else
-                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}";
+            {
+                var conversationSuffix = createSubscribeLink ? "/subscribe" : string.Empty;
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}{conversationSuffix}";
+            }
             return builder.Uri;
         }
 
@@ -211,8 +220,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="baseaddress"></param>
         /// <param name="conversationId"></param>
+        /// <param name="createSubscribeLink"></param>
         /// <returns></returns>
-        private static Uri CreateUri(string baseaddress, string? conversationId)
+        private static Uri CreateUri(string baseaddress, string? conversationId, bool createSubscribeLink)
         {
             var builder = new UriBuilder(baseaddress);
             builder.Query = $"api-version={ApiVersion}";
@@ -234,9 +244,15 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
 
             if (string.IsNullOrEmpty(conversationId))
+            {
                 builder.Path = $"{builder.Path}/conversations";
+            }
             else
-                builder.Path = $"{builder.Path}/conversations/{conversationId}";
+            {
+                builder.Path = createSubscribeLink
+                    ? $"{builder.Path}/conversations/{conversationId}/subscribe"
+                    : $"{builder.Path}/conversations/{conversationId}";
+            }
 
             return builder.Uri;
         }

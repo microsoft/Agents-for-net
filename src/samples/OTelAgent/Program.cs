@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using OTelAgent;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -16,7 +15,6 @@ using System;
 using System.Diagnostics.Metrics;
 
 // OpenTelemetry imports
-using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -131,59 +129,70 @@ builder.AddAgentApplicationOptions();
 // Add the AgentApplication logic
 builder.AddAgent<MyAgent>();
 
-// In-memory storage (development)
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operates correctly
+// in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
 builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
+
+// Configure the HTTP request pipeline.
+
 WebApplication app = builder.Build();
 
+// Enable AspNet authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
+// Map GET "/"
+app.MapAgentRootEndpoint();
 
-// Incoming messages route
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    using var activity = AgentTelemetry.ActivitySource.StartActivity("agent.process_message");
-
-    try
+// Map the /api/message endpoint for MyAgent with custom processing logic to include telemetry
+app.MapAgentEndpoints<MyAgent>(
+    requireAuth: !app.Environment.IsDevelopment(), 
+    process: async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, MyAgent agent, CancellationToken cancellationToken) =>
     {
-        activity?.SetTag("agent.type", agent.GetType().Name);
-        activity?.SetTag("request.path", request.Path);
-        activity?.SetTag("request.method", request.Method);
+        using var activity = AgentTelemetry.ActivitySource.StartActivity("agent.process_message");
 
-        await adapter.ProcessAsync(request, response, agent, cancellationToken);
-
-        activity?.SetStatus(ActivityStatusCode.Ok);
-        AgentTelemetry.MessageProcessedCounter.Add(1,
-            new KeyValuePair<string, object?>("agent.type", agent.GetType().Name),
-            new KeyValuePair<string, object?>("status", "success"));
-    }
-    catch (Exception ex)
-    {
-        activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-        activity?.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, new()
+        try
         {
-            ["exception.type"] = ex.GetType().FullName,
-            ["exception.message"] = ex.Message,
-            ["exception.stacktrace"] = ex.StackTrace
-        }));
-        AgentTelemetry.MessageProcessedCounter.Add(1,
-            new KeyValuePair<string, object?>("agent.type", agent.GetType().Name),
-            new KeyValuePair<string, object?>("status", "error"));
-        throw;
-    }
-});
+            activity?.SetTag("agent.type", agent.GetType().Name);
+            activity?.SetTag("request.path", request.Path);
+            activity?.SetTag("request.method", request.Method);
 
-if (!app.Environment.IsDevelopment())
+            await adapter.ProcessAsync(request, response, agent, cancellationToken);
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            AgentTelemetry.MessageProcessedCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.type", agent.GetType().Name),
+                new KeyValuePair<string, object?>("status", "success"));
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, new()
+            {
+                ["exception.type"] = ex.GetType().FullName,
+                ["exception.message"] = ex.Message,
+                ["exception.stacktrace"] = ex.StackTrace
+            }));
+            AgentTelemetry.MessageProcessedCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.type", agent.GetType().Name),
+                new KeyValuePair<string, object?>("status", "error"));
+            throw;
+        }
+    }
+);
+
+if (app.Environment.IsDevelopment())
 {
-    incomingRoute.RequireAuthorization();
-}
-else
-{
+    // Hardcoded for brevity and ease of testing. 
+    // In production, this should be set in configuration.
     app.Urls.Add("http://localhost:3978");
 }
 
