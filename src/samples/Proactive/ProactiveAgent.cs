@@ -5,6 +5,8 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +19,7 @@ public class ProactiveAgent : AgentApplication
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
+        // Manual way to store a conversation for use in Proactive.  This is for sample purposes only.
         OnMessage("-s", async (turnContext, turnState, cancellationToken) =>
         {
             var id = await Proactive.StoreConversationAsync(turnContext, cancellationToken);
@@ -33,7 +36,27 @@ public class ProactiveAgent : AgentApplication
             await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, cancellationToken);
         });
 
-        // This will route all ContinueConversation Events to the same handler
+        // Events can contain an Activity.Value which further describes the event.  This can be used to route to different handlers.
+        // In this case, we look for a property "extended" with a value of true to route to a different handler.
+        // For example, from POSTing to /proactive/continueconversation/{{id}} with a body of { "extended": true }
+        // This is highly dependent on what was passed to Proactive.ContinueConversationAsync(IChannelAdapter, string, IDictionary<string, object>)
+        Proactive.AddContinueConversationRoute(OnContinueConversationExtendedAsync, selector: (context, ct) =>
+        {
+            if (context.Activity.Value == null || context.Activity.ValueType != Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationValueType)
+            {
+                return Task.FromResult(false);
+            }
+
+            var continueProperties = (IDictionary<string, object>)context.Activity.Value;
+            if (continueProperties.TryGetValue("extended", out var extValue))
+            {
+                return Task.FromResult(extValue is JsonElement jsonValueKind ? jsonValueKind.GetBoolean() : (bool)extValue);
+            }
+
+            return Task.FromResult(false);
+        });
+
+        // This will route all ContinueConversation Events to the same handler, with OAuth token from the "me" handler.
         Proactive.AddContinueConversationRoute(OnContinueConversationAsync, autoSignInHandlers: ["me"]);
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
@@ -59,5 +82,10 @@ public class ProactiveAgent : AgentApplication
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync($"This is ContinueConversation with token len={token.Length}", cancellationToken: cancellationToken);
+    }
+
+    private async Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 }

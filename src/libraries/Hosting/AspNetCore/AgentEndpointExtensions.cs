@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -302,7 +303,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 "/sendactivity",
                 async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
-                    var recordRequest = await HttpHelper.ReadRequestAsync<SendToConversationRecord>(httpRequest).ConfigureAwait(false);
+                    var recordRequest = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
 
                     if (recordRequest.ConversationReferenceRecord == null)
                     {
@@ -327,6 +328,35 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
             routeGroup.MapPost(
+                "/continueconversation/{conversationId}",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken cancellationToken) =>
+                {
+                    try
+                    {
+                        var body = await HttpHelper.ReadRequestAsync<JsonElement>(httpRequest).ConfigureAwait(false);
+                        if (body.ValueKind != JsonValueKind.Object && body.ValueKind != JsonValueKind.Undefined)
+                        {
+                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                            await httpResponse.WriteAsJsonAsync(new { error = "Request body must be a JSON object containing the properties for ContinueConversation." }, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        var continueProperties = body.ValueKind == JsonValueKind.Object
+                            ? body.EnumerateObject().ToDictionary(p => p.Name, p => (object)p.Value)
+                            : null;
+
+                        await agent.Proactive.ContinueConversationAsync(adapter, conversationId, continueProperties, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status404NotFound;
+                        await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
                 "/createconversation",
                 (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
@@ -339,11 +369,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return routeGroup;
         }
 
-        class SendToConversationRecord
+        class SendToConversationBody
         {
             public ConversationReferenceRecord ConversationReferenceRecord { get; set; }
             public IActivity Activity { get; set; } = default!;
 		}
+
+        class ContinueConversationBody
+        {
+            public ConversationReferenceRecord ConversationReferenceRecord { get; set; }
+            public IActivity Activity { get; set; } = default!;
+        }
 
         private static bool IsOrDerives(this Type type, Type baseType)
         {

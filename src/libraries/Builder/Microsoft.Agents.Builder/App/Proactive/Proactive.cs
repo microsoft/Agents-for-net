@@ -15,6 +15,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         private readonly AgentApplication _app;
         private readonly ProactiveOptions _options;
 
+        /// <summary>
+        /// Options <c>IAcitivty.ValueType</c> that indicates additional information for the ContinueConversation Event. If
+        /// specified, the AgentApplication can use this to route the Event to a RouteHandler.
+        /// </summary>
+        public static readonly string ContinueConversationValueType = "application/vnd.microsoft.activity.continueconversation";
+
         public Proactive(AgentApplication app)
         {
             _app = app;
@@ -132,7 +138,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Continues an existing conversation by starting proactive turn.  <see cref="AddContinueConversationRoute(RouteHandler, RouteSelector, string[])"/>
+        /// Continues an existing conversation by starting proactive turn.  <see cref="AddContinueConversationRoute(RouteHandler, string[], RouteSelector)"/>
         /// MUST have been called to register a route handler for the <c>ContinueConversation</c> Event prior to calling this method. The registered route 
         /// handler will be called with the same TurnState in the context of the original conversation, and if specified on the route the OAuth tokens.
         /// </summary>
@@ -150,6 +156,33 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Continues an existing conversation by starting proactive turn.  <see cref="AddContinueConversationRoute(RouteHandler, string[], RouteSelector)"/>
+        /// MUST have been called to register a route handler for the <c>ContinueConversation</c> Event prior to calling this method. The registered route 
+        /// handler will be called with the same TurnState in the context of the original conversation, and if specified on the route the OAuth tokens.
+        /// </summary>
+        /// <param name="adapter">The channel adapter used to process the proactive conversation activity.</param>
+        /// <param name="conversationId">The unique identifier of the conversation to continue. Must correspond to a valid conversation reference.</param>
+        /// <param name="continueProperties">A dictionary containing properties to include in the continuation activity. These properties are passed as
+        /// the activity's value.  These can be used in a custom RouteSelector to route to the desired RouteHandler.<br/><br/>The ITurnContext.Activity.Value 
+        /// will contain the dictionary. The ITurnContext.Activity.ValueType will be <see cref="ContinueConversationValueType"/></param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation of continuing the conversation.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, IDictionary<string, object> continueProperties, CancellationToken cancellationToken = default)
+        {
+            var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
+                ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
+
+            var continuationActivity = record!.Reference!.GetContinuationActivity();
+            if (continueProperties?.Count > 0)
+            {
+                continuationActivity.ValueType = ContinueConversationValueType;
+                continuationActivity.Value = continueProperties;
+            }
+            await adapter.ProcessProactiveAsync(record!.Identity, continuationActivity, _app, cancellationToken);
+        }
+
+        /// <summary>
         /// Registers a route handler for the ContinueConversation event, enabling the application to process conversation continuation activities.
         /// </summary>
         /// <remarks>Use this method to add custom logic for handling proactive messaging. If no selector is provided, the handler will apply to
@@ -162,7 +195,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             // TODO Proactive should fail if user not signed in if autoSignInHandlers are specified.
             //   a) Fail selector and log
-            //   b) or, Report to user they need to sign in?
+            //   b) or, Report to user they need to sign in?  Somehow?
 
             if (selector == null)
             {
