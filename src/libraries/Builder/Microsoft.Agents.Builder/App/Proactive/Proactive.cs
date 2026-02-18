@@ -100,20 +100,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Continues an existing conversation by invoking the specified route handler within the context of the
-        /// provided conversation reference.  This method will provide TurnState relative to the original conversation
-        /// context, allowing the route handler to process activities and operations as if they were occurring within 
-        /// the original conversation.  This is particularly useful for scenarios such as proactive messaging or 
-        /// background event handling, where activities need to be processed in the context of an existing conversation 
-        /// without direct user interaction.  The route handler will be invoked with a TurnContext that is properly 
-        /// initialized with the conversation reference, and a TurnState that has been loaded with any relevant state 
-        /// information from the original conversation context.  After the route handler completes, any changes to the 
-        /// TurnState will be saved back to the underlying storage, ensuring that state remains consistent across both 
-        /// proactive and reactive interactions within the conversation.
+        /// provided conversation reference.  This method will provide TurnContext and TurnState relative to the 
+        /// original conversation context, allowing the route handler to process activities and operations as if 
+        /// they were occurring within the original conversation. After the route handler completes, any changes 
+        /// to the TurnState will be saved back to the underlying storage.
         /// </summary>
-        /// <remarks>This method loads and saves turn state before and after invoking the route handler.
-        /// It is typically used to process additional activities or operations in the context of an existing
-        /// conversation, such as proactive messaging or background event handling.<br/><br/>
-        /// NOTE:  OAuth is not availble withing the turn when using this.</remarks>
+        /// <remarks>NOTE:  OAuth is not availble within the turn when using this.</remarks>
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
         /// <param name="identity">The claims identity representing the user or bot on whose behalf the conversation is continued. Must not be
         /// null.</param>
@@ -182,6 +174,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
         }
 
+        #region Conversation Storage
         /// <summary>
         /// Stores the current conversation reference in the proactive storage and returns the conversation identifier.
         /// </summary>
@@ -246,5 +239,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             return $"conversationreferences/{conversationId}";
         }
+        #endregion
     }
 }
