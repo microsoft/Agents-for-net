@@ -11,6 +11,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
+using System;
 
 namespace Microsoft.Agents.Hosting.A2A;
 
@@ -29,6 +30,12 @@ public static class A2AServiceExtensions
         services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
     }
 
+    [Obsolete("Use MapA2AEndpoints instead")]
+    public static IEndpointConventionBuilder MapA2A(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
+    {
+        return endpoints.MapA2AEndpoints(requireAuth, pattern);
+    }
+
     /// <summary>
     /// Maps A2A endpoints.
     /// </summary>
@@ -36,8 +43,13 @@ public static class A2AServiceExtensions
     /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
     /// <param name="pattern">Indicate the route patter, defaults to "/a2a"</param>
     /// <returns></returns>
-    public static IEndpointConventionBuilder MapA2A(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
+    public static IEndpointConventionBuilder MapA2AEndpoints(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
     {
+        if (string.IsNullOrEmpty(pattern))
+        {
+            pattern = "/a2a";
+        }
+
         var a2aGroup = endpoints.MapGroup(pattern);
         if (requireAuth)
         {
@@ -48,7 +60,11 @@ public static class A2AServiceExtensions
             a2aGroup.AllowAnonymous();
         }
 
-        // JSONRPC
+        // TODO A2A HTTP route mapping
+        //   Before post-preview, A2A needs to account for more than one AgentApplication in the same host.
+        //   This should work like the AspNetCore.ServiceCollectionExtensions.MapAgentApplicationEndpoints method extension and use the AgentInterfaceAttribute.
+
+        // JSONRPC route
         a2aGroup.MapPost(
             "",
             async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>

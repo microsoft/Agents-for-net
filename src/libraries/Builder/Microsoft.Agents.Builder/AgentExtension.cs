@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using System;
 
 namespace Microsoft.Agents.Builder
 {
@@ -16,7 +17,15 @@ namespace Microsoft.Agents.Builder
 #else
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false) {
+
+        [Obsolete("This method is deprecated. Please use the overload that includes the 'isAgenticOnly' parameter.")]
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        {
+            AddRoute(agentApplication, routeSelector, routeHandler, isInvokeRoute, false, rank, autoSignInHandlers);
+        }
+
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) 
+        {
             var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
                 bool isForChannel = false; 
                 if (turnContext.Activity.ChannelId != null && ChannelId != null)

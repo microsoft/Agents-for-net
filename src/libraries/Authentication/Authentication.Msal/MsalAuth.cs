@@ -248,8 +248,8 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return !string.IsNullOrEmpty(connectionSettings.Authority)
-                ? Regex.Replace(connectionSettings.Authority, @"/common(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
-                : $"https://login.microsoftonline.com/{tenantId}";
+                            ? Regex.Replace(connectionSettings.Authority, @"/(?:common|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
+                            : $"https://login.microsoftonline.com/{tenantId}";
         }
 
         /// <summary>

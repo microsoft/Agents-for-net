@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 );
             }
 
-            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && string.Equals(ChannelData.EventType, "editMessage"));
             }
 
-            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -173,7 +173,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && string.Equals(ChannelData.EventType, "undeleteMessage"));
             }
 
-            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && string.Equals(ChannelData.EventType, "softDeleteMessage"));
             }
 
-            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, handler, isInvokeRoute: false, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -226,7 +226,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
             }
 
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: false, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: false, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 await SetResponse(turnContext, result);
             }
 
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -278,7 +278,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 await SetResponse(turnContext, result);
             }
 
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 await SetResponse(turnContext);
             };
 
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, isAgenticOnly, rank, autoSignInHandlers);
             return this;
         }
 
@@ -356,7 +356,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 await SetResponse(turnContext);
             }
 
-            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers, isAgenticOnly);
+            AddRoute(AgentApplication, routeSelector, routeHandler, isInvokeRoute: true, isAgenticOnly, rank, autoSignInHandlers);
             return AgentApplication;
         }
 
