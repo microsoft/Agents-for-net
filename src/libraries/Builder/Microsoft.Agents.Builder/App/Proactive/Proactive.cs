@@ -173,13 +173,38 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
 
-            var continuationActivity = record!.Reference!.GetContinuationActivity();
+            await ContinueConversationAsync(adapter, record.Identity, record.Reference, continueProperties, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Continues an existing conversation by starting proactive turn.  <see cref="AddContinueConversationRoute(RouteHandler, string[], RouteSelector)"/>
+        /// MUST have been called to register a route handler for the <c>ContinueConversation</c> Event prior to calling this method. The registered route 
+        /// handler will be called with the same TurnState in the context of the original conversation, and if specified on the route the OAuth tokens.
+        /// </summary>
+        /// <param name="adapter">The channel adapter used to process the proactive conversation activity.</param>
+        /// <param name="identity">The claims identity representing the user or bot on whose behalf the conversation is continued. Must not be
+        /// null.</param>
+        /// <param name="reference">The conversation reference that identifies the conversation to continue. Must not be null.</param>
+        /// <param name="continueProperties">A dictionary containing properties to include in the continuation activity. These properties are passed as
+        /// the activity's value.  These can be used in a custom RouteSelector to route to the desired RouteHandler.<br/><br/>The ITurnContext.Activity.Value 
+        /// will contain the dictionary. The ITurnContext.Activity.ValueType will be <see cref="ContinueConversationValueType"/></param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation of continuing the conversation.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, IDictionary<string, object> continueProperties, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
+            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
+            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
+
+            var continuationActivity = reference.GetContinuationActivity();
             if (continueProperties?.Count > 0)
             {
                 continuationActivity.ValueType = ContinueConversationValueType;
                 continuationActivity.Value = continueProperties;
             }
-            await adapter.ProcessProactiveAsync(record!.Identity, continuationActivity, _app, cancellationToken);
+
+            await adapter.ProcessProactiveAsync(identity, continuationActivity, _app, cancellationToken);
         }
 
         /// <summary>

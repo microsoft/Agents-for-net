@@ -303,23 +303,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 "/sendactivity",
                 async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
-                    var recordRequest = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
+                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
 
-                    if (recordRequest.ConversationReferenceRecord == null)
+                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
                     {
                         httpResponse.StatusCode = StatusCodes.Status400BadRequest;
                         await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
-                    if (recordRequest.Activity == null)
+                    if (body.Activity == null)
                     {
                         httpResponse.StatusCode = StatusCodes.Status400BadRequest;
                         await httpResponse.WriteAsJsonAsync(new { error = "Activity is required." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
-                    var response = await Proactive.SendActivityAsync(adapter, recordRequest.ConversationReferenceRecord, recordRequest.Activity, cancellationToken).ConfigureAwait(false);
+                    var response = await Proactive.SendActivityAsync(adapter, body.ReferenceRecord, body.Activity, cancellationToken).ConfigureAwait(false);
 
                     using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
                     httpResponse.Headers.ContentType = "application/json";
@@ -357,6 +357,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
             routeGroup.MapPost(
+                "/continueconversation",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                {
+                    var body = await HttpHelper.ReadRequestAsync<ContinueConversationBody>(httpRequest).ConfigureAwait(false);
+
+                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    await agent.Proactive.ContinueConversationAsync(adapter, body.ReferenceRecord.Identity, body.ReferenceRecord.Reference, body.ContinueProperties, cancellationToken).ConfigureAwait(false);
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
                 "/createconversation",
                 (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
@@ -371,14 +388,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         class SendToConversationBody
         {
-            public ConversationReferenceRecord ConversationReferenceRecord { get; set; }
+            public ConversationReferenceRecord ReferenceRecord { get; set; }
             public IActivity Activity { get; set; } = default!;
 		}
 
         class ContinueConversationBody
         {
-            public ConversationReferenceRecord ConversationReferenceRecord { get; set; }
-            public IActivity Activity { get; set; } = default!;
+            public ConversationReferenceRecord ReferenceRecord { get; set; }
+            public IDictionary<string, object> ContinueProperties { get; set; }
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)
