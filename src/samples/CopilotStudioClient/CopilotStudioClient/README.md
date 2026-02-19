@@ -26,7 +26,7 @@ This step will require permissions to Create application identities in your Azur
 1. Create an new App Registration in Entra ID 
     1. Provide a Name
     1. Choose "Accounts in this organization directory only"
-    1. In the "Select a Platform" list, Choose "Public Client/native (mobile & desktop) 
+    1. In the "Select a Platform" list, Choose "Public Client/native (mobile & desktop)" 
     1. In the Redirect URI url box, type in `http://localhost` (**note: use HTTP, not HTTPS**)
     1. Then click register.
 1. In your newly created application
