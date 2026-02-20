@@ -10,6 +10,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -162,6 +163,12 @@ namespace Microsoft.Agents.Builder.App
                 AdaptiveCards = cardOptions ?? section.Get<AdaptiveCardsOptions>();
             }
 
+            Proactive = new ProactiveOptions
+            {
+                // TODO: Change after PR #712 merges, use Options.Storage
+                Storage = storage ?? sp.GetService<IStorage>()
+            };
+
             // Can't get these from config at the moment
             FileDownloaders = fileDownloaders;
         }
@@ -184,6 +191,8 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Options used to customize the processing of Adaptive Card requests.
         /// </summary>
         public AdaptiveCardsOptions? AdaptiveCards { get; set; }
+
+        public ProactiveOptions Proactive { get; set; }
 
         /// <summary>
         /// Optional. Factory used to create a custom turn state instance.

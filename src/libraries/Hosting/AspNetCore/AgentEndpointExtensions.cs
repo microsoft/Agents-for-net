@@ -3,20 +3,36 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
+    /// <summary>
+    /// Provides extension methods for mapping HTTP endpoints related to Agent applications, including activity protocol
+    /// endpoints, proactive messaging, and root informational endpoints, to ASP.NET Core applications.
+    /// </summary>
+    /// <remarks>These extension methods simplify the integration of Agent-based bots and services into
+    /// ASP.NET Core applications by registering standardized endpoints for message processing, proactive operations,
+    /// and diagnostics. The methods support configuration of authentication requirements, custom request processing
+    /// delegates, and route patterns. Use these extensions to quickly expose bot functionality over HTTP in a
+    /// consistent and maintainable manner.</remarks>
     public static class AgentEndpointExtensions
     {
         /// <summary>
@@ -28,12 +44,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         public delegate Task ProcessRequestDelegate(HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Represents an asynchronous method that processes an HTTP request using the specified adapter and agent.
+        /// </summary>
+        /// <typeparam name="TAdapter">The type of the HTTP adapter used to handle the request. Must implement <see cref="IAgentHttpAdapter"/>.</typeparam>
+        /// <typeparam name="TAgent">The type of the agent that processes the request. Must implement <see cref="IAgent"/>.</typeparam>
+        /// <param name="request">The HTTP request to be processed.</param>
+        /// <param name="response">The HTTP response to be sent.</param>
+        /// <param name="adapter">The adapter instance used to facilitate communication between the HTTP layer and the agent.</param>
+        /// <param name="agent">The agent instance responsible for handling the request logic.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public delegate Task ProcessRequestDelegate<TAdapter, TAgent>(HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken)
             where TAgent : IAgent
             where TAdapter : IAgentHttpAdapter;
 
         /// <summary>
-        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="ServiceCollectionExtensions.AddAgent{TAgent}(Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>
@@ -216,6 +244,158 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;
             var assemblyVersion = System.Reflection.Assembly.GetCallingAssembly().GetName().Version?.ToString() ?? "unknown";
             app.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
+        }
+
+        /// <summary>
+        /// Maps endpoints for handling proactive messaging operations, such as sending activities to conversations, to
+        /// the specified route group in the application's endpoint routing pipeline.
+        /// </summary>
+        /// <remarks>
+        /// /proactive/sendactivity/{conversationId} - sends an activity to a specific conversation using the conversation ID.<br/><br/>
+        /// /proactive/sendactivity - sends an activity using a conversation reference record, which includes the necessary information to identify the target conversation.<br/><br/>
+        /// /proactive/createconversation - creates a new conversation and sends an initial activity to it. The request payload should include the necessary information to create the conversation and the activity to be sent.<br/><br/>
+        /// </remarks>
+        /// <remarks>The mapped endpoints include operations for sending activities to a specific
+        /// conversation, sending activities using a conversation reference, and creating new conversations. If
+        /// requireAuth is set to true, all endpoints require authorization; otherwise, they allow anonymous access. The
+        /// endpoints expect JSON payloads and are grouped under the specified route pattern.</remarks>
+        /// <param name="app">The WebApplication to which the proactive messaging endpoints are added.</param>
+        /// <param name="requireAuth">true to require authentication for the mapped endpoints; otherwise, false. The default is true.</param>
+        /// <param name="defaultPath">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
+        /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
+        /// endpoints.</returns>
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
+        {
+            var routeGroup = app.MapGroup(defaultPath);
+            if (requireAuth)
+            {
+                routeGroup.RequireAuthorization();
+            }
+            else
+            {
+                routeGroup.AllowAnonymous();
+            }
+
+            routeGroup.MapPost(
+                "/sendactivity/{conversationId}",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken cancellationToken) =>
+                {
+                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
+
+                    try
+                    {
+                        var response = await agent.Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken).ConfigureAwait(false);
+
+                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                        httpResponse.Headers.ContentType = "application/json";
+                        await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status404NotFound;
+                        await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
+                "/sendactivity",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                {
+                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
+
+                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    if (body.Activity == null)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "Activity is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    var response = await Proactive.SendActivityAsync(adapter, body.ReferenceRecord, body.Activity, cancellationToken).ConfigureAwait(false);
+
+                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                    httpResponse.Headers.ContentType = "application/json";
+                    await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
+                "/continueconversation/{conversationId}",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken cancellationToken) =>
+                {
+                    try
+                    {
+                        var body = await HttpHelper.ReadRequestAsync<JsonElement>(httpRequest).ConfigureAwait(false);
+                        if (body.ValueKind != JsonValueKind.Object && body.ValueKind != JsonValueKind.Undefined)
+                        {
+                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                            await httpResponse.WriteAsJsonAsync(new { error = "Request body must be a JSON object containing the properties for ContinueConversation." }, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        var continueProperties = body.ValueKind == JsonValueKind.Object
+                            ? body.EnumerateObject().ToDictionary(p => p.Name, p => (object)p.Value)
+                            : null;
+
+                        await agent.Proactive.ContinueConversationAsync(adapter, conversationId, continueProperties, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status404NotFound;
+                        await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
+                "/continueconversation",
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                {
+                    var body = await HttpHelper.ReadRequestAsync<ContinueConversationBody>(httpRequest).ConfigureAwait(false);
+
+                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    await agent.Proactive.ContinueConversationAsync(adapter, body.ReferenceRecord.Identity, body.ReferenceRecord.Reference, body.ContinueProperties, cancellationToken).ConfigureAwait(false);
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost(
+                "/createconversation",
+                (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                {
+                    // TODO: call IProactiveAgent
+                    // request -> IProactiveAgent -> AgentApplication.Proactive.CreateConversation
+                    return Task.CompletedTask;
+                })
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            return routeGroup;
+        }
+
+        class SendToConversationBody
+        {
+            public ConversationReferenceRecord ReferenceRecord { get; set; }
+            public IActivity Activity { get; set; } = default!;
+		}
+
+        class ContinueConversationBody
+        {
+            public ConversationReferenceRecord ReferenceRecord { get; set; }
+            public IDictionary<string, object> ContinueProperties { get; set; }
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)

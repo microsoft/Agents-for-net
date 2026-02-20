@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
@@ -12,6 +13,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -61,6 +63,7 @@ namespace Microsoft.Agents.Builder.App
             // Application Features
 
             AdaptiveCards = new AdaptiveCard(this);
+            Proactive = new Proactive.Proactive(this);
 
             if (options.UserAuthorization != null)
             {
@@ -76,6 +79,8 @@ namespace Microsoft.Agents.Builder.App
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
+
+        public Proactive.Proactive Proactive { get; }
 
         /// <summary>
         /// The application's configured options.
