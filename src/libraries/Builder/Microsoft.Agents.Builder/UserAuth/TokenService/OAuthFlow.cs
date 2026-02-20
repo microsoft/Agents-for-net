@@ -5,9 +5,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Storage;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -246,6 +244,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         // Throws:
         //    ErrorResponseException
         //    UserCancelledException
+        //    ConsentRequiredException - caller should noop if no specific action required.
         private async Task<TokenResponse> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse result = null;
@@ -284,7 +283,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
                     if (result != null)
                     {
-                        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.InvokeResponse }, cancellationToken).ConfigureAwait(false);
+                        await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -338,12 +337,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
                         if (!isConsentRequired)
                         {
-                            // Unclear if this will ever happen except for a hard transient error since the deduping would have done
-                            // this already.  Leaving for some defensive coding.
                             // This is a critical error.  Either request failure, or OAuth Connection misconfiguration.
                             // A 400 seems to cause Teams to not retry.  412 or 500 does not.
-                            // Callers should catch and clean up state because all bets are off.  This is a hammer and
-                            // more work may be possible for a more nuanced handling.
+                            // Callers should catch and clean up state because all bets are off.
                             await SendInvokeResponseAsync(
                                 turnContext,
                                 HttpStatusCode.BadRequest,
@@ -368,6 +364,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
                                 FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
+
+                        throw new ConsentRequiredException();
                     }
                     else
                     {
