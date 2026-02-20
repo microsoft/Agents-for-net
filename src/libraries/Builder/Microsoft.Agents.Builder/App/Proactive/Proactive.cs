@@ -21,6 +21,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         public static readonly string ContinueConversationValueType = "application/vnd.microsoft.activity.continueconversation";
 
+        /// <summary>
+        /// Options <c>IAcitivty.ValueType</c> that indicates additional information for the CreateConversation Event. If
+        /// specified, the AgentApplication can use this to route the Event to a RouteHandler.
+        /// </summary>
+        public static readonly string CreateConversationValueType = "application/vnd.microsoft.activity.createconversation";
+
         public Proactive(AgentApplication app)
         {
             _app = app;
@@ -80,7 +86,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             await adapter.ContinueConversationAsync(record.Identity, record.Reference, async (turnContext, ct) =>
             {
                 response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
 
             return response;
         }
@@ -101,7 +107,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
-            await ContinueConversationAsync(adapter, record.Identity, record.Reference, handler, cancellationToken);
+            await ContinueConversationAsync(adapter, record.Identity, record.Reference, handler, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -152,7 +158,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             var record = await GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
-            await adapter.ProcessProactiveAsync(record!.Identity, record.Reference!.GetContinuationActivity(), _app, cancellationToken);
+            await adapter.ProcessProactiveAsync(record!.Identity, record.Reference!.GetContinuationActivity(), _app, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -204,7 +210,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 continuationActivity.Value = continueProperties;
             }
 
-            await adapter.ProcessProactiveAsync(identity, continuationActivity, _app, cancellationToken);
+            await adapter.ProcessProactiveAsync(identity, continuationActivity, _app, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -251,7 +257,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 {
                     { key, record }
                 },
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             return turnContext.Activity.Conversation.Id;
         }
 

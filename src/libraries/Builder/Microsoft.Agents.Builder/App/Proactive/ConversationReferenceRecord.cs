@@ -46,8 +46,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Gets or sets the collection of claims associated with the current entity.
         /// </summary>
-        /// <remarks>Each entry in the dictionary represents a claim, where the key is the claim type and
-        /// the value is the claim value. The collection may be null if no claims are associated.</remarks>
+        /// <remarks>This is the list of JWT claims.  For Azure Bot Service, only the 'aud' claim is required.  The 'aud' claim 
+        /// should be the ClientId of the Azure Bot.</remarks>
         public IDictionary<string, string>? Claims { get; set; }
 
         /// <summary>
@@ -61,19 +61,22 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <remarks>The returned identity reflects the current claims in the object. Modifying the claims
         /// after accessing this property does not update the returned identity instance.</remarks>
         [JsonIgnore]
-        public ClaimsIdentity Identity => new(Claims?.Select(kv => new Claim(kv.Key, kv.Value)).ToList());
+        public ClaimsIdentity Identity => IdentityFromClaims(Claims);
 
         /// <summary>
         /// Extracts a dictionary of selected claim types and their values from the specified identity.
         /// </summary>
-        /// <remarks>Only claims with the types 'aud', 'azp', 'appid', 'idtyp', 'ver', and 'iss' are
-        /// included in the returned dictionary. If multiple claims of the same type exist, only the last occurrence is
-        /// included due to dictionary key uniqueness.</remarks>
+        /// <remarks>Only claims with the types 'aud', 'azp', 'appid', 'idtyp', 'ver', 'iss', and 'tid' are
+        /// included in the returned dictionary.</remarks>
         /// <param name="identity">The identity from which to extract claims. Cannot be null.</param>
-        /// <returns>A dictionary containing the values of the 'aud', 'azp', 'appid', 'idtyp', 'ver', and 'iss' claims from the
-        /// identity. The dictionary is empty if none of these claims are present.</returns>
+        /// <returns>A dictionary containing applicable claims from the ClaimsIdentity.</returns>
         public static IDictionary<string, string> ClaimsFromIdentity(ClaimsIdentity identity)
         {
+            if (identity == null)
+            {
+                return new Dictionary<string, string>();
+            }
+
             return identity.Claims.Where(c =>
             {
                 return c.Type == "aud"
@@ -81,8 +84,24 @@ namespace Microsoft.Agents.Builder.App.Proactive
                     || c.Type == "appid"
                     || c.Type == "idtyp"
                     || c.Type == "ver"
-                    || c.Type == "iss";
+                    || c.Type == "iss"
+                    || c.Type == "tid";
             }).ToDictionary(c => c.Type, c => c.Value);
+        }
+
+        /// <summary>
+        /// Creates a new ClaimsIdentity from the specified collection of claim type and value pairs.
+        /// </summary>
+        /// <param name="claims">A dictionary containing claim types as keys and their corresponding claim values. Cannot be null.</param>
+        /// <returns>A ClaimsIdentity containing a claim for each entry in the provided dictionary.</returns>
+        public static ClaimsIdentity IdentityFromClaims(IDictionary<string, string> claims)
+        {
+            if (claims == null)
+            {
+                return new ClaimsIdentity();
+            }
+
+            return new ClaimsIdentity([.. claims.Select(kv => new Claim(kv.Key, kv.Value))]);
         }
     }
 }

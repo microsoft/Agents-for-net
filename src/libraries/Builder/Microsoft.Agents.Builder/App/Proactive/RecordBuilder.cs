@@ -12,13 +12,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// Provides a builder for constructing instances of the ConversationReferenceRecord class with configurable
     /// reference and claims information.
     /// </summary>
-    /// <remarks>Use RecordBuilder to fluently configure and create ConversationReferenceRecord objects. This
-    /// class supports setting conversation references and claims data through a series of method calls before building
-    /// the final record. RecordBuilder is not thread-safe.</remarks>
+    /// <remarks>Use RecordBuilder to incrementally specify details of a conversation reference record, such as
+    /// the user, agent, service URL, activity ID, and locale. This class is intended to simplify the creation of
+    /// ConversationReferenceRecord instances for use in Proactive scenarios. The builder ensures required
+    /// fields are set and applies sensible defaults for optional properties if not specified.</remarks>
     public class RecordBuilder
     {
         private readonly ConversationReferenceRecord _record = new();
-        private ReferenceBuilder _refBuilder;
 
         /// <summary>
         /// Creates a new instance of the RecordBuilder class for constructing record objects.
@@ -27,17 +27,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public static RecordBuilder Create()
         {
             return new RecordBuilder();
-        }
-
-        /// <summary>
-        /// Sets the reference information for the record being built.
-        /// </summary>
-        /// <param name="refBuilder">The builder that specifies the reference details to associate with the record. Cannot be null.</param>
-        /// <returns>The current <see cref="RecordBuilder"/> instance with the updated reference information.</returns>
-        public RecordBuilder WithReference(ReferenceBuilder refBuilder)
-        {
-            _refBuilder = refBuilder;
-            return this;
         }
 
         /// <summary>
@@ -61,8 +50,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="requestorId">An optional requestor identifier to associate with the 'appid' claim. If null or empty, the 'appid' claim is
         /// not added.</param>
         /// <returns>The current <see cref="RecordBuilder"/> instance with the updated claims.</returns>
-        public RecordBuilder WithClaimsFromClientId(string agentClientId, string requestorId = null)
-        {             
+        public RecordBuilder WithClaimsForClientId(string agentClientId, string requestorId = null)
+        {        
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
             var claims = new Dictionary<string, string>
             {
                 { "aud", agentClientId },
@@ -82,7 +72,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="RecordBuilder"/> instance with the specified claims applied.</returns>
         public RecordBuilder WithClaims(IDictionary<string, string> claims)
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(claims, "Claims cannot be null or empty");
+            AssertionHelpers.ThrowIfNullOrEmpty(claims, nameof(claims));
             _record.Claims = claims;
             return this;
         }
@@ -106,12 +96,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public ConversationReferenceRecord Build()
         {
             AssertionHelpers.ThrowIfNullOrEmpty(_record.Claims, "Record.Claims cannot be null or empty");
-
-            if (_refBuilder != null)
-            {
-                _record.Reference = _refBuilder.Build();
-            }
-
             AssertionHelpers.ThrowIfNull(_record.Reference, "Record.Reference cannot be null");
 
             return _record;

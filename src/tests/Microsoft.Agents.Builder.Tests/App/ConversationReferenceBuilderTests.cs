@@ -100,26 +100,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithUser_WithCustomRole_SetsCustomRole()
-        {
-            // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
-            var conversationId = "test-conversation-id";
-            var userId = "user-123";
-            var customRole = "CustomRole";
-
-            // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
-                .WithUser(userId, null, customRole)
-                .Build();
-
-            // Assert
-            Assert.NotNull(reference.User);
-            Assert.Equal(userId, reference.User.Id);
-            Assert.Equal(customRole, reference.User.Role);
-        }
-
-        [Fact]
         public void WithUser_WithChannelAccount_SetsUserCorrectly()
         {
             // Arrange
@@ -178,26 +158,6 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(agentId, reference.Agent.Id);
             Assert.Null(reference.Agent.Name);
             Assert.Equal(RoleTypes.Agent, reference.Agent.Role);
-        }
-
-        [Fact]
-        public void WithAgent_WithCustomRole_SetsCustomRole()
-        {
-            // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
-            var conversationId = "test-conversation-id";
-            var agentId = "agent-123";
-            var customRole = "CustomAgentRole";
-
-            // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
-                .WithAgent(agentId, null, customRole)
-                .Build();
-
-            // Assert
-            Assert.NotNull(reference.Agent);
-            Assert.Equal(agentId, reference.Agent.Id);
-            Assert.Equal(customRole, reference.Agent.Role);
         }
 
         [Fact]

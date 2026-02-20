@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// </summary>
     /// <remarks>Use ReferenceBuilder to incrementally specify details of a conversation reference, such as
     /// the user, agent, service URL, activity ID, and locale. This class is intended to simplify the creation of
-    /// ConversationReference instances for use in bot frameworks or messaging scenarios. The builder ensures required
+    /// ConversationReference instances for use Proactive scenarios. The builder ensures required
     /// fields are set and applies sensible defaults for optional properties if not specified.</remarks>
     public class ReferenceBuilder
     {
@@ -37,15 +37,33 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Creates a new instance of the ReferenceBuilder class initialized with the specified agent ID, channel ID,
+        /// and optional service URL.
+        /// </summary>
+        /// <param name="agentClientId">The unique identifier of the agent. Cannot be null or empty.</param>
+        /// <param name="channelId">The identifier of the channel to associate with the reference. Cannot be null or empty.</param>
+        /// <param name="serviceUrl">The service URL to associate with the reference, or null to omit the service URL.</param>
+        /// <returns>A ReferenceBuilder instance initialized with the provided agent ID, channel ID, and optional service URL.</returns>
+        public static ReferenceBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null)
+        {
+            AssertionHelpers.ThrowIfNullOrEmpty(agentClientId, nameof(agentClientId));
+            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
+            var builder = new ReferenceBuilder();
+            builder._reference.Agent = new ChannelAccount(agentClientId, role: RoleTypes.Agent);
+            builder._reference.ChannelId = channelId;
+            builder._reference.ServiceUrl = serviceUrl;
+            return builder;
+        }
+
+        /// <summary>
         /// Sets the user information for the reference using the specified user ID, optional user name, and role.
         /// </summary>
         /// <param name="userId">The unique identifier of the user to associate with the reference. Cannot be null.</param>
         /// <param name="userName">The display name of the user. May be null if no display name is available.</param>
-        /// <param name="role">The role of the user within the conversation. If null, defaults to <see cref="RoleTypes.User"/>.</param>
         /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated user information.</returns>
-        public ReferenceBuilder WithUser(string userId, string? userName = null, string role = RoleTypes.User)
+        public ReferenceBuilder WithUser(string userId, string? userName = null)
         {
-            _reference.User = new ChannelAccount(userId, userName, role ?? RoleTypes.User);
+            _reference.User = new ChannelAccount(userId, userName, RoleTypes.User);
             return this;
         }
 
@@ -63,13 +81,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Sets the agent information for the reference using the specified agent ID, name, and role.
         /// </summary>
-        /// <param name="agentId">The unique identifier of the agent. Cannot be null.</param>
-        /// <param name="agentName">The display name of the agent. Can be null if a name is not available.</param>
-        /// <param name="role">The role of the agent. If null, defaults to RoleTypes.Agent.</param>
+        /// <param name="agentClientId">The unique identifier of the agent. Cannot be null.</param>
+        /// <param name="agentName">Optional Agent name.</param>
         /// <returns>The current ReferenceBuilder instance with the updated agent information.</returns>
-        public ReferenceBuilder WithAgent(string agentId, string? agentName = null, string role = RoleTypes.Agent)
+        public ReferenceBuilder WithAgent(string agentClientId, string agentName = null)
         {
-            _reference.Agent = new ChannelAccount(agentId, agentName, role ?? RoleTypes.Agent);
+            _reference.Agent = new ChannelAccount(agentClientId, agentName, role: RoleTypes.Agent);
             return this;
         }
 

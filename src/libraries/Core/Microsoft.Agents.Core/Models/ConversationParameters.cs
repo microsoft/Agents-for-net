@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Core.Models
         public string TenantId { get; set; }
 
         /// <summary> An Activity is the basic communication type for the Activity Protocol. </summary>
-        public Activity Activity { get; set; }
+        public IActivity Activity { get; set; }
 
         /// <summary> Channel specific payload for creating the conversation. </summary>
         public object ChannelData { get; set; }

@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var result = builder
-                .WithReference(refBuilder)
+                .WithReference(refBuilder.Build())
                 .WithClaims(claims)
                 .Build();
 
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var result = builder
                 .WithReference(reference)
-                .WithClaimsFromClientId(clientId)
+                .WithClaimsForClientId(clientId)
                 .Build();
 
             // Assert
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var result = builder
                 .WithReference(reference)
-                .WithClaimsFromClientId(clientId, requestorId)
+                .WithClaimsForClientId(clientId, requestorId)
                 .Build();
 
             // Assert
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var result = builder
                 .WithReference(reference)
-                .WithClaimsFromClientId(clientId, string.Empty)
+                .WithClaimsForClientId(clientId, string.Empty)
                 .Build();
 
             // Assert
@@ -310,7 +310,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var result = builder
-                .WithReference(refBuilder)
+                .WithReference(refBuilder.Build())
                 .WithClaims(claims)
                 .Build();
 
@@ -370,8 +370,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange & Act
             var result = RecordBuilder.Create()
-                .WithReference(ReferenceBuilder.Create(Channels.Msteams, "conv123"))
-                .WithClaimsFromClientId("client123", "requestor456")
+                .WithReference(ReferenceBuilder.Create(Channels.Msteams, "conv123").Build())
+                .WithClaimsForClientId("client123", "requestor456")
                 .Build();
 
             // Assert
