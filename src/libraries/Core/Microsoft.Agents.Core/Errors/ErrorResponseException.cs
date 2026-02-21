@@ -53,9 +53,16 @@ namespace Microsoft.Agents.Core.Errors
         {
             var ex = CreateErrorResponseException(message, innerException, errors);
             ex.StatusCode = (int) httpResponse.StatusCode;
-
             try
             {
+                // Report headers in the exception Data
+                if (httpResponse.Headers != null)
+                {
+                    foreach (var header in httpResponse.Headers)
+                    {
+                        ex.Data[header.Key] = string.Join(",", header.Value);
+                    }
+                }
 
 #if !NETSTANDARD
                 string responseContent = httpResponse.Content?.ReadAsStringAsync(cancellationToken).Result;
