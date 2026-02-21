@@ -147,6 +147,9 @@
 
 	  <!-- Azure Monitor (Application Insights) Exporter -->
 	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
-  
+	  
+	  <!-- A2A -->
+	  <PackageVersion Include="A2A.AspNetCore" Version="0.3.3-preview" />
+	  <PackageVersion Include="A2A" Version="0.3.3-preview" />
   </ItemGroup>
 </Project>

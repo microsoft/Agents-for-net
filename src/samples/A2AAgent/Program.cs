@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2AAgent;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Extensions.Hosting;
-using A2AAgent;
+using Microsoft.Extensions.Logging;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -44,12 +44,13 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Add endpoints for the AgentApplication registered above.
 app.MapAgentRootEndpoint();
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-// Add A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2AEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// Map Agent ActivityProtocol endpoints to /api/messages.
+app.MapAgentApplicationEndpoints(!app.Environment.IsDevelopment());
+
+// Map A2A endpoints to /a2a.
+app.MapA2AApplicationEndpoints(!app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {
@@ -58,4 +59,4 @@ if (app.Environment.IsDevelopment())
     app.Urls.Add($"http://localhost:3978");
 }
 
-app.Run();
+await app.RunAsync();
