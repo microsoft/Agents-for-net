@@ -44,7 +44,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <NoWarn>$(NoWarn);CS8032;CS8002;CS1668</NoWarn>
+    <NoWarn>$(NoWarn);CS8032;CS8002;CS1668;CA1873</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
