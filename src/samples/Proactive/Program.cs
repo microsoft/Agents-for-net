@@ -7,6 +7,8 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
+using Microsoft.Agents.Builder.App;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +49,7 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 // Map the endpoints for proactive messages.  This is required to receive external Http
 // requests for AgentApplication.Proactive at /proactive.
-app.MapAgentProactiveEndpoints<ProactiveAgent>(requireAuth: !app.Environment.IsDevelopment());
+app.MapAgentProactiveEndpoints<ProactiveAgent>(continueRoutes: new Dictionary<string, string> {{ "", "OnContinueConversationAsync" }, { "ext", "OnContinueConversationExtendedAsync" } },requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {

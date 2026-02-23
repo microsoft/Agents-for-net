@@ -213,8 +213,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
             await adapter.ProcessProactiveAsync(identity, continuationActivity, _app, cancellationToken).ConfigureAwait(false);
         }
 
+        public Task<ConversationReference> CreateConversationAsync(IChannelAdapter adapter, CreateConversationRecord record, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
+            AssertionHelpers.ThrowIfNull(record, nameof(record));
+
+            return adapter.CreateConversationAsync(record.ReferenceRecord.Identity, record.ReferenceRecord.Reference, record.Parameters, record.Scope, _app.OnTurnAsync, cancellationToken);
+        }
+
         /// <summary>
-        /// Registers a route handler for the ContinueConversation event, enabling the application to process conversation continuation activities.
+        /// Registers a route handler for the ContinueConversation event, enabling the application to process continue conversation events.
         /// </summary>
         /// <remarks>Use this method to add custom logic for handling proactive messaging. If no selector is provided, the handler will apply to
         /// all ContinueConversation Events.</remarks>
@@ -224,23 +232,47 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// is registered for all ContinueConversation Events.</param>
         public void AddContinueConversationRoute(RouteHandler handler, string[] autoSignInHandlers = null, RouteSelector selector = null)
         {
-            // TODO Proactive should fail if user not signed in if autoSignInHandlers are specified.
-            //   a) Fail selector and log
-            //   b) or, Report to user they need to sign in?  Somehow?
+            AddContinuationRoute(ActivityEventNames.ContinueConversation, handler, autoSignInHandlers, selector);
+        }
 
+        /// <summary>
+        /// Registers a route handler for the CreateConversation event, enabling the application to process create conversation events.
+        /// </summary>
+        /// <remarks>Use this method to add custom logic for handling proactive messaging. If no selector is provided, the handler will apply to
+        /// all CreateConversation Events.</remarks>
+        /// <param name="handler">The handler to execute when a CreateConversation event is received. Cannot be null.</param>
+        /// <param name="autoSignInHandlers">An optional array of handler names that require automatic sign-in before the route handler is invoked.</param>
+        /// <param name="selector">An optional route selector that determines which events the handler should respond to. If null, the handler
+        /// is registered for all CreateConversation Events.</param>
+        public void AddCreateConversationRoute(RouteHandler handler, string[] autoSignInHandlers = null, RouteSelector selector = null)
+        {
+            AddContinuationRoute(ActivityEventNames.CreateConversation, handler, autoSignInHandlers, selector);
+        }
+
+        private void AddContinuationRoute(string eventName, RouteHandler handler, string[] autoSignInHandlers = null, RouteSelector selector = null)
+        {
             if (selector == null)
             {
-                _app.OnEvent(ActivityEventNames.ContinueConversation, handler, rank: RouteRank.Last, autoSignInHandlers: autoSignInHandlers);
+                _app.OnEvent(eventName, handler, rank: RouteRank.Last, autoSignInHandlers: autoSignInHandlers);
             }
             else
             {
-                _app.OnEvent(selector, handler, autoSignInHandlers: autoSignInHandlers);
+                _app.OnEvent((context, ct) =>
+                {
+                    if (context.Activity.IsType(ActivityTypes.Event) && context.Activity.Name == eventName)
+                    {
+                        return selector(context, ct);
+                    }
+
+                    return Task.FromResult(false);
+                },
+                handler, autoSignInHandlers: autoSignInHandlers);
             }
         }
 
         #region Conversation Storage
         /// <summary>
-        /// Stores the current conversation reference in the proactive storage and returns the conversation identifier.
+        /// Stores the current conversation reference in the proactive storage from the ITurnContext.
         /// </summary>
         /// <remarks>Use this method to enable proactive messaging scenarios by persisting conversation
         /// references. The returned conversation identifier can be used to retrieve or reference the conversation in
@@ -248,17 +280,29 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="turnContext">The context object for the current turn, containing activity and conversation information. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A string containing the conversation identifier for the stored conversation reference.</returns>
-        public async Task<string> StoreConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        public Task<string> StoreConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            var key = GetRecordKey(turnContext.Activity.Conversation.Id);
             var record = new ConversationReferenceRecord(turnContext.Identity, turnContext.Activity.GetConversationReference());
+            return StoreConversationAsync(record, cancellationToken);
+        }
+
+        /// <summary>
+        /// Stores the current conversation reference in the proactive storage and returns the conversation identifier.
+        /// </summary>
+        /// <param name="record">The conversation reference record to store. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the ID of the stored
+        /// conversation.</returns>
+        public async Task<string> StoreConversationAsync(ConversationReferenceRecord record, CancellationToken cancellationToken)
+        {
+            var key = GetRecordKey(record.Reference.Conversation.Id);
             await _app.Options.Proactive.Storage.WriteAsync(
                 new Dictionary<string, object>
                 {
                     { key, record }
                 },
                 cancellationToken).ConfigureAwait(false);
-            return turnContext.Activity.Conversation.Id;
+            return record.Reference.Conversation.Id;
         }
 
         /// <summary>

@@ -16,7 +16,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// <remarks>This class is typically used to persist or transfer conversation context and identity claims
     /// between different components or services in an agent application. The claims are extracted from a provided identity
     /// and can be used for authentication or authorization scenarios. The conversation reference provides the necessary
-    /// information to resume or continue a conversation thread.</remarks>
+    /// information to resume or continue a conversation thread.<br/><br/>
+    /// See <see cref="RecordBuilder"/> to ease creation of an instance of this class.</remarks>
     public class ConversationReferenceRecord
     {
         public ConversationReferenceRecord() { }

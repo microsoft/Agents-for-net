@@ -3,6 +3,9 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
@@ -13,7 +16,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
     {
         private readonly CreateConversationRecord _record = new();
 
-        public static CreateConversationBuilder Create(string agentClientId, ChannelId channelId, string tenantId = null, string serviceUrl = null)
+        /// <summary>
+        /// Creates a new instance of the CreateConversationBuilder class for initializing a conversation with the
+        /// specified agent and channel.
+        /// </summary>
+        /// <remarks>If the parameters argument is null, default conversation parameters are used. If the
+        /// Agent property of parameters is not set, it is initialized with the provided agentClientId.</remarks>
+        /// <param name="agentClientId">The unique identifier of the agent client to associate with the conversation. Cannot be null or whitespace.</param>
+        /// <param name="channelId">The identifier of the channel where the conversation will take place. Cannot be null or whitespace.</param>
+        /// <param name="serviceUrl">The service URL to use for the conversation. If null, a default value may be used.</param>
+        /// <param name="parameters">Optional parameters for configuring the conversation. If null, default parameters are used.</param>
+        /// <returns>A CreateConversationBuilder instance configured with the specified agent, channel, and parameters.</returns>
+        public static CreateConversationBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
@@ -25,11 +39,45 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 .WithClaimsForClientId(agentClientId)
                 .Build();
 
-            builder._record.Parameters = new ConversationParameters
+            builder._record.Parameters = parameters ?? new ConversationParameters();
+            if (builder._record.Parameters.Agent == null)
             {
-                TenantId = tenantId,
-                Agent = new ChannelAccount(agentClientId, role: RoleTypes.Agent)
-            };
+                builder._record.Parameters.Agent = channelId == Channels.Msteams ? new ChannelAccount($"28:{agentClientId}") : new ChannelAccount(agentClientId);
+            }
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the CreateConversationBuilder class for initializing a conversation with the
+        /// specified identity, channel, and parameters.
+        /// </summary>
+        /// <param name="claims">The ClaimsIdentity.Claims representing the agent or user initiating the conversation. Cannot be null.</param>
+        /// <param name="channelId">The identifier of the channel where the conversation will be created. Cannot be null or whitespace.</param>
+        /// <param name="serviceUrl">The service URL for the channel. If null, the default service URL is used.</param>
+        /// <param name="parameters">Optional parameters for the conversation, such as participants or conversation metadata. If null, default
+        /// parameters are used.</param>
+        /// <returns>A CreateConversationBuilder instance configured with the specified identity, channel, and parameters.</returns>
+        public static CreateConversationBuilder Create(IDictionary<string, string> claims, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
+        {
+            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+
+            var builder = new CreateConversationBuilder();
+
+            var agentClientId = claims.FirstOrDefault(c => c.Key == "aud").Value;
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, "The claims dictionary must contain an 'aud' claim with the agent client ID as its value.");
+
+            builder._record.ReferenceRecord = RecordBuilder.Create()
+                .WithReference(ReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
+                .WithClaims(claims)
+                .Build();
+
+            builder._record.Parameters = parameters ?? new ConversationParameters();
+            if (builder._record.Parameters.Agent == null)
+            {
+                builder._record.Parameters.Agent = channelId == Channels.Msteams ? new ChannelAccount($"{agentClientId}") : new ChannelAccount(agentClientId);
+            }
 
             return builder;
         }
@@ -51,17 +99,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Specifies the user to include as a member in the conversation being created.
+        /// Specifies a user to include as a member in the conversation being created.
         /// </summary>
         /// <param name="user">The user account to add as a member of the conversation. Cannot be null.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance for method chaining.</returns>
         public CreateConversationBuilder WithUser(ChannelAccount user)
         {
-            AssertionHelpers.ThrowIfNull(user, nameof(user));
-            _record.Parameters.Members =
-            [
-                user
-            ];
+            if (user != null)
+            {
+                if (_record.Parameters.Members != null)
+                {
+                    _record.Parameters.Members = [.. _record.Parameters.Members, .. new[] { user }];
+                }
+                else
+                {
+                    _record.Parameters.Members =
+                    [
+                        user
+                    ];
+                }
+            }
             return this;
         }
 
@@ -85,19 +142,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the updated scope.</returns>
         public CreateConversationBuilder WithScope(string scope)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(scope, nameof(scope));
             _record.Scope = scope;
             return this;
         }
 
         /// <summary>
-        /// Adds a message to the conversation being constructed.
+        /// Adds an Activity to the conversation being constructed.
         /// </summary>
         /// <param name="message">The activity representing the message to include in the conversation. Cannot be null.</param>
         /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the specified message added.</returns>
-        public CreateConversationBuilder WithMessage(IActivity message)
+        public CreateConversationBuilder WithActivity(IActivity message)
         {
-            AssertionHelpers.ThrowIfNull(message, nameof(message));
             _record.Parameters.Activity = message;
             return this;
         }
@@ -139,11 +194,31 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Sets the tenant identifier for the conversation being created and returns the builder instance for method
+        /// chaining.
+        /// </summary>
+        /// <param name="tenantId">The unique identifier of the tenant to associate with the conversation. Cannot be null or empty.</param>
+        /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the specified tenant identifier applied.</returns>
+        public CreateConversationBuilder WithTenantId(string tenantId)
+        {
+            _record.Parameters.TenantId = tenantId;
+            return this;
+        }
+
+        /// <summary>
         /// Builds and returns a configured instance of the CreateConversationRecord object.
         /// </summary>
         /// <returns>A CreateConversationRecord instance containing the configured create conversation parameters.</returns>
         public CreateConversationRecord Build()
         {
+            if (string.IsNullOrWhiteSpace(_record.Scope))
+            {
+                _record.Scope = CreateConversationRecord.AzureBotScope;
+            }
+            if (string.IsNullOrWhiteSpace(_record.Parameters.Activity?.Type))
+            {
+                _record.Parameters.Activity.Type = ActivityTypes.Message;
+            }
             return _record;
         }
     }

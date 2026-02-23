@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.AspNetCore.Builder;
@@ -19,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -260,11 +263,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// requireAuth is set to true, all endpoints require authorization; otherwise, they allow anonymous access. The
         /// endpoints expect JSON payloads and are grouped under the specified route pattern.</remarks>
         /// <param name="app">The WebApplication to which the proactive messaging endpoints are added.</param>
+        /// <param name="continueRoutes"></param>
         /// <param name="requireAuth">true to require authentication for the mapped endpoints; otherwise, false. The default is true.</param>
         /// <param name="defaultPath">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
         /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
         /// endpoints.</returns>
-        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(this WebApplication app, bool requireAuth = true, [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(this WebApplication app, IDictionary<string, string> continueRoutes, bool requireAuth = true, [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
             var routeGroup = app.MapGroup(defaultPath);
             if (requireAuth)
@@ -358,7 +362,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/continueconversation",
-                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string name, CancellationToken cancellationToken) =>
                 {
                     var body = await HttpHelper.ReadRequestAsync<ContinueConversationBody>(httpRequest).ConfigureAwait(false);
 
@@ -375,15 +379,82 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             routeGroup.MapPost(
                 "/createconversation",
-                (HttpRequest request, HttpResponse response, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
+                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
                 {
-                    // TODO: call IProactiveAgent
-                    // request -> IProactiveAgent -> AgentApplication.Proactive.CreateConversation
-                    return Task.CompletedTask;
+                    var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false);
+
+                    // Create the CreateConversationRecord
+                    IDictionary<string, string> claims;
+                    if (string.IsNullOrWhiteSpace(body.AgentClientId))
+                    {
+                        claims = ConversationReferenceRecord.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
+                    }
+                    else
+                    {
+                        claims = new Dictionary<string, string>
+                        {
+                    { "aud", body.AgentClientId },
+                        };
+                    }
+
+                    if (claims == null || claims.Count == 0 || string.IsNullOrWhiteSpace(body.ChannelId))
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    var createRecord = CreateConversationBuilder.Create(claims, body.ChannelId)
+                        .WithActivity(body.Activity)
+                        .WithTopicName(body.TopicName)
+                        .WithUsers(body.Members)
+                        .WithChannelData(body.ChannelData)
+                        .WithTenantId(body.TenantId)
+                        .Build();
+
+                    try
+                    {
+                        // Execute the conversation creation
+                        var newReference = await agent.Proactive.CreateConversationAsync(
+                            adapter,
+                            createRecord,
+                            cancellationToken).ConfigureAwait(false);
+
+                        // Store the conversation if requested, and return the ConversationReferenceRecord in the response body.
+                        var response = new ConversationReferenceRecord
+                        {
+                            Reference = newReference,
+                            Claims = claims,
+                        };
+
+                        if (body.StoreConversation)
+                        {
+                            await agent.Proactive.StoreConversationAsync(response, cancellationToken).ConfigureAwait(false);
+                        }
+
+                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                        httpResponse.Headers.ContentType = "application/json";
+                        await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ErrorResponseException errorResponse)
+                    {
+                        httpResponse.StatusCode = (int)errorResponse.StatusCode.GetValueOrDefault(StatusCodes.Status500InternalServerError);
+                        if (errorResponse.Body != null)
+                        {
+                            using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(errorResponse.Body)));
+                            httpResponse.Headers.ContentType = "application/json";
+                            await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception requestFailed)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
+                        await httpResponse.WriteAsJsonAsync(new { error = new { message = requestFailed.Message } }, cancellationToken).ConfigureAwait(false);
+                    }
                 })
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
-            return routeGroup;
+                return routeGroup;
         }
 
         class SendToConversationBody
@@ -396,6 +467,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             public ConversationReferenceRecord ReferenceRecord { get; set; }
             public IDictionary<string, object> ContinueProperties { get; set; }
+        }
+
+        class CreateConversationBody
+        {
+            public string AgentClientId { get; set; }
+            public string ChannelId { get; set; }
+            /// <summary> IsGroup. </summary>
+            public bool? IsGroup { get; set; }
+            public ChannelAccount[] Members { get; set; }
+            public string TopicName { get; set; }
+            public string TenantId { get; set; }
+            public IActivity Activity { get; set; }
+            public object ChannelData { get; set; }
+            public bool StoreConversation { get; set; } = false;
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)

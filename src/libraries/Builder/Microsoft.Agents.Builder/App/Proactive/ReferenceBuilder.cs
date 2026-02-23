@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public static ReferenceBuilder Create(ChannelId channelId, string conversationId)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
-            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var builder = new ReferenceBuilder();
             builder._reference.ChannelId = channelId;
@@ -46,10 +46,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A ReferenceBuilder instance initialized with the provided agent ID, channel ID, and optional service URL.</returns>
         public static ReferenceBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null)
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(agentClientId, nameof(agentClientId));
-            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
             var builder = new ReferenceBuilder();
-            builder._reference.Agent = new ChannelAccount(agentClientId, role: RoleTypes.Agent);
+            builder._reference.Agent = AgentForChannel(channelId, agentClientId);
             builder._reference.ChannelId = channelId;
             builder._reference.ServiceUrl = serviceUrl;
             return builder;
@@ -63,6 +63,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated user information.</returns>
         public ReferenceBuilder WithUser(string userId, string? userName = null)
         {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
             _reference.User = new ChannelAccount(userId, userName, RoleTypes.User);
             return this;
         }
@@ -86,7 +87,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current ReferenceBuilder instance with the updated agent information.</returns>
         public ReferenceBuilder WithAgent(string agentClientId, string agentName = null)
         {
-            _reference.Agent = new ChannelAccount(agentClientId, agentName, role: RoleTypes.Agent);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
+            _reference.Agent = AgentForChannel(_reference.ChannelId, agentClientId, agentName);
             return this;
         }
 
@@ -104,7 +106,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Sets the service URL for the reference and returns the current builder instance.
         /// </summary>
-        /// <param name="serviceUrl">The service URL to associate with the reference. Cannot be null.</param>
+        /// <param name="serviceUrl">The service URL to associate with the reference. If null, a default will be provided in <see cref="Build"/>.</param>
         /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated service URL.</returns>
         public ReferenceBuilder WithServiceUrl(string serviceUrl)
         {
@@ -161,10 +163,15 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return channelId.Channel switch
             {
                 Channels.Msteams => "https://smba.trafficmanager.net/teams/",
-                Channels.Webchat => "https://webchat.botframework.com/",
-                Channels.Directline => "https://directline.botframework.com/",
-                _ => null
+                _ => $"https://{channelId.Channel}.botframework.com/"
             };
+        }
+
+        private static ChannelAccount AgentForChannel(ChannelId channelId, string agentClientId, string agentName = null)
+        {
+            return channelId == Channels.Msteams
+                ? new ChannelAccount($"28:{agentClientId}", agentName, role: RoleTypes.Agent)
+                : new ChannelAccount(agentClientId, agentName, role: RoleTypes.Agent);
         }
     }
 }

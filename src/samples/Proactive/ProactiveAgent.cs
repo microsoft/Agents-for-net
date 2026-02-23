@@ -59,6 +59,9 @@ public class ProactiveAgent : AgentApplication
         // This will route all ContinueConversation Events to the same handler, with OAuth token from the "me" handler.
         Proactive.AddContinueConversationRoute(OnContinueConversationAsync, autoSignInHandlers: ["me"]);
 
+        // This will route all CreateConversation Events to the same handler, with OAuth token from the "me" handler.
+        Proactive.AddCreateConversationRoute(OnCreateConversationAsync);
+
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -78,7 +81,7 @@ public class ProactiveAgent : AgentApplication
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
-    private async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync($"This is ContinueConversation with token len={token.Length}", cancellationToken: cancellationToken);
@@ -87,5 +90,10 @@ public class ProactiveAgent : AgentApplication
     private async Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+    }
+
+    private static async Task OnCreateConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.SendActivityAsync("This is CreateConversation", cancellationToken: cancellationToken);
     }
 }

@@ -11,12 +11,6 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Parameters for creating a new conversation. </summary>
     public class ConversationParameters
     {
-        /// <summary> Initializes a new instance of ConversationParameters. </summary>
-        internal ConversationParameters()
-        {
-            Members = [];
-        }
-
         /// <summary>Initializes a new instance of the <see cref="ConversationParameters"/> class.</summary>
         /// <param name="isGroup">IsGroup.</param>
         /// <param name="agent">This represents "From".  Defaults to ChannelAccount with <see cref="RoleTypes.Agent"/>.</param>

@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Core.Models
             return new Activity()
             {
                 Type = ActivityTypes.Event,
-                Name = ActivityEventNames.ContinueConversation.ToString(),
+                Name = ActivityEventNames.ContinueConversation,
                 Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,
                 Locale = Locale,
@@ -80,6 +80,25 @@ namespace Microsoft.Agents.Core.Models
                 Conversation = Conversation,
                 Recipient = Agent,
                 From = User,
+                RelatesTo = this,
+                RequestId = RequestId,
+            };
+        }
+
+        public Activity GetCreateContinuationActivity(ConversationAccount conversation = null, object channelData = null)
+        {
+            return new Activity()
+            {
+                Type = ActivityTypes.Event,
+                Name = ActivityEventNames.CreateConversation,
+                Id = ActivityId ?? Guid.NewGuid().ToString(),
+                ChannelId = ChannelId,
+                Locale = Locale,
+                ServiceUrl = ServiceUrl,
+                Conversation = conversation ?? Conversation,
+                ChannelData = channelData,
+                Recipient = Agent,
+                From = Agent,
                 RelatesTo = this,
                 RequestId = RequestId,
             };
