@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {
-    public class ReferenceBuilderTests
+    public class ConversationReferenceBuilderTests
     {
         [Fact]
         public void Create_WithValidParameters_ReturnsReferenceBuilder()
@@ -18,11 +18,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var builder = ReferenceBuilder.Create(channelId, conversationId);
+            var builder = ConversationReferenceBuilder.Create(channelId, conversationId);
 
             // Assert
             Assert.NotNull(builder);
-            Assert.IsType<ReferenceBuilder>(builder);
+            Assert.IsType<ConversationReferenceBuilder>(builder);
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => ReferenceBuilder.Create(channelId, conversationId));
+            Assert.Throws<ArgumentNullException>(() => ConversationReferenceBuilder.Create(channelId, conversationId));
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             string conversationId = null;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => ReferenceBuilder.Create(channelId, conversationId));
+            Assert.Throws<ArgumentNullException>(() => ConversationReferenceBuilder.Create(channelId, conversationId));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = string.Empty;
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => ReferenceBuilder.Create(channelId, conversationId));
+            Assert.Throws<ArgumentException>(() => ConversationReferenceBuilder.Create(channelId, conversationId));
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var userName = "Test User";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithUser(userId, userName)
                 .Build();
 
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var userId = "user-123";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithUser(userId)
                 .Build();
 
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var user = new ChannelAccount("user-456", "Another User", RoleTypes.User);
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithUser(user)
                 .Build();
 
@@ -123,13 +123,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithAgent_WithAgentIdAndAgentName_SetsAgentCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Channels.Webchat);
             var conversationId = "test-conversation-id";
             var agentId = "agent-123";
             var agentName = "Test Agent";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithAgent(agentId, agentName)
                 .Build();
 
@@ -144,12 +144,12 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithAgent_WithAgentIdOnly_SetsAgentWithNullName()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Channels.Webchat);
             var conversationId = "test-conversation-id";
             var agentId = "agent-123";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithAgent(agentId)
                 .Build();
 
@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agent = new ChannelAccount("agent-456", "Another Agent", RoleTypes.Agent);
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithAgent(agent)
                 .Build();
 
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var serviceUrl = "https://custom.service.url/";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithServiceUrl(serviceUrl)
                 .Build();
 
@@ -206,7 +206,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activityId = "activity-123";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithActivityId(activityId)
                 .Build();
 
@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var locale = "en-US";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithLocale(locale)
                 .Build();
 
@@ -239,7 +239,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -269,7 +269,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -284,11 +284,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
-            Assert.Null(reference.ServiceUrl);
+            Assert.NotNull(reference.ServiceUrl);
         }
 
         [Fact]
@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -315,7 +315,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -332,7 +332,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var customServiceUrl = "https://custom.url/";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithServiceUrl(customServiceUrl)
                 .Build();
 
@@ -348,7 +348,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -363,7 +363,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void FluentInterface_AllMethodsChainCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Channels.Webchat);
             var conversationId = "test-conversation-id";
             var userId = "user-123";
             var userName = "Test User";
@@ -386,7 +386,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var locale = "en-US";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .WithUser(userId, userName)
                 .WithAgent(agentId, agentName)
                 .WithServiceUrl(serviceUrl)
@@ -415,7 +415,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversationId = "test-conversation-id";
 
             // Act
-            var reference = ReferenceBuilder.Create(channelId, conversationId)
+            var reference = ConversationReferenceBuilder.Create(channelId, conversationId)
                 .Build();
 
             // Assert - M365Copilot is a subchannel of Msteams

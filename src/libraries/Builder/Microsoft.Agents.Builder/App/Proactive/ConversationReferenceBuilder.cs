@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// the user, agent, service URL, activity ID, and locale. This class is intended to simplify the creation of
     /// ConversationReference instances for use Proactive scenarios. The builder ensures required
     /// fields are set and applies sensible defaults for optional properties if not specified.</remarks>
-    public class ReferenceBuilder
+    public class ConversationReferenceBuilder
     {
         private readonly ConversationReference _reference = new();
 
@@ -25,12 +25,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="channelId">The unique identifier of the channel in which the conversation takes place. Cannot be null or empty.</param>
         /// <param name="conversationId">The unique identifier of the conversation within the channel. Cannot be null or empty.</param>
         /// <returns>A ReferenceBuilder instance initialized with the provided channel and conversation identifiers.</returns>
-        public static ReferenceBuilder Create(ChannelId channelId, string conversationId)
+        public static ConversationReferenceBuilder Create(ChannelId channelId, string conversationId)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
-            var builder = new ReferenceBuilder();
+            var builder = new ConversationReferenceBuilder();
             builder._reference.ChannelId = channelId;
             builder._reference.Conversation = new ConversationAccount(id: conversationId);
             return builder;
@@ -44,11 +44,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="channelId">The identifier of the channel to associate with the reference. Cannot be null or empty.</param>
         /// <param name="serviceUrl">The service URL to associate with the reference, or null to omit the service URL.</param>
         /// <returns>A ReferenceBuilder instance initialized with the provided agent ID, channel ID, and optional service URL.</returns>
-        public static ReferenceBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null)
+        public static ConversationReferenceBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
-            var builder = new ReferenceBuilder();
+            var builder = new ConversationReferenceBuilder();
             builder._reference.Agent = AgentForChannel(channelId, agentClientId);
             builder._reference.ChannelId = channelId;
             builder._reference.ServiceUrl = serviceUrl;
@@ -60,8 +60,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="userId">The unique identifier of the user to associate with the reference. Cannot be null.</param>
         /// <param name="userName">The display name of the user. May be null if no display name is available.</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated user information.</returns>
-        public ReferenceBuilder WithUser(string userId, string? userName = null)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance with the updated user information.</returns>
+        public ConversationReferenceBuilder WithUser(string userId, string? userName = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
             _reference.User = new ChannelAccount(userId, userName, RoleTypes.User);
@@ -72,8 +72,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the user associated with the conversation reference being built.
         /// </summary>
         /// <param name="user">The user to associate with the conversation reference. Cannot be null.</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance for method chaining.</returns>
-        public ReferenceBuilder WithUser(ChannelAccount user)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance for method chaining.</returns>
+        public ConversationReferenceBuilder WithUser(ChannelAccount user)
         {
             _reference.User = user;
             return this;
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="agentClientId">The unique identifier of the agent. Cannot be null.</param>
         /// <param name="agentName">Optional Agent name.</param>
         /// <returns>The current ReferenceBuilder instance with the updated agent information.</returns>
-        public ReferenceBuilder WithAgent(string agentClientId, string agentName = null)
+        public ConversationReferenceBuilder WithAgent(string agentClientId, string agentName = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
             _reference.Agent = AgentForChannel(_reference.ChannelId, agentClientId, agentName);
@@ -96,8 +96,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the agent information for the reference and returns the current builder instance.
         /// </summary>
         /// <param name="agent">The agent to associate with the reference. Cannot be null.</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated agent information.</returns>
-        public ReferenceBuilder WithAgent(ChannelAccount agent)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance with the updated agent information.</returns>
+        public ConversationReferenceBuilder WithAgent(ChannelAccount agent)
         {
             _reference.Agent = agent;
             return this;
@@ -107,8 +107,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the service URL for the reference and returns the current builder instance.
         /// </summary>
         /// <param name="serviceUrl">The service URL to associate with the reference. If null, a default will be provided in <see cref="Build"/>.</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated service URL.</returns>
-        public ReferenceBuilder WithServiceUrl(string serviceUrl)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance with the updated service URL.</returns>
+        public ConversationReferenceBuilder WithServiceUrl(string serviceUrl)
         {
             _reference.ServiceUrl = serviceUrl;
             return this;
@@ -118,8 +118,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the activity identifier for the reference being built.
         /// </summary>
         /// <param name="activityId">The unique identifier to associate with the activity. Can be null or empty if no activity ID is required.</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated activity identifier.</returns>
-        public ReferenceBuilder WithActivityId(string activityId)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance with the updated activity identifier.</returns>
+        public ConversationReferenceBuilder WithActivityId(string activityId)
         {
             _reference.ActivityId = activityId;
             return this;
@@ -130,8 +130,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="locale">The locale identifier to assign to the reference. This should be a valid IETF language tag (for example,
         /// "en-US" or "fr-FR").</param>
-        /// <returns>The current <see cref="ReferenceBuilder"/> instance with the updated locale.</returns>
-        public ReferenceBuilder WithLocale(string locale)
+        /// <returns>The current <see cref="ConversationReferenceBuilder"/> instance with the updated locale.</returns>
+        public ConversationReferenceBuilder WithLocale(string locale)
         {
             _reference.Locale = locale;
             return this;
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             if (string.IsNullOrEmpty(_reference.ServiceUrl))
             {
-                _reference.ServiceUrl = ReferenceBuilder.ServiceUrlForChannel(_reference.ChannelId);
+                _reference.ServiceUrl = ConversationReferenceBuilder.ServiceUrlForChannel(_reference.ChannelId);
             }
 
             _reference.Agent ??= new ChannelAccount(role: RoleTypes.Agent);

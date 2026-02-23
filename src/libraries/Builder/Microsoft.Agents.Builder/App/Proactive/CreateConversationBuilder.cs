@@ -5,7 +5,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
@@ -14,7 +13,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// </summary>
     public class CreateConversationBuilder
     {
-        private readonly CreateConversationRecord _record = new();
+        private readonly CreateConversation _record = new();
 
         /// <summary>
         /// Creates a new instance of the CreateConversationBuilder class for initializing a conversation with the
@@ -34,15 +33,15 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             var builder = new CreateConversationBuilder();
 
-            builder._record.ReferenceRecord = RecordBuilder.Create()
-                .WithReference(ReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
+            builder._record.Conversation = ConversationBuilder.Create()
+                .WithReference(ConversationReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
                 .WithClaimsForClientId(agentClientId)
                 .Build();
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)
             {
-                builder._record.Parameters.Agent = channelId == Channels.Msteams ? new ChannelAccount($"28:{agentClientId}") : new ChannelAccount(agentClientId);
+                builder._record.Parameters.Agent = new ChannelAccount(agentClientId);
             }
 
             return builder;
@@ -68,15 +67,15 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var agentClientId = claims.FirstOrDefault(c => c.Key == "aud").Value;
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, "The claims dictionary must contain an 'aud' claim with the agent client ID as its value.");
 
-            builder._record.ReferenceRecord = RecordBuilder.Create()
-                .WithReference(ReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
+            builder._record.Conversation = ConversationBuilder.Create()
+                .WithReference(ConversationReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
                 .WithClaims(claims)
                 .Build();
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)
             {
-                builder._record.Parameters.Agent = channelId == Channels.Msteams ? new ChannelAccount($"{agentClientId}") : new ChannelAccount(agentClientId);
+                builder._record.Parameters.Agent = new ChannelAccount(agentClientId);
             }
 
             return builder;
@@ -206,16 +205,27 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Builds and returns a configured instance of the CreateConversationRecord object.
+        /// Specifies whether the conversation should continue after the current interaction.
         /// </summary>
-        /// <returns>A CreateConversationRecord instance containing the configured create conversation parameters.</returns>
-        public CreateConversationRecord Build()
+        /// <param name="continueConversation">true to indicate that the conversation should continue; otherwise, false.</param>
+        /// <returns>The current instance of the CreateConversationBuilder for method chaining.</returns>
+        public CreateConversationBuilder WithContinueConversation(bool continueConversation = true)
+        {
+            _record.Continue = continueConversation;
+            return this;
+        }
+
+        /// <summary>
+        /// Builds and returns a configured instance of the CreateConversation object.
+        /// </summary>
+        /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>
+        public CreateConversation Build()
         {
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
-                _record.Scope = CreateConversationRecord.AzureBotScope;
+                _record.Scope = CreateConversation.AzureBotScope;
             }
-            if (string.IsNullOrWhiteSpace(_record.Parameters.Activity?.Type))
+            if (_record.Parameters.Activity != null && string.IsNullOrWhiteSpace(_record.Parameters.Activity.Type))
             {
                 _record.Parameters.Activity.Type = ActivityTypes.Message;
             }

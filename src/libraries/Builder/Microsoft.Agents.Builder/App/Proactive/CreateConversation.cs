@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// Represents the data required to create a new conversation, including authentication scope, configuration
     /// parameters, and conversation reference information.
     /// </summary>
-    public class CreateConversationRecord
+    public class CreateConversation
     {
         public const string AzureBotScope = $"{AuthenticationConstants.BotFrameworkScope}/.default";
 
@@ -25,8 +25,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public ConversationParameters Parameters { get; set; }
 
         /// <summary>
-        /// Gets or sets the reference information for the conversation associated with this instance.
+        /// Gets or sets the information for the conversation associated with this instance.
         /// </summary>
-        public ConversationReferenceRecord ReferenceRecord { get; set; }
+        public Conversation Conversation { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the conversation should continue after the create operation.
+        /// </summary>
+        public bool Continue { get; set; }
     }
 }

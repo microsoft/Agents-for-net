@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder
 
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
             var createRecord = CreateConversationBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters).WithScope(audience).Build();
-            return CreateConversationAsync(createRecord.ReferenceRecord.Identity, createRecord.ReferenceRecord.Reference, createRecord.Parameters, createRecord.Scope, callback, cancellationToken);
+            return CreateConversationAsync(createRecord.Conversation.Identity, createRecord.Conversation.Reference, createRecord.Parameters, createRecord.Scope, callback, cancellationToken);
         }
 
         /// <inheritdoc/>

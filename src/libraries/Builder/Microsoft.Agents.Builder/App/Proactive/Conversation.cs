@@ -17,25 +17,25 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// between different components or services in an agent application. The claims are extracted from a provided identity
     /// and can be used for authentication or authorization scenarios. The conversation reference provides the necessary
     /// information to resume or continue a conversation thread.<br/><br/>
-    /// See <see cref="RecordBuilder"/> to ease creation of an instance of this class.</remarks>
-    public class ConversationReferenceRecord
+    /// See <see cref="ConversationBuilder"/> to ease creation of an instance of this class.</remarks>
+    public class Conversation
     {
-        public ConversationReferenceRecord() { }
+        public Conversation() { }
 
         /// <summary>
-        /// Initializes a new instance of the ConversationReferenceRecord class using the specified turn context.
+        /// Initializes a new instance of the Conversation class using the specified turn context.
         /// </summary>
         /// <param name="context">The turn context containing the identity and activity information to initialize the conversation reference.
         /// Cannot be null.</param>
-        public ConversationReferenceRecord(ITurnContext context) : this(context?.Identity, context?.Activity?.GetConversationReference()) { }
+        public Conversation(ITurnContext context) : this(context?.Identity, context?.Activity?.GetConversationReference()) { }
 
         /// <summary>
-        /// Initializes a new instance of the ConversationReferenceRecord class using the specified identity and
+        /// Initializes a new instance of the Conversation class using the specified identity and
         /// conversation reference.
         /// </summary>
         /// <param name="identity">The ClaimsIdentity containing the claims associated with the conversation. Cannot be null.</param>
         /// <param name="reference">The ConversationReference that identifies the conversation. Cannot be null.</param>
-        public ConversationReferenceRecord(ClaimsIdentity identity, ConversationReference reference)
+        public Conversation(ClaimsIdentity identity, ConversationReference reference)
         {
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
@@ -45,11 +45,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Initializes a new instance of the Conversation class with the specified claims and conversation reference.
+        /// </summary>
+        /// <param name="claims">A dictionary containing claim types and their corresponding values associated with the conversation. Cannot
+        /// be null.</param>
+        /// <param name="reference">The reference information that uniquely identifies the conversation. Cannot be null.</param>
+        public Conversation(IDictionary<string, string> claims, ConversationReference reference)
+        {
+            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
+            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
+
+            Claims = claims;
+            Reference = reference;
+        }
+
+        /// <summary>
         /// Gets or sets the collection of claims associated with the current entity.
         /// </summary>
         /// <remarks>This is the list of JWT claims.  For Azure Bot Service, only the 'aud' claim is required.  The 'aud' claim 
         /// should be the ClientId of the Azure Bot.</remarks>
-        public IDictionary<string, string>? Claims { get; set; }
+        internal IDictionary<string, string>? Claims { get; set; }
 
         /// <summary>
         /// Gets or sets the reference information for the conversation associated with this instance.
@@ -103,6 +118,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             return new ClaimsIdentity([.. claims.Select(kv => new Claim(kv.Key, kv.Value))]);
+        }
+
+        /// <summary>
+        /// Determines whether the current object is valid based on the presence of a reference and an audience claim.
+        /// </summary>
+        /// <remarks>Use this method to verify that the object has been properly initialized and contains
+        /// the required audience claim before performing operations that depend on these values.</remarks>
+        /// <returns>true if the reference is not null and the claims dictionary contains an "aud" (audience) entry; otherwise,
+        /// false.</returns>
+        public bool IsValid()
+        {
+            return Reference != null && (bool)Claims?.TryGetValue("aud", out _);
         }
     }
 }

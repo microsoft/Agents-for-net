@@ -309,10 +309,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
 
-                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
+                    if (!body.Conversation.IsValid())
                     {
                         httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        await httpResponse.WriteAsJsonAsync(new { error = "Conversation is invalid" }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         return;
                     }
 
-                    var response = await Proactive.SendActivityAsync(adapter, body.ReferenceRecord, body.Activity, cancellationToken).ConfigureAwait(false);
+                    var response = await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false);
 
                     using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
                     httpResponse.Headers.ContentType = "application/json";
@@ -366,14 +366,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     var body = await HttpHelper.ReadRequestAsync<ContinueConversationBody>(httpRequest).ConfigureAwait(false);
 
-                    if (body.ReferenceRecord == null || body.ReferenceRecord.Claims?.Count == 0 || body.ReferenceRecord.Reference == null)
+                    if (!body.Conversation.IsValid())
                     {
                         httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        await httpResponse.WriteAsJsonAsync(new { error = "Conversation is invalid" }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
-                    await agent.Proactive.ContinueConversationAsync(adapter, body.ReferenceRecord.Identity, body.ReferenceRecord.Reference, body.ContinueProperties, cancellationToken).ConfigureAwait(false);
+                    await agent.Proactive.ContinueConversationAsync(adapter, body.Conversation.Identity, body.Conversation.Reference, body.ContinueProperties, cancellationToken).ConfigureAwait(false);
                 })
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
@@ -383,24 +383,31 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false);
 
-                    // Create the CreateConversationRecord
+                    // Create the CreateConversation instance from the request body.
                     IDictionary<string, string> claims;
                     if (string.IsNullOrWhiteSpace(body.AgentClientId))
                     {
-                        claims = ConversationReferenceRecord.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
+                        claims = Conversation.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
                     }
                     else
                     {
                         claims = new Dictionary<string, string>
                         {
-                    { "aud", body.AgentClientId },
+                            { "aud", body.AgentClientId },
                         };
                     }
 
                     if (claims == null || claims.Count == 0 || string.IsNullOrWhiteSpace(body.ChannelId))
                     {
                         httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = "ConversationReferenceRecord is required." }, cancellationToken).ConfigureAwait(false);
+                        await httpResponse.WriteAsJsonAsync(new { error = "AgentClientId or a valid JWT Bearer token is required." }, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(body.ChannelId))
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = "ChannelId is required." }, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
@@ -410,6 +417,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         .WithUsers(body.Members)
                         .WithChannelData(body.ChannelData)
                         .WithTenantId(body.TenantId)
+                        .WithContinueConversation(body.ContinueConversation)
                         .Build();
 
                     try
@@ -420,19 +428,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             createRecord,
                             cancellationToken).ConfigureAwait(false);
 
-                        // Store the conversation if requested, and return the ConversationReferenceRecord in the response body.
-                        var response = new ConversationReferenceRecord
-                        {
-                            Reference = newReference,
-                            Claims = claims,
-                        };
+                        // Store the conversation if requested, and return the Conversation in the response body.
+                        var conversation = new Conversation(claims, newReference);
 
                         if (body.StoreConversation)
                         {
-                            await agent.Proactive.StoreConversationAsync(response, cancellationToken).ConfigureAwait(false);
+                            await agent.Proactive.StoreConversationAsync(conversation, cancellationToken).ConfigureAwait(false);
                         }
 
-                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
+                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(conversation)));
                         httpResponse.Headers.ContentType = "application/json";
                         await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                     }
@@ -459,13 +463,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         class SendToConversationBody
         {
-            public ConversationReferenceRecord ReferenceRecord { get; set; }
+            public Conversation Conversation { get; set; }
             public IActivity Activity { get; set; } = default!;
 		}
 
         class ContinueConversationBody
         {
-            public ConversationReferenceRecord ReferenceRecord { get; set; }
+            public Conversation Conversation { get; set; }
             public IDictionary<string, object> ContinueProperties { get; set; }
         }
 
@@ -481,6 +485,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             public IActivity Activity { get; set; }
             public object ChannelData { get; set; }
             public bool StoreConversation { get; set; } = false;
+            public bool ContinueConversation { get; set; } = false;
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)

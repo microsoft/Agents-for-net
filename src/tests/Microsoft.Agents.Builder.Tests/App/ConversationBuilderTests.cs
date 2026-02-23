@@ -10,25 +10,25 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {
-    public class RecordBuilderTests
+    public class ConversationBuilderTests
     {
         [Fact]
         public void Create_ShouldReturnNewInstance()
         {
             // Act
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
 
             // Assert
             Assert.NotNull(builder);
-            Assert.IsType<RecordBuilder>(builder);
+            Assert.IsType<ConversationBuilder>(builder);
         }
 
         [Fact]
-        public void WithReference_ReferenceBuilder_ShouldSetReferenceBuilder()
+        public void WithReference_ReferenceBuilder_ShouldSetTeamsReferenceBuilder()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
-            var refBuilder = ReferenceBuilder.Create(Channels.Msteams, "conv123")
+            var builder = ConversationBuilder.Create();
+            var refBuilder = ConversationReferenceBuilder.Create(Channels.Msteams, "conv123")
                 .WithUser("user123")
                 .WithAgent("agent123")
                 .WithServiceUrl("https://test.com");
@@ -49,14 +49,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(result.Reference);
             Assert.Equal("conv123", result.Reference.Conversation.Id);
             Assert.Equal("user123", result.Reference.User.Id);
-            Assert.Equal("agent123", result.Reference.Agent.Id);
+            Assert.Equal("28:agent123", result.Reference.Agent.Id);
         }
 
         [Fact]
         public void WithReference_ConversationReference_ShouldSetReference()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var reference = new ConversationReference
             {
                 ChannelId = Channels.Msteams,
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaimsFromClientId_WithClientIdOnly_ShouldSetClaims()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var clientId = "client123";
             var reference = new ConversationReference
             {
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaimsFromClientId_WithRequestorId_ShouldSetBothClaims()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var clientId = "client123";
             var requestorId = "requestor456";
             var reference = new ConversationReference
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaimsFromClientId_WithEmptyRequestorId_ShouldOnlySetAudClaim()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var clientId = "client123";
             var reference = new ConversationReference
             {
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaims_ShouldSetClaims()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var claims = new Dictionary<string, string>
             {
                 { "aud", "audience123" },
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaims_NullClaims_ShouldThrow()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => builder.WithClaims(null));
@@ -209,7 +209,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaims_EmptyClaims_ShouldThrow()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var claims = new Dictionary<string, string>();
 
             // Act & Assert
@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithIdentity_ShouldExtractClaimsFromIdentity()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var identity = new ClaimsIdentity(new[]
             {
                 new Claim("aud", "audience123"),
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithoutClaims_ShouldThrow()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var reference = new ConversationReference
             {
                 ChannelId = Channels.Msteams,
@@ -278,7 +278,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithoutReference_ShouldThrow()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var claims = new Dictionary<string, string>
             {
                 { "aud", "audience123" }
@@ -292,11 +292,11 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void Build_WithReferenceBuilder_ShouldBuildReferenceFromBuilder()
+        public void Build_WithReferenceBuilder_ShouldBuildTeamsReferenceFromBuilder()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
-            var refBuilder = ReferenceBuilder.Create(Channels.Msteams, "conv123")
+            var builder = ConversationBuilder.Create();
+            var refBuilder = ConversationReferenceBuilder.Create(Channels.Msteams, "conv123")
                 .WithUser("user123", "User Name")
                 .WithAgent("agent123", "Agent Name")
                 .WithServiceUrl("https://test.com")
@@ -321,7 +321,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("conv123", result.Reference.Conversation.Id);
             Assert.Equal("user123", result.Reference.User.Id);
             Assert.Equal("User Name", result.Reference.User.Name);
-            Assert.Equal("agent123", result.Reference.Agent.Id);
+            Assert.Equal("28:agent123", result.Reference.Agent.Id);
             Assert.Equal("Agent Name", result.Reference.Agent.Name);
             Assert.Equal("https://test.com", result.Reference.ServiceUrl);
             Assert.Equal("activity123", result.Reference.ActivityId);
@@ -329,10 +329,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void Build_ShouldReturnValidConversationReferenceRecord()
+        public void Build_ShouldReturnValidConversation()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var reference = new ConversationReference
             {
                 ChannelId = Channels.Msteams,
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.IsType<ConversationReferenceRecord>(result);
+            Assert.IsType<Conversation>(result);
             Assert.NotNull(result.Reference);
             Assert.NotNull(result.Claims);
             Assert.Equal(reference, result.Reference);
@@ -369,8 +369,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void FluentInterface_ShouldAllowMethodChaining()
         {
             // Arrange & Act
-            var result = RecordBuilder.Create()
-                .WithReference(ReferenceBuilder.Create(Channels.Msteams, "conv123").Build())
+            var result = ConversationBuilder.Create()
+                .WithReference(ConversationReferenceBuilder.Create(Channels.Msteams, "conv123").Build())
                 .WithClaimsForClientId("client123", "requestor456")
                 .Build();
 
@@ -384,7 +384,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithClaims_ShouldReplaceExistingClaims()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var reference = new ConversationReference
             {
                 ChannelId = Channels.Msteams,
@@ -420,7 +420,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithReference_ShouldReplaceExistingReference()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var reference1 = new ConversationReference
             {
                 Conversation = new ConversationAccount { Id = "conv1" }
@@ -452,7 +452,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithIdentity_EmptyIdentity_ShouldSetEmptyClaims()
         {
             // Arrange
-            var builder = RecordBuilder.Create();
+            var builder = ConversationBuilder.Create();
             var identity = new ClaimsIdentity();
             var reference = new ConversationReference
             {

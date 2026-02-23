@@ -33,8 +33,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
             _options = app.Options.Proactive;
         }
 
-        // TODO: CreateConversation method to start new conversations proactively
-
         /// <summary>
         /// Sends an activity to an existing conversation using the specified channel adapter.
         /// </summary>
@@ -72,7 +70,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a ResourceResponse with
         /// information about the sent activity.</returns>
-        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, ConversationReferenceRecord record, IActivity activity, CancellationToken cancellationToken = default)
+        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, Conversation record, IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
             AssertionHelpers.ThrowIfNull(record, nameof(record));
@@ -213,12 +211,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
             await adapter.ProcessProactiveAsync(identity, continuationActivity, _app, cancellationToken).ConfigureAwait(false);
         }
 
-        public Task<ConversationReference> CreateConversationAsync(IChannelAdapter adapter, CreateConversationRecord record, CancellationToken cancellationToken = default)
+        public Task<ConversationReference> CreateConversationAsync(IChannelAdapter adapter, CreateConversation create, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            AssertionHelpers.ThrowIfNull(record, nameof(record));
+            AssertionHelpers.ThrowIfNull(create, nameof(create));
 
-            return adapter.CreateConversationAsync(record.ReferenceRecord.Identity, record.ReferenceRecord.Reference, record.Parameters, record.Scope, _app.OnTurnAsync, cancellationToken);
+            return adapter.CreateConversationAsync(create.Conversation.Identity, create.Conversation.Reference, create.Parameters, create.Scope, create.Continue ? _app.OnTurnAsync : null, cancellationToken);
         }
 
         /// <summary>
@@ -282,27 +280,27 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A string containing the conversation identifier for the stored conversation reference.</returns>
         public Task<string> StoreConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            var record = new ConversationReferenceRecord(turnContext.Identity, turnContext.Activity.GetConversationReference());
+            var record = new Conversation(turnContext.Identity, turnContext.Activity.GetConversationReference());
             return StoreConversationAsync(record, cancellationToken);
         }
 
         /// <summary>
         /// Stores the current conversation reference in the proactive storage and returns the conversation identifier.
         /// </summary>
-        /// <param name="record">The conversation reference record to store. Cannot be null.</param>
+        /// <param name="conversation">The conversation reference record to store. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the ID of the stored
         /// conversation.</returns>
-        public async Task<string> StoreConversationAsync(ConversationReferenceRecord record, CancellationToken cancellationToken)
+        public async Task<string> StoreConversationAsync(Conversation conversation, CancellationToken cancellationToken)
         {
-            var key = GetRecordKey(record.Reference.Conversation.Id);
+            var key = GetRecordKey(conversation.Reference.Conversation.Id);
             await _app.Options.Proactive.Storage.WriteAsync(
                 new Dictionary<string, object>
                 {
-                    { key, record }
+                    { key, conversation }
                 },
                 cancellationToken).ConfigureAwait(false);
-            return record.Reference.Conversation.Id;
+            return conversation.Reference.Conversation.Id;
         }
 
         /// <summary>
@@ -314,14 +312,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="conversationId">The unique identifier of the conversation for which to retrieve the reference record. Cannot be null or
         /// empty.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A <see cref="ConversationReferenceRecord"/> representing the conversation reference if found; otherwise,
+        /// <returns>A <see cref="Conversation"/> representing the conversation reference if found; otherwise,
         /// <see langword="null"/>.</returns>
-        public async Task<ConversationReferenceRecord?> GetConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
+        public async Task<Conversation?> GetConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
             var key = GetRecordKey(conversationId);
             var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
-            if (items != null && items.TryGetValue(key, out var item) && item is ConversationReferenceRecord record)
+            if (items != null && items.TryGetValue(key, out var item) && item is Conversation record)
             {
                 return record;
             }
