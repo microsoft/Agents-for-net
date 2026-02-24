@@ -402,14 +402,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     try
                     {
-                        var body = await HttpHelper.ReadRequestAsync<JsonElement>(httpRequest).ConfigureAwait(false);
-                        if (body.ValueKind != JsonValueKind.Object && body.ValueKind != JsonValueKind.Undefined)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                            await httpResponse.WriteAsJsonAsync(new { error = "Request body must be a JSON object containing the properties for ContinueConversation." }, cancellationToken).ConfigureAwait(false);
-                            return;
-                        }
-
                         var conversation = await agent.Proactive.GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
                         if (conversation == null)
                         {
@@ -447,9 +439,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         try
                         {
-                            var body = await HttpHelper.ReadRequestAsync<ContinueConversationBody>(httpRequest).ConfigureAwait(false);
-
-                            if (!body.Conversation.IsValid())
+                            var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false);
+                            if (!conversation.IsValid())
                             {
                                 httpResponse.StatusCode = StatusCodes.Status400BadRequest;
                                 await httpResponse.WriteAsJsonAsync(new { error = "Conversation is invalid" }, cancellationToken).ConfigureAwait(false);
@@ -457,7 +448,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             }
 
                             // Creating a continuation activity with Value containing Query args.
-                            var continuationActivity = body.Conversation.Reference.GetContinuationActivity();
+                            var continuationActivity = conversation.Reference.GetContinuationActivity();
                             var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
                             if (eventValue.Count > 0)
                             {
@@ -470,8 +461,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                             await agent.Proactive.ContinueConversationAsync(
                                 adapter,
-                                body.Conversation.Identity,
-                                body.Conversation.Reference,
+                                conversation,
                                 handlerMethod.CreateDelegate<Builder.App.RouteHandler>(agent),
                                 continuationActivity,
                                 cancellationToken).ConfigureAwait(false);
@@ -590,12 +580,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             public Conversation Conversation { get; set; }
             public IActivity Activity { get; set; } = default!;
 		}
-
-        class ContinueConversationBody
-        {
-            public Conversation Conversation { get; set; }
-            public IDictionary<string, object> ContinueProperties { get; set; }
-        }
 
         class CreateConversationBody
         {

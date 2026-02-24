@@ -59,16 +59,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sends an activity to a conversation using the specified channel adapter and conversation reference.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send the activity. Cannot be null.</param>
-        /// <param name="record">The conversation reference record containing the identity and conversation information. Cannot be null.</param>
+        /// <param name="conversation">The conversation reference record containing the identity and conversation information. Cannot be null.</param>
         /// <param name="activity">The activity to send to the conversation. If the activity's Type property is null or empty, it defaults to a
         /// message activity. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a ResourceResponse with
         /// information about the sent activity.</returns>
-        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, Conversation record, IActivity activity, CancellationToken cancellationToken = default)
+        public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, Conversation conversation, IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
-            AssertionHelpers.ThrowIfNull(record, nameof(record));
+            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
 
             if (string.IsNullOrEmpty(activity.Type))
             {
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             ResourceResponse response = null;
-            await adapter.ContinueConversationAsync(record.Identity, record.Reference, async (turnContext, ct) =>
+            await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
             {
                 response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
@@ -87,13 +87,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
         /// ID. The conversation must have previously been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/>.<br/><br/>
-        /// 
-        /// See <see cref="ContinueConversationAsync(IChannelAdapter, ClaimsIdentity, ConversationReference, RouteHandler, CancellationToken)"/>.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
         /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
         /// <param name="continuationHandler">A delegate that handles the routing of activities within the continued conversation.</param>
-        /// <param name="continuationActivity"></param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
@@ -101,35 +99,29 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
-            await ContinueConversationAsync(adapter, conversation.Identity, conversation.Reference, continuationHandler, continuationActivity, cancellationToken).ConfigureAwait(false);
+            await ContinueConversationAsync(adapter, conversation, continuationHandler, continuationActivity, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Continues an existing conversation by invoking the specified route handler within the context of the
+        /// Continues an existing conversation by calling the specified route handler within the context of the
         /// provided conversation reference.  This method will provide TurnContext and TurnState relative to the 
-        /// original conversation context, allowing the route handler to process activities and operations as if 
-        /// they were occurring within the original conversation. After the route handler completes, any changes 
-        /// to the TurnState will be saved back to the underlying storage.
+        /// original conversation.
         /// </summary>
-        /// <remarks>NOTE:  OAuth is not availble within the turn when using this.</remarks>
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
-        /// <param name="identity">The claims identity representing the user or bot on whose behalf the conversation is continued. Must not be
-        /// null.</param>
-        /// <param name="reference">The conversation reference that identifies the conversation to continue. Must not be null.</param>
+        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
-        /// <param name="continuationActivity"></param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public Task ContinueConversationAsync(IChannelAdapter adapter, ClaimsIdentity identity, ConversationReference reference, RouteHandler continuationHandler, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
+        public Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
+            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
             AssertionHelpers.ThrowIfNull(continuationHandler, nameof(continuationHandler));
 
-            continuationActivity ??= reference.GetContinuationActivity();
+            continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
-            return adapter.ProcessProactiveAsync(identity, continuationActivity, null, (turnContext, ct) =>
+            return adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, (turnContext, ct) =>
             {
                 return OnTurnAsync(turnContext, continuationHandler, autoSignInHandlers: null, ct);
             }, cancellationToken);
@@ -141,8 +133,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="adapter">The channel adapter used to create the conversation. Cannot be null.</param>
         /// <param name="createInfo">An object containing the details required to create the conversation, including conversation identity,
         /// reference, parameters, and scope. Cannot be null.</param>
-        /// <param name="continuationHandler"></param>
-        /// <param name="continuationActivityFactory"></param>
+        /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
+        /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a reference to the newly created
         /// conversation.</returns>
