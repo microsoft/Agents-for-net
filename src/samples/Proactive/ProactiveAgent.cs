@@ -17,8 +17,6 @@ public class ProactiveAgent : AgentApplication
 {
     public ProactiveAgent(AgentApplicationOptions options) : base(options)
     {
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-
         // Manual way to store a conversation for use in Proactive.  This is for sample purposes only.
         OnMessage("-s", async (turnContext, turnState, cancellationToken) =>
         {
@@ -34,11 +32,10 @@ public class ProactiveAgent : AgentApplication
 
             await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
         });
-
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    public async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -49,7 +46,8 @@ public class ProactiveAgent : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
