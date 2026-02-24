@@ -205,17 +205,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Specifies whether the conversation should continue after the current interaction.
-        /// </summary>
-        /// <param name="continueConversation">true to indicate that the conversation should continue; otherwise, false.</param>
-        /// <returns>The current instance of the CreateConversationBuilder for method chaining.</returns>
-        public CreateConversationBuilder WithContinueConversation(bool continueConversation = true)
-        {
-            _record.Continue = continueConversation;
-            return this;
-        }
-
-        /// <summary>
         /// Builds and returns a configured instance of the CreateConversation object.
         /// </summary>
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>

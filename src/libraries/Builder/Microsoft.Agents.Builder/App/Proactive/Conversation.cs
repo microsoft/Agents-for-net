@@ -59,12 +59,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
             Reference = reference;
         }
 
-        /// <summary>
-        /// Gets or sets the collection of claims associated with the current entity.
-        /// </summary>
-        /// <remarks>This is the list of JWT claims.  For Azure Bot Service, only the 'aud' claim is required.  The 'aud' claim 
-        /// should be the ClientId of the Azure Bot.</remarks>
-        internal IDictionary<string, string>? Claims { get; set; }
+        internal Conversation(Conversation conversation, IDictionary<string, string> claims)
+        {
+            Reference = conversation.Reference;
+            Claims = claims;
+        }
 
         /// <summary>
         /// Gets or sets the reference information for the conversation associated with this instance.
@@ -78,6 +77,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// after accessing this property does not update the returned identity instance.</remarks>
         [JsonIgnore]
         public ClaimsIdentity Identity => IdentityFromClaims(Claims);
+
+        /// <summary>
+        /// Gets or sets the collection of claims associated with the current entity.
+        /// </summary>
+        /// <remarks>This is the list of JWT claims.  For Azure Bot Service, only the 'aud' claim is required.  The 'aud' claim 
+        /// should be the ClientId of the Azure Bot.</remarks>
+        [JsonInclude]
+        private IDictionary<string, string>? Claims { get; set; }
 
         /// <summary>
         /// Extracts a dictionary of selected claim types and their values from the specified identity.
@@ -129,7 +136,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// false.</returns>
         public bool IsValid()
         {
-            return Reference != null && (bool)Claims?.TryGetValue("aud", out _);
+            return Reference != null && Claims != null && (bool)Claims?.TryGetValue("aud", out _);
         }
     }
 }

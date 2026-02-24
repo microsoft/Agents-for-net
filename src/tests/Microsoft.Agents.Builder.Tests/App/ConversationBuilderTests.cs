@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Xunit;
 
@@ -105,9 +106,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Claims);
-            Assert.Single(result.Claims);
-            Assert.Equal(clientId, result.Claims["aud"]);
+            Assert.True(result.IsValid());
         }
 
         [Fact]
@@ -131,10 +130,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Claims);
-            Assert.Equal(2, result.Claims.Count);
-            Assert.Equal(clientId, result.Claims["aud"]);
-            Assert.Equal(requestorId, result.Claims["appid"]);
+            Assert.True(result.IsValid());
+            Assert.Equal(requestorId, result.Identity.Claims.First(c => c.Type == "appid")?.Value);
         }
 
         [Fact]
@@ -157,10 +154,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Claims);
-            Assert.Single(result.Claims);
-            Assert.Equal(clientId, result.Claims["aud"]);
-            Assert.False(result.Claims.ContainsKey("appid"));
+            Assert.True(result.IsValid());
+            Assert.Null(result.Identity.Claims.FirstOrDefault(c => c.Type == "appid"));
         }
 
         [Fact]
@@ -188,11 +183,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Claims);
-            Assert.Equal(3, result.Claims.Count);
-            Assert.Equal("audience123", result.Claims["aud"]);
-            Assert.Equal("app456", result.Claims["appid"]);
-            Assert.Equal("issuer789", result.Claims["iss"]);
+            Assert.True(result.IsValid());
+            Assert.Equal("app456", result.Identity.Claims.First(c => c.Type == "appid").Value);
+            Assert.Equal("issuer789", result.Identity.Claims.First(c => c.Type == "iss").Value);
         }
 
         [Fact]
@@ -245,15 +238,13 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Claims);
-            Assert.Equal(6, result.Claims.Count);
-            Assert.Equal("audience123", result.Claims["aud"]);
-            Assert.Equal("azp456", result.Claims["azp"]);
-            Assert.Equal("app789", result.Claims["appid"]);
-            Assert.Equal("app", result.Claims["idtyp"]);
-            Assert.Equal("1.0", result.Claims["ver"]);
-            Assert.Equal("issuer111", result.Claims["iss"]);
-            Assert.False(result.Claims.ContainsKey("other"));
+            Assert.True(result.IsValid());
+            Assert.Equal("azp456", result.Identity.Claims.First(c => c.Type == "azp").Value);
+            Assert.Equal("app789", result.Identity.Claims.First(c => c.Type == "appid").Value);
+            Assert.Equal("app", result.Identity.Claims.First(c => c.Type == "idtyp").Value);
+            Assert.Equal("1.0", result.Identity.Claims.First(c => c.Type == "ver").Value);
+            Assert.Equal("issuer111", result.Identity.Claims.First(c => c.Type == "iss").Value);
+            Assert.Null(result.Identity.Claims.FirstOrDefault(c => c.Type == "other"));
         }
 
         [Fact]
@@ -268,10 +259,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() =>
+            Assert.Throws<ArgumentException>(() =>
                 builder.WithReference(reference).Build());
-
-            Assert.Contains("Record.Claims", exception.Message);
         }
 
         [Fact]
@@ -285,10 +274,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentNullException>(() =>
+            Assert.Throws<ArgumentException>(() =>
                 builder.WithClaims(claims).Build());
-
-            Assert.Contains("Record.Reference", exception.Message);
         }
 
         [Fact]
@@ -360,9 +347,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(result);
             Assert.IsType<Conversation>(result);
             Assert.NotNull(result.Reference);
-            Assert.NotNull(result.Claims);
+            Assert.True(result.IsValid());
             Assert.Equal(reference, result.Reference);
-            Assert.Equal(claims, result.Claims);
+            Assert.Equal(2, result.Identity.Claims.ToList().Count);
         }
 
         [Fact]
@@ -377,7 +364,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Reference);
-            Assert.NotNull(result.Claims);
+            Assert.NotNull(result.Identity);
         }
 
         [Fact]
@@ -411,9 +398,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Claims.Count);
-            Assert.Equal("replaced", result.Claims["aud"]);
-            Assert.Equal("new", result.Claims["appid"]);
+            Assert.Equal(2, result.Identity.Claims.ToList().Count);
+            Assert.Equal("replaced", result.Identity.Claims.First(c => c.Type == "aud").Value);
+            Assert.Equal("new", result.Identity.Claims.First(c => c.Type == "appid").Value);
         }
 
         [Fact]
@@ -461,13 +448,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<ArgumentException>(() =>
                 builder
                     .WithReference(reference)
                     .WithIdentity(identity)
                     .Build());
-
-            Assert.Contains("Record.Claims", exception.Message);
         }
     }
 }

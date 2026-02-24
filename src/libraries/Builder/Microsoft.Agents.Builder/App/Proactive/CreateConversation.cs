@@ -28,10 +28,5 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Gets or sets the information for the conversation associated with this instance.
         /// </summary>
         public Conversation Conversation { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the conversation should continue after the create operation.
-        /// </summary>
-        public bool Continue { get; set; }
     }
 }

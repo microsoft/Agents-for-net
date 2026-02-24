@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// fields are set and applies sensible defaults for optional properties if not specified.</remarks>
     public class ConversationBuilder
     {
-        private readonly Conversation _record = new();
+        private Conversation _conversation = new();
 
         /// <summary>
         /// Creates a new instance of the RecordBuilder class for constructing record objects.
@@ -36,7 +37,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="ConversationBuilder"/> instance for method chaining.</returns>
         public ConversationBuilder WithReference(ConversationReference reference)
         {
-            _record.Reference = reference;
+            _conversation.Reference = reference;
             return this;
         }
 
@@ -61,7 +62,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 claims["appid"] = requestorId;
             }
-            _record.Claims = claims;
+            _conversation = new Conversation(_conversation, claims);
             return this;
         }
 
@@ -73,7 +74,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public ConversationBuilder WithClaims(IDictionary<string, string> claims)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(claims, nameof(claims));
-            _record.Claims = claims;
+            _conversation = new Conversation(_conversation, claims);
             return this;
         }
 
@@ -84,7 +85,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated identity information.</returns>
         public ConversationBuilder WithIdentity(ClaimsIdentity identity)
         {
-            _record.Claims = Conversation.ClaimsFromIdentity(identity);
+            _conversation = new Conversation(identity, _conversation.Reference);
             return this;
         }
 
@@ -95,10 +96,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// builder.</returns>
         public Conversation Build()
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(_record.Claims, "Record.Claims cannot be null or empty");
-            AssertionHelpers.ThrowIfNull(_record.Reference, "Record.Reference cannot be null");
+            if (!_conversation.IsValid())
+            {
+                throw new ArgumentException("Cannot build Conversation: missing required fields.");
+            }
 
-            return _record;
+            return _conversation;
         }
     }
 }

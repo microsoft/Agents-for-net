@@ -3,9 +3,9 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -26,41 +26,14 @@ public class ProactiveAgent : AgentApplication
             await turnContext.SendActivityAsync($"Conversation '{id}' stored", cancellationToken: cancellationToken);
         });
 
-        // ContinueConversation by routing to AgentApplication.  This allows both TurnState and OAuth tokens
-        // to be available.
+        // In-code ContinueConversation 
         OnMessage(new Regex("-c.*"), async (turnContext, turnState, cancellationToken) =>
         {
             var split = turnContext.Activity.Text.Split(' ');
             var conversationId = split.Length == 1 ? turnContext.Activity.Conversation.Id : split[1];
 
-            await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, cancellationToken);
+            await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
         });
-
-        // Events can contain an Activity.Value which further describes the event.  This can be used to route to different handlers.
-        // In this case, we look for a property "extended" with a value of true to route to a different handler.
-        // For example, from POSTing to /proactive/continueconversation/{{id}} with a body of { "extended": true }
-        // This is highly dependent on what was passed to Proactive.ContinueConversationAsync(IChannelAdapter, string, IDictionary<string, object>)
-        Proactive.AddContinueConversationRoute(OnContinueConversationExtendedAsync, selector: (context, ct) =>
-        {
-            if (context.Activity.Value == null || context.Activity.ValueType != Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationValueType)
-            {
-                return Task.FromResult(false);
-            }
-
-            var continueProperties = (IDictionary<string, object>)context.Activity.Value;
-            if (continueProperties.TryGetValue("extended", out var extValue))
-            {
-                return Task.FromResult(extValue is JsonElement jsonValueKind ? jsonValueKind.GetBoolean() : (bool)extValue);
-            }
-
-            return Task.FromResult(false);
-        });
-
-        // This will route all ContinueConversation Events to the same handler, with OAuth token from the "me" handler.
-        Proactive.AddContinueConversationRoute(OnContinueConversationAsync, autoSignInHandlers: ["me"]);
-
-        // This will route all CreateConversation Events to the same handler, with OAuth token from the "me" handler.
-        Proactive.AddCreateConversationRoute(OnCreateConversationAsync);
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
@@ -81,19 +54,16 @@ public class ProactiveAgent : AgentApplication
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
+    [ContinueConversation]
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, cancellationToken: cancellationToken);
-        await turnContext.SendActivityAsync($"This is ContinueConversation with token len={token.Length}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"This is ContinueConversation with token len={token?.Length}. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 
-    private async Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [ContinueConversation("ext")]
+    public async Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
-    }
-
-    private static async Task OnCreateConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        await turnContext.SendActivityAsync("This is CreateConversation", cancellationToken: cancellationToken);
     }
 }

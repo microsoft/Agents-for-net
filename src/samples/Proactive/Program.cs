@@ -49,7 +49,9 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 // Map the endpoints for proactive messages.  This is required to receive external Http
 // requests for AgentApplication.Proactive at /proactive.
-app.MapAgentProactiveEndpoints<ProactiveAgent>(continueRoutes: new Dictionary<string, string> {{ "", "OnContinueConversationAsync" }, { "ext", "OnContinueConversationExtendedAsync" } },requireAuth: !app.Environment.IsDevelopment());
+// This is using ContinueConversationAttributes in the ProactiveAgent to map /proactive/continue,
+// /proactive/continue/ext.
+app.MapAgentProactiveEndpoints<ProactiveAgent>(requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {
