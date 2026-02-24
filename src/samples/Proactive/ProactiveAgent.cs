@@ -54,16 +54,17 @@ public class ProactiveAgent : AgentApplication
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
+    // Map /proactive/continue to this method
     [ContinueConversation]
-    public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, cancellationToken: cancellationToken);
-        await turnContext.SendActivityAsync($"This is ContinueConversation with token len={token?.Length}. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        return turnContext.SendActivityAsync($"This is OnContinueConversation. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 
+    // Map /proactive/continue/ext to this method
     [ContinueConversation("ext")]
-    public async Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        return turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 }
