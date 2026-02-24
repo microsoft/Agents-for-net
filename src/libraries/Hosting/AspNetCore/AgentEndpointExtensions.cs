@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
@@ -21,8 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -264,13 +261,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             bool requireAuth = true,
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
-            var handlers = new Dictionary<string, string>();
+            var handlers = new Dictionary<string, ContinueConversationRoute<TAgent>>();
             foreach (var method in typeof(TAgent).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 var continueHandlers = method.GetCustomAttributes<ContinueConversationAttribute>(true);
                 foreach (var handler in continueHandlers)
                 {
-                    handlers.Add(handler.Key, method.Name);
+                    handlers.Add(handler.Key, new ContinueConversationRoute<TAgent>(method.Name, handler.TokenHandlers));
                 }
             }
 
@@ -299,7 +296,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             return MapAgentProactiveEndpoints<TAgent>(
                 app,
-                new Dictionary<string, string> { { "", "continueConversationDelegate" } },
+                new Dictionary<string, ContinueConversationRoute<TAgent>> { { "", new ContinueConversationRoute<TAgent>(continueConversationDelegate, string.Empty) } },
                 requireAuth,
                 defaultPath);
         }
@@ -327,7 +324,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// endpoints.</returns>
         public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
             this WebApplication app, 
-            IDictionary<string, string> continueRoutes, 
+            IDictionary<string, ContinueConversationRoute<TAgent>> continueRoutes, 
             bool requireAuth = true, 
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
@@ -419,9 +416,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             continuationActivity.Value = eventValue;
                         }
 
-                        var handlerMethod = typeof(TAgent).GetMethod(continueRoute.Value, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                            ?? throw new InvalidOperationException($"The specified continue route handler '{continueRoute.Value}' was not found on AgentApplication '{typeof(TAgent).FullName}'.");
-                        await agent.Proactive.ContinueConversationAsync(adapter, conversationId, handlerMethod.CreateDelegate<Builder.App.RouteHandler>(agent), continuationActivity, cancellationToken).ConfigureAwait(false);
+                        await agent.Proactive.ContinueConversationAsync(
+                            adapter, 
+                            conversationId, 
+                            continueRoute.Value.RouteHandler(agent), 
+                            continuationActivity, 
+                            continueRoute.Value.TokenHandlers, 
+                            cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception requestFailed)
                     {
@@ -456,14 +457,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 continuationActivity.Value = eventValue;
                             }
 
-                            var handlerMethod = typeof(TAgent).GetMethod(continueRoute.Value, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                ?? throw new InvalidOperationException($"The specified continue route handler '{continueRoute.Value}' was not found on AgentApplication '{typeof(TAgent).FullName}'.");
-
                             await agent.Proactive.ContinueConversationAsync(
                                 adapter,
                                 conversation,
-                                handlerMethod.CreateDelegate<Builder.App.RouteHandler>(agent),
+                                continueRoute.Value.RouteHandler(agent),
                                 continuationActivity,
+                                continueRoute.Value.TokenHandlers,
                                 cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception requestFailed)
@@ -520,14 +519,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 .WithTenantId(body.TenantId)
                                 .Build();
 
-                            var handlerMethod = typeof(TAgent).GetMethod(continueRoute.Value, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                ?? throw new InvalidOperationException($"The specified continue create conversation route handler '{continueRoute.Value}' was not found on AgentApplication '{typeof(TAgent).FullName}'.");
-
                             // Execute the conversation creation
                             var newReference = await agent.Proactive.CreateConversationAsync(
                                 adapter,
                                 createRecord,
-                                body.ContinueConversation ? handlerMethod.CreateDelegate<Builder.App.RouteHandler>(agent) : null,
+                                body.ContinueConversation ? continueRoute.Value.RouteHandler(agent) : null,
                                 (reference) =>
                                 {
                                     var continuationActivity = reference.GetContinuationActivity();
@@ -539,6 +535,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                     }
                                     return continuationActivity;
                                 },
+                                continueRoute.Value.TokenHandlers,
                                 cancellationToken).ConfigureAwait(false);
 
                             // Store the conversation if requested, and return the Conversation in the response body.

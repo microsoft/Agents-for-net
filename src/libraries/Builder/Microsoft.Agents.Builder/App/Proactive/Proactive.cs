@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -16,7 +17,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         private readonly ProactiveOptions _options;
 
         /// <summary>
-        /// Options <c>IAcitivty.ValueType</c> that indicates additional key/values for the ContinueConversation Event.
+        /// <c>IAcitivty.ValueType</c> that indicates additional key/values for the ContinueConversation Event.
         /// </summary>
         public static readonly string ContinueConversationValueType = "application/vnd.microsoft.activity.continueconversation";
 
@@ -92,16 +93,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
         /// <param name="continuationHandler">A delegate that handles the routing of activities within the continued conversation.</param>
         /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
+        /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
-        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
-            await ContinueConversationAsync(adapter, conversation, continuationHandler, continuationActivity, cancellationToken).ConfigureAwait(false);
+            await ContinueConversationAsync(adapter, conversation, continuationHandler, continuationActivity, tokenHandlers, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -113,9 +115,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
         /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
+        /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        public Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
@@ -123,10 +126,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
-            return adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, (turnContext, ct) =>
+            await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
             {
-                return OnTurnAsync(turnContext, continuationHandler, autoSignInHandlers: null, ct);
-            }, cancellationToken);
+                await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: tokenHandlers, ct).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -137,6 +140,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// reference, parameters, and scope. Cannot be null. See <see cref="CreateConversationBuilder"/>.</param>
         /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
         /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
+        /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a reference to the newly created
         /// conversation.</returns>
@@ -144,7 +148,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
             IChannelAdapter adapter, 
             CreateConversation createInfo, 
             RouteHandler continuationHandler = null, 
-            Func<ConversationReference, IActivity> continuationActivityFactory = null, 
+            Func<ConversationReference, IActivity> continuationActivityFactory = null,
+            string[] tokenHandlers = null,
             CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
@@ -158,7 +163,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 null,
                 cancellationToken).ConfigureAwait(false);
 
-            AgentCallbackHandler continuation = continuationHandler != null ? (context, ct) => OnTurnAsync(context, continuationHandler, autoSignInHandlers: null, ct) : null;
+            AgentCallbackHandler continuation = continuationHandler != null ? (context, ct) => OnTurnAsync(context, continuationHandler, tokenHandlers: tokenHandlers, ct) : null;
             if (continuation != null)
             {
                 var continuationActivity = continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity();
@@ -246,18 +251,30 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return _options.Storage.DeleteAsync([key], cancellationToken);
         }
 
-        private async Task OnTurnAsync(ITurnContext turnContext, RouteHandler handler, string[] autoSignInHandlers = null, CancellationToken cancellationToken = default)
+        private async Task OnTurnAsync(ITurnContext turnContext, RouteHandler handler, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             var turnState = _app.Options.TurnStateFactory!();
             await turnState.LoadStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
 
-            if (autoSignInHandlers?.Length > 0)
+            try
             {
+                if (tokenHandlers?.Length > 0 && _app.UserAuthorization != null)
+                {
+                    turnContext.Services.Set<UserAuthorization>(_app.UserAuthorization);
+                    await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
+                }
+
+                await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+
+                await turnState.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
             }
-
-            await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-
-            await turnState.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            finally
+            {
+                if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
+                {
+                    await turnContext.StreamingResponse.EndStreamAsync(cancellationToken).ConfigureAwait(false);
+                }
+            }
         }
 
         private static string GetRecordKey(string conversationId)

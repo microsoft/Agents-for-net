@@ -24,6 +24,17 @@ public class ProactiveAgent : AgentApplication
             await turnContext.SendActivityAsync($"Conversation '{id}' stored", cancellationToken: cancellationToken);
         });
 
+        OnMessage("-signin", async (turnContext, turnState, cancellationToken) =>
+        {
+            await turnContext.SendActivityAsync("Signed in", cancellationToken: cancellationToken);
+        }, autoSignInHandlers: ["me"]);
+
+        OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>
+        {
+            await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken);
+            await turnContext.SendActivityAsync("Signed out", cancellationToken: cancellationToken);
+        });
+
         // In-code ContinueConversation 
         OnMessage(new Regex("-c.*"), async (turnContext, turnState, cancellationToken) =>
         {
@@ -53,16 +64,17 @@ public class ProactiveAgent : AgentApplication
     }
 
     // Map /proactive/continue to this method
-    [ContinueConversation]
-    public Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [ContinueConversation(tokenHandlers: "me")]
+    public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        return turnContext.SendActivityAsync($"This is OnContinueConversation. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken); 
+        await turnContext.SendActivityAsync($"This is OnContinueConversation. Token={(token == null ? "not signed in" : token.Length)}, Activity.Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 
     // Map /proactive/continue/ext to this method
     [ContinueConversation("ext")]
     public Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        return turnContext.SendActivityAsync($"This is ContinueConversationExtended. Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        return turnContext.SendActivityAsync($"This is ContinueConversationExtended. Activity.Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
     }
 }

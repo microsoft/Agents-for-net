@@ -18,11 +18,27 @@ namespace Microsoft.Agents.Builder.App.Proactive
     {
         public const string DefaultKey = "";
 
-        public ContinueConversationAttribute(string key = DefaultKey)
+        /// <summary>
+        /// Initializes a new instance of the ContinueConversationAttribute class with the specified conversation key
+        /// and optional token handler configuration.
+        /// </summary>
+        /// <param name="key">The conversation key used to identify the conversation context. If null, an ArgumentNullException is thrown.</param>
+        /// <param name="tokenHandlers">An optional comma, semicolon, or space delimted list of tokens to get.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the key parameter is null.</exception>
+        public ContinueConversationAttribute(string key = DefaultKey, string tokenHandlers = null)
         {
             Key = key ?? throw new ArgumentNullException(nameof(key));
+            TokenHandlers = tokenHandlers;
         }
 
+        /// <summary>
+        /// Gets the unique identifier associated with the current instance.
+        /// </summary>
         public string Key { get; }
+
+        /// <summary>
+        /// Gets or sets the token handler configuration used for processing authentication tokens.
+        /// </summary>
+        public string TokenHandlers { get; set; }
     }
 }

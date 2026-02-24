@@ -264,6 +264,26 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return true;
         }
 
+        internal async Task<bool> GetSignedInTokensAsync(ITurnContext turnContext, string[] handlerList, CancellationToken cancellationToken)
+        {
+            int fetched = 0;
+            foreach (var handlerName in handlerList)
+            {
+                var handler = _dispatcher.Get(handlerName);
+                if (handler != null)
+                {
+                    var token = await handler.GetRefreshedUserTokenAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    if (token != null)
+                    {
+                        fetched++;
+                        CacheToken(handlerName, new SignInResponse(SignInStatus.Complete) { TokenResponse = token });
+                    }
+                }
+            }
+
+            return fetched == handlerList.Length;
+        }
+
         /// <summary>
         /// Set token in state
         /// </summary>
