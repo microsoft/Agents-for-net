@@ -15,13 +15,69 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
 
+	public sealed class TimedActivity : IDisposable
+	{
+		private readonly Activity? Activity;
+		private readonly Stopwatch Stopwatch;
+		private readonly Action<Activity?, long>? SuccessCallback;
+		private readonly Action<Activity?, long>? FailureCallback;
+		private bool Disposed;
+		private bool HasError;
+
+		internal TimedActivity(
+			Activity? activity,
+			Action<Activity?, long>? successCallback,
+			Action<Activity?, long>? failureCallback
+		)
+		{
+			Activity = activity;
+			Stopwatch = Stopwatch.StartNew();
+			SuccessCallback = successCallback;
+			FailureCallback = failureCallback;
+		}
+
+		public void SetError(Exception ex)
+		{
+			if (Activity == null)
+				return;
+
+			HasError = true;
+			Activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            Activity?.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, new()
+            {
+                ["exception.type"] = ex.GetType().FullName,
+                ["exception.message"] = ex.Message,
+                ["exception.stacktrace"] = ex.StackTrace
+            }));
+        }
+
+		public void Dispose()
+		{
+			if (Disposed)
+				return;
+
+			Stopwatch.Stop();
+			var duration = Stopwatch.ElapsedMilliseconds;
+
+			if (HasError && FailureCallback != null)
+				FailureCallback(Activity, duration);
+			else if (!HasError && SuccessCallback != null)
+				SuccessCallback(Activity, duration);
+
+			Activity?.Dispose();
+
+			Disposed = true;
+		}
+	}
+
 	public static class AgentTelemetry
 	{
 		
 		public static readonly string SourceName = "Microsoft.Agents.Builder";
-		public static readonly ActivitySource ActivitySource = new(SourceName);
+		public static readonly string SourceVersion = "1.0.0";
+		public static readonly ActivitySource ActivitySource = new(SourceName, SourceVersion);
 
-		private static readonly Meter Meter = new("Microsoft.Agents.Builder", "1.0.0");
+		private static readonly Meter Meter = new(SourceName, SourceVersion);
 		private static readonly Counter<long> TurnTotal = Meter.CreateCounter<long>(
 			"agent.turns.total", "turn"
 		);
@@ -53,9 +109,9 @@ namespace Microsoft.Agents.Builder
             return attributes;
         }
 
-		public static Activity StartActivity(string name, ITurnContext? turnContext)
+		public static Activity? StartActivity(string name, ITurnContext? turnContext)
 		{
-			var activity = ActivitySource.StartActivity(name, ActivityKind.Server);
+			var activity = ActivitySource.StartActivity(name);
 			if (turnContext != null)
 			{
                 var attributes = ExtractAttributesFromContext(turnContext);
@@ -67,66 +123,26 @@ namespace Microsoft.Agents.Builder
 			return activity;
         }
 
-		private static async Task TimedActivityAsync(
+        private static TimedActivity StartTimedActivity(
 			string operationName,
 			ITurnContext? turnContext,
-			Func<Task> func,
 			Action<Activity, long>? successCallback = null,
 			Action<Activity, long>? failureCallback = null
 			)
 		{
-			using var activity = StartActivity(operationName, turnContext);
-			bool success = true;
-
-			var stopwatch = Stopwatch.StartNew();
-
-			try
-			{
-				await func();
-			}
-			catch (Exception ex)
-			{
-				success = false;
-				activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                activity?.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, new()
-				{
-					["exception.type"] = ex.GetType().FullName,
-					["exception.message"] = ex.Message,
-					["exception.stacktrace"] = ex.StackTrace
-				}));
-				throw;
-            }
-			finally
-			{
-				stopwatch.Stop();
-				var duration = stopwatch.ElapsedMilliseconds;
-
-				if (success)
-				{
-					activity?.SetStatus(ActivityStatusCode.Ok);
-					if (successCallback != null && activity != null)
-					{
-						successCallback(activity, duration);
-					}
-                }
-				else
-				{
-					if (failureCallback != null && activity != null)
-					{
-						failureCallback(activity, duration);
-                    }
-
-					activity?.SetStatus(ActivityStatusCode.Error);
-                }
-            }
+			var activity = StartActivity(operationName, turnContext);
+			return new TimedActivity(
+				activity,
+				successCallback,
+				failureCallback
+			);
 		}
 
-		public static async Task InvokeAgentTurnOperation(ITurnContext turnContext, Func<Task> func)
+		public static TimedActivity StartAgentTurnOperation(ITurnContext turnContext)
 		{
-			await TimedActivityAsync(
+			return StartTimedActivity(
 				"agent turn",
 				turnContext,
-				func,
 				successCallback: (activity, duration) =>
 				{
 					TurnTotal.Add(1);
@@ -141,12 +157,11 @@ namespace Microsoft.Agents.Builder
 			);
         }
 
-		public static async Task InvokeAdapterProcessOperation(Func<Task> func)
+		public static TimedActivity StartAdapterProcessOperation()
 		{
-			await TimedActivityAsync(
+			return StartTimedActivity(
 				"adapter process",
 				null,
-				func,
 				successCallback: (activity, duration) =>
 				{
 					// do stuff
@@ -158,12 +173,11 @@ namespace Microsoft.Agents.Builder
 			);
 		}
 
-		public static async Task InvokeStorageOperation(string operationName, Func<Task> func)
+		public static TimedActivity StartStorageOperation(string operationName)
 		{
-			await TimedActivityAsync(
+			return StartTimedActivity(
 				$"storage {operationName}",
 				null,
-				func,
 				successCallback: (activity, duration) =>
 				{
 					// do stuff
@@ -173,11 +187,6 @@ namespace Microsoft.Agents.Builder
 					// do stuff
 				}
 			);
-		}
-
-		public static Activity? StartActivity(string operationName)
-		{
-			return ActivitySource.StartActivity(operationName);
 		}
     }
 }

@@ -780,125 +780,123 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
-                await AgentTelemetry.InvokeAgentTurnOperation(turnContext, async () =>
+                using var telemetryActivity = AgentTelemetry.StartAgentTurnOperation(turnContext);
+ 
+                // Start typing timer if configured
+                if (Options.StartTypingTimer)
                 {
-                    // Start typing timer if configured
-                    if (Options.StartTypingTimer)
+                    StartTypingTimer(turnContext);
+                }
+
+                // Handle @mentions
+                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Options.NormalizeMentions)
                     {
-                        StartTypingTimer(turnContext);
+                        turnContext.Activity.NormalizeMentions(Options.RemoveRecipientMention);
                     }
-                        ;
-
-                    // Handle @mentions
-                    if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                    else if (Options.RemoveRecipientMention)
                     {
-                        if (Options.NormalizeMentions)
+                        turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
+                    }
+                }
+
+                // Load turn state
+                ITurnState turnState = Options.TurnStateFactory!();
+                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    // Handle user auth
+                    if (_userAuth != null)
+                    {
+                        // For AutoSignIn, this will initiate the OAuth flow.  Otherwise, this will continue OAuth flows
+                        // start by a Route (when `autoSignInHandlers` are specified on the Route).
+                        var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (!signInComplete)
                         {
-                            turnContext.Activity.NormalizeMentions(Options.RemoveRecipientMention);
-                        }
-                        else if (Options.RemoveRecipientMention)
-                        {
-                            turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
+                            return;
                         }
                     }
 
-                    // Load turn state
-                    ITurnState turnState = Options.TurnStateFactory!();
-                    await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                    try
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
                     {
-                        // Handle user auth
-                        if (_userAuth != null)
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
                         {
-                            // For AutoSignIn, this will initiate the OAuth flow.  Otherwise, this will continue OAuth flows
-                            // start by a Route (when `autoSignInHandlers` are specified on the Route).
-                            var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            if (!signInComplete)
-                            {
-                                return;
-                            }
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
                         }
+                    }
 
-                        // Download any input files
-                        IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                        if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    // Call before turn handler
+                    foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    {
+                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
                         {
-                            foreach (IInputFileDownloader downloader in fileDownloaders)
-                            {
-                                var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                                turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
-                            }
+                            // Save turn state
+                            // - This lets the Agent keep track of why it ended the previous turn. It also
+                            //   allows the dialog system to be used before the AI system is called.
+                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                            return;
                         }
+                    }
 
-                        // Call before turn handler
-                        foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
+                    foreach (Route route in _routes.Enumerate())
+                    {
+                        if (await route.Selector(turnContext, cancellationToken))
                         {
-                            if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                            if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
                             {
-                                // Save turn state
-                                // - This lets the Agent keep track of why it ended the previous turn. It also
-                                //   allows the dialog system to be used before the AI system is called.
-                                await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                                return;
+                                await route.Handler(turnContext, turnState, cancellationToken);
                             }
-                        }
-
-                        // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
-                        foreach (Route route in _routes.Enumerate())
-                        {
-                            if (await route.Selector(turnContext, cancellationToken))
+                            else
                             {
-                                if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
+                                bool signInComplete = false;
+
+                                var handlers = route.AutoSignInHandler;
+                                foreach (var handler in handlers)
+                                {
+                                    signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, handler, forceAuto: true, cancellationToken: cancellationToken).ConfigureAwait(false);
+                                    if (!signInComplete)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                if (signInComplete)
                                 {
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
-                                else
-                                {
-                                    bool signInComplete = false;
-
-                                    var handlers = route.AutoSignInHandler;
-                                    foreach (var handler in handlers)
-                                    {
-                                        signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, handler, forceAuto: true, cancellationToken: cancellationToken).ConfigureAwait(false);
-                                        if (!signInComplete)
-                                        {
-                                            break;
-                                        }
-                                    }
-
-                                    if (signInComplete)
-                                    {
-                                        await route.Handler(turnContext, turnState, cancellationToken);
-                                    }
-                                }
-
-                                break;
                             }
-                        }
 
-                        // Call after turn handler
-                        foreach (TurnEventHandler afterTurnHandler in _afterTurn)
-                        {
-                            if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
-                            {
-                                return;
-                            }
+                            break;
                         }
                     }
-                    catch (Exception ex)
+
+                    // Call after turn handler
+                    foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                     {
-                        foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
+                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
                         {
-                            await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
+                            return;
                         }
-
-                        throw;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
+                    {
+                        await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
                     }
 
-                    await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                    throw;
+                }
+
+                await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             finally
             {

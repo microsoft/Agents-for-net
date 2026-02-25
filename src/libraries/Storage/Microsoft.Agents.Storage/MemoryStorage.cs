@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -43,6 +44,7 @@ namespace Microsoft.Agents.Storage
 
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
+            using var telemetryActivity = AgentTelemetry.StartStorageOperation("delete");
             lock (_syncroot)
             {
                 foreach (var key in keys)
@@ -68,6 +70,7 @@ namespace Microsoft.Agents.Storage
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+            using var telemetryActivity = AgentTelemetry.StartStorageOperation("read");
             var storeItems = new Dictionary<string, object>(keys.Length);
             lock (_syncroot)
             {
@@ -119,6 +122,8 @@ namespace Microsoft.Agents.Storage
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            using var telemetryActivity = AgentTelemetry.StartStorageOperation("write");
             lock (_syncroot)
             {
                 foreach (var change in changes)
