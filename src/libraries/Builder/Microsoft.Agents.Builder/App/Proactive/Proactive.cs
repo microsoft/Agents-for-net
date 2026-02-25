@@ -87,11 +87,24 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 activity.Type = ActivityTypes.Message;
             }
 
+            ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
             await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
             {
-                response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
+                try
+                {
+                    response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
+                    // results in the exception being lost.  Capture the exception info here to re-throw
+                    // after ContinueConversationAsync completes.
+                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                }
             }, cancellationToken).ConfigureAwait(false);
+
+            exceptionInfo?.Throw();
 
             return response;
         }

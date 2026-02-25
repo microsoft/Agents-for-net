@@ -251,13 +251,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Maps proactive conversation endpoints using ContinueConversationAttributes on the agent.
         /// </summary>
         /// <typeparam name="TAgent">The agent application type for which proactive endpoints are mapped. Must inherit from AgentApplication.</typeparam>
-        /// <param name="app">The web application to which the proactive endpoints will be added.</param>
+        /// <param name="endpoints">The web application to which the proactive endpoints will be added.</param>
         /// <param name="requireAuth">A value indicating whether authentication is required for the mapped endpoints. Defaults to <see
         /// langword="true"/>.</param>
         /// <param name="defaultPath">The base route path for the proactive endpoints. Defaults to "/proactive".</param>
         /// <returns>An endpoint convention builder that can be used to further configure the mapped endpoints.</returns>
         public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
-            this WebApplication app,
+            this IEndpointRouteBuilder endpoints,
             bool requireAuth = true,
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
@@ -271,7 +271,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
             }
 
-            return MapAgentProactiveEndpoints<TAgent>(app, handlers, requireAuth, defaultPath);
+            return MapAgentProactiveEndpoints<TAgent>(endpoints, handlers, requireAuth, defaultPath);
         }
 
         /// <summary>
@@ -280,14 +280,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <typeparam name="TAgent">The type of the agent application for which proactive endpoints are being mapped. Must inherit from
         /// AgentApplication.</typeparam>
-        /// <param name="app">The WebApplication instance to which the proactive endpoints will be added.</param>
+        /// <param name="endpoints">The WebApplication instance to which the proactive endpoints will be added.</param>
         /// <param name="continueConversationDelegate">The name of the delegate or function to invoke when continuing a conversation proactively. Cannot be null or
         /// whitespace.</param>
         /// <param name="requireAuth">true to require authentication for the proactive endpoints; otherwise, false. The default is true.</param>
         /// <param name="defaultPath">The base route path for the proactive endpoints. The default is "/proactive".</param>
         /// <returns>An IEndpointConventionBuilder that can be used to further configure the mapped endpoints.</returns>
         public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
-            this WebApplication app,
+            this IEndpointRouteBuilder endpoints,
             string continueConversationDelegate,
             bool requireAuth = true,
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             AssertionHelpers.ThrowIfNullOrWhiteSpace(continueConversationDelegate, nameof(continueConversationDelegate));
 
             return MapAgentProactiveEndpoints<TAgent>(
-                app,
+                endpoints,
                 new Dictionary<string, ContinueConversationRoute<TAgent>> { { "", new ContinueConversationRoute<TAgent>(continueConversationDelegate, string.Empty) } },
                 requireAuth,
                 defaultPath);
@@ -316,19 +316,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// conversation, sending activities using a conversation reference, and creating new conversations. If
         /// requireAuth is set to true, all endpoints require authorization; otherwise, they allow anonymous access. The
         /// endpoints expect JSON payloads and are grouped under the specified route pattern.</remarks>
-        /// <param name="app">The WebApplication to which the proactive messaging endpoints are added.</param>
+        /// <param name="endpoints">The WebApplication to which the proactive messaging endpoints are added.</param>
         /// <param name="continueRoutes"></param>
         /// <param name="requireAuth">true to require authentication for the mapped endpoints; otherwise, false. The default is true.</param>
         /// <param name="defaultPath">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
         /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
         /// endpoints.</returns>
         public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
-            this WebApplication app, 
+            this IEndpointRouteBuilder endpoints, 
             IDictionary<string, ContinueConversationRoute<TAgent>> continueRoutes, 
             bool requireAuth = true, 
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
-            var routeGroup = app.MapGroup(defaultPath);
+            var routeGroup = endpoints.MapGroup(defaultPath);
             if (requireAuth)
             {
                 routeGroup.RequireAuthorization();
@@ -338,274 +338,34 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 routeGroup.AllowAnonymous();
             }
 
-            routeGroup.MapPost(
-                "/sendactivity/{conversationId}",
-                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken cancellationToken) =>
-                {
-                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
-
-                    try
-                    {
-                        var response = await agent.Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken).ConfigureAwait(false);
-
-                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
-                        httpResponse.Headers.ContentType = "application/json";
-                        await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                        httpResponse.StatusCode = StatusCodes.Status404NotFound;
-                        await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
-                        return;
-                    }
-                })
+            routeGroup.MapPost("/sendactivity/{conversationId}", HttpProactive.SendActivityWithConversationId<TAgent>)
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
-            routeGroup.MapPost(
-                "/sendactivity",
-                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
-                {
-                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
-
-                    if (!body.Conversation.IsValid())
-                    {
-                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = "Conversation is invalid" }, cancellationToken).ConfigureAwait(false);
-                        return;
-                    }
-
-                    if (body.Activity == null)
-                    {
-                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = "Activity is required." }, cancellationToken).ConfigureAwait(false);
-                        return;
-                    }
-
-                    var response = await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false);
-
-                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(response)));
-                    httpResponse.Headers.ContentType = "application/json";
-                    await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
-                })
+            routeGroup.MapPost("/sendactivity", HttpProactive.SendActivityWithConversation<TAgent>)
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
             foreach (var continueRoute in continueRoutes)
             {
                 // Continue with ConversationId in the route
                 var withId = string.IsNullOrEmpty(continueRoute.Key) ? "/continue/{conversationId}" : $"/continue/{continueRoute.Key}/{{conversationId}}";
-                routeGroup.MapPost(
-                withId,
-                async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken cancellationToken) =>
-                {
-                    try
-                    {
-                        var conversation = await agent.Proactive.GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
-                        if (conversation == null)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status404NotFound;
-                            await httpResponse.WriteAsJsonAsync(new { error = $"Conversation with id '{conversationId}' not found." }, cancellationToken).ConfigureAwait(false);
-                            return;
-                        }
-
-                        // Creating a continuation activity with Value containing Query args.
-                        var continuationActivity = conversation.Reference.GetContinuationActivity();
-                        var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                        if (eventValue.Count > 0)
-                        {
-                            continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                            continuationActivity.Value = eventValue;
-                        }
-
-                        await agent.Proactive.ContinueConversationAsync(
-                            adapter, 
-                            conversationId, 
-                            continueRoute.Value.RouteHandler(agent), 
-                            continuationActivity, 
-                            continueRoute.Value.TokenHandlers, 
-                            cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
-                    {
-                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                        await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception requestFailed)
-                    {
-                        httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
-                        await httpResponse.WriteAsJsonAsync(new { error = new { message = requestFailed.Message } }, cancellationToken).ConfigureAwait(false);
-                    }
-                })
-                .WithMetadata(new AcceptsMetadata(["application/json"]));
+                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) => 
+                    HttpProactive.ContinueConversationWithConversationId<TAgent>(continueRoute.Value, req, resp, adapter, agent, conversationId, ct))
+                    .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Continue with Conversation in the body
                 var withConversation = string.IsNullOrEmpty(continueRoute.Key) ? "/continue" : $"/continue/{continueRoute.Key}";
-                routeGroup.MapPost(
-                    withConversation,
-                    async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string name, CancellationToken cancellationToken) =>
-                    {
-                        try
-                        {
-                            var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false);
-                            if (!conversation.IsValid())
-                            {
-                                httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                                await httpResponse.WriteAsJsonAsync(new { error = "Conversation is invalid" }, cancellationToken).ConfigureAwait(false);
-                                return;
-                            }
-
-                            // Creating a continuation activity with Value containing Query args.
-                            var continuationActivity = conversation.Reference.GetContinuationActivity();
-                            var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                            if (eventValue.Count > 0)
-                            {
-                                continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                                continuationActivity.Value = eventValue;
-                            }
-
-                            await agent.Proactive.ContinueConversationAsync(
-                                adapter,
-                                conversation,
-                                continueRoute.Value.RouteHandler(agent),
-                                continuationActivity,
-                                continueRoute.Value.TokenHandlers,
-                                cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                            await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (Exception requestFailed)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
-                            await httpResponse.WriteAsJsonAsync(new { error = new { message = requestFailed.Message } }, cancellationToken).ConfigureAwait(false);
-                        }
-                    })
+                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                    HttpProactive.ContinueConversationWithConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Create with CreateConversation in the body
                 var createPattern = string.IsNullOrEmpty(continueRoute.Key) ? "/create" : $"/create/{continueRoute.Key}";
-                routeGroup.MapPost(
-                    createPattern,
-                    async (HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, CancellationToken cancellationToken) =>
-                    {
-                        try
-                        {
-                            var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false);
-
-                            // Create the CreateConversation instance from the request body.
-                            IDictionary<string, string> claims;
-                            if (string.IsNullOrWhiteSpace(body.AgentClientId))
-                            {
-                                claims = Conversation.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
-                            }
-                            else
-                            {
-                                claims = new Dictionary<string, string>
-                                {
-                                    { "aud", body.AgentClientId },
-                                };
-                            }
-
-                            if (claims == null || claims.Count == 0)
-                            {
-                                httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                                await httpResponse.WriteAsJsonAsync(new { error = "AgentClientId or a valid JWT Bearer token is required." }, cancellationToken).ConfigureAwait(false);
-                                return;
-                            }
-
-                            if (string.IsNullOrWhiteSpace(body.ChannelId))
-                            {
-                                httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                                await httpResponse.WriteAsJsonAsync(new { error = "ChannelId is required." }, cancellationToken).ConfigureAwait(false);
-                                return;
-                            }
-
-                            var createRecord = CreateConversationBuilder.Create(claims, body.ChannelId)
-                                .WithActivity(body.Activity)
-                                .WithTopicName(body.TopicName)
-                                .WithUser(body.User)
-                                .WithChannelData(body.ChannelData)
-                                .WithTenantId(body.TenantId)
-                                .Build();
-
-                            // Execute the conversation creation
-                            var newReference = await agent.Proactive.CreateConversationAsync(
-                                adapter,
-                                createRecord,
-                                body.ContinueConversation ? continueRoute.Value.RouteHandler(agent) : null,
-                                (reference) =>
-                                {
-                                    var continuationActivity = reference.GetContinuationActivity();
-                                    var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                                    if (eventValue.Count > 0)
-                                    {
-                                        continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                                        continuationActivity.Value = eventValue;
-                                    }
-                                    return continuationActivity;
-                                },
-                                continueRoute.Value.TokenHandlers,
-                                cancellationToken).ConfigureAwait(false);
-
-                            // Store the conversation if requested, and return the Conversation in the response body.
-                            var conversation = new Conversation(newReference, claims);
-
-                            if (body.StoreConversation)
-                            {
-                                await agent.Proactive.StoreConversationAsync(conversation, cancellationToken).ConfigureAwait(false);
-                            }
-
-                            using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(conversation)));
-                            httpResponse.Headers.ContentType = "application/json";
-                            await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (ErrorResponseException errorResponse)
-                        {
-                            httpResponse.StatusCode = (int)errorResponse.StatusCode.GetValueOrDefault(StatusCodes.Status500InternalServerError);
-                            if (errorResponse.Body != null)
-                            {
-                                using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(errorResponse.Body)));
-                                httpResponse.Headers.ContentType = "application/json";
-                                await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
-                            }
-                        }
-                        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                            await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (Exception requestFailed)
-                        {
-                            httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
-                            await httpResponse.WriteAsJsonAsync(new { error = new { message = requestFailed.Message } }, cancellationToken).ConfigureAwait(false);
-                        }
-                    })
+                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                    HttpProactive.CreateConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
             }
 
             return routeGroup;
-        }
-
-        class SendToConversationBody
-        {
-            public Conversation Conversation { get; set; }
-            public IActivity Activity { get; set; } = default!;
-		}
-
-        class CreateConversationBody
-        {
-            public string AgentClientId { get; set; }
-            public string ChannelId { get; set; }
-            /// <summary> IsGroup. </summary>
-            public bool? IsGroup { get; set; }
-            public ChannelAccount User { get; set; }
-            public string TopicName { get; set; }
-            public string TenantId { get; set; }
-            public IActivity Activity { get; set; }
-            public object ChannelData { get; set; }
-            public bool StoreConversation { get; set; } = false;
-            public bool ContinueConversation { get; set; } = false;
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)
