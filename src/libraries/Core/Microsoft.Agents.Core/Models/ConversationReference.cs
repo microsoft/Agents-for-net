@@ -91,7 +91,6 @@ namespace Microsoft.Agents.Core.Models
             {
                 Type = ActivityTypes.Event,
                 Name = ActivityEventNames.CreateConversation,
-                Id = ActivityId ?? Guid.NewGuid().ToString(),
                 ChannelId = ChannelId,
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,

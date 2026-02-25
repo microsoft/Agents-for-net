@@ -11,6 +11,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
+    /// <summary>
+    /// Provides methods for storing, retrieving, and managing conversation references to enable proactive messaging
+    /// scenarios. Supports sending activities and continuing conversations outside the standard request/response flow
+    /// using stored conversation references.
+    /// </summary>
+    /// <remarks>Use the Proactive class to implement scenarios where aan agent needs to initiate conversations or
+    /// send messages to users without an incoming activity, such as notifications or scheduled alerts. Some operations
+    /// require that Conversation references be stored using StoreConversationAsync before they can be used.
+    /// </remarks>
     public class Proactive
     {
         private readonly AgentApplication _app;
@@ -88,6 +97,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
         /// ID. The conversation must have previously been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/>.<br/><br/>
+        /// See  <see cref="ContinueConversationAsync(IChannelAdapter, Conversation, RouteHandler, IActivity, string[], CancellationToken)"/> 
+        /// for more details.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
         /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
@@ -111,6 +122,25 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// provided conversation reference.  This method will provide TurnContext and TurnState relative to the 
         /// original conversation.
         /// </summary>
+        /// <remarks>
+        /// Add a ContinueConversation handler in your AgentApplication to handle incoming requests to continue conversations.  For example:
+        /// <code>
+        /// public class MyProactiveAgent : AgentApplication 
+        /// {
+        ///     [ContinueConversation]
+        ///     public async Task HandleContinueConversationAsync(ITurnContext turnContext, TurnState turnState, CancellationToken cancellationToken)
+        ///     {
+        ///         // ITurnContext and TurnState will be relative to the original conversation, allowing you to continue the conversation as 
+        ///         // if you were responding to an incoming activity.
+        ///     }
+        /// }
+        /// </code>
+        /// 
+        /// In Program.cs, map configured ContinueConversation handlers:
+        /// <code>
+        /// app.MapAgentProactiveEndpoints&lt;MyProactiveAgent&gt;();
+        /// </code>
+        /// </remarks>
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>

@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="activity">(Optional) When creating a new conversation, use this activity as the initial message to the conversation.</param>
         /// <param name="channelData">Channel specific payload for creating the conversation.</param>
         /// <param name="tenantId">(Optional) The tenant ID in which the conversation should be created.</param>
-        public ConversationParameters(bool? isGroup = default, ChannelAccount agent = default, IReadOnlyList<ChannelAccount> members = default, string topicName = default, Activity activity = default, object channelData = default, string tenantId = default)
+        public ConversationParameters(bool? isGroup = default, ChannelAccount agent = default, IReadOnlyList<ChannelAccount> members = default, string topicName = default, IActivity activity = default, object channelData = default, string tenantId = default)
         {
             IsGroup = isGroup;
             Agent = agent;
