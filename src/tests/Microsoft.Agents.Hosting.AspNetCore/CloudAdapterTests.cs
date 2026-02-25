@@ -625,14 +625,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                         Channels.Test,
                         serviceUrl,
                         AgentClaims.GetTokenAudience(context.Identity),
-                        new ConversationParameters() { Agent = context.Activity.From },
+                        new ConversationParameters() { Agent = context.Activity.Recipient, Members = [context.Activity.From] },
                         async (innerContext, innerCt) =>
                         {
+                            Assert.Equal("appid", innerContext.Activity.Recipient.Id);
+                            Assert.Equal("userid", innerContext.Activity.From.Id);
+
                             // TurnState isn't provided in the continuation lambda.  Lets test it manually.
                             var turnState = agent.Options.TurnStateFactory();
                             await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
 
                             turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
+                            turnState.User.SetValue("lastConvoMessage", context.Activity.Text);
                             await innerContext.SendActivityAsync($"New Conversation: {context.Activity.Text}", cancellationToken: innerCt);
 
                             await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
@@ -678,8 +682,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: origConversationId),
                 Text = "user message",
                 ChannelId = Channels.Test,
-                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new ChannelAccount(id: "userid", role: RoleTypes.User),
+                Recipient = new(id: "appid", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -711,6 +715,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
+            
+            items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/users/{responses[1].Recipient.Id}"]);
+            var newUserState = items.First().Value;
+            Assert.True(newUserState.ContainsKey("lastConvoMessage"));
 
             await record.Service.StopAsync(CancellationToken.None);
         }

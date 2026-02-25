@@ -90,11 +90,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public CreateConversationBuilder WithUser(string userId, string userName = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
-            _record.Parameters.Members =
-            [
-                new ChannelAccount(userId, userName)
-            ];
-            return this;
+            return WithUser(new ChannelAccount(userId, userName));
         }
 
         /// <summary>
@@ -106,30 +102,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             if (user != null)
             {
-                if (_record.Parameters.Members != null)
-                {
-                    _record.Parameters.Members = [.. _record.Parameters.Members, .. new[] { user }];
-                }
-                else
-                {
-                    _record.Parameters.Members =
-                    [
-                        user
-                    ];
-                }
+                _record.Conversation.Reference.User = user;
+                _record.Parameters.Members =
+                [
+                    user
+                ];
             }
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the users to include as a member in the conversation being created.
-        /// </summary>
-        /// <param name="users">The user accounts to add as a member of the conversation. Cannot be null or empty.</param>
-        /// <returns>The current <see cref="CreateConversationBuilder"/> instance for method chaining.</returns>
-        public CreateConversationBuilder WithUsers(ChannelAccount[] users)
-        {
-            AssertionHelpers.ThrowIfNullOrEmpty(users, nameof(users));
-            _record.Parameters.Members = users;
             return this;
         }
 
@@ -210,6 +188,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>
         public CreateConversation Build()
         {
+            AssertionHelpers.ThrowIfNull(_record.Parameters.Members, "Parameters.Members must be set.  Specify User before Build.");
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
                 _record.Scope = CreateConversation.AzureBotScope;

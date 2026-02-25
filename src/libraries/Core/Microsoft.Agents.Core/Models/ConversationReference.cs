@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Core.Models
                 Conversation = conversation ?? Conversation,
                 ChannelData = channelData,
                 Recipient = Agent,
-                From = Agent,
+                From = User ?? Agent,
                 RelatesTo = this,
                 RequestId = RequestId,
             };

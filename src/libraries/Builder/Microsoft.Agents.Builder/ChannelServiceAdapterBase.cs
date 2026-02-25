@@ -9,6 +9,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -163,7 +164,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
-            var createRecord = CreateConversationBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters).WithScope(audience).Build();
+            var createRecord = CreateConversationBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters)
+                .WithScope(audience)
+                .WithUser((conversationParameters.Members?.Count > 0 ? conversationParameters.Members[0] : null))
+                .Build();
             return CreateConversationAsync(createRecord.Conversation.Identity, createRecord.Conversation.Reference, createRecord.Parameters, createRecord.Scope, callback, cancellationToken);
         }
 

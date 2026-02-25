@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <see langword="null"/>.</returns>
         public async Task<Conversation?> GetConversationAsync(string conversationId, CancellationToken cancellationToken = default)
         {
-            AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var key = GetRecordKey(conversationId);
             var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);

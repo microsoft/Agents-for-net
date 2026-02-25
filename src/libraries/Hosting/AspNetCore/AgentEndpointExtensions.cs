@@ -514,7 +514,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             var createRecord = CreateConversationBuilder.Create(claims, body.ChannelId)
                                 .WithActivity(body.Activity)
                                 .WithTopicName(body.TopicName)
-                                .WithUsers(body.Members)
+                                .WithUser(body.User)
                                 .WithChannelData(body.ChannelData)
                                 .WithTenantId(body.TenantId)
                                 .Build();
@@ -539,7 +539,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 cancellationToken).ConfigureAwait(false);
 
                             // Store the conversation if requested, and return the Conversation in the response body.
-                            var conversation = new Conversation(claims, newReference);
+                            var conversation = new Conversation(newReference, claims);
 
                             if (body.StoreConversation)
                             {
@@ -584,7 +584,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             public string ChannelId { get; set; }
             /// <summary> IsGroup. </summary>
             public bool? IsGroup { get; set; }
-            public ChannelAccount[] Members { get; set; }
+            public ChannelAccount User { get; set; }
             public string TopicName { get; set; }
             public string TenantId { get; set; }
             public IActivity Activity { get; set; }

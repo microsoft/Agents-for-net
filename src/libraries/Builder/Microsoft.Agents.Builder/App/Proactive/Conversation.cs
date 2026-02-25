@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="claims">A dictionary containing claim types and their corresponding values associated with the conversation. Cannot
         /// be null.</param>
         /// <param name="reference">The reference information that uniquely identifies the conversation. Cannot be null.</param>
-        public Conversation(IDictionary<string, string> claims, ConversationReference reference)
+        public Conversation(ConversationReference reference, IDictionary<string, string> claims)
         {
             AssertionHelpers.ThrowIfNull(claims, nameof(claims));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
