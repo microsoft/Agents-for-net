@@ -226,4 +226,12 @@
     <value>The token for handler '{0}' has expired.</value>
     <comment>Raised when an authorization token from a Copilot Studio Connector request has expired.</comment>
   </data>
+  <data name="ProactiveNotAllHandlersSignedIn" xml:space="preserve">
+    <value>Proactive: One or more required tokens were not acquired for this conversation.</value>
+    <comment>Raised during Proactive.ContinueConversation with token handlers specified and not all handler had been signed into.</comment>
+  </data>
+  <data name="ProactiveConversationNotFound" xml:space="preserve">
+    <value>Proactive: No conversation reference found for conversation ID '{0}'.</value>
+    <comment>Raised when the specified conversationId was not found.  Was it stored?</comment>
+  </data>
 </root>

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -188,7 +189,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>
         public CreateConversation Build()
         {
-            AssertionHelpers.ThrowIfNull(_record.Parameters.Members, "Parameters.Members must be set.  Specify User before Build.");
+            if (_record.Parameters.Members?.Count == 0)
+            {
+                throw new ArgumentException("Parameters.Members must contain at least one member. Specify User before Build.");
+            }
+
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
                 _record.Scope = CreateConversation.AzureBotScope;

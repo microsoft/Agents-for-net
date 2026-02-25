@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -59,7 +60,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
-                ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
 
             return await SendActivityAsync(adapter, conversation, activity, cancellationToken).ConfigureAwait(false);
         }
@@ -113,7 +114,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
-                ?? throw new KeyNotFoundException($"No conversation reference found for conversation ID '{conversationId}'.");
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
+
             await ContinueConversationAsync(adapter, conversation, continuationHandler, continuationActivity, tokenHandlers, cancellationToken).ConfigureAwait(false);
         }
 
@@ -156,10 +158,24 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
+            Exception exception = null;
+
             await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
             {
-                await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: tokenHandlers, ct).ConfigureAwait(false);
+                try
+                {
+                    await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: tokenHandlers, ct).ConfigureAwait(false);
+                }
+                catch(Exception ex)
+                {
+                    exception = ex;
+                }
             }, cancellationToken).ConfigureAwait(false);
+
+            if (exception != null)
+            {
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -196,8 +212,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AgentCallbackHandler continuation = continuationHandler != null ? (context, ct) => OnTurnAsync(context, continuationHandler, tokenHandlers: tokenHandlers, ct) : null;
             if (continuation != null)
             {
+                Exception exception = null;
                 var continuationActivity = continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity();
-                await adapter.ProcessProactiveAsync(createInfo.Conversation.Identity, continuationActivity, null, continuation, cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    await adapter.ProcessProactiveAsync(createInfo.Conversation.Identity, continuationActivity, null, continuation, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
             }
 
             return newReference;
@@ -291,7 +316,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 if (tokenHandlers?.Length > 0 && _app.UserAuthorization != null)
                 {
                     turnContext.Services.Set<UserAuthorization>(_app.UserAuthorization);
-                    await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
+                    var allAcquired = await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
+                    if (!allAcquired && _options.FailOnUnsignedInConnections)
+                    {
+                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ProactiveNotAllHandlersSignedIn, null);
+                    }
                 }
 
                 await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);

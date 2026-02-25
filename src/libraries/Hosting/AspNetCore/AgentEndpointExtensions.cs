@@ -424,6 +424,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             continueRoute.Value.TokenHandlers, 
                             cancellationToken).ConfigureAwait(false);
                     }
+                    catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
+                    {
+                        httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                        await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
+                    }
                     catch (Exception requestFailed)
                     {
                         httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
@@ -464,6 +469,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 continuationActivity,
                                 continueRoute.Value.TokenHandlers,
                                 cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
+                        {
+                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                            await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception requestFailed)
                         {
@@ -559,6 +569,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 httpResponse.Headers.ContentType = "application/json";
                                 await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                             }
+                        }
+                        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
+                        {
+                            httpResponse.StatusCode = StatusCodes.Status400BadRequest;
+                            await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception requestFailed)
                         {

@@ -559,7 +559,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task CreateConversationAsync_ShouldCreateNewConversation()
         {
             // Arrange
-            var createInfo = CreateConversationBuilder.Create("bot", "channel", "serviceUrl")
+            var createInfo = CreateConversationBuilder.Create("bot", "channel", "serviceUrl").WithUser("user1", "User 1")
                 .Build();
             
             var newReference = new ConversationReference
@@ -591,7 +591,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task CreateConversationAsync_NullAdapter_ShouldThrow()
         {
             // Arrange
-            var createInfo = CreateConversationBuilder.Create("bot", "channel", "serviceUrl")
+            var createInfo = CreateConversationBuilder.Create("bot", "channel", "serviceUrl").WithUser("user1", "User 1")
                 .Build();
 
             // Act & Assert

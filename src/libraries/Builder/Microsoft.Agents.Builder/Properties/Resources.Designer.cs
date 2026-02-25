@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -192,6 +192,24 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string OBONotSupported {
             get {
                 return ResourceManager.GetString("OBONotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Proactive: No conversation reference found for conversation ID &apos;{0}&apos;..
+        /// </summary>
+        internal static string ProactiveConversationNotFound {
+            get {
+                return ResourceManager.GetString("ProactiveConversationNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Proactive: One or more required tokens were not acquired for this conversation..
+        /// </summary>
+        internal static string ProactiveNotAllHandlersSignedIn {
+            get {
+                return ResourceManager.GetString("ProactiveNotAllHandlersSignedIn", resourceCulture);
             }
         }
         
