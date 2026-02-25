@@ -7,6 +7,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// scenarios. Supports sending activities and continuing conversations outside the standard request/response flow
     /// using stored conversation references.
     /// </summary>
-    /// <remarks>Use the Proactive class to implement scenarios where aan agent needs to initiate conversations or
+    /// <remarks>Use the Proactive class to implement scenarios where an agent needs to initiate conversations or
     /// send messages to users without an incoming activity, such as notifications or scheduled alerts. Some operations
     /// require that Conversation references be stored using StoreConversationAsync before they can be used.
     /// </remarks>
@@ -158,7 +159,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
-            Exception exception = null;
+            ExceptionDispatchInfo exceptionInfo = null;
 
             await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
             {
@@ -168,14 +169,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 }
                 catch(Exception ex)
                 {
-                    exception = ex;
+                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
+                    // results in the exception being lost.  Capture the exception info here to re-throw
+                    // after ProcessProactiveAsync completes.
+                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
                 }
             }, cancellationToken).ConfigureAwait(false);
 
-            if (exception != null)
-            {
-                throw exception;
-            }
+            exceptionInfo?.Throw();
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AgentCallbackHandler continuation = continuationHandler != null ? (context, ct) => OnTurnAsync(context, continuationHandler, tokenHandlers: tokenHandlers, ct) : null;
             if (continuation != null)
             {
-                Exception exception = null;
+                ExceptionDispatchInfo exceptionInfo = null;
                 var continuationActivity = continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity();
 
                 try
@@ -221,7 +222,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 }
                 catch (Exception ex)
                 {
-                    exception = ex;
+                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
+                    // results in the exception being lost.
+                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
                 }
             }
 
