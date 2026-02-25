@@ -31,34 +31,34 @@ namespace Microsoft.Agents.Builder
         private static readonly Histogram<long> TurnDuration = Meter.CreateHistogram<long>(
 			"agent.turn.duration", "ms");
 
-        private static Dictionary<string, string> ExtractAttributesFromContext(TurnContext context)
+        private static Dictionary<string, string> ExtractAttributesFromContext(ITurnContext turnContext)
 		{
 			Dictionary< string, string> attributes = new Dictionary<string, string>();
-			attributes["activity.type"] = context.Activity.Type;
-			attributes["agent.is_agentic"] = context.IsAgenticRequest().ToString();
-			if (context.Activity.From != null)
+			attributes["activity.type"] = turnContext.Activity.Type;
+			attributes["agent.is_agentic"] = turnContext.IsAgenticRequest().ToString();
+			if (turnContext.Activity.From != null)
 			{
-				attributes["from.id"] = context.Activity.From.Id;
+				attributes["from.id"] = turnContext.Activity.From.Id;
             }
-			if (context.Activity.Recipient != null)
+			if (turnContext.Activity.Recipient != null)
 			{
-				attributes["recipient.id"] = context.Activity.Recipient.Id;
+				attributes["recipient.id"] = turnContext.Activity.Recipient.Id;
             }
-			if (context.Activity.Conversation != null)
+			if (turnContext.Activity.Conversation != null)
 			{
-				attributes["conversation.id"] = context.Activity.Conversation.Id;
+				attributes["conversation.id"] = turnContext.Activity.Conversation.Id;
             }
-			attributes["channel_id"] = context.Activity.ChannelId;
-			attributes["message.text.length"] = context.Activity.Text?.Length.ToString() ?? "0";
+			attributes["channel_id"] = turnContext.Activity.ChannelId;
+			attributes["message.text.length"] = turnContext.Activity.Text?.Length.ToString() ?? "0";
             return attributes;
         }
 
-		public static Activity StartActivity(string name, TurnContext? context)
+		public static Activity StartActivity(string name, ITurnContext? turnContext)
 		{
 			var activity = ActivitySource.StartActivity(name, ActivityKind.Server);
-			if (context != null)
+			if (turnContext != null)
 			{
-                var attributes = ExtractAttributesFromContext(context);
+                var attributes = ExtractAttributesFromContext(turnContext);
                 foreach (var kvp in attributes)
 				{
 					activity?.SetTag(kvp.Key, kvp.Value);
@@ -69,13 +69,13 @@ namespace Microsoft.Agents.Builder
 
 		private static async Task TimedActivityAsync(
 			string operationName,
-			TurnContext? context,
+			ITurnContext? turnContext,
 			Func<Task> func,
 			Action<Activity, long>? successCallback = null,
 			Action<Activity, long>? failureCallback = null
 			)
 		{
-			using var activity = StartActivity(operationName, context);
+			using var activity = StartActivity(operationName, turnContext);
 			bool success = true;
 
 			var stopwatch = Stopwatch.StartNew();
@@ -121,11 +121,11 @@ namespace Microsoft.Agents.Builder
             }
 		}
 
-		public static async Task InvokeAgentTurnOperation(TurnContext context, Func<Task> func)
+		public static async Task InvokeAgentTurnOperation(ITurnContext turnContext, Func<Task> func)
 		{
 			await TimedActivityAsync(
 				"agent turn",
-				context,
+				turnContext,
 				func,
 				successCallback: (activity, duration) =>
 				{
