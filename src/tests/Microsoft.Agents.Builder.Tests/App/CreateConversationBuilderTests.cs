@@ -593,7 +593,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var channelData = new { data = "value" };
 
             // Act
-            var result = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationBuilder.Create(TestAgentClientId, Channels.Webchat)
                 .WithUser(TestUserId, TestUserName)
                 .WithScope(TestScope)
                 .WithActivity(activity)
