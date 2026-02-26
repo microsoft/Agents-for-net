@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -91,13 +92,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public CreateConversationBuilder WithUser(string userId, string userName = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
-            return WithUser(new ChannelAccount(userId, userName));
+            return WithUser(new ChannelAccount(userId.Trim(), userName));
         }
 
         /// <summary>
         /// Specifies a user to include as a member in the conversation being created.
         /// </summary>
-        /// <param name="user">The user account to add as a member of the conversation. Cannot be null.</param>
+        /// <param name="user">The user account to add as a member of the conversation. Ignored if null.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance for method chaining.</returns>
         public CreateConversationBuilder WithUser(ChannelAccount user)
         {
@@ -116,7 +117,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the scope for the conversation being created.
         /// </summary>
         /// <remarks>Use this method to specify a custom scope for the conversation. This does not normally need to be set for Azure Bot Channels.</remarks>
-        /// <param name="scope">The scope value to associate with the conversation. Cannot be null or empty.</param>
+        /// <param name="scope">The scope value to associate with the conversation. If null the default Azure Bot Service scope is used.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the updated scope.</returns>
         public CreateConversationBuilder WithScope(string scope)
         {
@@ -125,9 +126,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Adds an Activity to the conversation being constructed.
+        /// Adds an Activity to the conversation being creatged.  This does not apply to all Channel types, but can be used to specify the initial message 
+        /// for those that do.  Teams supports this, and will use the Activity as the initial message in the conversation.  For channels that do not support 
+        /// this, the Activity will be ignored.
         /// </summary>
-        /// <param name="message">The activity representing the message to include in the conversation. Cannot be null.</param>
+        /// <param name="message">The activity representing the message to include in the conversation. Ignored if null.</param>
         /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the specified message added.</returns>
         public CreateConversationBuilder WithActivity(IActivity message)
         {
@@ -143,7 +146,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the specified channel data applied.</returns>
         public CreateConversationBuilder WithChannelData(object channelData)
         {
-            _record.Parameters.ChannelData = channelData;
+            SetChannelData(channelData);
             return this;
         }
 
@@ -163,11 +166,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <remarks>Use this method to specify a topic for the conversation before finalizing its
         /// creation. Calling this method multiple times will overwrite the previously set topic name.</remarks>
-        /// <param name="topicName">The name of the topic to associate with the conversation. Cannot be null or empty.</param>
+        /// <param name="topicName">The name of the topic to associate with the conversation. Ignored if null or empty.</param>
         /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the updated topic name.</returns>
         public CreateConversationBuilder WithTopicName(string topicName)
         {
-            _record.Parameters.TopicName = topicName;
+            _record.Parameters.TopicName = topicName?.Trim();
             return this;
         }
 
@@ -175,11 +178,50 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the tenant identifier for the conversation being created and returns the builder instance for method
         /// chaining.
         /// </summary>
-        /// <param name="tenantId">The unique identifier of the tenant to associate with the conversation. Cannot be null or empty.</param>
+        /// <param name="tenantId">The unique identifier of the tenant to associate with the conversation. Ignored if null or empty.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the specified tenant identifier applied.</returns>
         public CreateConversationBuilder WithTenantId(string tenantId)
         {
-            _record.Parameters.TenantId = tenantId;
+            _record.Parameters.TenantId = tenantId?.Trim();
+
+            if (_record.Conversation.Reference.ChannelId == Channels.Msteams && !string.IsNullOrEmpty(_record.Parameters.TenantId))
+            {
+                SetChannelData(new
+                {
+                    tenant = new
+                    {
+                        id = _record.Parameters.TenantId
+                    }
+                });
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Specifies the Microsoft Teams channel ID to associate with the conversation being built.
+        /// </summary>
+        /// <remarks>This method only applies the Teams channel. For other channels, this method has no effect. Note that
+        /// this "channel id" is not the same as the Activity.ChannelId values.<br/><br/>
+        /// More information about teams information can be acquired by using the 
+        /// <see href="https://learn.microsoft.com/en-us/MicrosoftTeams/teams-powershell-overview">Teams PowerShell Overview</see>.
+        /// </remarks>
+        /// <param name="teamsChannelId">The unique identifier of the Microsoft Teams channel to set for the conversation. If null or empty this has no effect.</param>
+        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> to allow method chaining.</returns>
+        public CreateConversationBuilder WithTeamsChannelId(string teamsChannelId)
+        {
+            if (_record.Conversation.Reference.ChannelId == Channels.Msteams && !string.IsNullOrWhiteSpace(teamsChannelId))
+            {
+                IsGroup(true);
+                SetChannelData(new
+                {
+                    channel = new
+                    {
+                        id = teamsChannelId.Trim()
+                    }
+                });
+            }
+
             return this;
         }
 
@@ -203,6 +245,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 _record.Parameters.Activity.Type = ActivityTypes.Message;
             }
             return _record;
+        }
+
+        private void SetChannelData(object channelData)
+        {
+            if (_record.Parameters.ChannelData == null)
+            {
+                _record.Parameters.ChannelData = channelData;
+            }
+            else
+            {
+                _record.Parameters.ChannelData = ObjectPath.Merge<object>(_record.Parameters.ChannelData, channelData);
+            }
         }
     }
 }

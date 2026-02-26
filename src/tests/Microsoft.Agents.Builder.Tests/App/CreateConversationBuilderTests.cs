@@ -491,6 +491,43 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         #endregion
 
+        #region Teams Tests
+        [Fact]
+        public void Create_ForMsteams_ShouldMergeTeamsTenantAndChannelId()
+        {
+            // Act
+            var result = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams)
+                .WithTenantId("teams-tenant-id")
+                .WithTeamsChannelId("teams-channel-id")
+                .WithUser(TestUserId, TestUserName)
+                .Build();
+
+            var expectedJson = "{\"tenant\":{\"id\":\"teams-tenant-id\"},\"channel\":{\"id\":\"teams-channel-id\"}}";
+
+            // Assert
+            Assert.NotNull(result.Parameters.ChannelData);
+            Assert.Equal(expectedJson, System.Text.Json.JsonSerializer.Serialize(result.Parameters.ChannelData));
+        }
+
+        [Fact]
+        public void Create_ForMsteams_ShouldMergeWithChannelData()
+        {
+            // Act
+            var result = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams)
+                .WithTeamsChannelId("teams-channel-id")
+                .WithChannelData(new { tenant = new { id = "teams-tenant-id" } })
+                .WithUser(TestUserId, TestUserName)
+                .Build();
+
+            var expectedJson = "{\"channel\":{\"id\":\"teams-channel-id\"},\"tenant\":{\"id\":\"teams-tenant-id\"}}";
+
+            // Assert
+            Assert.NotNull(result.Parameters.ChannelData);
+            Assert.Equal(expectedJson, System.Text.Json.JsonSerializer.Serialize(result.Parameters.ChannelData));
+        }
+
+        #endregion
+
         #region Build Tests
 
         [Fact]

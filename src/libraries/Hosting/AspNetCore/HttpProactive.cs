@@ -177,13 +177,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         return new Result(StatusCodes.Status400BadRequest, ErrorBody("ChannelId is required."));
                     }
 
-                    var createRecord = CreateConversationBuilder.Create(claims, body.ChannelId)
+                    var createRecordBuilder = CreateConversationBuilder.Create(claims, body.ChannelId)
                         .WithActivity(body.Activity)
                         .WithTopicName(body.TopicName)
                         .WithUser(body.User)
                         .WithChannelData(body.ChannelData)
-                        .WithTenantId(body.TenantId)
-                        .Build();
+                        .WithTeamsChannelId(body.TeamsChannelId)
+                        .WithTenantId(body.TenantId);
+
+                    if (body.IsGroup.HasValue)
+                    {
+                        createRecordBuilder.IsGroup(body.IsGroup.Value);
+                    }
+                        
+                    var createRecord = createRecordBuilder.Build();
 
                     // Execute the conversation creation
                     var newReference = await agent.Proactive.CreateConversationAsync(
@@ -285,12 +292,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         public string AgentClientId { get; set; }
         public string ChannelId { get; set; }
-        /// <summary> IsGroup. </summary>
         public bool? IsGroup { get; set; }
         public ChannelAccount User { get; set; }
         public string TopicName { get; set; }
         public string TenantId { get; set; }
         public IActivity Activity { get; set; }
+        public string TeamsChannelId { get; set; }
         public object ChannelData { get; set; }
         public bool StoreConversation { get; set; } = false;
         public bool ContinueConversation { get; set; } = false;
