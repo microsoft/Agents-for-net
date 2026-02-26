@@ -264,10 +264,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var handlers = new Dictionary<string, ContinueConversationRoute<TAgent>>();
             foreach (var method in typeof(TAgent).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                var continueHandlers = method.GetCustomAttributes<ContinueConversationAttribute>(true);
-                foreach (var handler in continueHandlers)
+                var continueHandler = method.GetCustomAttribute<ContinueConversationAttribute>(true);
+                if (continueHandler != null)
                 {
-                    handlers.Add(handler.Key, new ContinueConversationRoute<TAgent>(method.Name, handler.TokenHandlers));
+                    handlers.Add(continueHandler.Key, new ContinueConversationRoute<TAgent>(method.Name, continueHandler.TokenHandlers));
                 }
             }
 

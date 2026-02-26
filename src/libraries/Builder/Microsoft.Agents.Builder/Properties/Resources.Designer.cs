@@ -205,7 +205,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Proactive: One or more required tokens were not acquired for this conversation..
+        ///   Looks up a localized string similar to Continuing the conversation with OAuth failed because the user is not signed into all handlers..
         /// </summary>
         internal static string ProactiveNotAllHandlersSignedIn {
             get {

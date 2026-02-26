@@ -7,6 +7,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -171,6 +172,15 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AssertionHelpers.ThrowIfNull(continuationHandler, nameof(continuationHandler));
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
+
+            if (tokenHandlers == null || tokenHandlers.Length == 0)
+            {
+                var attribute = continuationHandler.GetMethodInfo().GetCustomAttribute<ContinueConversationAttribute>(true);
+                if (attribute != null)
+                {
+                    tokenHandlers = RouteAttribute.DelimitedToList(attribute.TokenHandlers);
+                }
+            }
 
             ExceptionDispatchInfo exceptionInfo = null;
 

@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="delegatgeName">The name of the delegate to be used for continuing the conversation. Cannot be null or empty.</param>
         /// <param name="delimitedTokenHandlers">A comma-separated string containing the names of token handlers to associate with the route. If null or
         /// empty, no token handlers are assigned.</param>
-        public ContinueConversationRoute(string delegatgeName, string delimitedTokenHandlers = null) : this(delegatgeName, DelimitedToList(delimitedTokenHandlers))
+        public ContinueConversationRoute(string delegatgeName, string delimitedTokenHandlers = null) : this(delegatgeName, RouteAttribute.DelimitedToList(delimitedTokenHandlers))
         {
         }
 
@@ -54,15 +54,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Gets the collection of token handler names used to process authentication tokens.
         /// </summary>
         public string[] TokenHandlers { get; private set; }
-
-        private static string[] DelimitedToList(string delimitedTokenHandlers)
-        {
-#if !NETSTANDARD
-            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
-#else
-            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
-#endif
-        }
 
         private static T CreateHandlerDelegate<T>(TAgent agent, MethodInfo attributedMethod)
     where T : class, Delegate

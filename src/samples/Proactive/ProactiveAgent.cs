@@ -6,7 +6,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,12 +34,14 @@ public class ProactiveAgent : AgentApplication
             await turnContext.SendActivityAsync("Signed out", cancellationToken: cancellationToken);
         });
 
-        // In-code ContinueConversation 
+        // In-code ContinueConversation
         OnMessage(new Regex("-c.*"), async (turnContext, turnState, cancellationToken) =>
         {
             var split = turnContext.Activity.Text.Split(' ');
             var conversationId = split.Length == 1 ? turnContext.Activity.Conversation.Id : split[1];
 
+            // Since OnContinueConversationAsync has the [ContinueConversation] attribute this
+            // will automatically pick up the specified token handlers. 
             await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
         });
     }
@@ -87,13 +88,13 @@ public class ProactiveAgent : AgentApplication
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken); 
-        await turnContext.SendActivityAsync($"This is OnContinueConversation. Token={(token == null ? "not signed in" : token.Length)}, Activity.Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"This is OnContinueConversation. Token={(token == null ? "not signed in" : token.Length)}", cancellationToken: cancellationToken);
     }
 
     // Map /proactive/continue/ext to this method
     [ContinueConversation("ext")]
     public Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        return turnContext.SendActivityAsync($"This is ContinueConversationExtended. Activity.Value={JsonSerializer.Serialize(turnContext.Activity.Value)}", cancellationToken: cancellationToken);
+        return turnContext.SendActivityAsync($"This is ContinueConversationExtended", cancellationToken: cancellationToken);
     }
 }
