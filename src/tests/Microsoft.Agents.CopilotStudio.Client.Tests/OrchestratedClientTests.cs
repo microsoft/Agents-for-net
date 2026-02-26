@@ -327,6 +327,74 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
 
         #endregion
 
+        #region End Event Tests
+
+        [Fact]
+        public async Task ExecuteTurnAsync_WithSseEndEventWithData_CapturesData()
+        {
+            // Arrange
+            var handler = new FakeSseHttpMessageHandler("event: end\ndata: end\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+
+            // Act
+            var responses = new List<OrchestratedResponse>();
+            await foreach (var response in client.ExecuteTurnAsync("conv-1", request))
+            {
+                responses.Add(response);
+            }
+
+            // Assert
+            Assert.Single(responses);
+            var endResponse = Assert.IsType<OrchestratedEndResponse>(responses[0]);
+            Assert.Equal("end", endResponse.Data);
+        }
+
+        [Fact]
+        public async Task ExecuteTurnAsync_WithActivityThenEnd_ReturnsBothResponses()
+        {
+            // Arrange
+            var sseData = new StringBuilder();
+            sseData.AppendLine("event: activity");
+            sseData.AppendLine("data: {\"type\": \"message\", \"text\": \"Hello\", \"conversation\": {\"id\": \"conv-1\"}}");
+            sseData.AppendLine();
+            sseData.AppendLine("event: state");
+            sseData.AppendLine("data: {\"status\": \"Completed\", \"enabledToolSchemaNames\": []}");
+            sseData.AppendLine();
+            sseData.AppendLine("event: end");
+            sseData.AppendLine("data: end");
+            sseData.AppendLine();
+
+            var handler = new FakeSseHttpMessageHandler(sseData.ToString());
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+
+            // Act
+            var responses = new List<OrchestratedResponse>();
+            await foreach (var response in client.ExecuteTurnAsync("conv-1", request))
+            {
+                responses.Add(response);
+            }
+
+            // Assert
+            Assert.Equal(3, responses.Count);
+            Assert.IsType<OrchestratedActivityResponse>(responses[0]);
+            Assert.IsType<OrchestratedStateResponse>(responses[1]);
+            Assert.IsType<OrchestratedEndResponse>(responses[2]);
+        }
+
+        #endregion
+
         #region HTTP Error Tests
 
         [Fact]

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
     /// Base type for responses from an externally orchestrated conversation turn.
     /// Use pattern matching to handle the specific response types:
     /// <see cref="OrchestratedActivityResponse"/>, <see cref="OrchestratedStateResponse"/>,
-    /// and <see cref="OrchestratedErrorResponse"/>.
+    /// <see cref="OrchestratedErrorResponse"/>, and <see cref="OrchestratedEndResponse"/>.
     /// </summary>
 #if !NETSTANDARD
     public abstract record OrchestratedResponse;
@@ -31,6 +31,12 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
     /// </summary>
     /// <param name="Error">The error payload containing code and message.</param>
     public record OrchestratedErrorResponse(OrchestratedErrorPayload Error) : OrchestratedResponse;
+
+    /// <summary>
+    /// Signals that the orchestrated turn has completed and the SSE stream has ended.
+    /// </summary>
+    /// <param name="Data">The raw data payload from the end event, if any.</param>
+    public record OrchestratedEndResponse(string? Data = null) : OrchestratedResponse;
 #else
     public abstract class OrchestratedResponse { }
 
@@ -91,6 +97,22 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
         public OrchestratedErrorResponse(OrchestratedErrorPayload error)
         {
             Error = error;
+        }
+    }
+
+    /// <summary>
+    /// Signals that the orchestrated turn has completed and the SSE stream has ended.
+    /// </summary>
+    public class OrchestratedEndResponse : OrchestratedResponse
+    {
+        /// <summary>
+        /// The raw data payload from the end event, if any.
+        /// </summary>
+        public string? Data { get; }
+
+        public OrchestratedEndResponse(string? data = null)
+        {
+            Data = data;
         }
     }
 #endif
