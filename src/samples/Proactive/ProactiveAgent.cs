@@ -34,7 +34,7 @@ public class ProactiveAgent : AgentApplication
             await turnContext.SendActivityAsync("Signed out", cancellationToken: cancellationToken);
         });
 
-        // In-code ContinueConversation
+        // In-code ContinueConversation.  Send "-s" first to store the conversation.
         OnMessage(new Regex("-c.*"), async (turnContext, turnState, cancellationToken) =>
         {
             var split = turnContext.Activity.Text.Split(' ');
@@ -65,7 +65,7 @@ public class ProactiveAgent : AgentApplication
         // continuation activity.
         // This does the same as:  await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}"),
         // except using ContinueConversation.
-        // You can also use ConversationBuilder to manually create a Conversation instance manually.
+        // ConversationBuilder can also be used to manually create a Conversation instance manually.
         var conversation = new Conversation(turnContext);
 
         var customContinuation = conversation.Reference.GetContinuationActivity();
