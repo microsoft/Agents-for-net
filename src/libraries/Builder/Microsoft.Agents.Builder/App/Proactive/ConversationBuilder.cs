@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -22,12 +24,57 @@ namespace Microsoft.Agents.Builder.App.Proactive
         private Conversation _conversation = new();
 
         /// <summary>
-        /// Creates a new instance of the RecordBuilder class for constructing record objects.
+        /// Creates a new instance of the ConversationBuilder class with the specified agent client ID, channel ID, and
+        /// optional service URL.
         /// </summary>
-        /// <returns>A new RecordBuilder instance that can be used to configure and build record objects.</returns>
-        public static ConversationBuilder Create()
+        /// <param name="agentClientId">The unique identifier for the agent client. Cannot be null or empty.</param>
+        /// <param name="channelId">The identifier for the communication channel. Cannot be null or empty.</param>
+        /// <param name="serviceUrl">The service URL to associate with the conversation. If null, the default ServiceUrl for
+        /// the channel will be used.</param>
+        /// <param name="requestorId">The clientId of the app making the request.  Null for Azure Bot Service.</param>
+        /// <returns>A ConversationBuilder instance initialized with the specified agent client ID, channel ID, and service URL.</returns>
+        public static ConversationBuilder Create(string agentClientId, string channelId, string serviceUrl = null, string requestorId = null)
         {
-            return new ConversationBuilder();
+            var builder = new ConversationBuilder();
+            builder._conversation.Reference = ConversationReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build();
+            builder.WithClaimsForClientId(agentClientId, requestorId);
+            return builder;
+        }
+
+        public static ConversationBuilder Create(ClaimsIdentity identity, string channelId, string serviceUrl = null)
+        {
+            var builder = new ConversationBuilder();
+            builder._conversation.Reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl).Build();
+            builder.WithIdentity(identity);
+            return builder;
+        }
+
+        public ConversationBuilder WithUser(string userId, string userName = null)
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
+            _conversation.Reference.User = new ChannelAccount(userId, userName, RoleTypes.User);
+            return this;
+        }
+
+        public ConversationBuilder WithUser(ChannelAccount user)
+        {
+            AssertionHelpers.ThrowIfNull(user, nameof(user));
+            _conversation.Reference.User = user;
+            return this;
+        }
+
+        public ConversationBuilder WithConversation(string conversationId)
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
+            _conversation.Reference.Conversation = new ConversationAccount(id: conversationId);
+            return this;
+        }
+
+        public ConversationBuilder WithConversation(ConversationAccount conversation)
+        {
+            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
+            _conversation.Reference.Conversation = conversation;
+            return this;
         }
 
         /// <summary>
@@ -37,7 +84,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current <see cref="ConversationBuilder"/> instance for method chaining.</returns>
         public ConversationBuilder WithReference(ConversationReference reference)
         {
-            _conversation.Reference = reference;
+            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
+            _conversation.Reference = ObjectPath.Merge(_conversation.Reference, reference);
             return this;
         }
 
@@ -51,7 +99,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="requestorId">An optional requestor identifier to associate with the 'appid' claim. If null or empty, the 'appid' claim is
         /// not added.</param>
         /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated claims.</returns>
-        public ConversationBuilder WithClaimsForClientId(string agentClientId, string requestorId = null)
+        private ConversationBuilder WithClaimsForClientId(string agentClientId, string requestorId = null)
         {        
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
             var claims = new Dictionary<string, string>
@@ -71,7 +119,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="claims">A dictionary containing claim types and their corresponding values to assign to the record. Cannot be null.</param>
         /// <returns>The current <see cref="ConversationBuilder"/> instance with the specified claims applied.</returns>
-        public ConversationBuilder WithClaims(IDictionary<string, string> claims)
+        internal ConversationBuilder WithClaims(IDictionary<string, string> claims)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(claims, nameof(claims));
             _conversation = new Conversation(_conversation, claims);
@@ -83,7 +131,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="identity">The claims identity to associate with the record. Cannot be null.</param>
         /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated identity information.</returns>
-        public ConversationBuilder WithIdentity(ClaimsIdentity identity)
+        private ConversationBuilder WithIdentity(ClaimsIdentity identity)
         {
             _conversation = new Conversation(identity, _conversation.Reference);
             return this;
@@ -99,6 +147,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
             if (!_conversation.IsValid())
             {
                 throw new ArgumentException("Cannot build Conversation: missing required fields.");
+            }
+
+            if (string.IsNullOrWhiteSpace(_conversation.Reference.ServiceUrl))
+            {
+                _conversation.Reference.ServiceUrl = ConversationReferenceBuilder.ServiceUrlForChannel(_conversation.Reference.ChannelId);
             }
 
             return _conversation;

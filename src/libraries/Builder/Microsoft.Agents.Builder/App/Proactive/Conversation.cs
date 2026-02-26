@@ -61,14 +61,25 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         internal Conversation(Conversation conversation, IDictionary<string, string> claims)
         {
+            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
             Reference = conversation.Reference;
-            Claims = claims;
+            if (claims?.Count > 0)
+            {
+                Claims ??= new Dictionary<string, string>();
+                foreach (var claim in claims)
+                {
+                    if (!Claims.ContainsKey(claim.Key))
+                    {
+                        Claims[claim.Key] = claim.Value;
+                    }
+                }
+            }
         }
 
         /// <summary>
         /// Gets or sets the reference information for the conversation associated with this instance.
         /// </summary>
-        public ConversationReference? Reference { get; set; }
+        public ConversationReference Reference { get; set; }
 
         /// <summary>
         /// Gets a claims-based identity constructed from the current set of claims.

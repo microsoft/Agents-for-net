@@ -35,10 +35,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             var builder = new CreateConversationBuilder();
 
-            builder._record.Conversation = ConversationBuilder.Create()
-                .WithReference(ConversationReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
-                .WithClaimsForClientId(agentClientId)
-                .Build();
+            builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).Build();
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)
@@ -69,10 +66,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var agentClientId = claims.FirstOrDefault(c => c.Key == "aud").Value;
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, "The claims dictionary must contain an 'aud' claim with the agent client ID as its value.");
 
-            builder._record.Conversation = ConversationBuilder.Create()
-                .WithReference(ConversationReferenceBuilder.Create(agentClientId, channelId, serviceUrl).Build())
-                .WithClaims(claims)
-                .Build();
+            builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).WithClaims(claims).Build();
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)

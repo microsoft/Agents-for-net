@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -13,11 +14,21 @@ namespace Microsoft.Agents.Builder.Tests.App
 {
     public class ConversationBuilderTests
     {
+        private const string TestAgentClientId = "test-agent-id";
+        private const string TestChannelId = "test-channel";
+        private const string TestServiceUrl = "https://test.service.url/";
+        private const string TestRequestorId = "test-requestor-id";
+        private const string TestUserId = "test-user-id";
+        private const string TestUserName = "Test User";
+        private const string TestConversationId = "test-conversation-id";
+
+        #region Create Tests
+
         [Fact]
-        public void Create_ShouldReturnNewInstance()
+        public void Create_WithAgentClientIdAndChannelId_ReturnsBuilder()
         {
             // Act
-            var builder = ConversationBuilder.Create();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
 
             // Assert
             Assert.NotNull(builder);
@@ -25,434 +36,700 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithReference_ReferenceBuilder_ShouldSetTeamsReferenceBuilder()
+        public void Create_WithServiceUrl_SetsServiceUrl()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var refBuilder = ConversationReferenceBuilder.Create(Channels.Msteams, "conv123")
-                .WithUser("user123")
-                .WithAgent("agent123")
-                .WithServiceUrl("https://test.com");
-
-            var claims = new Dictionary<string, string>
-            {
-                { "aud", "testAudience" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(refBuilder.Build())
-                .WithClaims(claims)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId, TestServiceUrl);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.NotNull(result.Reference);
-            Assert.Equal("conv123", result.Reference.Conversation.Id);
-            Assert.Equal("user123", result.Reference.User.Id);
-            Assert.Equal("28:agent123", result.Reference.Agent.Id);
+            Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);
         }
 
         [Fact]
-        public void WithReference_ConversationReference_ShouldSetReference()
+        public void Create_WithoutServiceUrl_UsesDefaultServiceUrl()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" },
-                User = new ChannelAccount { Id = "user123" },
-                Agent = new ChannelAccount { Id = "agent123" },
-                ServiceUrl = "https://test.com"
-            };
-
-            var claims = new Dictionary<string, string>
-            {
-                { "aud", "testAudience" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaims(claims)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.NotNull(result.Reference);
-            Assert.Equal(reference.Conversation.Id, result.Reference.Conversation.Id);
-            Assert.Equal(reference.User.Id, result.Reference.User.Id);
-            Assert.Equal(reference.Agent.Id, result.Reference.Agent.Id);
+            Assert.NotNull(conversation.Reference.ServiceUrl);
+            Assert.Equal($"https://{TestChannelId}.botframework.com/", conversation.Reference.ServiceUrl);
         }
 
         [Fact]
-        public void WithClaimsFromClientId_WithClientIdOnly_ShouldSetClaims()
+        public void Create_WithRequestorId_SetsAppIdClaim()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var clientId = "client123";
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaimsForClientId(clientId)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId, null, TestRequestorId);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.True(result.IsValid());
+            var identity = conversation.Identity;
+            var appIdClaim = identity.Claims.FirstOrDefault(c => c.Type == "appid");
+            Assert.NotNull(appIdClaim);
+            Assert.Equal(TestRequestorId, appIdClaim.Value);
         }
 
         [Fact]
-        public void WithClaimsFromClientId_WithRequestorId_ShouldSetBothClaims()
+        public void Create_WithoutRequestorId_DoesNotSetAppIdClaim()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var clientId = "client123";
-            var requestorId = "requestor456";
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaimsForClientId(clientId, requestorId)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.True(result.IsValid());
-            Assert.Equal(requestorId, result.Identity.Claims.First(c => c.Type == "appid")?.Value);
+            var identity = conversation.Identity;
+            var appIdClaim = identity.Claims.FirstOrDefault(c => c.Type == "appid");
+            Assert.Null(appIdClaim);
         }
 
         [Fact]
-        public void WithClaimsFromClientId_WithEmptyRequestorId_ShouldOnlySetAudClaim()
+        public void Create_SetsAudienceClaim()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var clientId = "client123";
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaimsForClientId(clientId, string.Empty)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.True(result.IsValid());
-            Assert.Null(result.Identity.Claims.FirstOrDefault(c => c.Type == "appid"));
+            var identity = conversation.Identity;
+            var audClaim = identity.Claims.FirstOrDefault(c => c.Type == "aud");
+            Assert.NotNull(audClaim);
+            Assert.Equal(TestAgentClientId, audClaim.Value);
         }
 
         [Fact]
-        public void WithClaims_ShouldSetClaims()
+        public void Create_WithNullAgentClientId_ThrowsArgumentException()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var claims = new Dictionary<string, string>
-            {
-                { "aud", "audience123" },
-                { "appid", "app456" },
-                { "iss", "issuer789" }
-            };
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
-            // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaims(claims)
-                .Build();
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.IsValid());
-            Assert.Equal("app456", result.Identity.Claims.First(c => c.Type == "appid").Value);
-            Assert.Equal("issuer789", result.Identity.Claims.First(c => c.Type == "iss").Value);
-        }
-
-        [Fact]
-        public void WithClaims_NullClaims_ShouldThrow()
-        {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.WithClaims(null));
+            Assert.Throws<ArgumentNullException>(() => ConversationBuilder.Create((string)null, TestChannelId));
         }
 
         [Fact]
-        public void WithClaims_EmptyClaims_ShouldThrow()
+        public void Create_WithEmptyAgentClientId_ThrowsArgumentException()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var claims = new Dictionary<string, string>();
-
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => builder.WithClaims(claims));
+            Assert.Throws<ArgumentException>(() => ConversationBuilder.Create(string.Empty, TestChannelId));
         }
 
         [Fact]
-        public void WithIdentity_ShouldExtractClaimsFromIdentity()
+        public void Create_WithWhitespaceAgentClientId_ThrowsArgumentException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => ConversationBuilder.Create("    ", TestChannelId));
+        }
+
+        [Fact]
+        public void Create_WithNullChannelId_ThrowsArgumentException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => ConversationBuilder.Create(TestAgentClientId, null));
+        }
+
+        [Fact]
+        public void Create_WithEmptyChannelId_ThrowsArgumentException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => ConversationBuilder.Create(TestAgentClientId, string.Empty));
+        }
+
+        [Fact]
+        public void Create_WithClaimsIdentity_ReturnsBuilder()
         {
             // Arrange
-            var builder = ConversationBuilder.Create();
-            var identity = new ClaimsIdentity(new[]
+            var claims = new List<Claim>
             {
-                new Claim("aud", "audience123"),
-                new Claim("azp", "azp456"),
-                new Claim("appid", "app789"),
-                new Claim("idtyp", "app"),
+                new Claim("aud", TestAgentClientId),
+                new Claim("appid", TestRequestorId)
+            };
+            var identity = new ClaimsIdentity(claims);
+
+            // Act
+            var builder = ConversationBuilder.Create(identity, TestChannelId);
+
+            // Assert
+            Assert.NotNull(builder);
+            Assert.IsType<ConversationBuilder>(builder);
+        }
+
+        [Fact]
+        public void Create_WithClaimsIdentity_SetsIdentity()
+        {
+            // Arrange
+            var claims = new List<Claim>
+            {
+                new Claim("aud", TestAgentClientId),
+                new Claim("appid", TestRequestorId),
                 new Claim("ver", "1.0"),
-                new Claim("iss", "issuer111"),
-                new Claim("other", "shouldBeIgnored")
-            });
+                new Claim("other", "value")
+            };
+            var identity = new ClaimsIdentity(claims);
+
+            // Act
+            var builder = ConversationBuilder.Create(identity, TestChannelId);
+            var conversation = builder.Build();
+
+            // Assert
+            var resultIdentity = conversation.Identity;
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "aud"));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "appid"));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "ver"));
+            Assert.Null(resultIdentity.Claims.FirstOrDefault(c => c.Type == "other"));
+        }
+
+        [Fact]
+        public void Create_WithClaimsIdentityAndServiceUrl_SetsServiceUrl()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim("aud", TestAgentClientId) };
+            var identity = new ClaimsIdentity(claims);
+
+            // Act
+            var builder = ConversationBuilder.Create(identity, TestChannelId, TestServiceUrl);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);
+        }
+
+        #endregion
+
+        #region WithUser Tests
+
+        [Fact]
+        public void WithUser_WithUserIdAndName_SetsUser()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId, TestUserName);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.User);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestUserName, conversation.Reference.User.Name);
+            Assert.Equal(RoleTypes.User, conversation.Reference.User.Role);
+        }
+
+        [Fact]
+        public void WithUser_WithUserIdOnly_SetsUserWithoutName()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.User);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(RoleTypes.User, conversation.Reference.User.Role);
+            Assert.Null(conversation.Reference.User.Name);
+        }
+
+        [Fact]
+        public void WithUser_WithNullUserId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => builder.WithUser(null, TestUserName));
+        }
+
+        [Fact]
+        public void WithUser_WithEmptyUserId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => builder.WithUser(string.Empty, TestUserName));
+        }
+
+        [Fact]
+        public void WithUser_WithWhitespaceUserId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => builder.WithUser("   ", TestUserName));
+        }
+
+        [Fact]
+        public void WithUser_WithChannelAccount_SetsUser()
+        {
+            // Arrange
+            var user = new ChannelAccount(TestUserId, TestUserName, RoleTypes.User);
+
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(user);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.User);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestUserName, conversation.Reference.User.Name);
+            Assert.Equal(RoleTypes.User, conversation.Reference.User.Role);
+        }
+
+        [Fact]
+        public void WithUser_WithNullChannelAccount_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => builder.WithUser((ChannelAccount)null));
+        }
+
+        [Fact]
+        public void WithUser_MergeReferenceWithUser()
+        {
+            // Note: This tests the internal behavior when _conversation.Reference is null
+            // We can't directly test this since Create() initializes the reference,
+            // but this validates the merge logic works correctly
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId, TestUserName);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference);
+            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
+            Assert.NotNull(conversation.Reference.Agent);
+            Assert.Equal(TestAgentClientId, conversation.Reference.Agent.Id);
+            Assert.NotNull(conversation.Reference.User);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.NotEmpty(conversation.Reference.ServiceUrl);
+        }
+
+        [Fact]
+        public void WithUser_MergeReferenceWithReference()
+        {
+            // Note: This tests the internal behavior when _conversation.Reference is null
+            // We can't directly test this since Create() initializes the reference,
+            // but this validates the merge logic works correctly
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId, TestUserName)
+                .WithReference(new ConversationReference
+                {
+                    ChannelId = "some-other-id",
+                    ServiceUrl = "some-other-serviceUrl",
+                    Locale = "en-US",
+                    ActivityId = "some-activity-id",
+                });
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference);
+            Assert.Equal("some-other-id", conversation.Reference.ChannelId);
+            Assert.Equal("some-other-serviceUrl", conversation.Reference.ServiceUrl);
+            Assert.NotNull(conversation.Reference.Agent);
+            Assert.Equal(TestAgentClientId, conversation.Reference.Agent.Id);
+            Assert.NotNull(conversation.Reference.User);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal("en-US", conversation.Reference.Locale);
+            Assert.Equal("some-activity-id", conversation.Reference.ActivityId);
+        }
+
+        [Fact]
+        public void WithUser_ReturnsBuilderForChaining()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var result = builder.WithUser(TestUserId);
+
+            // Assert
+            Assert.Same(builder, result);
+        }
+
+        #endregion
+
+        #region WithConversation Tests
+
+        [Fact]
+        public void WithConversation_WithConversationId_SetsConversation()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithConversation(TestConversationId);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.Conversation);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+        }
+
+        [Fact]
+        public void WithConversation_WithNullConversationId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => builder.WithConversation((string)null));
+        }
+
+        [Fact]
+        public void WithConversation_WithEmptyConversationId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => builder.WithConversation(string.Empty));
+        }
+
+        [Fact]
+        public void WithConversation_WithWhitespaceConversationId_ThrowsArgumentException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => builder.WithConversation("   "));
+        }
+
+        [Fact]
+        public void WithConversation_WithConversationAccount_SetsConversation()
+        {
+            // Arrange
+            var conversationAccount = new ConversationAccount(id: TestConversationId, name: "Test Conversation");
+
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithConversation(conversationAccount);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.Conversation);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+            Assert.Equal("Test Conversation", conversation.Reference.Conversation.Name);
+        }
+
+        [Fact]
+        public void WithConversation_WithNullConversationAccount_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => builder.WithConversation((ConversationAccount)null));
+        }
+
+        [Fact]
+        public void WithConversation_ReturnsBuilderForChaining()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var result = builder.WithConversation(TestConversationId);
+
+            // Assert
+            Assert.Same(builder, result);
+        }
+
+        #endregion
+
+        #region WithReference Tests
+
+        [Fact]
+        public void WithReference_WithValidReference_SetsReference()
+        {
+            // Arrange
             var reference = new ConversationReference
             {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
+                ChannelId = "custom-channel",
+                ServiceUrl = "https://custom.service.url/",
+                User = new ChannelAccount("custom-user", "Custom User"),
+                Conversation = new ConversationAccount(id: "custom-conversation")
             };
 
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithIdentity(identity)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithReference(reference);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.True(result.IsValid());
-            Assert.Equal("azp456", result.Identity.Claims.First(c => c.Type == "azp").Value);
-            Assert.Equal("app789", result.Identity.Claims.First(c => c.Type == "appid").Value);
-            Assert.Equal("app", result.Identity.Claims.First(c => c.Type == "idtyp").Value);
-            Assert.Equal("1.0", result.Identity.Claims.First(c => c.Type == "ver").Value);
-            Assert.Equal("issuer111", result.Identity.Claims.First(c => c.Type == "iss").Value);
-            Assert.Null(result.Identity.Claims.FirstOrDefault(c => c.Type == "other"));
+            Assert.NotNull(conversation.Reference);
+            Assert.Equal("custom-channel", conversation.Reference.ChannelId);
+            Assert.Equal("https://custom.service.url/", conversation.Reference.ServiceUrl);
+            Assert.Equal("custom-user", conversation.Reference.User.Id);
+            Assert.Equal("custom-conversation", conversation.Reference.Conversation.Id);
         }
 
         [Fact]
-        public void Build_WithoutClaims_ShouldThrow()
+        public void WithReference_WithNullReference_ThrowsArgumentNullException()
         {
             // Arrange
-            var builder = ConversationBuilder.Create();
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                builder.WithReference(reference).Build());
+            Assert.Throws<ArgumentNullException>(() => builder.WithReference(null));
         }
 
         [Fact]
-        public void Build_WithoutReference_ShouldThrow()
+        public void WithReference_MergesWithExistingReference()
         {
             // Arrange
-            var builder = ConversationBuilder.Create();
-            var claims = new Dictionary<string, string>
+            var existingReference = new ConversationReference
             {
-                { "aud", "audience123" }
+                ChannelId = TestChannelId,
+                ServiceUrl = TestServiceUrl,
+                User = new ChannelAccount(TestUserId, TestUserName)
             };
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                builder.WithClaims(claims).Build());
-        }
-
-        [Fact]
-        public void Build_WithReferenceBuilder_ShouldBuildTeamsReferenceFromBuilder()
-        {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var refBuilder = ConversationReferenceBuilder.Create(Channels.Msteams, "conv123")
-                .WithUser("user123", "User Name")
-                .WithAgent("agent123", "Agent Name")
-                .WithServiceUrl("https://test.com")
-                .WithActivityId("activity123")
-                .WithLocale("en-US");
-
-            var claims = new Dictionary<string, string>
+            var newReference = new ConversationReference
             {
-                { "aud", "audience123" }
+                Conversation = new ConversationAccount(id: TestConversationId),
+                ActivityId = "test-activity-id"
             };
 
             // Act
-            var result = builder
-                .WithReference(refBuilder.Build())
-                .WithClaims(claims)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId, TestUserName)
+                .WithReference(newReference);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.NotNull(result.Reference);
-            Assert.Equal(Channels.Msteams, result.Reference.ChannelId);
-            Assert.Equal("conv123", result.Reference.Conversation.Id);
-            Assert.Equal("user123", result.Reference.User.Id);
-            Assert.Equal("User Name", result.Reference.User.Name);
-            Assert.Equal("28:agent123", result.Reference.Agent.Id);
-            Assert.Equal("Agent Name", result.Reference.Agent.Name);
-            Assert.Equal("https://test.com", result.Reference.ServiceUrl);
-            Assert.Equal("activity123", result.Reference.ActivityId);
-            Assert.Equal("en-US", result.Reference.Locale);
+            Assert.NotNull(conversation.Reference);
+            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+            Assert.Equal("test-activity-id", conversation.Reference.ActivityId);
         }
 
         [Fact]
-        public void Build_ShouldReturnValidConversation()
+        public void WithReference_ReturnsBuilderForChaining()
         {
             // Arrange
-            var builder = ConversationBuilder.Create();
-            var reference = new ConversationReference
+            var reference = new ConversationReference { ChannelId = "test" };
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+
+            // Act
+            var result = builder.WithReference(reference);
+
+            // Assert
+            Assert.Same(builder, result);
+        }
+
+        #endregion
+
+        #region Build Tests
+
+        [Fact]
+        public void Build_WithMinimalConfiguration_ReturnsValidConversation()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation);
+            Assert.True(conversation.IsValid());
+            Assert.NotNull(conversation.Reference);
+            Assert.NotNull(conversation.Identity);
+        }
+
+        [Fact]
+        public void Build_WithFullConfiguration_ReturnsValidConversation()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId, TestServiceUrl, TestRequestorId)
+                .WithUser(TestUserId, TestUserName)
+                .WithConversation(TestConversationId);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation);
+            Assert.True(conversation.IsValid());
+            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
+            Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestUserName, conversation.Reference.User.Name);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+        }
+
+        [Fact]
+        public void Build_SetsDefaultServiceUrlWhenNotProvided()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation.Reference.ServiceUrl);
+            Assert.StartsWith("https://", conversation.Reference.ServiceUrl);
+        }
+
+        [Fact]
+        public void Build_WithTeamsChannel_SetsTeamsServiceUrl()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.Equal("https://smba.trafficmanager.net/teams/", conversation.Reference.ServiceUrl);
+        }
+
+        [Fact]
+        public void Build_MultipleTimes_ReturnsConsistentResults()
+        {
+            // Arrange
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId, TestUserName);
+
+            // Act
+            var conversation1 = builder.Build();
+            var conversation2 = builder.Build();
+
+            // Assert
+            Assert.Equal(conversation1.Reference.User.Id, conversation2.Reference.User.Id);
+            Assert.Equal(conversation1.Reference.ChannelId, conversation2.Reference.ChannelId);
+        }
+
+        #endregion
+
+        #region Integration Tests
+
+        [Fact]
+        public void BuilderChaining_WorksCorrectly()
+        {
+            // Act
+            var conversation = ConversationBuilder.Create(TestAgentClientId, TestChannelId, TestServiceUrl, TestRequestorId)
+                .WithUser(TestUserId, TestUserName)
+                .WithConversation(TestConversationId)
+                .Build();
+
+            // Assert
+            Assert.NotNull(conversation);
+            Assert.True(conversation.IsValid());
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+            Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);
+        }
+
+        [Fact]
+        public void BuilderWithClaimsIdentity_PreservesClaims()
+        {
+            // Arrange
+            var claims = new List<Claim>
             {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" },
-                User = new ChannelAccount { Id = "user123", Name = "Test User" },
-                Agent = new ChannelAccount { Id = "agent123", Name = "Test Agent" },
-                ServiceUrl = "https://test.com",
-                ActivityId = "activity123",
+                new Claim("aud", TestAgentClientId),
+                new Claim("appid", TestRequestorId),
+                new Claim("ver", "2.0"),
+                new Claim("iss", "test-issuer"),
+                new Claim("tid", "test-tenant-id")
+            };
+            var identity = new ClaimsIdentity(claims);
+
+            // Act
+            var conversation = ConversationBuilder.Create(identity, TestChannelId)
+                .WithUser(TestUserId)
+                .WithConversation(TestConversationId)
+                .Build();
+
+            // Assert
+            var resultIdentity = conversation.Identity;
+            Assert.Equal(5, resultIdentity.Claims.Count());
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "aud" && c.Value == TestAgentClientId));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "appid" && c.Value == TestRequestorId));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "ver" && c.Value == "2.0"));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "iss" && c.Value == "test-issuer"));
+            Assert.NotNull(resultIdentity.Claims.FirstOrDefault(c => c.Type == "tid" && c.Value == "test-tenant-id"));
+        }
+
+        [Fact]
+        public void Builder_OverwritesUserWithMultipleCalls()
+        {
+            // Act
+            var conversation = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser("first-user-id", "First User")
+                .WithUser(TestUserId, TestUserName)
+                .Build();
+
+            // Assert
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestUserName, conversation.Reference.User.Name);
+        }
+
+        [Fact]
+        public void Builder_OverwritesConversationWithMultipleCalls()
+        {
+            // Act
+            var conversation = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithConversation("first-conversation-id")
+                .WithConversation(TestConversationId)
+                .Build();
+
+            // Assert
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+        }
+
+        [Fact]
+        public void Builder_WithComplexReference_MergesCorrectly()
+        {
+            // Arrange
+            var partialReference = new ConversationReference
+            {
+                ActivityId = "test-activity",
                 Locale = "en-US"
             };
 
-            var claims = new Dictionary<string, string>
-            {
-                { "aud", "audience123" },
-                { "appid", "app456" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaims(claims)
+            var conversation = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId)
+                .WithConversation(TestConversationId)
+                .WithReference(partialReference)
                 .Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.IsType<Conversation>(result);
-            Assert.NotNull(result.Reference);
-            Assert.True(result.IsValid());
-            Assert.Equal(reference, result.Reference);
-            Assert.Equal(2, result.Identity.Claims.ToList().Count);
+            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
+            Assert.Equal(TestUserId, conversation.Reference.User.Id);
+            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
+            Assert.Equal("test-activity", conversation.Reference.ActivityId);
+            Assert.Equal("en-US", conversation.Reference.Locale);
         }
 
-        [Fact]
-        public void FluentInterface_ShouldAllowMethodChaining()
-        {
-            // Arrange & Act
-            var result = ConversationBuilder.Create()
-                .WithReference(ConversationReferenceBuilder.Create(Channels.Msteams, "conv123").Build())
-                .WithClaimsForClientId("client123", "requestor456")
-                .Build();
+        #endregion
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotNull(result.Reference);
-            Assert.NotNull(result.Identity);
-        }
+        #region Edge Cases
 
         [Fact]
-        public void WithClaims_ShouldReplaceExistingClaims()
+        public void Builder_WithEmptyServiceUrl_UsesDefault()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
-            var initialClaims = new Dictionary<string, string>
-            {
-                { "aud", "initial" }
-            };
-
-            var newClaims = new Dictionary<string, string>
-            {
-                { "aud", "replaced" },
-                { "appid", "new" }
-            };
-
             // Act
-            var result = builder
-                .WithReference(reference)
-                .WithClaims(initialClaims)
-                .WithClaims(newClaims)
-                .Build();
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId, string.Empty);
+            var conversation = builder.Build();
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Identity.Claims.ToList().Count);
-            Assert.Equal("replaced", result.Identity.Claims.First(c => c.Type == "aud").Value);
-            Assert.Equal("new", result.Identity.Claims.First(c => c.Type == "appid").Value);
+            Assert.NotNull(conversation.Reference.ServiceUrl);
+            Assert.NotEmpty(conversation.Reference.ServiceUrl);
         }
 
         [Fact]
-        public void WithReference_ShouldReplaceExistingReference()
+        public void Builder_WithDifferentChannels_GeneratesCorrectServiceUrls()
         {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var reference1 = new ConversationReference
+            // Test different channels
+            var testCases = new[]
             {
-                Conversation = new ConversationAccount { Id = "conv1" }
+                (Channels.Msteams, "https://smba.trafficmanager.net/teams/"),
+                (Channels.Emulator, "https://emulator.botframework.com/"),
+                (Channels.Directline, "https://directline.botframework.com/"),
+                (Channels.Webchat, "https://webchat.botframework.com/")
             };
 
-            var reference2 = new ConversationReference
+            foreach (var (channelId, expectedUrl) in testCases)
             {
-                Conversation = new ConversationAccount { Id = "conv2" }
-            };
+                // Act
+                var conversation = ConversationBuilder.Create(TestAgentClientId, channelId).Build();
 
-            var claims = new Dictionary<string, string>
-            {
-                { "aud", "audience" }
-            };
-
-            // Act
-            var result = builder
-                .WithReference(reference1)
-                .WithReference(reference2)
-                .WithClaims(claims)
-                .Build();
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("conv2", result.Reference.Conversation.Id);
+                // Assert
+                Assert.Equal(expectedUrl, conversation.Reference.ServiceUrl);
+            }
         }
 
-        [Fact]
-        public void WithIdentity_EmptyIdentity_ShouldSetEmptyClaims()
-        {
-            // Arrange
-            var builder = ConversationBuilder.Create();
-            var identity = new ClaimsIdentity();
-            var reference = new ConversationReference
-            {
-                ChannelId = Channels.Msteams,
-                Conversation = new ConversationAccount { Id = "conv123" }
-            };
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                builder
-                    .WithReference(reference)
-                    .WithIdentity(identity)
-                    .Build());
-        }
+        #endregion
     }
 }

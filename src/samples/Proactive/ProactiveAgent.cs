@@ -60,10 +60,29 @@ public class ProactiveAgent : AgentApplication
     [Route(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
     public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        // This demonstrates using a Conversation instance to perform ContinueConversation with a custom 
+        // continuation activity.
+        // This does the same as:  await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}"),
+        // except using ContinueConversation.
+        // You can also use ConversationBuilder to manually create a Conversation instance manually.
+        var conversation = new Conversation(turnContext);
+
+        var customContinuation = conversation.Reference.GetContinuationActivity();
+        customContinuation.Value = turnContext.Activity;
+
+        await Proactive.ContinueConversationAsync(
+            turnContext.Adapter, 
+            conversation, 
+            async (context, state, ct) =>
+            {
+                var originalActivity = (IActivity)context.Activity.Value;
+                await context.SendActivityAsync($"You said: {originalActivity.Text}", cancellationToken: ct);
+            },
+            customContinuation,
+            cancellationToken: cancellationToken);
     }
 
-    // Map /proactive/continue to this method
+    // Map /proactive/continue to this method.  This will fail if the user is not signed into "me".
     [ContinueConversation(tokenHandlers: "me")]
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {

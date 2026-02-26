@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return _reference;
         }
 
-        private static string ServiceUrlForChannel(ChannelId channelId)
+        public static string ServiceUrlForChannel(ChannelId channelId)
         {
             return channelId.Channel switch
             {
