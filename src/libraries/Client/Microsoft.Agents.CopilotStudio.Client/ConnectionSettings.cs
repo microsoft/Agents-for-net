@@ -29,6 +29,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         public bool UseExperimentalEndpoint { get; set; } = false;
         //<inheritdoc/>
         public bool EnableDiagnostics { get; set; } = false;
+        //<inheritdoc/>
+        public string? CdsBotId { get; set; }
 
 
         /// <summary>
@@ -52,6 +54,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
                 UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint), false);
                 EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);
+                CdsBotId = config[nameof(CdsBotId)];
                 if (string.IsNullOrEmpty(DirectConnectUrl))
                 {
                     EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
