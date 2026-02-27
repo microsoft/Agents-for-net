@@ -974,6 +974,81 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
             record.VerifyMocks();
         }
+        
+        [Fact]
+        public async Task ProcessAsync_CancellationDuringStream_ShouldNotThrow()
+        {
+            // Arrange: use an agent that delays long enough to be cancelled
+            var agentStarted = new TaskCompletionSource<bool>();
+            var record = UseRecord((_) => new DelayedActivityHandler(agentStarted));
+
+            var activity = new Activity()
+            {
+                ChannelId = Channels.Test,
+                Type = ActivityTypes.Invoke,
+                Name = "invoke",
+                DeliveryMode = DeliveryModes.Stream,
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "fromId", role: RoleTypes.User)
+            };
+            var context = CreateHttpContext(activity);
+
+            // Setup logger expectations:
+            // - Warning IS logged for cancellation
+            record.QueueLogger
+                .Setup(e => e.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((e, _) => e.ToString().Contains("cancelled")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Verifiable(Times.AtLeastOnce);
+
+            // - Error is NOT logged
+            record.QueueLogger
+                .Setup(e => e.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Verifiable(Times.Never);
+
+            // - NullReferenceException should NOT occur in the background service
+            record.HostedServiceLogger
+                .Setup(e => e.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<NullReferenceException>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Verifiable(Times.Never);
+
+            using var cts = new CancellationTokenSource();
+
+            await record.Service.StartAsync(CancellationToken.None);
+
+            // Act: start processing, wait for the agent to begin, then cancel
+            var processTask = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, cts.Token);
+
+            // Wait until the agent handler has started processing
+            await agentStarted.Task;
+
+            // Cancel the request (simulates client disconnect)
+            cts.Cancel();
+
+            // Assert: ProcessAsync should complete (no deadlock) and not set 500
+            await processTask;
+            Assert.NotEqual(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
+
+            await record.Service.StopAsync(CancellationToken.None);
+
+            // Verify: warning was logged, error was not
+            Mock.Verify(record.QueueLogger);
+            Mock.Verify(record.HostedServiceLogger);
+        }
+
 
         private static DefaultHttpContext CreateHttpContext(Activity activity = null)
         {
@@ -1026,6 +1101,42 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             public IStorage Storage { get; } = new MemoryStorage();
 
             public IAgent Agent { get; set; } = Agent;
+        }
+
+        private class DelayedActivityHandler : ActivityHandler
+        {
+            private readonly TaskCompletionSource<bool> _started;
+
+            public DelayedActivityHandler(TaskCompletionSource<bool> started)
+            {
+                _started = started;
+            }
+
+            protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+            {
+                // Signal that the handler has started
+                _started.TrySetResult(true);
+
+                // Delay long enough for the test to cancel
+                await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+
+                await turnContext.SendActivityAsync("Should not reach here", cancellationToken: cancellationToken);
+            }
+
+            protected override async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
+            {
+                // Signal that the handler has started
+                _started.TrySetResult(true);
+
+                // Delay long enough for the test to cancel
+                await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+
+                return new InvokeResponse()
+                {
+                    Status = (int)HttpStatusCode.OK,
+                    Body = new TokenResponse() { Token = "should-not-reach" }
+                };
+            }
         }
 
         private class RespondingActivityHandler : ActivityHandler
