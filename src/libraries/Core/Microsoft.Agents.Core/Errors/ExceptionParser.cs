@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections;
 using System.Globalization;
 using System.Text;
 
@@ -47,8 +48,9 @@ namespace Microsoft.Agents.Core.Errors
                 string.IsNullOrEmpty(generalEx.Message) ? "Not Provided" : localErrorMessage,
                 string.IsNullOrEmpty(generalEx.HelpLink) ? "Not Provided" : generalEx.HelpLink.ToString().Trim(),
                 generalEx.HResult == 0 ? null : generalEx.HResult,
-                string.IsNullOrEmpty(generalEx.StackTrace) ? "Not Provided" : generalEx.StackTrace.ToString().Trim()
-                , sw, level, includeStackTrace);
+                string.IsNullOrEmpty(generalEx.StackTrace) ? "Not Provided" : generalEx.StackTrace.ToString().Trim(),
+                generalEx.Data,
+                sw, level, includeStackTrace);
 
             lastErrorMsg.Append(string.IsNullOrEmpty(localErrorMessage) ? "Not Provided" : localErrorMessage.ToString().Trim());
 
@@ -72,6 +74,7 @@ namespace Microsoft.Agents.Core.Errors
         /// <param name="helpLink">A URL to a help file or website that provides more information about the exception.</param>
         /// <param name="errorCode">The error code associated with the exception, if available.</param>
         /// <param name="stackTrace">The stack trace of the exception, if available.</param>
+        /// <param name="exData">The additional data associated with the exception.</param>
         /// <param name="sw">The <see cref="StringBuilder"/> to which the formatted exception details will be appended.</param>
         /// <param name="level">The depth of the exception in the hierarchy (e.g., 0 for the top-level exception, 1 for the first inner exception, etc.).</param>
         /// <param name="includeStackTrace">Indicates whether the stack trace should be included in the output.</param>
@@ -79,7 +82,7 @@ namespace Microsoft.Agents.Core.Errors
         /// This method is used to create a detailed, human-readable representation of an exception, including its source, target site, message, 
         /// help link, error code, and optionally its stack trace. It is typically used for logging or debugging purposes.
         /// </remarks>
-        private static void FormatExceptionMessage(string source, string targetSite, string message, string helpLink, int? errorCode, string stackTrace, StringBuilder sw, int level, bool includeStackTrace = false)
+        private static void FormatExceptionMessage(string source, string targetSite, string message, string helpLink, int? errorCode, string stackTrace, IDictionary exData, StringBuilder sw, int level, bool includeStackTrace = false)
         {
             if (level != 0)
                 sw.AppendLine($"Inner Exception Level {level}\t: ");
@@ -96,6 +99,10 @@ namespace Microsoft.Agents.Core.Errors
             sw.AppendLine($"HelpLink Url: {helpLink}");
             if (includeStackTrace)
             {
+                foreach (DictionaryEntry de in exData)
+                {
+                    sw.AppendLine($"Headers: {de.Key} = {de.Value}");
+                }
                 //TODO:
                 // Update this code to use a setting or environment variable to control the output of the stack trace.
                 if (!string.IsNullOrEmpty(stackTrace))
