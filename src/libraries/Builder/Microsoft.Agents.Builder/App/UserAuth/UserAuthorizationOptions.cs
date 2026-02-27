@@ -7,6 +7,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -73,12 +75,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </code>
         /// </remarks>
         /// <param name="sp"></param>
+        /// <param name="loggerFactory"></param>
         /// <param name="configuration"></param>
         /// <param name="storage"></param>
         /// <param name="autoSignInSelector"></param>
         /// <param name="configKey"></param>
         public UserAuthorizationOptions(
             IServiceProvider sp, 
+            ILoggerFactory loggerFactory,
             IConfiguration configuration, 
             IStorage storage = null,
             AutoSignInSelector autoSignInSelector = null, 
@@ -86,7 +90,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             var section = configuration.GetSection(configKey);
             DefaultHandlerName = section.GetValue<string>(nameof(DefaultHandlerName));
-            Dispatcher = new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
+            Storage = storage ?? sp.GetService<IStorage>() ?? throw new ArgumentNullException(nameof(storage));
+            Dispatcher = new UserAuthorizationDispatcher(sp, loggerFactory, configuration, Storage, configKey: $"{configKey}:Handlers");
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelector>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
@@ -122,15 +127,25 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         ///   };
         /// </code>
         /// </remarks>
+        /// <param name="loggerFactory">Typically from AgentApplicationOptions.LoggerFactory</param>
+        /// <param name="storage">The IStorage to use for UserAuthorization flow state. This can be the same storage as elsewhere.</param>
         /// <param name="connections"></param>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
+        public UserAuthorizationOptions(ILoggerFactory loggerFactory, IStorage storage, IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
-            Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
+            Storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            Dispatcher = new UserAuthorizationDispatcher(loggerFactory, connections, userAuthHandlers);
             AutoSignIn = AutoSignInOnForAny;
         }
 
+        [Obsolete("This constructor is deprecated. Use UserAuthorizationOptions(ILoggerFactory, IStorage, IConnections, params IUserAuthorization[])")]
+        public UserAuthorizationOptions(IStorage storage, IConnections connections, params IUserAuthorization[] userAuthHandlers) : this(NullLoggerFactory.Instance, storage, connections, userAuthHandlers)
+        {
+        }
+
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
+
+        internal IStorage Storage { get; set; }
 
         /// <summary>
         /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is

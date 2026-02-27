@@ -10,6 +10,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -47,6 +48,8 @@ namespace Microsoft.Agents.Builder.App
     /// <seealso cref="UserAuthorizationOptions"/>
     public class AgentApplicationOptions
     {
+        internal static readonly ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning).AddConsole());
+
         /// <summary>
         /// Constructs AgentApplicationOptions programmatically.
         /// <code>
@@ -70,13 +73,14 @@ namespace Microsoft.Agents.Builder.App
         /// This will set the `TurnStateFactory` property with the default TurnStateFactory .
         /// </remarks>
         /// </summary>
-        public AgentApplicationOptions(IStorage storage) : this(storage == null ? () => new TurnState() : () => new TurnState(storage))
+        public AgentApplicationOptions(IStorage storage, ILoggerFactory loggerFactory = null) : this(storage == null ? () => new TurnState() : () => new TurnState(storage), loggerFactory)
         {
         }
 
-        public AgentApplicationOptions(TurnStateFactory turnStateFactory)
+        public AgentApplicationOptions(TurnStateFactory turnStateFactory, ILoggerFactory loggerFactory = null)
         {
             TurnStateFactory = turnStateFactory;
+            LoggerFactory = loggerFactory ?? DefaultLoggerFactory;
         }
 
         /// <summary>
@@ -120,6 +124,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="cardOptions"></param>
         /// <param name="fileDownloaders"></param>
         /// <param name="configKey"></param>
+        /// <param name="loggerFactory"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
             IConfiguration configuration, 
@@ -128,13 +133,18 @@ namespace Microsoft.Agents.Builder.App
             UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
-            string configKey = "AgentApplication") 
+            string configKey = "AgentApplication",
+            ILoggerFactory loggerFactory = null) 
         {
+            LoggerFactory = loggerFactory ?? DefaultLoggerFactory;
+
 #pragma warning disable CS0618 // Type or member is obsolete
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
-            TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
+
+            storage ??= new MemoryStorage();
+            TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
 
             var section = configuration.GetSection(configKey);
             if (!section.Exists())
@@ -153,7 +163,7 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (section.GetSection("UserAuthorization").Exists())
             {
-                UserAuthorization = new UserAuthorizationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthorization");
+                UserAuthorization = new UserAuthorizationOptions(sp, loggerFactory, configuration, storage, configKey: $"{configKey}:UserAuthorization");
             }
 
             section = section.GetSection("AdaptiveCards");
@@ -223,5 +233,10 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Options used to enable user authorization for the application.
         /// </summary>
         public UserAuthorizationOptions UserAuthorization { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ILoggerFactory LoggerFactory { get; set; }
     }
 }
