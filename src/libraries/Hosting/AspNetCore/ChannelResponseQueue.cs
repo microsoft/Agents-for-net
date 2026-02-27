@@ -37,14 +37,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-
-                while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                try
                 {
-                    var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    action(activity);
+                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                    {
+                        var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                        action(activity);
+                    }
                 }
-
-                channelInfo.readDone.Set();
+                catch (OperationCanceledException)
+                {
+                    // Request was cancelled (e.g. client disconnected). Drain any remaining items and clean up.
+                    logger.LogWarning("ChannelResponseQueue: HandleResponsesAsync cancelled for requestId '{RequestId}'.", requestId);
+                }
+                finally
+                {
+                    channelInfo.readDone.Set();
+                }
             }
         }
 
@@ -82,10 +91,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 channelInfo.channel.Writer.Complete();
                 _conversations.Remove(requestId, out _);
-            }
 
-            // wait for reads to be done
-            channelInfo.readDone.WaitOne();
+                // wait for reads to be done
+                channelInfo.readDone.WaitOne();
+                channelInfo.readDone.Dispose();
+            }
         }
 
         /// <summary>
@@ -106,8 +116,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 foreach (var activity in activities)
                 {
-                    // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
-                    await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
+                        await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ChannelClosedException)
+                    {
+                        // The channel was completed (e.g. due to cancellation). Stop writing.
+                        logger.LogWarning("ChannelResponseQueue: Channel closed for requestId '{RequestId}'. Remaining activities will not be sent.", requestId);
+                        break;
+                    }
                 }
             }
         }
