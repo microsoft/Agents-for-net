@@ -12,17 +12,12 @@ namespace Microsoft.Agents.Builder.App
         private readonly ReaderWriterLock rwl = new();
         private List<RouteEntry> routes = [];
 
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
-        {
-            AddRoute(selector, handler, false, isInvokeRoute, rank, autoSignInHandlers);
-        }
-
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isAgenticRoute, bool isInvokeRoute, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
+        public void AddRoute(Route route)
         {
             try
             {
                 rwl.AcquireWriterLock(1000);
-                routes.Add(new RouteEntry(rank, new(selector, handler, isInvokeRoute, isAgenticRoute, autoSignInHandlers)));
+                routes.Add(new RouteEntry(route));
 
                 // Ordered by:
                 //    Agentic + Invoke
@@ -31,8 +26,8 @@ namespace Microsoft.Agents.Builder.App
                 //    Other
                 // Then by Rank
                 routes = [.. routes
-                    .OrderByDescending(entry => entry.Type)
-                    .ThenBy(entry => entry.Rank)];
+                    .OrderByDescending(entry => entry.Order)
+                    .ThenBy(entry => entry.Route.Rank)];
             }
             finally
             {
@@ -54,7 +49,7 @@ namespace Microsoft.Agents.Builder.App
         }
     }
 
-    enum RouteEntryType
+    enum RouteEntryOrder
     {
         Other = 0,
         Agentic = 1,
@@ -64,18 +59,16 @@ namespace Microsoft.Agents.Builder.App
 
     class RouteEntry
     {
-        public RouteEntry(ushort rank, Route route) 
+        public RouteEntry(Route route) 
         { 
-            Rank = rank;
             Route = route;
-            if (route.IsInvokeRoute)
-                Type = RouteEntryType.Invoke;
-            if (route.IsAgenticRoute)
-                Type |= RouteEntryType.Agentic;
+            if (route.Flags.HasFlag(RouteFlags.Invoke))
+                Order = RouteEntryOrder.Invoke;
+            if (route.Flags.HasFlag(RouteFlags.Agentic))
+                Order |= RouteEntryOrder.Agentic;
         }
 
-        public ushort Rank { get; private set; }
         public Route Route { get; private set; }
-        public RouteEntryType Type { get; private set; }
+        public RouteEntryOrder Order { get; private set; }
     }
 }

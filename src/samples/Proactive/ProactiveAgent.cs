@@ -95,7 +95,7 @@ public class ProactiveAgent : AgentApplication
     [ContinueConversation(tokenHandlers: "me")]
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken); 
+        var token = await turnContext.GetTurnTokenAsync(cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync($"This is OnContinueConversation. Token={(token == null ? "not signed in" : token.Length)}", cancellationToken: cancellationToken);
     }
 

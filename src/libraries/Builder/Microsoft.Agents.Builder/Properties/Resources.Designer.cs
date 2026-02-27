@@ -196,6 +196,17 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A selector has already been defined for this route. Multiple selectors are not supported. Builder method &apos;{0}&apos;..
+        /// </summary>
+        internal static string RouteSelectorAlreadyDefined
+        {
+            get
+            {
+                return ResourceManager.GetString("RouteSelectorAlreadyDefined", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to IActivity instance required for this Proactive request.
         /// </summary>
         internal static string ProactiveActivityRequired {

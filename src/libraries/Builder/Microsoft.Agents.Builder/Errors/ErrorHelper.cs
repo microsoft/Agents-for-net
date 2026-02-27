@@ -69,6 +69,9 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(-50030, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/M365AgentsErrorCodes/#-50030");
         internal static readonly AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(-50031, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/M365AgentsErrorCodes/#-50031");
         internal static readonly AgentErrorDefinition UserAuthorizationDefaultHandlerNotFound = new AgentErrorDefinition(-50032, Properties.Resources.UserAuthorizationDefaultHandlerNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50032");
+
+        // RouteBuilders
+        internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-50033, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-50033");
         // Proactive
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50033, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50033");
         internal static readonly AgentErrorDefinition ProactiveConversationNotFound = new AgentErrorDefinition(-50034, Properties.Resources.ProactiveConversationNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50034");

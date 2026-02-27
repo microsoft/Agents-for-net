@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,33 +28,31 @@ namespace Microsoft.Agents.Builder.App
     /// <returns></returns>
     public delegate Task RouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
-    internal class Route
+    public enum RouteFlags
     {
-        public Route(RouteSelector selector, bool isInvokeRoute = false, bool isAgenticRoute = false) : this(selector, (_, _, _) => Task.CompletedTask, isAgenticRoute, isInvokeRoute)
+        None = 0,
+        Agentic = 1,
+        Invoke = 2,
+        NonTerminal = 4
+    }
+
+    public class Route()
+    {
+        public ChannelId? ChannelId;
+
+        public RouteSelector Selector;
+
+        public RouteHandler Handler;
+
+        public RouteFlags Flags;
+
+        public ushort Rank = RouteRank.Unspecified;
+
+        public Func<ITurnContext, string[]> OAuthHandlers = context => [];
+
+        public bool IsChannelIdMatch(ChannelId channelId)
         {
+            return ChannelId == null || channelId == ChannelId;
         }
-
-        public Route(RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false) : this((_, _) => Task.FromResult(true), handler, isInvokeRoute, isAgenticRoute, null)
-        {
-        }
-
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, params string[] autoSignInHandler)
-        {
-            Selector = selector;
-            Handler = handler;
-            IsInvokeRoute = isInvokeRoute;
-            IsAgenticRoute = isAgenticRoute;
-            AutoSignInHandler = autoSignInHandler;
-        }
-
-        public RouteSelector Selector { get; private set; }
-
-        public RouteHandler Handler { get; private set; }
-
-        public bool IsAgenticRoute { get; private set; }
-
-        public bool IsInvokeRoute { get; private set; }
-
-        public string[] AutoSignInHandler { get; private set; }
     }
 }
