@@ -34,8 +34,6 @@ public class AuthAgent : AgentApplication
         // For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
         // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent.
 
-        // This constructor should only register events and setup state as it will be called for each request. 
-        
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
@@ -60,7 +58,7 @@ public class AuthAgent : AgentApplication
         // The UserAuthorization Class provides methods and properties to manage and access user authorization tokens
         // You can use this class to interact with the UserAuthorization process, including signing in and signing out users, accessing tokens, and handling authorization events.
 
-        // Register Events for SignIn Failure on the UserAuthorization class to notify the Agent in the event of an OAuth failure.
+        // Register handler on the UserAuthorization class to notify the Agent in the event of an OAuth failure.
         // For a production Agent, this would typically be used to provide instructions to the end-user.  For example, call/email or
         // handoff to a live person (depending on Agent capabilities).
         UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
@@ -108,7 +106,7 @@ public class AuthAgent : AgentApplication
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     private async Task OnMe(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // If successful, the user will be the token will be available from the UserAuthorization.GetTurnTokenAsync(turnContext, DefaultHandlerName) call. 
+        // If successful, the user will be the token will be available via UserAuthorization.GetTurnTokenAsync(turnContext, "me"). 
         // If not successful, this handler won't be reached.  Instead, OnUserSignInFailure handler would have been called. 
 
         // For this sample, two OAuth Connections are setup to demonstrate multiple OAuth Connections and Auto SignIn handling and routing.
@@ -117,20 +115,6 @@ public class AuthAgent : AgentApplication
 
         var displayName = await GetDisplayName(turnContext);
         var graphInfo = await GetGraphInfo(turnContext, "me");
-
-        // Just to verify "auto" handler setup.  This wouldn't be needed in a production Agent and here just to verify sample setup.
-        if (displayName.Equals(_defaultDisplayName) || graphInfo == null)
-        {
-            await turnContext.SendActivityAsync($"Failed to get information from handlers '{UserAuthorization.DefaultHandlerName}' and/or 'me'. \nDid you update the scope correctly in Azure bot Service?. If so type in -signout to force signout the current user", cancellationToken: cancellationToken);
-            return;
-        }
-
-        // Just to verify we in fact have two different tokens.  This wouldn't be needed in a production Agent and here just to verify sample setup.
-        if (await UserAuthorization.GetTurnTokenAsync(turnContext, UserAuthorization.DefaultHandlerName, cancellationToken: cancellationToken) == await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken))
-        {
-            await turnContext.SendActivityAsync($"It would seem '{UserAuthorization.DefaultHandlerName}' and 'me' are using the same OAuth Connection", cancellationToken: cancellationToken);
-            return;
-        }
 
         var meInfo = $"Name: {displayName}{Environment.NewLine}Job Title: {graphInfo["jobTitle"]?.GetValue<string>()}{Environment.NewLine}Email: {graphInfo["mail"]?.GetValue<string>()}";
         await turnContext.SendActivityAsync(meInfo, cancellationToken: cancellationToken);
@@ -148,9 +132,9 @@ public class AuthAgent : AgentApplication
         // When Auto Sign in is properly configured, the user will be automatically signed in when they first connect to the agent using the default
         // handler chosen in the UserAuthorization configuration.
         // IMPORTANT: The ReadMe associated with this sample, instructs you on configuring the Azure Bot Service Registration with the scopes to allow
-        // you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
+        // you to read your own information from Graph.  You must have completed that for this sample to work correctly. 
 
-        // If successful, the user will be the token will be available from the UserAuthorization.GetTurnTokenAsync(turnContext, DefaultHandlerName) call. 
+        // If successful, the user will be the token will be available from the ITurnContext.GetTurnTokenAsync(turnContext) call. 
         // If not successful, this handler won't be reached.  Instead, OnUserSignInFailure handler would have been called. 
         
         // We have the access token, now try to get your user name from graph. 
@@ -188,7 +172,7 @@ public class AuthAgent : AgentApplication
     private async Task<string> GetDisplayName(ITurnContext turnContext)
     {
         string displayName = _defaultDisplayName;
-        var graphInfo = await GetGraphInfo(turnContext, UserAuthorization.DefaultHandlerName);
+        var graphInfo = await GetGraphInfo(turnContext);
         if (graphInfo != null)
         {
             displayName = graphInfo!["displayName"]!.GetValue<string>();
@@ -196,9 +180,10 @@ public class AuthAgent : AgentApplication
         return displayName;
     }
 
-    private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext, string handleName)
+    private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext, string? handlerName = null)
     {
-        string accessToken = await UserAuthorization.GetTurnTokenAsync(turnContext, handleName);
+        // In this sample, a null handlerName will always return the "auto" token.
+        string accessToken = await turnContext.GetTurnTokenAsync(handlerName!);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {
