@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task StoreConversationAsync_WithConversationReference_ShouldStoreConversation()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id } });
+            var conversation = new Conversation(new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id } }, _conversationRef);
 
             // Act
             var conversationId = await _proactive.StoreConversationAsync(conversation);
@@ -116,8 +116,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task StoreConversationAsync_ShouldOverwriteExisting()
         {
             // Arrange
-            var conversation1 = new Conversation(_conversationRef, _claims);
-            var conversation2 = new Conversation(_conversationRef, new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id }, { "iss", "issuer" } });
+            var conversation1 = new Conversation(_claims, _conversationRef);
+            var conversation2 = new Conversation(new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id }, { "iss", "issuer" } }, _conversationRef);
 
             // Act
             await _proactive.StoreConversationAsync(conversation1);
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task DeleteConversationAsync_ShouldRemoveConversation()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
             // Act
@@ -217,7 +217,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_WithStoredConversation_ShouldSendActivity()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
             var activity = new Activity
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_ActivityWithoutType_ShouldDefaultToMessage()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
             var activity = new Activity { Text = "Test" };
@@ -315,7 +315,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_StaticMethod_ShouldSendActivity()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             var activity = new Activity { Text = "Test" };
 
             _mockAdapter
@@ -357,7 +357,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_StaticMethod_NullAdapter_ShouldThrow()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             var activity = new Activity { Text = "Test" };
 
             // Act & Assert
@@ -380,7 +380,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_StaticMethod_NullActivity_ShouldThrow()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -395,7 +395,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ContinueConversationAsync_WithStoredConversation_ShouldContinue()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
             var handlerCalled = false;
@@ -456,7 +456,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ContinueConversationAsync_WithConversationObject_ShouldContinue()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             var handlerCalled = false;
             RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) =>
             {
@@ -486,7 +486,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ContinueConversationAsync_NullAdapter_ShouldThrow()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) => Task.CompletedTask;
 
             // Act & Assert
@@ -509,7 +509,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ContinueConversationAsync_NullHandler_ShouldThrow()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -520,7 +520,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ContinueConversationAsync_WithCustomActivity_ShouldUseCustomActivity()
         {
             // Arrange
-            var conversation = new Conversation(_conversationRef, _claims);
+            var conversation = new Conversation(_claims, _conversationRef);
             var customActivity = new Activity
             {
                 Type = ActivityTypes.Event,
@@ -542,7 +542,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) => Task.CompletedTask;
 
             // Act
-            await _proactive.ContinueConversationAsync(_mockAdapter.Object, conversation, handler, customActivity);
+            await _proactive.ContinueConversationAsync(_mockAdapter.Object, conversation, handler, continuationActivity: customActivity);
 
             // Assert
             Assert.NotNull(capturedActivity);
@@ -655,7 +655,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     async (identity, activity, audience, callback, ct) => await callback(new TurnContext(_mockAdapter.Object, activity, identity), ct));
 
             // Act
-            var result = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo, handler, (reference) => newReference.GetCreateContinuationActivity());
+            var result = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo, handler, continuationActivityFactory: (reference) => newReference.GetCreateContinuationActivity());
 
             // Assert
             Assert.True(handlerCalled);
@@ -671,7 +671,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void ContinueConversationValueType_ShouldHaveCorrectValue()
         {
             // Assert
-            Assert.Equal("application/vnd.microsoft.activity.continueconversation",
+            Assert.Equal("application/vnd.microsoft.activity.continueconversation+json",
                 Proactive.ContinueConversationValueType);
         }
 

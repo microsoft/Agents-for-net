@@ -70,8 +70,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         adapter,
                         conversation,
                         continueRoute.RouteHandler(agent),
-                        continuationActivity,
                         continueRoute.TokenHandlers,
+                        continuationActivity,
                         cancellationToken).ConfigureAwait(false);
 
                     return new Result(StatusCodes.Status200OK);
@@ -102,8 +102,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         adapter,
                         conversation,
                         continueRoute.RouteHandler(agent),
-                        continuationActivity,
                         continueRoute.TokenHandlers,
+                        continuationActivity,
                         cancellationToken).ConfigureAwait(false);
 
                     return new Result(StatusCodes.Status200OK);
@@ -155,6 +155,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         adapter,
                         createRecord,
                         body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
+                        continueRoute.TokenHandlers,
                         (reference) =>
                         {
                             // Creating a continuation activity with Value containing Query args.
@@ -167,11 +168,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             }
                             return continuationActivity;
                         },
-                        continueRoute.TokenHandlers,
                         cancellationToken).ConfigureAwait(false);
 
                     // Store the conversation if requested, and return the Conversation in the response body.
-                    var conversation = new Conversation(newReference, claims);
+                    var conversation = new Conversation(claims, newReference);
 
                     if (body.StoreConversation)
                     {

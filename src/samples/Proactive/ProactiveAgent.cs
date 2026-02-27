@@ -47,7 +47,7 @@ public class ProactiveAgent : AgentApplication
                 // will automatically pick up the specified token handlers. 
                 await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 await turnContext.SendActivityAsync($"Send '-signin' first", cancellationToken: cancellationToken);
             }
@@ -87,7 +87,7 @@ public class ProactiveAgent : AgentApplication
                 var originalActivity = (IActivity)context.Activity.Value;
                 await context.SendActivityAsync($"You said: {originalActivity.Text}", cancellationToken: ct);
             },
-            customContinuation,
+            continuationActivity: customContinuation,
             cancellationToken: cancellationToken);
     }
 

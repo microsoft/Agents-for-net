@@ -31,9 +31,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// <c>IAcitivty.ValueType</c> that indicates additional key/values for the ContinueConversation Event.
         /// </summary>
-        public static readonly string ContinueConversationValueType = "application/vnd.microsoft.activity.continueconversation";
+        public static readonly string ContinueConversationValueType = "application/vnd.microsoft.activity.continueconversation+json";
 
-        public Proactive(AgentApplication app)
+        internal Proactive(AgentApplication app)
         {
             _app = app;
             _options = app.Options.Proactive;
@@ -132,20 +132,20 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
         /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
         /// <param name="continuationHandler">A delegate that handles the routing of activities within the continued conversation.</param>
-        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
-        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, string[] tokenHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
 
-            await ContinueConversationAsync(adapter, conversation, continuationHandler, continuationActivity, tokenHandlers, cancellationToken).ConfigureAwait(false);
+            await ContinueConversationAsync(adapter, conversation, continuationHandler, tokenHandlers, continuationActivity, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// }
         /// </code>
         /// 
-        /// In Program.cs, map configured ContinueConversation handlers:
+        /// In Program.cs, map configured ContinueConversation handlers to Http endpoints:
         /// <code>
         /// app.MapAgentProactiveEndpoints&lt;MyProactiveAgent&gt;();
         /// </code>
@@ -175,12 +175,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
-        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
-        public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
+        public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, string[] tokenHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
             AssertionHelpers.ThrowIfNull(continuationHandler, nameof(continuationHandler));
@@ -193,6 +193,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
+            // If token handlers were not explicitly provided, check for ContinueConversationAttribute on the handler method to get them.
             if (tokenHandlers == null || tokenHandlers.Length == 0)
             {
                 var attribute = continuationHandler.GetMethodInfo().GetCustomAttribute<ContinueConversationAttribute>(true);
@@ -229,17 +230,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="createInfo">An object containing the details required to create the conversation, including conversation identity,
         /// reference, parameters, and scope. Cannot be null. See <see cref="CreateConversationBuilder"/>.</param>
         /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
-        /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
         /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a reference to the newly created
         /// conversation.</returns>
         public async Task<ConversationReference> CreateConversationAsync(
             IChannelAdapter adapter, 
             CreateConversation createInfo, 
-            RouteHandler continuationHandler = null, 
-            Func<ConversationReference, IActivity> continuationActivityFactory = null,
+            RouteHandler continuationHandler = null,
             string[] tokenHandlers = null,
+            Func<ConversationReference, IActivity> continuationActivityFactory = null,
             CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
@@ -258,21 +259,22 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 null,
                 cancellationToken).ConfigureAwait(false);
 
-            AgentCallbackHandler continuation = continuationHandler != null ? (context, ct) => OnTurnAsync(context, continuationHandler, tokenHandlers: tokenHandlers, ct) : null;
-            if (continuation != null)
+            if (continuationHandler != null)
             {
-                ExceptionDispatchInfo exceptionInfo = null;
-                var continuationActivity = continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity();
-
                 try
                 {
-                    await adapter.ProcessProactiveAsync(createInfo.Conversation.Identity, continuationActivity, null, continuation, cancellationToken).ConfigureAwait(false);
+                    await ContinueConversationAsync(
+                        adapter,
+                        new Conversation(createInfo.Conversation.Identity, newReference),
+                        continuationHandler,
+                        tokenHandlers,
+                        continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity(),
+                        cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
-                    // results in the exception being lost.
-                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                    // TODO: use _app.Logger ince it is available after PR waiting to merge (#712)
+                    System.Diagnostics.Debug.WriteLine($"CreateConversationAsync continue failed: {ex.Message}");
                 }
             }
 
@@ -354,11 +356,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public async Task<Conversation?> GetConversationWithThrowAsync(string conversationId, CancellationToken cancellationToken = default)
         {
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
-            if (conversation == null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
-            }
-            return conversation;
+            return conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
         }
 
         /// <summary>
@@ -387,6 +385,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 if (tokenHandlers?.Length > 0 && _app.UserAuthorization != null)
                 {
                     turnContext.Services.Set<UserAuthorization>(_app.UserAuthorization);
+
                     var allAcquired = await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
                     if (!allAcquired && _options.FailOnUnsignedInConnections)
                     {

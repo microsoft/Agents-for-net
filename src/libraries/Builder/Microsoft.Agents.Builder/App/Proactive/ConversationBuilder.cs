@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 claims["appid"] = requestorId;
             }
-            _conversation = new Conversation(_conversation, claims);
+            _conversation = new Conversation(claims, _conversation);
             return this;
         }
 
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         internal ConversationBuilder WithClaims(IDictionary<string, string> claims)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(claims, nameof(claims));
-            _conversation = new Conversation(_conversation, claims);
+            _conversation = new Conversation(claims, _conversation);
             return this;
         }
 

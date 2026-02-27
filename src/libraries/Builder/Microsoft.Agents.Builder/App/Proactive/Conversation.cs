@@ -21,7 +21,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// See <see cref="ConversationBuilder"/> to ease creation of an instance of this class.</remarks>
     public class Conversation
     {
-        public Conversation() { }
+        [JsonConstructor]
+        internal Conversation() { }
 
         /// <summary>
         /// Initializes a new instance of the Conversation class using the specified turn context.
@@ -51,7 +52,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="claims">A dictionary containing claim types and their corresponding values associated with the conversation. Cannot
         /// be null.</param>
         /// <param name="reference">The reference information that uniquely identifies the conversation. Cannot be null.</param>
-        public Conversation(ConversationReference reference, IDictionary<string, string> claims)
+        public Conversation(IDictionary<string, string> claims, ConversationReference reference)
         {
             AssertionHelpers.ThrowIfNull(claims, nameof(claims));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
@@ -60,7 +61,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             Reference = reference;
         }
 
-        internal Conversation(Conversation conversation, IDictionary<string, string> claims)
+        internal Conversation(IDictionary<string, string> claims, Conversation conversation)
         {
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
             Reference = conversation.Reference;
