@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -95,7 +96,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <remarks>This is the list of JWT claims.  For Azure Bot Service, only the 'aud' claim is required.  The 'aud' claim 
         /// should be the ClientId of the Azure Bot.</remarks>
         [JsonInclude]
-        private IDictionary<string, string>? Claims { get; set; }
+        internal IDictionary<string, string>? Claims { get; set; }
 
         /// <summary>
         /// Extracts a dictionary of selected claim types and their values from the specified identity.
@@ -136,18 +137,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             return new ClaimsIdentity([.. claims.Select(kv => new Claim(kv.Key, kv.Value))]);
-        }
-
-        /// <summary>
-        /// Determines whether the current object is valid based on the presence of a reference and an audience claim.
-        /// </summary>
-        /// <remarks>Use this method to verify that the object has been properly initialized and contains
-        /// the required audience claim before performing operations that depend on these values.</remarks>
-        /// <returns>true if the reference is not null and the claims dictionary contains an "aud" (audience) entry; otherwise,
-        /// false.</returns>
-        public bool IsValid()
-        {
-            return Reference != null && Claims != null && (bool)Claims?.TryGetValue("aud", out _);
         }
     }
 }

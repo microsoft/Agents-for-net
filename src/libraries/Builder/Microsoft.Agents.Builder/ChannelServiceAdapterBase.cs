@@ -3,13 +3,13 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Builder
         private static void ValidateContinuationActivity(IActivity continuationActivity)
         {
             _ = continuationActivity ?? throw new ArgumentNullException(nameof(continuationActivity));
-            _ = continuationActivity.Conversation ?? throw new ArgumentException("The continuation Activity should contain a Conversation value.");
+            _ = continuationActivity.Conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidConversationAccount, null);
         }
 
         private static InvokeResponse ProcessTurnResults(TurnContext turnContext)

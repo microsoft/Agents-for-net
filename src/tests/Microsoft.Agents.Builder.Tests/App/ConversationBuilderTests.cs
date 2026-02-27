@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -518,7 +517,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         #region Build Tests
 
         [Fact]
-        public void Build_WithMinimalConfiguration_ReturnsValidConversation()
+        public void Build_WithMinimalConfiguration_ReturnsValidatesWithoutConversion()
         {
             // Act
             var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
@@ -526,9 +525,42 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(conversation);
-            Assert.True(conversation.IsValid());
             Assert.NotNull(conversation.Reference);
             Assert.NotNull(conversation.Identity);
+
+            conversation.Validate(validateConversation: false);
+        }
+
+        [Fact]
+        public void Build_WithMinimalConfiguration_ReturnsValidatesWithConversation()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithConversation("conv-id");
+            var conversation = builder.Build();
+
+            // Assert
+            Assert.NotNull(conversation);
+            Assert.NotNull(conversation.Reference);
+            Assert.NotNull(conversation.Identity);
+
+            conversation.Validate(validateConversation: true);
+        }
+
+        [Fact]
+        public void Build_WithMinimalConfiguration_FailsValidationWithWhitespaceConversationId()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            Assert.Throws<ArgumentException>(() => builder.WithConversation(" "));
+        }
+
+        [Fact]
+        public void Build_WithMinimalConfiguration_FailsValidationWithNullConversationId()
+        {
+            // Act
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            Assert.Throws<ArgumentNullException>(() => builder.WithConversation(new ConversationAccount()));
         }
 
         [Fact]
@@ -542,7 +574,6 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(conversation);
-            Assert.True(conversation.IsValid());
             Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
             Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);
             Assert.Equal(TestUserId, conversation.Reference.User.Id);
@@ -604,7 +635,6 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(conversation);
-            Assert.True(conversation.IsValid());
             Assert.Equal(TestUserId, conversation.Reference.User.Id);
             Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
             Assert.Equal(TestServiceUrl, conversation.Reference.ServiceUrl);

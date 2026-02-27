@@ -5,7 +5,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 
@@ -73,6 +72,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public ConversationBuilder WithConversation(ConversationAccount conversation)
         {
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversation.Id, nameof(conversation.Id));
             _conversation.Reference.Conversation = conversation;
             return this;
         }
@@ -144,11 +144,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// builder.</returns>
         public Conversation Build()
         {
-            if (!_conversation.IsValid())
-            {
-                throw new ArgumentException("Cannot build Conversation: missing required fields.");
-            }
-
             if (string.IsNullOrWhiteSpace(_conversation.Reference.ServiceUrl))
             {
                 _conversation.Reference.ServiceUrl = ConversationReferenceBuilder.ServiceUrlForChannel(_conversation.Reference.ChannelId);

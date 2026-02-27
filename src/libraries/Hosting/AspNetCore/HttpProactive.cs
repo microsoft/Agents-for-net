@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Hosting.AspNetCore.Errors;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -26,21 +27,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse, 
                 async () =>
                 {
-                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
-                    if (activity == null)
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("Activity json body is required."));
-                    }
+                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false)
+                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingActivityBody, null);
                     return new Result(200, await agent.Proactive.SendActivityAsync(adapter, conversationId, activity, cancellationToken).ConfigureAwait(false));
                 }, 
-                (ex) =>
-                {
-                    if (ex is KeyNotFoundException)
-                    {
-                        return new Result(StatusCodes.Status404NotFound, ErrorBody($"Conversation with id '{conversationId}' not found."));
-                    }
-                    return null;
-                },
+                null,
                 cancellationToken).ConfigureAwait(false);
         }
 
@@ -50,18 +41,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse,
                 async () =>
                 {
-                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false);
-
-                    if (!body.Conversation.IsValid())
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("Conversation is invalid"));
-                    }
-
-                    if (body.Activity == null)
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("Activity is required."));
-                    }
-
+                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false)
+                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingSendBody, null);
                     return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false));
                 },
                 null,
@@ -74,11 +55,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse,
                 async () =>
                 {
-                    var conversation = await agent.Proactive.GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
-                    if (conversation == null)
-                    {
-                        return new Result(StatusCodes.Status404NotFound, ErrorBody($"Conversation with id '{conversationId}' not found."));
-                    }
+                    var conversation = await agent.Proactive.GetConversationWithThrowAsync(conversationId, cancellationToken).ConfigureAwait(false);
 
                     // Creating a continuation activity with Value containing Query args.
                     var continuationActivity = conversation.Reference.GetContinuationActivity();
@@ -99,14 +76,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     return new Result(StatusCodes.Status200OK);
                 },
-                (ex) =>
-                {
-                    if (ex is KeyNotFoundException)
-                    {
-                        return new Result(StatusCodes.Status404NotFound, ErrorBody($"Conversation with id '{conversationId}' not found."));
-                    }
-                    return null;
-                },
+                null,
                 cancellationToken).ConfigureAwait(false);
         }
 
@@ -116,11 +86,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse,
                 async () =>
                 {
-                    var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false);
-                    if (!conversation.IsValid())
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("Conversation is invalid"));
-                    }
+                    var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false)
+                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingConversationBody, null);
 
                     // Creating a continuation activity with Value containing Query args.
                     var continuationActivity = conversation.Reference.GetContinuationActivity();
@@ -151,10 +118,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse,
                 async () =>
                 {
-                    var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false);
+                    var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false) 
+                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingCreateBody, null);
 
                     // Create the CreateConversation instance from the request body.
-                    IDictionary<string, string> claims;
+                    IDictionary<string, string> claims = null;
                     if (string.IsNullOrWhiteSpace(body.AgentClientId))
                     {
                         claims = Conversation.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
@@ -162,19 +130,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else
                     {
                         claims = new Dictionary<string, string>
-                    {
-                        { "aud", body.AgentClientId },
-                    };
-                    }
-
-                    if (claims == null || claims.Count == 0)
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("AgentClientId or a valid JWT Bearer token is required."));
-                    }
-
-                    if (string.IsNullOrWhiteSpace(body.ChannelId))
-                    {
-                        return new Result(StatusCodes.Status400BadRequest, ErrorBody("ChannelId is required."));
+                        {
+                            { "aud", body.AgentClientId },
+                        };
                     }
 
                     var createRecordBuilder = CreateConversationBuilder.Create(claims, body.ChannelId)
@@ -185,9 +143,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         .WithTeamsChannelId(body.TeamsChannelId)
                         .WithTenantId(body.TenantId);
 
-                    if (body.IsGroup.HasValue)
+                    if ((bool)(body.IsGroup.HasValue))
                     {
-                        createRecordBuilder.IsGroup(body.IsGroup.Value);
+                        createRecordBuilder.IsGroup((bool)(body.IsGroup.Value));
                     }
                         
                     var createRecord = createRecordBuilder.Build();
@@ -199,7 +157,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
                         (reference) =>
                         {
-                            var continuationActivity = reference.GetContinuationActivity();
+                            // Creating a continuation activity with Value containing Query args.
+                            var continuationActivity = reference.GetCreateContinuationActivity();
                             var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
                             if (eventValue.Count > 0)
                             {
@@ -248,10 +207,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                 }
             }
+            catch (KeyNotFoundException knf)
+            {
+                httpResponse.StatusCode = StatusCodes.Status404NotFound;
+                await httpResponse.WriteAsJsonAsync(ErrorBody(knf.Message, knf.HResult, knf.HelpLink), cancellationToken).ConfigureAwait(false);
+            }
             catch (Exception ex) when(ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
             {
                 httpResponse.StatusCode = StatusCodes.Status400BadRequest;
-                await httpResponse.WriteAsJsonAsync(new { error = new { message = ex.Message } }, cancellationToken).ConfigureAwait(false);
+                await httpResponse.WriteAsJsonAsync(ErrorBody(ex.Message, ex.HResult, ex.HelpLink), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception requestFailed)
             {
@@ -269,14 +233,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 else
                 {
                     httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
-                    await httpResponse.WriteAsJsonAsync(new { error = new { message = requestFailed.Message } }, cancellationToken).ConfigureAwait(false);
+                    await httpResponse.WriteAsJsonAsync(ErrorBody(requestFailed.Message, requestFailed.HResult, requestFailed.HelpLink), cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
-        private static object ErrorBody(string message)
+        private static object ErrorBody(string message, int? hresult = null, string helpLink = null)
         {
-            return new { error = message };
+            if (!hresult.HasValue || hresult.Value == 0)
+            {
+                return new { error = new { message, helpLink } };
+            }
+            
+            return new { error = new { code = hresult.Value.ToString(), message, helpLink } };
         }
     }
 

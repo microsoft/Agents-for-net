@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithAgentClientId_ShouldThrowOnNullAgentClientId()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => CreateConversationBuilder.Create((string) null, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create((string) null, Channels.Msteams));
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithAgentClientId_ShouldThrowOnNullChannelId()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => CreateConversationBuilder.Create(TestAgentClientId, (ChannelId)null));
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(TestAgentClientId, (ChannelId)null));
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithClaims_ShouldThrowOnNullClaims()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => CreateConversationBuilder.Create((IDictionary<string, string>)null, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create((IDictionary<string, string>)null, Channels.Msteams));
         }
 
         [Fact]
@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => CreateConversationBuilder.Create(claims, (ChannelId)null));
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(claims, (ChannelId)null));
         }
 
         [Fact]
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>(() => CreateConversationBuilder.Create(claims, Channels.Msteams));
+            var ex = Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(claims, Channels.Msteams));
             Assert.Contains("aud", ex.Message);
         }
 
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.WithUser((string)null));
+            Assert.Throws<ArgumentException>(() => builder.WithUser((string)null));
         }
 
         [Fact]
@@ -319,14 +319,21 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithUser_WithNullChannelAccount_ShouldReturnBuilder()
+        public void WithUser_WithNullChannelAccount_ShouldThrow()
         {
-            // Act
-            var builder = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams)
-                .WithUser((ChannelAccount)null);
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser((ChannelAccount)null));
+        }
 
-            // Assert
-            Assert.NotNull(builder);
+        [Fact]
+        public void WithUser_WithNullChannelAccountId_ShouldThrow()
+        {
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser(new ChannelAccount(null)));
+        }
+
+        [Fact]
+        public void WithUser_WithWhitespaceChannelAccountId_ShouldThrow()
+        {
+            Assert.Throws<ArgumentException>(() => CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser(new ChannelAccount("    ")));
         }
 
         #endregion
@@ -537,8 +544,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = CreateConversationBuilder.Create(TestAgentClientId, Channels.Msteams);
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => builder.Build());
-            Assert.Contains("Members", ex.Message);
+            Assert.Throws<ArgumentException>(() => builder.Build());
         }
 
         [Fact]

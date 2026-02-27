@@ -501,7 +501,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) => Task.CompletedTask;
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 _proactive.ContinueConversationAsync(_mockAdapter.Object, (Conversation)null, handler));
         }
 

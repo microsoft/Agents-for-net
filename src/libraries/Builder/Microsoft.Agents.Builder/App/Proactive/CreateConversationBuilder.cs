@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -28,10 +28,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="serviceUrl">The service URL to use for the conversation. If null, a default value may be used.</param>
         /// <param name="parameters">Optional parameters for configuring the conversation. If null, default parameters are used.</param>
         /// <returns>A CreateConversationBuilder instance configured with the specified agent, channel, and parameters.</returns>
+        /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public static CreateConversationBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            if (string.IsNullOrWhiteSpace(agentClientId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidAgentClientId, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(channelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidChannelId, null);
+            }
 
             var builder = new CreateConversationBuilder();
 
@@ -56,15 +64,22 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="parameters">Optional parameters for the conversation, such as participants or conversation metadata. If null, default
         /// parameters are used.</param>
         /// <returns>A CreateConversationBuilder instance configured with the specified identity, channel, and parameters.</returns>
+        /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public static CreateConversationBuilder Create(IDictionary<string, string> claims, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
         {
-            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            var agentClientId = claims?.FirstOrDefault(c => c.Key == "aud").Value;
+            if (string.IsNullOrWhiteSpace(agentClientId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidClaims, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(channelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidChannelId, null);
+            }
 
             var builder = new CreateConversationBuilder();
 
-            var agentClientId = claims.FirstOrDefault(c => c.Key == "aud").Value;
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, "The claims dictionary must contain an 'aud' claim with the agent client ID as its value.");
 
             builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).WithClaims(claims).Build();
 
@@ -83,9 +98,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="userId">The unique identifier of the user to add to the conversation. Cannot be null.</param>
         /// <param name="userName">The display name of the user to add to the conversation. This value is optional and can be null.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the specified user set as a participant.</returns>
+        /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public CreateConversationBuilder WithUser(string userId, string userName = null)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidUserId, null);
+            }
             return WithUser(new ChannelAccount(userId.Trim(), userName));
         }
 
@@ -94,8 +113,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="user">The user account to add as a member of the conversation. Ignored if null.</param>
         /// <returns>The current <see cref="CreateConversationBuilder"/> instance for method chaining.</returns>
+        /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public CreateConversationBuilder WithUser(ChannelAccount user)
         {
+            if (string.IsNullOrWhiteSpace(user?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidUserId, null);
+            }
+
             if (user != null)
             {
                 _record.Conversation.Reference.User = user;
@@ -223,11 +248,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Builds and returns a configured instance of the CreateConversation object.
         /// </summary>
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>
+        /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public CreateConversation Build()
         {
             if (_record.Parameters.Members?.Count == 0)
             {
-                throw new ArgumentException("Parameters.Members must contain at least one member. Specify User before Build.");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveMissingMembers, null);
             }
 
             if (string.IsNullOrWhiteSpace(_record.Scope))

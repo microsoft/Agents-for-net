@@ -72,6 +72,17 @@ namespace Microsoft.Agents.Builder.Errors
         // Proactive
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50033, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50033");
         internal static readonly AgentErrorDefinition ProactiveConversationNotFound = new AgentErrorDefinition(-50034, Properties.Resources.ProactiveConversationNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50034");
+        internal static readonly AgentErrorDefinition ProactiveConversationRequired = new AgentErrorDefinition(-50035, Properties.Resources.ProactiveConversationRequired, "https://aka.ms/M365AgentsErrorCodes/#-50035");
+        internal static readonly AgentErrorDefinition ProactiveActivityRequired = new AgentErrorDefinition(-50036, Properties.Resources.ProactiveActivityRequired, "https://aka.ms/M365AgentsErrorCodes/#-50036");
+        internal static readonly AgentErrorDefinition ProactiveInvalidClaims = new AgentErrorDefinition(-50037, Properties.Resources.ProactiveInvalidClaims, "https://aka.ms/M365AgentsErrorCodes/#-50037");
+        internal static readonly AgentErrorDefinition ProactiveInvalidChannelId = new AgentErrorDefinition(-50038, Properties.Resources.ProactiveInvalidChannelId, "https://aka.ms/M365AgentsErrorCodes/#-50038");
+        internal static readonly AgentErrorDefinition ProactiveInvalidUserId = new AgentErrorDefinition(-50039, Properties.Resources.ProactiveInvalidUserId, "https://aka.ms/M365AgentsErrorCodes/#-50039");
+        internal static readonly AgentErrorDefinition ProactiveMissingMembers = new AgentErrorDefinition(-50040, Properties.Resources.ProactiveMissingMembers, "https://aka.ms/M365AgentsErrorCodes/#-50040");
+        internal static readonly AgentErrorDefinition ProactiveInvalidAgentClientId = new AgentErrorDefinition(-50041, Properties.Resources.ProactiveInvalidUserId, "https://aka.ms/M365AgentsErrorCodes/#-50041");
+        internal static readonly AgentErrorDefinition ProactiveInvalidConversationAccount = new AgentErrorDefinition(-50042, Properties.Resources.ProactiveInvalidConversationAccount, "https://aka.ms/M365AgentsErrorCodes/#-50042");
+        internal static readonly AgentErrorDefinition ProactiveInvalidConversationInstance = new AgentErrorDefinition(-50043, Properties.Resources.ProactiveInvalidConversationInstance, "https://aka.ms/M365AgentsErrorCodes/#-50043");
+        internal static readonly AgentErrorDefinition ProactiveInvalidCreateConversationInstance = new AgentErrorDefinition(-50044, Properties.Resources.ProactiveInvalidCreateConversationInstance, "https://aka.ms/M365AgentsErrorCodes/#-50044");
+        internal static readonly AgentErrorDefinition ProactiveInvalidConversationReferenceInstance = new AgentErrorDefinition(-50045, Properties.Resources.ProactiveInvalidConversationReferenceInstance, "https://aka.ms/M365AgentsErrorCodes/#-50045");
+        internal static readonly AgentErrorDefinition ProactiveInvalidConversationParametersInstance = new AgentErrorDefinition(-50046, Properties.Resources.ProactiveInvalidConversationParametersInstance, "https://aka.ms/M365AgentsErrorCodes/#-50046");
     }
-
 }

@@ -54,7 +54,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
-            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
+            if (activity == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveActivityRequired, null);
+            }
 
             if (string.IsNullOrEmpty(activity.Type))
             {
@@ -80,8 +84,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public static async Task<ResourceResponse> SendActivityAsync(IChannelAdapter adapter, Conversation conversation, IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
-            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
+
+            if (conversation == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveConversationRequired, null);
+            }
+
+            if (activity == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveActivityRequired, null);
+            }
 
             if (string.IsNullOrEmpty(activity.Type))
             {
@@ -168,8 +180,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
             AssertionHelpers.ThrowIfNull(continuationHandler, nameof(continuationHandler));
+
+            if (conversation == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveConversationRequired, null, "null instance");
+            }
+            conversation.Validate();
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
@@ -223,7 +240,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
             CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            AssertionHelpers.ThrowIfNull(createInfo, nameof(createInfo));
+            
+            if (createInfo == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, "null instance");
+            }
+            createInfo.Validate();
 
             var newReference = await adapter.CreateConversationAsync(
                 createInfo.Conversation.Identity,
@@ -314,6 +336,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 return record;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Retrieves the conversation with the specified identifier asynchronously, throwing an exception if the
+        /// conversation does not exist.
+        /// </summary>
+        /// <remarks>If no conversation is found for the specified identifier, a <see
+        /// cref="KeyNotFoundException"/> is thrown. Use this method when the absence of a conversation should be
+        /// treated as an error.</remarks>
+        /// <param name="conversationId">The unique identifier of the conversation to retrieve. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the conversation if found.</returns>
+        public async Task<Conversation?> GetConversationWithThrowAsync(string conversationId, CancellationToken cancellationToken = default)
+        {
+            var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
+            if (conversation == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
+            }
+            return conversation;
         }
 
         /// <summary>

@@ -196,11 +196,119 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Proactive: No conversation reference found for conversation ID &apos;{0}&apos;..
+        ///   Looks up a localized string similar to IActivity instance required for this Proactive request.
+        /// </summary>
+        internal static string ProactiveActivityRequired {
+            get {
+                return ResourceManager.GetString("ProactiveActivityRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Conversation not found for conversationId &apos;{0}&apos;..
         /// </summary>
         internal static string ProactiveConversationNotFound {
             get {
                 return ResourceManager.GetString("ProactiveConversationNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Conversation instance required for this Proactive request.
+        /// </summary>
+        internal static string ProactiveConversationRequired {
+            get {
+                return ResourceManager.GetString("ProactiveConversationRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Agents ClientId supplied to Proactive is missing or invalid..
+        /// </summary>
+        internal static string ProactiveInvalidAgentClientId {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidAgentClientId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The channel Id supplied to Proactive is missing or invalid..
+        /// </summary>
+        internal static string ProactiveInvalidChannelId {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidChannelId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The claims supplied for the Proactive request were not supplied or missing the required `aud` value..
+        /// </summary>
+        internal static string ProactiveInvalidClaims {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidClaims", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Continuation Activity for Proactive is missing a valid ConversationAccount..
+        /// </summary>
+        internal static string ProactiveInvalidConversationAccount {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidConversationAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of type &apos;Conversation&apos; contains invalid values: {0}.
+        /// </summary>
+        internal static string ProactiveInvalidConversationInstance {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidConversationInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of type &apos;ConversationParameters&apos; contains invalid values: {0}.
+        /// </summary>
+        internal static string ProactiveInvalidConversationParametersInstance {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidConversationParametersInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of type &apos;ConversationReference&apos; contains invalid values: {0}.
+        /// </summary>
+        internal static string ProactiveInvalidConversationReferenceInstance {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidConversationReferenceInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of type &apos;CreateConversation&apos; contains invalid values: {0}.
+        /// </summary>
+        internal static string ProactiveInvalidCreateConversationInstance {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidCreateConversationInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The user Id supplied to Proactive is missing or invalid..
+        /// </summary>
+        internal static string ProactiveInvalidUserId {
+            get {
+                return ResourceManager.GetString("ProactiveInvalidUserId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Proactive CreateConversation doesn&apos;t have members defined. Call WithUser if using the builder..
+        /// </summary>
+        internal static string ProactiveMissingMembers {
+            get {
+                return ResourceManager.GetString("ProactiveMissingMembers", resourceCulture);
             }
         }
         
