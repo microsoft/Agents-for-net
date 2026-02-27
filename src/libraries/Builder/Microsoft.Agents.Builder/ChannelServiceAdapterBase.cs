@@ -9,6 +9,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -265,7 +266,7 @@ namespace Microsoft.Agents.Builder
                 ResolveIfConnectorClientIsNeeded(activity)  // if Delivery Mode == ExpectReplies, we don't need a connector client.
                     ? await ChannelServiceFactory.CreateConnectorClientAsync(
                         context,
-                        scopes: AgentClaims.GetTokenScopes(claimsIdentity),
+                        scopes: ResolveConnectorClientScopes(claimsIdentity, activity),
                         useAnonymous: useAnonymousAuthCallback,
                         cancellationToken: cancellationToken).ConfigureAwait(false)
                     : null;
@@ -280,6 +281,27 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+        }
+
+        /// <summary>
+        /// Resolves the appropriate authentication scope for the connector client based on the identity and activity.
+        /// </summary>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="activity">The activity to process.</param>
+        /// <returns>The resolved authentication scopes for the connector client.</returns>
+        private static IList<string> ResolveConnectorClientScopes(ClaimsIdentity claimsIdentity, IActivity activity)
+        {
+            IList<string> defaultScopes = [$"{AuthenticationConstants.BotFrameworkScope}/.default"];
+
+            // ABS tokens will not have an azp/appid so use the botframework scope.
+            // Otherwise use the appId. This will happen when communicating back to another agent.
+            if (activity?.Recipient?.Role == RoleTypes.Skill)
+            {
+                var scopes = AgentClaims.GetTokenScopes(claimsIdentity);
+                return scopes ?? defaultScopes;
+            }
+
+            return defaultScopes;
         }
 
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
