@@ -520,7 +520,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithMinimalConfiguration_ReturnsValidatesWithoutConversion()
         {
             // Act
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
+            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId).WithUser(TestUserId);
             var conversation = builder.Build();
 
             // Assert
@@ -536,6 +536,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Act
             var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
+                .WithUser(TestUserId)
                 .WithConversation("conv-id");
             var conversation = builder.Build();
 

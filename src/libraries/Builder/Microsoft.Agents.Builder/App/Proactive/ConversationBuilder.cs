@@ -48,6 +48,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return builder;
         }
 
+        /// <summary>
+        /// Associates a user with the conversation using the specified user ID and optional user name.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user to associate with the conversation. Cannot be null, empty, or consist
+        /// solely of whitespace.</param>
+        /// <param name="userName">The display name of the user. If null, the user will be associated without a display name.</param>
+        /// <returns>The current instance of <see cref="ConversationBuilder"/> with the user information set.</returns>
+        /// <exception cref="ArgumentException">Thrown when the userId is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithUser(string userId, string userName = null)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
@@ -55,13 +63,27 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return this;
         }
 
+        /// <summary>
+        /// Associates the specified user with the conversation being built.
+        /// </summary>
+        /// <param name="user">The user to associate with the conversation. Cannot be null, and the user's Id property must not be null or
+        /// whitespace.</param>
+        /// <returns>The current instance of the ConversationBuilder with the user set. Enables method chaining.</returns>
+        /// <exception cref="ArgumentException">Thrown when the ChannelAccount.Id is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithUser(ChannelAccount user)
         {
-            AssertionHelpers.ThrowIfNull(user, nameof(user));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(user?.Id, nameof(ChannelAccount.Id));
             _conversation.Reference.User = user;
             return this;
         }
 
+        /// <summary>
+        /// Sets the conversation identifier for the builder and associates it with the conversation reference.
+        /// </summary>
+        /// <param name="conversationId">The unique identifier of the conversation to associate with the builder. Cannot be null, empty, or consist
+        /// only of white-space characters.</param>
+        /// <returns>The current instance of <see cref="ConversationBuilder"/> with the conversation identifier set.</returns>
+        /// <exception cref="ArgumentException">Thrown when the conversationId is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithConversation(string conversationId)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
@@ -69,10 +91,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return this;
         }
 
+        /// <summary>
+        /// Sets the conversation context for the builder using the specified conversation account.
+        /// </summary>
+        /// <param name="conversation">The conversation account to associate with the builder. The <paramref name="conversation"/> parameter must
+        /// not be null, and its <c>Id</c> property must not be null or whitespace.</param>
+        /// <returns>The current <see cref="ConversationBuilder"/> instance with the conversation context set.</returns>
+        /// <exception cref="ArgumentException">Thrown when the ConversationAccount.Id is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithConversation(ConversationAccount conversation)
         {
-            AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversation.Id, nameof(conversation.Id));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversation?.Id, nameof(ConversationAccount.Id));
             _conversation.Reference.Conversation = conversation;
             return this;
         }
