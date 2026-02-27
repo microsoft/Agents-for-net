@@ -89,6 +89,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveConversationRequired, null);
             }
+            conversation.Validate();
 
             if (activity == null)
             {
@@ -136,6 +137,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
@@ -177,6 +179,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="tokenHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, IActivity continuationActivity = null, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));

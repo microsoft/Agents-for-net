@@ -166,7 +166,6 @@ namespace Microsoft.Agents.Builder
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
             var createRecord = CreateConversationBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters)
                 .WithScope(audience)
-                .WithUser((conversationParameters.Members?.Count > 0 ? conversationParameters.Members[0] : new ChannelAccount(agentAppId, role: RoleTypes.User)))
                 .Build();
             return CreateConversationAsync(createRecord.Conversation.Identity, createRecord.Conversation.Reference, createRecord.Parameters, createRecord.Scope, callback, cancellationToken);
         }
@@ -179,6 +178,8 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(parameters, nameof(parameters));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
+
+            scope ??= CreateConversation.AzureBotScope;
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(

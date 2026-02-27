@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public IStorage Storage { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to failed ContinueConversation when any in the list of
+        /// Gets or sets a value indicating whether to fail ContinueConversation when any in the list of
         /// token handlers is not signed in.
         /// </summary>
         public bool FailOnUnsignedInConnections { get; set; } = true;

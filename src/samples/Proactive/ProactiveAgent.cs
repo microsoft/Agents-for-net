@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,9 +41,16 @@ public class ProactiveAgent : AgentApplication
             var split = turnContext.Activity.Text.Split(' ');
             var conversationId = split.Length == 1 ? turnContext.Activity.Conversation.Id : split[1];
 
-            // Since OnContinueConversationAsync has the [ContinueConversation] attribute this
-            // will automatically pick up the specified token handlers. 
-            await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
+            try
+            {
+                // Since OnContinueConversationAsync has the [ContinueConversation] attribute this
+                // will automatically pick up the specified token handlers. 
+                await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                await turnContext.SendActivityAsync($"Send '-signin' first", cancellationToken: cancellationToken);
+            }
         });
     }
 

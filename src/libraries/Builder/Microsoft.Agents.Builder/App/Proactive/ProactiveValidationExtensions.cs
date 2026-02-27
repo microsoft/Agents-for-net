@@ -7,7 +7,7 @@ using System;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
-    public static class ProactiveExtensions
+    public static class ProactiveValidationExtensions
     {
         /// <summary>
         /// Validates a CreateConversation instance to ensure all required properties are valid.
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             if (string.IsNullOrWhiteSpace(parameters.Agent?.Id))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationParametersInstance, null, nameof(ConversationParameters.Agent.Id));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationParametersInstance, null, $"{nameof(ConversationParameters.Agent)}.{nameof(ConversationParameters.Agent.Id)}");
             }
         }
 
@@ -75,7 +75,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
             if (string.IsNullOrWhiteSpace(reference.Agent?.Id))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.Agent.Id));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Agent)}.{nameof(ConversationReference.Agent.Id)}");
+            }
+            if (string.IsNullOrWhiteSpace(reference.User?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.User)}.{nameof(ConversationReference.User.Id)}");
             }
             if (string.IsNullOrWhiteSpace(reference.ServiceUrl))
             {
@@ -88,9 +92,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.Conversation));
                 }
-                if (string.IsNullOrEmpty(reference.Conversation.Id))
+                if (string.IsNullOrWhiteSpace(reference.Conversation.Id))
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.Conversation.Id));
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Conversation)}.{nameof(ConversationReference.Conversation.Id)}");
                 }
             }
         }

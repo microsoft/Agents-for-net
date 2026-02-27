@@ -6,9 +6,8 @@ using System;
 namespace Microsoft.Agents.Builder.App.Proactive
 {
     /// <summary>
-    /// Specifies that a method should participate in continuing an existing conversation flow, using the provided
-    /// delegate and optional route segment. This is used by a Host to map incoming Proactive requests to the 
-    /// method.
+    /// Specifies that a method should participate in continuing an existing conversation flow using optional route segment. 
+    /// This is used by a Host to map incoming Proactive requests to the method.
     /// </summary>
     /// <remarks>Apply this attribute to methods that are intended to handle continuation of conversations,
     /// such as in conversational bots or workflow systems. The attribute identifies the delegate responsible for
