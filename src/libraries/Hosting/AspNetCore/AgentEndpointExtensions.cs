@@ -3,8 +3,11 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -17,6 +20,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
+    /// <summary>
+    /// Provides extension methods for mapping HTTP endpoints related to Agent applications, including activity protocol
+    /// endpoints, proactive messaging, and root informational endpoints, to ASP.NET Core applications.
+    /// </summary>
+    /// <remarks>These extension methods simplify the integration of Agent-based bots and services into
+    /// ASP.NET Core applications by registering standardized endpoints for message processing, proactive operations,
+    /// and diagnostics. The methods support configuration of authentication requirements, custom request processing
+    /// delegates, and route patterns. Use these extensions to quickly expose bot functionality over HTTP in a
+    /// consistent and maintainable manner.</remarks>
     public static class AgentEndpointExtensions
     {
         /// <summary>
@@ -28,12 +40,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="agent">The bot implementation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         public delegate Task ProcessRequestDelegate(HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Represents an asynchronous method that processes an HTTP request using the specified adapter and agent.
+        /// </summary>
+        /// <typeparam name="TAdapter">The type of the HTTP adapter used to handle the request. Must implement <see cref="IAgentHttpAdapter"/>.</typeparam>
+        /// <typeparam name="TAgent">The type of the agent that processes the request. Must implement <see cref="IAgent"/>.</typeparam>
+        /// <param name="request">The HTTP request to be processed.</param>
+        /// <param name="response">The HTTP response to be sent.</param>
+        /// <param name="adapter">The adapter instance used to facilitate communication between the HTTP layer and the agent.</param>
+        /// <param name="agent">The agent instance responsible for handling the request logic.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public delegate Task ProcessRequestDelegate<TAdapter, TAgent>(HttpRequest request, HttpResponse response, TAdapter adapter, TAgent agent, CancellationToken cancellationToken)
             where TAgent : IAgent
             where TAdapter : IAgentHttpAdapter;
 
         /// <summary>
-        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="ServiceCollectionExtensions.AddAgent{TAgent}(Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>
@@ -216,6 +240,127 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;
             var assemblyVersion = System.Reflection.Assembly.GetCallingAssembly().GetName().Version?.ToString() ?? "unknown";
             app.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
+        }
+
+        /// <summary>
+        /// Maps proactive conversation endpoints using ContinueConversationAttributes on the agent.
+        /// </summary>
+        /// <typeparam name="TAgent">The agent application type for which proactive endpoints are mapped. Must inherit from AgentApplication.</typeparam>
+        /// <param name="endpoints">The web application to which the proactive endpoints will be added.</param>
+        /// <param name="requireAuth">A value indicating whether authentication is required for the mapped endpoints. Defaults to <see
+        /// langword="true"/>.</param>
+        /// <param name="defaultPath">The base route path for the proactive endpoints. Defaults to "/proactive".</param>
+        /// <returns>An endpoint convention builder that can be used to further configure the mapped endpoints.</returns>
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
+            this IEndpointRouteBuilder endpoints,
+            bool requireAuth = true,
+            [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
+        {
+            var handlers = new Dictionary<string, ContinueConversationRoute<TAgent>>();
+            foreach (var method in typeof(TAgent).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                var continueHandler = method.GetCustomAttribute<ContinueConversationAttribute>(true);
+                if (continueHandler != null)
+                {
+                    handlers.Add(continueHandler.Key, new ContinueConversationRoute<TAgent>(method.Name, continueHandler.TokenHandlers));
+                }
+            }
+
+            return MapAgentProactiveEndpoints<TAgent>(endpoints, handlers, requireAuth, defaultPath);
+        }
+
+        /// <summary>
+        /// Maps endpoints to enable proactive messaging for an agent application, using the specified continue
+        /// conversation delegate.
+        /// </summary>
+        /// <typeparam name="TAgent">The type of the agent application for which proactive endpoints are being mapped. Must inherit from
+        /// AgentApplication.</typeparam>
+        /// <param name="endpoints">The WebApplication instance to which the proactive endpoints will be added.</param>
+        /// <param name="continueConversationDelegate">The name of the delegate or function to invoke when continuing a conversation proactively. Cannot be null or
+        /// whitespace.</param>
+        /// <param name="requireAuth">true to require authentication for the proactive endpoints; otherwise, false. The default is true.</param>
+        /// <param name="defaultPath">The base route path for the proactive endpoints. The default is "/proactive".</param>
+        /// <returns>An IEndpointConventionBuilder that can be used to further configure the mapped endpoints.</returns>
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
+            this IEndpointRouteBuilder endpoints,
+            string continueConversationDelegate,
+            bool requireAuth = true,
+            [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(continueConversationDelegate, nameof(continueConversationDelegate));
+
+            return MapAgentProactiveEndpoints<TAgent>(
+                endpoints,
+                new Dictionary<string, ContinueConversationRoute<TAgent>> { { "", new ContinueConversationRoute<TAgent>(continueConversationDelegate, string.Empty) } },
+                requireAuth,
+                defaultPath);
+        }
+
+        /// <summary>
+        /// Maps endpoints for handling proactive messaging operations, such as sending activities to conversations, to
+        /// the specified route group in the application's endpoint routing pipeline.
+        /// </summary>
+        /// <remarks>
+        /// /proactive/sendactivity/{conversationId} - sends an activity to a specific conversation using the conversation ID.<br/><br/>
+        /// /proactive/sendactivity - sends an activity using a conversation reference record, which includes the necessary information 
+        /// to identify the target conversation.<br/><br/>
+        /// /proactive/createconversation - creates a new conversation and sends an initial activity to it. The request payload should 
+        /// include the necessary information to create the conversation and the activity to be sent.<br/><br/>
+        /// </remarks>
+        /// <remarks>The mapped endpoints include operations for sending activities to a specific
+        /// conversation, sending activities using a conversation reference, and creating new conversations. If
+        /// requireAuth is set to true, all endpoints require authorization; otherwise, they allow anonymous access. The
+        /// endpoints expect JSON payloads and are grouped under the specified route pattern.</remarks>
+        /// <param name="endpoints">The WebApplication to which the proactive messaging endpoints are added.</param>
+        /// <param name="continueRoutes"></param>
+        /// <param name="requireAuth">true to require authentication for the mapped endpoints; otherwise, false. The default is true.</param>
+        /// <param name="defaultPath">The route pattern under which the proactive messaging endpoints are grouped. The default is "/proactive".</param>
+        /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
+        /// endpoints.</returns>
+        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
+            this IEndpointRouteBuilder endpoints, 
+            IDictionary<string, ContinueConversationRoute<TAgent>> continueRoutes, 
+            bool requireAuth = true, 
+            [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
+        {
+            var routeGroup = endpoints.MapGroup(defaultPath);
+            if (requireAuth)
+            {
+                routeGroup.RequireAuthorization();
+            }
+            else
+            {
+                routeGroup.AllowAnonymous();
+            }
+
+            routeGroup.MapPost("/sendactivity/{conversationId}", HttpProactive.SendActivityWithConversationId<TAgent>)
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            routeGroup.MapPost("/sendactivity", HttpProactive.SendActivityWithConversation<TAgent>)
+                .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+            foreach (var continueRoute in continueRoutes)
+            {
+                // Continue with ConversationId in the route
+                var withId = string.IsNullOrEmpty(continueRoute.Key) ? "/continue/{conversationId}" : $"/continue/{continueRoute.Key}/{{conversationId}}";
+                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) => 
+                    HttpProactive.ContinueConversationWithConversationId<TAgent>(continueRoute.Value, req, resp, adapter, agent, conversationId, ct))
+                    .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+                // Continue with Conversation in the body
+                var withConversation = string.IsNullOrEmpty(continueRoute.Key) ? "/continue" : $"/continue/{continueRoute.Key}";
+                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                    HttpProactive.ContinueConversationWithConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
+                    .WithMetadata(new AcceptsMetadata(["application/json"]));
+
+                // Create with CreateConversation in the body
+                var createPattern = string.IsNullOrEmpty(continueRoute.Key) ? "/create" : $"/create/{continueRoute.Key}";
+                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                    HttpProactive.CreateConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
+                    .WithMetadata(new AcceptsMetadata(["application/json"]));
+            }
+
+            return routeGroup;
         }
 
         private static bool IsOrDerives(this Type type, Type baseType)

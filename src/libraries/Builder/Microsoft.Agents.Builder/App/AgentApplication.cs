@@ -59,6 +59,7 @@ namespace Microsoft.Agents.Builder.App
             // Application Features
 
             AdaptiveCards = new AdaptiveCard(this);
+            Proactive = new Proactive.Proactive(this);
 
             if (options.UserAuthorization != null)
             {
@@ -74,6 +75,8 @@ namespace Microsoft.Agents.Builder.App
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
+
+        public Proactive.Proactive Proactive { get; }
 
         /// <summary>
         /// The application's configured options.

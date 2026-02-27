@@ -230,4 +230,60 @@
     <value>A selector has already been defined for this route. Multiple selectors are not supported. Builder method '{0}'.</value>
     <comment>Raised when using a RouteBuilder and using more than one selector method.</comment>
   </data>
+  <data name="ProactiveNotAllHandlersSignedIn" xml:space="preserve">
+    <value>Continuing the conversation with OAuth failed because the user is not signed into all handlers.</value>
+    <comment>Raised during Proactive.ContinueConversation with token handlers specified and not all handler had been signed into.</comment>
+  </data>
+  <data name="ProactiveConversationNotFound" xml:space="preserve">
+    <value>Conversation not found for conversationId '{0}'.</value>
+    <comment>Raised when the specified conversationId was not found.  Was it stored?</comment>
+  </data>
+  <data name="ProactiveConversationRequired" xml:space="preserve">
+    <value>Conversation instance required for this Proactive request</value>
+    <comment>Raised when Proactive methods requiring a Conversation were passed a null value.</comment>
+  </data>
+  <data name="ProactiveActivityRequired" xml:space="preserve">
+    <value>IActivity instance required for this Proactive request</value>
+    <comment>Raised when Proactive methods requiring a IActivity were passed a null value.</comment>
+  </data>
+  <data name="ProactiveInvalidClaims" xml:space="preserve">
+    <value>The claims supplied for the Proactive request were not supplied or missing the required `aud` value.</value>
+    <comment>Raised when using Proactive with missing or invalid claims</comment>
+  </data>
+  <data name="ProactiveInvalidChannelId" xml:space="preserve">
+    <value>The channel Id supplied to Proactive is missing or invalid.</value>
+    <comment>Raised when using Proactive with missing or invalid Channel Id</comment>
+  </data>
+  <data name="ProactiveInvalidUserId" xml:space="preserve">
+    <value>The user Id supplied to Proactive is missing or invalid.</value>
+    <comment>Raised when using Proactive with missing or invalid User Id.</comment>
+  </data>
+  <data name="ProactiveMissingMembers" xml:space="preserve">
+    <value>Proactive CreateConversation doesn't have members defined. Call WithUser if using the builder.</value>
+    <comment>Raised when using CreateConversationBuilder.Build()</comment>
+  </data>
+  <data name="ProactiveInvalidAgentClientId" xml:space="preserve">
+    <value>The Agents ClientId supplied to Proactive is missing or invalid.</value>
+    <comment>Raised when using Proactive with missing or invalid Agent ClientId</comment>
+  </data>
+  <data name="ProactiveInvalidConversationAccount" xml:space="preserve">
+    <value>The Continuation Activity for Proactive is missing a valid ConversationAccount.</value>
+    <comment>Raised when the ConversationAccount is missing or invalid.</comment>
+  </data>
+  <data name="ProactiveInvalidConversationInstance" xml:space="preserve">
+    <value>An instance of type 'Conversation' contains invalid values: {0}</value>
+    <comment>Raised when calling Proactive.ContinueConversation</comment>
+  </data>
+  <data name="ProactiveInvalidCreateConversationInstance" xml:space="preserve">
+    <value>An instance of type 'CreateConversation' contains invalid values: {0}</value>
+    <comment>Raised when calling Proactive CreateConversions</comment>
+  </data>
+  <data name="ProactiveInvalidConversationReferenceInstance" xml:space="preserve">
+    <value>An instance of type 'ConversationReference' contains invalid values: {0}</value>
+    <comment>Raised when calling Proactive</comment>
+  </data>
+  <data name="ProactiveInvalidConversationParametersInstance" xml:space="preserve">
+    <value>An instance of type 'ConversationParameters' contains invalid values: {0}</value>
+    <comment>Raised when using Proactive with missing or invalid User Id.</comment>
+  </data>
 </root>

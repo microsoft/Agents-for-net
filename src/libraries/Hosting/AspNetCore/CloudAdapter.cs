@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
-        /// as <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// as <see cref="ChannelServiceAdapterBase.ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
         /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
@@ -248,6 +248,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
+        /// <summary>
+        /// Processes an outgoing activity in response to an incoming activity, handling delivery modes that require
+        /// immediate response from the host.
+        /// </summary>
+        /// <remarks>This method handles activities with delivery modes <see cref="DeliveryModes.Stream"/>
+        /// and <see cref="DeliveryModes.ExpectReplies"/> by sending the response activity through the response queue.
+        /// For other delivery modes, the method returns <see langword="false"/> and does not process the
+        /// response.</remarks>
+        /// <param name="incomingActivity">The incoming activity that triggered the response. The delivery mode of this activity determines how the
+        /// response is handled.</param>
+        /// <param name="outActivity">The activity to be sent as a response to the incoming activity.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result is <see langword="true"/> if the response
+        /// was handled by the host; otherwise, <see langword="false"/>.</returns>
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are treated as Normal and

@@ -57,6 +57,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
+        /// <summary>
+        /// Reads all available responses for the specified request and invokes the provided action for each response.
+        /// </summary>
+        /// <remarks>This method processes all currently available responses for the given request. If no
+        /// responses are available, the action is not invoked. The method does not wait for additional responses to
+        /// arrive after it is called.</remarks>
+        /// <param name="requestId">The identifier of the request whose responses are to be read. Must not be null.</param>
+        /// <param name="action">An action to invoke for each response activity. Cannot be null.</param>
         public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
