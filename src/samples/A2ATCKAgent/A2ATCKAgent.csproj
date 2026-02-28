@@ -15,6 +15,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
 		<ProjectReference Include="..\..\libraries\Hosting\A2A\Microsoft.Agents.Hosting.AspNetCore.A2A.csproj" />
 		<ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />

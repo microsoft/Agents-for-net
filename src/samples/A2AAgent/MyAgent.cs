@@ -1,21 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Agents.Hosting.A2A.Protocol;
+using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace A2AAgent;
 
-public class MyAgent : AgentApplication, IAgentCardHandler
+[Agent(name: "MyAgent", description: "Agent with A2A Sample")]
+[AgentInterface(AgentTransportProtocol.ActivityProtocol, "/api/messages")]
+[AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
+[AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
+[A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
+[A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
+[A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
+public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
@@ -42,7 +47,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         var eoc = new Activity()
         {
             Type = ActivityTypes.EndOfConversation,
-            Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
+            Code = EndOfConversationCodes.CompletedSuccessfully,
         };
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
@@ -58,7 +63,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             return;
         }
 
-        // SDK always creates a Task in A2A. Simple one-shot message with no expectation of multi-turn should
+        // SDK always creates an AgentTask in A2A. Simple one-shot message with no expectation of multi-turn should
         // just be sent as EOC with Activity.Text in order to complete the A2A Task. Othewise, there is no
         // way to convey to A2A that the Task is complete.
         var activity = new Activity()
@@ -74,14 +79,13 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     {
         // No need for conversation state anymore
         turnState.Conversation.ClearState();
-
         return Task.CompletedTask;
     }
 
     private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
-        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = turnContext.Activity });
+        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Message = turnContext.Activity.Text });
 
         if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
@@ -89,12 +93,12 @@ public class MyAgent : AgentApplication, IAgentCardHandler
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Text = "All done. Activity list result in Artifacts", // optional, added as a message is TaskStatus
+                Text = "All done. Activity list result in Artifacts", // optional, added as a message in TaskStatus
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
             };
 
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.CloneTo<IActivity>(eoc) });
-            eoc.Value = multi;  // optional, added to Task Artifacts
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = eoc.Text });
+            eoc.Value = multi; 
 
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
@@ -105,18 +109,9 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = activity });
+            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = activity.Text });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
-    }
-
-    public Task<AgentCard> GetAgentCard(AgentCard initialCard)
-    {
-        initialCard.Name = "A2AAgent";
-        initialCard.Description = "Demonstrates A2A functionality in Agent SDK";
-        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
-
-        return Task.FromResult(initialCard);
     }
 }
 
@@ -124,7 +119,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
 class ActivityMessage
 {
     public required string Role { get; set; }
-    public required IActivity Activity { get; set; }
+    public required string Message { get; set; }
 }
 
 class MultiResult

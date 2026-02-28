@@ -1,103 +1,48 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Hosting.A2A.JsonRpc;
-using Microsoft.Agents.Hosting.A2A.Protocol;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
+using System.Text.Json;
 
-namespace Microsoft.Agents.Hosting.A2A;
+namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 
 /// <summary>
-/// Concerning A2A to/from Activity
+/// A2A to/from Activity
 /// </summary>
 internal static class A2AActivity
 {
     public const string DefaultUserId = "unknown";
 
     private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
-    private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> _schemas = [];
+    private static readonly ConcurrentDictionary<Type, Dictionary<string, JsonElement>> _schemas = [];
 
-    public static (IActivity, string? contextId, string? taskId, Message? message) ActivityFromRequest(JsonRpcRequest jsonRpcRequest, MessageSendParams sendParams = null, bool isStreaming = true)
+    public static IActivity ActivityFromMessage(string requestId, AgentTask task, AgentMessage message)
     {
-        if (jsonRpcRequest.Params == null)
-        {
-            throw new A2AException("Params is null", A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
-        }
+        AssertionHelpers.ThrowIfNull(message, nameof(message));
 
-        sendParams ??= A2AModel.MessageSendParamsFromRequest(jsonRpcRequest);
-        if (sendParams?.Message?.Parts == null)
-        {
-            throw new A2AException("Invalid MessageSendParams", A2AErrors.InvalidParams).WithRequestId(jsonRpcRequest.Id);
-        }
+        var taskId = task?.Id ?? message.TaskId ?? Guid.NewGuid().ToString("N");
+        var activity = CreateActivity(taskId, message.Parts, true, true);
+        activity.RequestId = requestId ?? Guid.NewGuid().ToString("N");
+        activity.ChannelData = message;
 
-        var contextId = sendParams.Message.ContextId ?? Guid.NewGuid().ToString("N");
+        message.ContextId = message.ContextId ?? Guid.NewGuid().ToString("N");
+        message.TaskId = taskId;
 
-        // taskId is our conversationId
-        var taskId = sendParams.Message.TaskId ?? Guid.NewGuid().ToString("N");
-        
-        var activity = CreateActivity(taskId, sendParams.Message.Parts, true, isStreaming);
-        activity.RequestId = jsonRpcRequest.Id.ToString();
-
-        sendParams.Message.ContextId = contextId;
-        sendParams.Message.TaskId = taskId;
-
-        return (activity, contextId, taskId, sendParams.Message);
+        return activity;
     }
 
-    public static TaskStatusUpdateEvent CreateStatusUpdate(string contextId, string taskId, TaskState taskState, string artifactId = null, bool isFinal = false, IActivity activity = null)
-    {
-        var artifact = CreateArtifact(activity, artifactId);
-
-        return new TaskStatusUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Status = new TaskStatus()
-            {
-                State = taskState,
-                Timestamp = DateTimeOffset.UtcNow,
-                Message = artifact == null ? null : new Message() { MessageId = Guid.NewGuid().ToString("N"), Parts = artifact.Parts, Role = MessageRole.Agent },
-            },
-            Final = isFinal
-        };
-    }
-
-    public static TaskStatusUpdateEvent CreateStatusUpdate(string contextId, string taskId, TaskStatus status, bool isFinal = false)
-    {
-        return new TaskStatusUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Status = status,
-            Final = isFinal
-        };
-    }
-
-    public static TaskArtifactUpdateEvent CreateArtifactUpdate(string contextId, string taskId, IActivity activity, string artifactId = null, bool append = false, bool lastChunk = false)
-    {
-        var artifact = CreateArtifact(activity, artifactId) ?? throw new ArgumentException("Invalid activity to convert to payload");
-
-        return new TaskArtifactUpdateEvent()
-        {
-            TaskId = taskId,
-            ContextId = contextId,
-            Artifact = artifact,
-            Append = append,
-            LastChunk = lastChunk
-        };
-    }
-
-    public static Message CreateMessage(string contextId, string taskId, IActivity activity, bool includeEntities = true)
+    public static AgentMessage MessageFromActivity(string contextId, string taskId, IActivity activity, bool includeEntities = true)
     {
         var artifact = CreateArtifact(activity, includeEntities: includeEntities) ?? throw new ArgumentException("Invalid activity to convert to payload");
 
-        return new Message()
+        return new AgentMessage()
         {
             TaskId = taskId,
             ContextId = contextId,
@@ -105,12 +50,6 @@ internal static class A2AActivity
             Parts = artifact.Parts,
             Role = MessageRole.Agent
         };
-    }
-
-    public static AgentTask CreateTask(string contextId, string taskId, TaskState taskState, IActivity activity)
-    {
-        var artifact = CreateArtifact(activity);
-        return A2AModel.TaskForState(contextId, taskId, taskState, artifact);
     }
 
     public static Artifact? CreateArtifact(IActivity activity, string artifactId = null, bool includeEntities = true)
@@ -127,7 +66,7 @@ internal static class A2AActivity
 
         if (activity?.Text != null)
         {
-            artifact.Parts = artifact.Parts.Add(new TextPart()
+            artifact.Parts.Add(new TextPart()
             {
                 Text = activity.Text
             });
@@ -135,7 +74,7 @@ internal static class A2AActivity
 
         if (activity?.Value != null)
         {
-            artifact.Parts = artifact.Parts.Add(new DataPart()
+            artifact.Parts.Add(new DataPart()
             {
                 Data = activity.Value.ToJsonElements()
             });
@@ -148,13 +87,19 @@ internal static class A2AActivity
                 continue;
             }
 
-            artifact.Parts = artifact.Parts.Add(new FilePart()
+            artifact.Parts.Add(new FilePart()
             {
-                Uri = attachment.ContentUrl,
-                Bytes = attachment.Content as string,
-                MimeType = attachment.ContentType,
-                Name = attachment.Name,
-
+                File = !string.IsNullOrEmpty(attachment.ContentUrl)
+                    ? new FileContent(new Uri(attachment.ContentUrl))
+                        {
+                            MimeType = attachment.ContentType,
+                            Name = attachment.Name,
+                        }
+                    : new FileContent(attachment.Content as string)
+                        {
+                            MimeType = attachment.ContentType,
+                            Name = attachment.Name,
+                        }
             });
         }
 
@@ -170,7 +115,7 @@ internal static class A2AActivity
                         _schemas.TryAdd(entity.GetType(), cachedMetadata);
                     }
 
-                    artifact.Parts = artifact.Parts.Add(new DataPart
+                    artifact.Parts.Add(new DataPart
                     {
                         Metadata = cachedMetadata,
                         Data = entity.ToJsonElements()
@@ -196,7 +141,7 @@ internal static class A2AActivity
             Description = description,
             Parts = [new DataPart()
             {
-                Data = data,
+                Data = ProtocolJsonSerializer.ToObject<Dictionary<string, JsonElement>>(data),
                 Metadata = data.ToA2AMetadata(mediaType ?? data.GetType().Name)
             }]
         };
@@ -205,7 +150,7 @@ internal static class A2AActivity
     public static bool HasA2AMessageContent(this IActivity activity)
     {
         return !string.IsNullOrEmpty(activity.Text)
-            || (bool) activity.Attachments?.Any();
+            || (bool)activity.Attachments?.Any();
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)
@@ -222,7 +167,7 @@ internal static class A2AActivity
 
     private static Activity CreateActivity(
         string conversationId,
-        ImmutableArray<Part> parts,
+        List<Part> parts,
         bool isIngress,
         bool isStreaming = true)
     {
@@ -269,10 +214,10 @@ internal static class A2AActivity
             {
                 activity.Attachments.Add(new Attachment()
                 {
-                    ContentType = filePart.MimeType,
-                    Name = filePart.Name,
-                    ContentUrl = filePart.Uri,
-                    Content = filePart.Bytes,
+                    ContentType = filePart.File.MimeType,
+                    Name = filePart.File.Name,
+                    ContentUrl = filePart.File.Uri.ToString(),
+                    Content = filePart.File.Bytes,
                 });
             }
             else if (part is DataPart dataPart)
