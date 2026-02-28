@@ -128,6 +128,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentNullException.ThrowIfNull(httpResponse);
             ArgumentNullException.ThrowIfNull(agent);
 
+            using var telemetryActivity = AgentTelemetry.StartAdapterProcessOperation();
+
             if (httpRequest.Method != HttpMethods.Post)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;

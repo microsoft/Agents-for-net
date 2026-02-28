@@ -718,11 +718,13 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
+                using var telemetryActivity = AgentTelemetry.StartAgentTurnOperation(turnContext);
+ 
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
                     StartTypingTimer(turnContext);
-                };
+                }
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
