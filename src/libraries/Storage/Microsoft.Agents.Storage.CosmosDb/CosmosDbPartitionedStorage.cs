@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
 
             return storeItems;
         }
-        
+
         //<inheritdoc/>
         public async Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
         {
@@ -157,16 +157,61 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Writes a set of typed items to Cosmos DB using the provided write options.
+        /// </summary>
+        /// <typeparam name="TStoreItem">The item type to store.</typeparam>
+        /// <param name="changes">The items to write, keyed by storage key.</param>
+        /// <param name="options">Write options that control ETag and conditional behavior.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>A dictionary of write results keyed by storage key.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="changes"/> is null.</exception>
+        public Task<IDictionary<string, StorageWriteResponse>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TStoreItem : class
+        {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
+            foreach (var change in changes)
+            {
+                changesAsObject.Add(change.Key, change.Value);
+            }
+
+            return WriteAsync(changesAsObject, options, cancellationToken);
+        }
+
+        /// <summary>
+        /// Writes storage items to storage.
+        /// </summary>
+        /// <param name="changes">The items to write, indexed by key.</param>
+        /// <param name="writeOptions">The write options to apply.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute. The task result contains
+        /// write responses indexed by key.</returns>
+        public async Task<IDictionary<string, StorageWriteResponse>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            AssertionHelpers.ThrowIfNull(writeOptions, nameof(writeOptions));
 
             if (changes.Count == 0)
             {
                 // Nothing to write is a no-op.
-                return;
+                return new Dictionary<string, StorageWriteResponse>();
             }
 
             // Ensure Initialization has been run
             await InitializeAsync().ConfigureAwait(false);
+
+            var storedItems = new Dictionary<string, StorageWriteResponse>(changes.Count);
 
             foreach (var change in changes)
             {
@@ -188,46 +233,62 @@ namespace Microsoft.Agents.Storage.CosmosDb
                     Document = document,
                 };
 
+                var partitionKey = GetPartitionKey(documentChange.PartitionKey);
+                var requestOptions = new ItemRequestOptions();
                 var etag = (change.Value as IStoreItem)?.ETag;
 
-                // Store per eTag rules
-                if (etag == null || etag == "*")
+                if (etag != null && etag != "*")
                 {
-                    // if new item or * then insert or replace unconditionally
-                    await _container.UpsertItemAsync(
-                            documentChange,
-                            GetPartitionKey(documentChange.PartitionKey),
-                            cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
+                    if (etag.Length > 0)
+                    {
+                        requestOptions.IfMatchEtag = etag;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("etag empty");
+                    }
                 }
-                else if (etag.Length > 0)
+
+                try
                 {
-                    // if we have an etag, do opt. concurrency replace
-                    await _container.UpsertItemAsync(
-                            documentChange,
-                            GetPartitionKey(documentChange.PartitionKey),
-                            new ItemRequestOptions() { IfMatchEtag = etag, },
-                            cancellationToken)
-                        .ConfigureAwait(false);
+                    ItemResponse<DocumentStoreItem> response;
+                    if (writeOptions.IfNotExists)
+                    {
+                        requestOptions.IfNoneMatchEtag = "*";
+                        response = await _container.CreateItemAsync(
+                                documentChange,
+                                partitionKey,
+                                requestOptions,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // if we have an etag, do opt. concurrency replace
+                        response = await _container.UpsertItemAsync(
+                                documentChange,
+                                partitionKey,
+                                requestOptions,
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+
+                    storedItems[change.Key] = new StorageWriteResponse()
+                    {
+                        ETag = response.ETag
+                    };
                 }
-                else
+                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
                 {
-                    throw new ArgumentException("etag empty");
+                    throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict.");
+                }
+                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ItemExistsException($"Unable to write '{change.Key}' because it already exists.");
                 }
             }
-        }
 
-        //<inheritdoc/>
-        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
-        {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-
-            Dictionary<string, object> changesAsObject = new Dictionary<string, object>(changes.Count);
-            foreach (var change in changes)
-            {
-                changesAsObject.Add(change.Key, change.Value);
-            }
-            return WriteAsync(changesAsObject, cancellationToken);
+            return storedItems;
         }
 
         /// <inheritdoc/>
@@ -477,7 +538,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                         var json = sr.ReadToEnd();
                         var jsonObject = JsonObject.Parse(json);
 
-                        return (T) jsonObject.Deserialize<T>(_serializerSettings);
+                        return (T)jsonObject.Deserialize<T>(_serializerSettings);
                     }
                 }
             }
@@ -491,7 +552,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             public override Stream ToStream<T>(T input)
             {
                 var streamPayload = new MemoryStream();
-                
+
                 JsonSerializer.Serialize(streamPayload, input, _serializerSettings);
                 streamPayload.Seek(0, SeekOrigin.Begin);
                 streamPayload.Position = 0;

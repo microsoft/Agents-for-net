@@ -92,6 +92,68 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task WriteAsync_WithOptions_ShouldThrowOnNullInputs()
+        {
+            var storage = new MemoryStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.WriteAsync<StoreItem>(null, new StorageWriteOptions(), CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.WriteAsync(new Dictionary<string, StoreItem>(), null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldReturnStoreItems()
+        {
+            var storage = new MemoryStorage();
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "testing" } }
+            };
+
+            var result = await storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.False(string.IsNullOrWhiteSpace(result["key"].ETag));
+            Assert.Equal("testing", changes["key"].ETag);
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldThrowWhenKeyExists()
+        {
+            var storage = new MemoryStorage();
+            var key = "key1";
+
+            await storage.WriteAsync(
+                new Dictionary<string, StoreItem> { { key, new StoreItem() } },
+                CancellationToken.None);
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            await Assert.ThrowsAsync<ItemExistsException>(() =>
+                storage.WriteAsync(
+                    new Dictionary<string, StoreItem> { { key, new StoreItem() } },
+                    options,
+                    CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldWriteNewItem()
+        {
+            var storage = new MemoryStorage();
+            var key = "key1";
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            var result = await storage.WriteAsync(
+                new Dictionary<string, StoreItem> { { key, new StoreItem() } },
+                options,
+                CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.False(string.IsNullOrWhiteSpace(result[key].ETag));
+        }
+
+        [Fact]
         public async Task ReadAsync_ShouldReturnWrittenStoreItem()
         {
             var storeItem = new StoreItem
