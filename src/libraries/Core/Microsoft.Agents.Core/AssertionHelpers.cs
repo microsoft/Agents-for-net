@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core
 {
@@ -46,6 +48,28 @@ namespace Microsoft.Agents.Core
                 throw new ArgumentException(name);
             }
 #endif
+        }
+
+        public static void ThrowIfNullOrEmpty(ICollection collection, string name)
+        {
+            if (collection == null)
+                throw new ArgumentNullException(name);
+
+            if (collection.Count == 0)
+            {
+                throw new ArgumentException(name);
+            }
+        }
+
+        public static void ThrowIfNullOrEmpty<TKey, TValue>(IDictionary<TKey, TValue> dict, string name)
+        {
+            if (dict == null)
+                throw new ArgumentNullException(name);
+
+            if (dict.Count == 0)
+            {
+                throw new ArgumentException(name);
+            }
         }
 
         public static void ThrowIfObjectDisposed(bool obj, string name)

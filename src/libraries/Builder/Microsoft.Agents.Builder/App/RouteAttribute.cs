@@ -86,6 +86,8 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
+            string[] autoSignInHandlers = DelimitedToList(SignInHandlers);
+
             if (RouteType == RouteType.Activity)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
@@ -316,6 +318,15 @@ namespace Microsoft.Agents.Builder.App
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex);
             }
+        }
+
+        public static string[] DelimitedToList(string delimitedTokenHandlers)
+        {
+#if !NETSTANDARD
+            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+#else
+            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+#endif
         }
     }
 }
