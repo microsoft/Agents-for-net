@@ -22,10 +22,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <remarks>If multiple token handler names are provided in the delimitedTokenHandlers parameter,
         /// they are split and trimmed before being assigned. This constructor is useful when token handler names are
         /// provided as a single string rather than an array.</remarks>
-        /// <param name="delegatgeName">The name of the delegate to be used for continuing the conversation. Cannot be null or empty.</param>
+        /// <param name="delegateName">The name of the delegate to be used for continuing the conversation. Cannot be null or empty.</param>
         /// <param name="delimitedTokenHandlers">A comma-separated string containing the names of token handlers to associate with the route. If null or
         /// empty, no token handlers are assigned.</param>
-        public ContinueConversationRoute(string delegatgeName, string delimitedTokenHandlers = null) : this(delegatgeName, RouteAttribute.DelimitedToList(delimitedTokenHandlers))
+        public ContinueConversationRoute(string delegateName, string delimitedTokenHandlers = null) : this(delegateName, RouteAttribute.DelimitedToList(delimitedTokenHandlers))
         {
         }
 
@@ -33,15 +33,15 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Initializes a new instance of the ContinueConversationRoute class with the specified delegate method
         /// name and optional token handlers.
         /// </summary>
-        /// <param name="delegatgeName">The name of the method on the agent type to be used as the continue route handler. This method must
+        /// <param name="delegateName">The name of the method on the agent type to be used as the continue route handler. This method must
         /// exist on the agent and can be public or non-public.</param>
         /// <param name="tokenHandlers">An optional array of token handler names to associate with this route. May be null if no token handlers
         /// are required.</param>
         /// <exception cref="InvalidOperationException">Thrown if a method with the specified name does not exist on the agent type.</exception>
-        public ContinueConversationRoute(string delegatgeName, string[] tokenHandlers = null)
+        public ContinueConversationRoute(string delegateName, string[] tokenHandlers = null)
         {
-            _delegate = typeof(TAgent).GetMethod(delegatgeName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                        ?? throw new InvalidOperationException($"The specified continue route handler '{delegatgeName}' was not found on AgentApplication '{typeof(TAgent).FullName}'.");
+            _delegate = typeof(TAgent).GetMethod(delegateName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                        ?? throw new InvalidOperationException($"The specified continue route handler '{delegateName}' was not found on AgentApplication '{typeof(TAgent).FullName}'.");
             TokenHandlers = tokenHandlers;
         }
 

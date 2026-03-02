@@ -349,13 +349,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 // Continue with Conversation in the body
                 var withConversation = string.IsNullOrEmpty(continueRoute.Key) ? "/continue" : $"/continue/{continueRoute.Key}";
-                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, CancellationToken ct) =>
                     HttpProactive.ContinueConversationWithConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Create with CreateConversation in the body
                 var createPattern = string.IsNullOrEmpty(continueRoute.Key) ? "/create" : $"/create/{continueRoute.Key}";
-                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) =>
+                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, CancellationToken ct) =>
                     HttpProactive.CreateConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
             }

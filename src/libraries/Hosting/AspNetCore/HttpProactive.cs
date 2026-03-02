@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         };
                     }
 
-                    var createRecordBuilder = CreateConversationBuilder.Create(claims, body.ChannelId)
+                    var createBuilder = CreateConversationBuilder.Create(claims, body.ChannelId)
                         .WithActivity(body.Activity)
                         .WithTopicName(body.TopicName)
                         .WithUser(body.User)
@@ -145,15 +145,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     if ((bool)(body.IsGroup.HasValue))
                     {
-                        createRecordBuilder.IsGroup((bool)(body.IsGroup.Value));
+                        createBuilder.IsGroup((bool)(body.IsGroup.Value));
                     }
                         
-                    var createRecord = createRecordBuilder.Build();
+                    var createInfo = createBuilder.Build();
 
                     // Execute the conversation creation
                     var newReference = await agent.Proactive.CreateConversationAsync(
                         adapter,
-                        createRecord,
+                        createInfo,
                         body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
                         continueRoute.TokenHandlers,
                         (reference) =>
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse.StatusCode = result.StatusCode;
                 if (result.Body != null)
                 {
-                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(result.Body)));
+                    using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(result.Body)));
                     httpResponse.Headers.ContentType = "application/json";
                     await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                 }
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse.StatusCode = (int)errorResponse.StatusCode.GetValueOrDefault(StatusCodes.Status500InternalServerError);
                 if (errorResponse.Body != null)
                 {
-                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(errorResponse.Body)));
+                    using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(errorResponse.Body)));
                     httpResponse.Headers.ContentType = "application/json";
                     await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                 }
@@ -226,7 +226,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     if (result.Body != null)
                     {
                         httpResponse.Headers.ContentType = "application/json";
-                        using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(ProtocolJsonSerializer.ToJson(result.Body)));
+                        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(result.Body)));
                         await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
                     }
                 }

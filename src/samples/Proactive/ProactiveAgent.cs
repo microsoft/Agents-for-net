@@ -47,7 +47,7 @@ public class ProactiveAgent : AgentApplication
                 // will automatically pick up the specified token handlers. 
                 await Proactive.ContinueConversationAsync(turnContext.Adapter, conversationId, OnContinueConversationAsync, cancellationToken: cancellationToken);
             }
-            catch (InvalidOperationException)
+            catch (UserNotSignedIn)
             {
                 await turnContext.SendActivityAsync($"Send '-signin' first", cancellationToken: cancellationToken);
             }
@@ -91,7 +91,10 @@ public class ProactiveAgent : AgentApplication
             cancellationToken: cancellationToken);
     }
 
-    // Map /proactive/continue to this method.  This will fail if the user is not signed into "me".
+    // This attribute indicates this is a ContinueConversation handler.
+    // It can be used in a code-first approach using Proactive.ContinueConversationAsync, or if MapAgentProactiveEndpoints was called in
+    // startup it can be mapped to an Http request to /proactive/continue that triggers this logic.
+    // Either way the tokens will be provided from the indicated token handlers. This will fail if the user is not signed into "me".
     [ContinueConversation(tokenHandlers: "me")]
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -99,7 +102,7 @@ public class ProactiveAgent : AgentApplication
         await turnContext.SendActivityAsync($"This is OnContinueConversation. Token={(token == null ? "not signed in" : token.Length)}", cancellationToken: cancellationToken);
     }
 
-    // Map /proactive/continue/ext to this method
+    // There can be ContinueConversation handlers for differet scenarios.  In this case, if enabled, the Http request /proactive/continue/ext is mapped to this method.
     [ContinueConversation("ext")]
     public Task OnContinueConversationExtendedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {

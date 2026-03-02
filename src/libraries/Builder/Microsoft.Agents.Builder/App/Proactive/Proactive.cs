@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
-        /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task ContinueConversationAsync(IChannelAdapter adapter, string conversationId, RouteHandler continuationHandler, string[] tokenHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task ContinueConversationAsync(IChannelAdapter adapter, Conversation conversation, RouteHandler continuationHandler, string[] tokenHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
@@ -235,6 +235,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a reference to the newly created
         /// conversation.</returns>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task<ConversationReference> CreateConversationAsync(
             IChannelAdapter adapter, 
             CreateConversation createInfo, 
@@ -389,7 +390,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                     var allAcquired = await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
                     if (!allAcquired && _options.FailOnUnsignedInConnections)
                     {
-                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ProactiveNotAllHandlersSignedIn, null);
+                        throw Core.Errors.ExceptionHelper.GenerateException<UserNotSignedIn>(ErrorHelper.ProactiveNotAllHandlersSignedIn, null);
                     }
                 }
 
