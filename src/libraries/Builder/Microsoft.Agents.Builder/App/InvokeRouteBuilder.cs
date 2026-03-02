@@ -21,6 +21,8 @@ namespace Microsoft.Agents.Builder.App
     /// route.</remarks>
     public class InvokeRouteBuilder : RouteBuilderBase<InvokeRouteBuilder>
     {
+        private string _invokeName;
+
         public InvokeRouteBuilder() : base()
         {
             _route.Flags |= RouteFlags.Invoke;
@@ -37,19 +39,7 @@ namespace Microsoft.Agents.Builder.App
         public InvokeRouteBuilder WithName(string name)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
-
-            if (_route.Selector != null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name})");
-            }
-
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && name.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
-                );
-
+            _invokeName = name;
             return this;
         }
 
@@ -85,7 +75,8 @@ namespace Microsoft.Agents.Builder.App
         /// Sets a custom route selector used to determine how incoming requests are matched to this route builder.
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
-        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// routing scenarios where requests are selected based on custom rules or patterns. If WithName was
+        /// also called, this selector is in addition to the Name selctor.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "invoke" is enforced.</param>
         /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with the specified selector applied.</returns>
@@ -128,6 +119,36 @@ namespace Microsoft.Agents.Builder.App
         public override InvokeRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;
+        }
+
+        protected override void PreBuild()
+        {
+            if (_route.Selector != null)
+            {
+                if (_invokeName != null)
+                {
+                    // Match on both the existing selector and the Activity.Name
+                    _route.Selector = async (context, ct) =>
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Invoke)
+                        && _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                        && await _route.Selector(context, ct);
+                }
+                return;
+            }
+
+            if (_invokeName == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Name");
+            }
+
+            // Just match on Activity.Name value
+            _route.Selector = (context, ct) => Task.FromResult
+                (
+                    IsContextMatch(context, _route)
+                    && context.Activity.IsType(ActivityTypes.Invoke)
+                    && _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                );
         }
     }
 }
