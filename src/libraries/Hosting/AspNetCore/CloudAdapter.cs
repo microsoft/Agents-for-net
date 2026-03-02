@@ -209,6 +209,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // Request was cancelled (e.g. client disconnected). This is expected and not an error.
+                    Logger.LogWarning("CloudAdapter.ProcessAsync cancelled for RequestId={RequestId}", activity.RequestId);
+                    _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                }
                 catch (Exception ex)
                 {
                     // OnTurnError should be catching these.  

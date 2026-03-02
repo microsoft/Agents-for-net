@@ -42,5 +42,10 @@ namespace Microsoft.Agents.Builder
 
             agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
         }
+
+        public void AddRoute(AgentApplication agentApplication, Route route)
+        {
+            agentApplication.AddRoute(route);
+        }
     }
 }
