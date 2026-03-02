@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public MessageExtension MessageExtensions { get; }
 
 #if !NETSTANDARD
-        protected AgentApplication AgentApplication { get; init;}
+        internal AgentApplication AgentApplication { get; init;}
 #else
-        protected AgentApplication AgentApplication { get; set;}
+        internal AgentApplication AgentApplication { get; set;}
 #endif
 
         /// <summary>

@@ -10,6 +10,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
+using System.Net.Http;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -135,6 +136,7 @@ namespace Microsoft.Agents.Builder.App
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
+            HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
             var section = configuration.GetSection(configKey);
             if (!section.Exists())
@@ -223,5 +225,7 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Options used to enable user authorization for the application.
         /// </summary>
         public UserAuthorizationOptions UserAuthorization { get; set; }
+
+        public IHttpClientFactory HttpClientFactory { get; set; }
     }
 }
