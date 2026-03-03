@@ -13,5 +13,32 @@ namespace Microsoft.Agents.Extensions.Teams
                 Content = card,
             };
         }
+
+        public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.HeroCard card)
+        {
+            return new Microsoft.Teams.Api.Attachment()
+            {
+                ContentType = Microsoft.Teams.Api.ContentType.HeroCard,
+                Content = card,
+            };
+        }
+
+        public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AudioCard card)
+        {
+            return new Microsoft.Teams.Api.Attachment()
+            {
+                ContentType = Microsoft.Teams.Api.ContentType.AudioCard,
+                Content = card,
+            };
+        }
+
+        public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AnimationCard card)
+        {
+            return new Microsoft.Teams.Api.Attachment()
+            {
+                ContentType = Microsoft.Teams.Api.ContentType.AnimationCard,
+                Content = card,
+            };
+        }
     }
 }
