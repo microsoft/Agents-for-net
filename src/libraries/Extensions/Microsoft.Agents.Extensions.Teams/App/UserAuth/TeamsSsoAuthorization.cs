@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// <param name="state">The turn state</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in response</returns>
-        async Task<TokenResponse> IUserAuthorization.SignInUserAsync(ITurnContext turnContext, bool forceSignIn, string exchangeConnection, IList<string> exchangeScopes, CancellationToken cancellationToken)
+        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn, string exchangeConnection, IList<string> exchangeScopes, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.ChannelId != Channels.Msteams)
             {
