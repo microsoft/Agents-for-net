@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.UserAuth.TokenService;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
     /// <summary>
     /// Settings to initialize TeamsSsoAuthentication class
     /// </summary>
-    public class TeamsSsoSettings : OAuthSettings
+    public class TeamsSsoSettings //: OAuthSettings
     {
+        public static readonly TimeSpan DefaultTimeoutValue = TimeSpan.FromMinutes(15);
+
         /// <summary>
         /// The AAD scopes for authentication. Only one resource is allowed in the scopes.
         /// </summary>
@@ -27,6 +29,13 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
         /// Your sign in page can leverage these parameters to compose the AAD sign-in URL.
         /// </summary>
         public string SignInLink { get; set; }
+
+        public int? Timeout { get; set; } = (int)DefaultTimeoutValue.TotalMilliseconds;
+
+        public bool EndOnInvalidMessage { get; set; }
+
+        public string InvalidSignInRetryMessage { get; set; } = "Invalid sign in code. Please enter the 6-digit code.";
+        public int InvalidSignInRetryMax { get; set; } = 2;
 
         /// <summary>
         /// Initializes the class
