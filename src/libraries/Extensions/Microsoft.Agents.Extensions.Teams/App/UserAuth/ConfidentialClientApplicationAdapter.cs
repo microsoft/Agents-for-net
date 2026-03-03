@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 {
-    internal class ConfidentialClientApplicationAdapter : IConfidentialClientApplicationAdapter
+    internal class ConfidentialClientApplicationAdapter
     {
         private readonly IConfidentialClientApplication _msal;
 

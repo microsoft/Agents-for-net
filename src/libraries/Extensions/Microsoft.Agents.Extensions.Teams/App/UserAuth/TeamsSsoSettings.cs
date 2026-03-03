@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
     /// <summary>
     /// Settings to initialize TeamsSsoAuthentication class
     /// </summary>
-    public class TeamsSsoSettings //: OAuthSettings
+    public class TeamsSsoSettings
     {
         public static readonly TimeSpan DefaultTimeoutValue = TimeSpan.FromMinutes(15);
 
