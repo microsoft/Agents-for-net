@@ -84,16 +84,17 @@ namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
 
             if (forceSignIn || IsValidActivity(turnContext))
             {
-               return new TokenResponse() { Token = await AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false) };
+                // TODO: handle OBO
+                return new TokenResponse() { Token = await AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false) };
             }
 
             return null;
         }
 
-        public Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            // TODO: get silent?
-            throw new NotImplementedException();
+            // TODO: handle OBO
+            return await _msalAdapter.TryGetUserToken(turnContext, Name, _settings).ConfigureAwait(false);
         }
 
         /// <summary>
