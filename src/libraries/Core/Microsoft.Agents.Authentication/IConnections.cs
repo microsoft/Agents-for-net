@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 
+using Microsoft.Agents.Core.Models;
 using System.Security.Claims;
 
 namespace Microsoft.Agents.Authentication
@@ -31,12 +32,17 @@ namespace Microsoft.Agents.Authentication
         /// <summary>
         /// Finds a connection based on a map.
         /// </summary>
-        /// <remarks>
-        /// An Activity.ServiceUrl value.
-        /// </remarks>        
         /// <param name="claimsIdentity"></param>
-        /// <param name="serviceUrl"></param>
+        /// <param name="serviceUrl">Typically Activity.ServiceUrl value</param>
         /// <returns></returns>
         IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, string serviceUrl);
+
+        /// <summary>
+        /// Finds a connection based on a map based on Activity.
+        /// </summary>
+        /// <param name="claimsIdentity"></param>
+        /// <param name="activity"></param>
+        /// <returns></returns>
+        IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, IActivity activity);
     }
 }

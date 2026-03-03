@@ -380,12 +380,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
                             }, cancellationToken).ConfigureAwait(false);
 
-                        result = new TokenResponse
-                        {
-                            ChannelId = tokenExchangeResponse.ChannelId,
-                            ConnectionName = tokenExchangeResponse.ConnectionName,
-                            Token = tokenExchangeResponse.Token,
-                        };
+                        result = tokenExchangeResponse;
                     }
                 }
             }

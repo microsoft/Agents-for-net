@@ -3,21 +3,27 @@
 
 #nullable disable
 
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
     internal class ConversationsRestClient(IRestTransport transport) : IConversations
     {
+        /// <summary>
+        /// Gets the maximum allowed length for an APX conversation ID.
+        /// </summary>
+        public int MaxApxConversationIdLength { get; set; } = 150;
+
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
@@ -99,10 +105,12 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateSendToConversationRequest(string conversationId, IActivity body)
         {
+            var convId = TruncateConversationId(conversationId, body);
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -244,10 +252,12 @@ namespace Microsoft.Agents.Connector.RestClients
 
         internal HttpRequestMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
         {
+            var convId = TruncateConversationId(conversationId, body);
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities/{HttpUtility.UrlEncode(activityId)}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -553,6 +563,24 @@ namespace Microsoft.Agents.Connector.RestClients
                         throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
+        }
+
+        private string TruncateConversationId(string conversationId, IActivity body)
+        {
+            string convId;
+
+            // Truncate conversationId for Teams and Agentic roles to MaxApxConversationIdLength characters
+            if ((body?.ChannelId?.Channel == Channels.Msteams ||
+                body?.ChannelId?.Channel == Channels.Agents)
+                && (body?.From?.Role == RoleTypes.AgenticIdentity
+                || body?.From?.Role == RoleTypes.AgenticUser))
+            {
+                convId = conversationId.Length > MaxApxConversationIdLength ? conversationId[..MaxApxConversationIdLength] : conversationId;
+            }
+            else
+                convId = conversationId;
+
+            return convId;
         }
     }
 }

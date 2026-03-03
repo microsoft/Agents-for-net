@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Client
         string HostClientId { get; set; }
 
         /// <summary>
-        /// Returns a list of configured Agents.
+        /// Gets a list of configured Agents.
         /// </summary>
         IList<IAgentInfo> GetAgents();
 
@@ -44,22 +44,22 @@ namespace Microsoft.Agents.Client
         /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 
         /// use the returned <see cref="IAgentClient"/> directly for those.
         /// </remarks>
-        /// <param name="turnContext"></param>
+        /// <param name="turnContext">Context for a turn of the Agent.</param>
         /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
-        /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="activity">The activity to send.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception cref="System.ArgumentException">If the specified agentName is null or not found.</exception>
         Task SendToAgent(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// 
+        /// Sends an activity to an Agent using an asynchronous stream.
         /// </summary>
-        /// <param name="turnContext"></param>
+        /// <param name="turnContext">Context for a turn of the Agent.</param>
         /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
-        /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="activity">The activity to send.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns></returns>
         IAsyncEnumerable<object> SendToAgentStreamedAsync(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 

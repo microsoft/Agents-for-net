@@ -27,11 +27,11 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Logger for the Adapter. 
         /// </summary>
-        private readonly ILogger? _logger;
+        public ILogger? Logger { get; set; }
 
         public ChannelAdapter(ILogger logger = null)
         {
-            _logger = logger ?? NullLogger.Instance;
+            Logger = logger ?? NullLogger.Instance;
         }
 
         /// <inheritdoc/>
@@ -163,10 +163,6 @@ namespace Microsoft.Agents.Builder
                 try
                 {
                     await MiddlewareSet.ReceiveActivityWithStatusAsync(turnContext, callback, cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw; // Do not try to send another request if the failure is an operation cancel. 
                 }
                 catch (Exception e)
                 {

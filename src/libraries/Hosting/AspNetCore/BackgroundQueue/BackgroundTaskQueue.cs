@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -13,19 +14,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     internal class BackgroundTaskQueue : IBackgroundTaskQueue
     {
-        private readonly ConcurrentQueue<Func<CancellationToken, Task>> _workItems = new();
-        private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);
+        private readonly ConcurrentQueue<WorkItem> _workItems = new();
+        private readonly SemaphoreSlim _signal = new(0);
 
         /// <summary>
         /// Enqueue a work item to be processed on a background thread.
         /// </summary>
-        /// <param name="workItem">The work item to be enqueued for execution. Is defined as
+        /// <param name="work">The work item to be enqueued for execution. Is defined as
         /// a function taking a cancellation token.</param>
-        public void QueueBackgroundWorkItem(Func<CancellationToken, Task> workItem)
+        public void QueueBackgroundWorkItem(Func<CancellationToken, Task> work)
         {
-            ArgumentNullException.ThrowIfNull(workItem);
+            ArgumentNullException.ThrowIfNull(work);
 
-            _workItems.Enqueue(workItem);
+            _workItems.Enqueue(new WorkItem() { Process = work, TelemetryActivity = System.Diagnostics.Activity.Current?.CloneActivity() });
             _signal.Release();
         }
 
@@ -39,8 +40,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             await _signal.WaitAsync(cancellationToken);
 
-            _workItems.TryDequeue(out Func<CancellationToken, Task> dequeued);
-            return dequeued;
+            if (!_workItems.TryDequeue(out WorkItem dequeued) || dequeued is null)
+            {
+                // In case of a race where the queue is empty, return a no-op work item.
+                return _ => Task.CompletedTask;
+            }
+            dequeued.TelemetryActivity?.Start();
+            return dequeued.Process;
         }
+    }
+
+    internal class WorkItem
+    {
+        public Func<CancellationToken, Task> Process { get; set; }
+
+        /// <summary>
+        /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and
+        /// telemetry correlation, cloned from the original request context.
+        /// </summary>
+        public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }

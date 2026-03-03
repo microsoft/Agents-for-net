@@ -37,10 +37,33 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-
-                while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                try
                 {
-                    var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                    {
+                        var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                        action(activity);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Request was cancelled (e.g. client disconnected). Drain any remaining items and clean up.
+                    logger.LogWarning("ChannelResponseQueue: HandleResponsesAsync cancelled for requestId '{RequestId}'.", requestId);
+                }
+                finally
+                {
+                    channelInfo.readDone.Set();
+                }
+            }
+        }
+
+        public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)
+        {
+            if (_conversations.TryGetValue(requestId, out var channelInfo))
+            {
+
+                while (channelInfo.channel.Reader.TryRead(out var activity))
+                {
                     action(activity);
                 }
 
@@ -58,7 +81,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Completes channel response handling.  This will wait for all reads to complete.  Once complete,
+        /// Completes channel response handling.  This will wait for all reads to complete.  Once called,
         /// any subsequent SendActivitiesAsync are ignored.
         /// </summary>
         /// <param name="requestId"></param>
@@ -68,9 +91,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 channelInfo.channel.Writer.Complete();
                 _conversations.Remove(requestId, out _);
-            }
 
-            channelInfo.readDone.WaitOne();
+                // wait for reads to be done
+                channelInfo.readDone.WaitOne();
+                channelInfo.readDone.Dispose();
+            }
         }
 
         /// <summary>
@@ -85,14 +110,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (string.IsNullOrEmpty(requestId) || !_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                logger.LogError("ChannelResponseQueue received unknown requestId '{RequestId}' for Activities: {Activity}", requestId, ProtocolJsonSerializer.ToJson(activities));
+                logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' for Activities: {Activity}", requestId, ProtocolJsonSerializer.ToJson(activities));
             }
             else
             {
                 foreach (var activity in activities)
                 {
-                    // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
-                    await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
+                        await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ChannelClosedException)
+                    {
+                        // The channel was completed (e.g. due to cancellation). Stop writing.
+                        logger.LogWarning("ChannelResponseQueue: Channel closed for requestId '{RequestId}'. Remaining activities will not be sent.", requestId);
+                        break;
+                    }
                 }
             }
         }

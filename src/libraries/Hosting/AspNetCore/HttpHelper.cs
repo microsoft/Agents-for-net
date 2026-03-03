@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// Helper class with methods to help with reading and responding to HTTP requests.
     /// </summary>
-    internal static class HttpHelper
+    public static class HttpHelper
     {
         /// <summary>
         /// Accepts an incoming HttpRequest and deserializes it using the <see cref="ProtocolJsonSerializer"/>.

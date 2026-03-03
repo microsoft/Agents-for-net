@@ -21,13 +21,19 @@ namespace Microsoft.Agents.Connector
 
         public Uri BaseUri => base.Endpoint;
 
-        public RestConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestConnectorClient))
+        public RestConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestConnectorClient), int? maxApxConversationIdLength = null)
             : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
         {
             AssertionHelpers.ThrowIfNull(endpoint, nameof(endpoint));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
             Conversations = new ConversationsRestClient(this);
+            if (maxApxConversationIdLength.HasValue)
+            {
+                // Cast this here as I do not want to expose MaxApxConversationIdLength on the interface.
+                ((ConversationsRestClient)Conversations).MaxApxConversationIdLength = maxApxConversationIdLength.Value;
+            }
+
             Attachments = new AttachmentsRestClient(this);
         }
 

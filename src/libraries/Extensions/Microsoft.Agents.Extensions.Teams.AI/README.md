@@ -5,6 +5,12 @@
 This is a Agents SDK based implementation of the former Teams AI library.
 Issues, releases, and source code available at https://github.com/microsoft/teams-agents
 
+## Changelog
+| Version | Date | Changelog |
+|------|----|------------|
+| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
+| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+
 ## Teams AI Agent APIs
 
 Below is a detailed overview of the main APIs and their purposes:

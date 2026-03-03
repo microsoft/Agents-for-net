@@ -37,14 +37,16 @@ namespace Microsoft.Agents.Builder
         /// <param name="adapter">The adapter creating the context.</param>
         /// <param name="activity">The incoming activity for the turn;
         /// or <c>null</c> for a turn for a proactive message.</param>
+        /// <param name="identity"></param>
         /// <param name="state"></param>
         /// <exception cref="System.ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by Adapter implementations only.</remarks>
-        public TurnContext(IChannelAdapter adapter, IActivity activity)
+        public TurnContext(IChannelAdapter adapter, IActivity activity, ClaimsIdentity identity = null)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
+            Identity = identity;
             StackState = [];
             Services = [];
 
@@ -238,15 +240,27 @@ namespace Microsoft.Agents.Builder
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()
             {
-                if (!Responded)
-                {
-                    Responded = bufferedActivities.Where((a) => !a.IsType(ActivityTypes.Trace)).Any();
-                }
-
                 // Send from the list which may have been manipulated via the event handlers.
                 // Note that 'responses' was captured from the root of the call, and will be
                 // returned to the original caller.
-                return await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
+                var responses = await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
+                var sentNonTraceActivity = false;
+
+                for (var index = 0; index < responses?.Length; index++)
+                {
+                    var activity = bufferedActivities[index];
+
+                    activity.Id = responses[index].Id;
+
+                    sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
+                }
+
+                if (sentNonTraceActivity)
+                {
+                    Responded = true;
+                }
+
+                return responses;
             }
         }
 

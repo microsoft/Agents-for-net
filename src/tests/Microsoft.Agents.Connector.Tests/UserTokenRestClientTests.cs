@@ -483,12 +483,35 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public async Task TokenExchangeable()
+        public async Task TokenExchangeableV1()
         {
             var httpTokenResponse = new TokenResponse
             {
                 // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
-                Token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDcwNTU2NDksImlhdCI6MTc0NzA1NTY0OX0.fAOK0HU59CgcA6SiU6feDdUmG2ZC5Nc8RzHlOPjfgWk"
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ2ZXIiOiIxLjAiLCJhcHBpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9."
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.True(tokenResponse.IsExchangeable);
+        }
+
+        [Fact]
+        public async Task TokenExchangeableV2()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ2ZXIiOiIyLjAiLCJhenAiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ."
             };
 
             var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)

@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public static async Task RunAsync(this Dialog dialog, ITurnContext turnContext, AgentState state, CancellationToken cancellationToken)
+        public static async Task<DialogTurnResult> RunAsync(this Dialog dialog, ITurnContext turnContext, AgentState state, CancellationToken cancellationToken)
         {
             var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
             var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
-            await InternalRunAsync(turnContext, dialog.Id, dialogContext, cancellationToken).ConfigureAwait(false);
+            return await InternalRunAsync(turnContext, dialog.Id, dialogContext, cancellationToken).ConfigureAwait(false);
         }
 
         [Obsolete("Use the non-IStatePropertyAccessor version")]

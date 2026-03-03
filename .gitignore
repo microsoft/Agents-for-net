@@ -229,3 +229,6 @@ appsettings.Production.json
 # VS Code files
 .vscode
 src/samples/ModelContextProtocol/GitHubMCPServer/Properties/ServiceDependencies/GitHubMCPServer20250311143114 - Web Deploy/profile.arm.json
+
+# Claude Code temporary files
+tmpclaude*

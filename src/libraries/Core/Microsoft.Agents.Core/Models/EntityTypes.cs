@@ -3,7 +3,7 @@
 
 namespace Microsoft.Agents.Core.Models
 {
-    public static class EntityTypes
+    public static partial class EntityTypes
     {
         public const string Mention = "mention";
         public const string Place = "Place";

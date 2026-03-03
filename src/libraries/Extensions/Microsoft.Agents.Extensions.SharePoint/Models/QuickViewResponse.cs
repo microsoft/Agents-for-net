@@ -25,6 +25,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         public object Data { get; set; }
 
         /// <summary>
+        /// Gets or sets the template of quick view response.
         /// </summary>
         /// <value>This value is the template of the quick view response.</value>
         public object Template { get; set; }  // !!! was of type AdaptiveCard

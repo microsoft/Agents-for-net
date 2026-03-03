@@ -24,12 +24,19 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <param name="details">The meeting's detailed information.</param>
         /// <param name="conversation">Conversation Account for the meeting.</param>
         /// <param name="organizer">Information specific to this organizer of the specific meeting.</param>
-        public MeetingInfo(MeetingDetails details, ConversationAccount conversation = null, TeamsChannelAccount organizer = null)
+        /// <param name="id">Unique identifier representing the meeting.</param>
+        public MeetingInfo(MeetingDetails details, ConversationAccount conversation = null, TeamsChannelAccount organizer = null, string id = null)
         {
+            Id = id;
             Details = details;
             Conversation = conversation;
             Organizer = organizer;
         }
+
+        /// <summary>
+        /// Unique identifier representing a meeting
+        /// </summary>
+        public string? Id { get; set; }
 
         /// <summary>
         /// Gets or sets the specific details of a Teams meeting.

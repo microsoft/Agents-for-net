@@ -45,8 +45,12 @@ namespace Microsoft.Agents.Core.Models
                     if (activity.Entities != null)
                     {
                         // strip entity.mention records for recipient id.
-                        activity.Entities = activity.Entities.Where(entity => entity is Mention mention &&
-                           mention.Mentioned.Id != activity.Recipient.Id).ToList();
+                        var ListToRemove = activity.Entities.Where(entity => entity is Mention mention &&
+                           mention.Mentioned.Id.Equals(activity.Recipient.Id, StringComparison.OrdinalIgnoreCase)).ToList();
+                        foreach (var entity in ListToRemove)
+                        {
+                            activity.Entities.Remove(entity);
+                        }
                     }
                 }
 
@@ -167,6 +171,16 @@ namespace Microsoft.Agents.Core.Models
             }
 
             return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.StreamInfo, StringComparison.OrdinalIgnoreCase)) as StreamInfo;
+        }
+
+        public static AIEntity GetAIEntity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+            {
+                return null;
+            }
+
+            return activity.Entities.FirstOrDefault(e => string.Equals(e.Type, EntityTypes.AICitation, StringComparison.OrdinalIgnoreCase)) as AIEntity;
         }
 
         public static ActivityTreatment GetActivityTreatmentEntity(this IActivity activity)

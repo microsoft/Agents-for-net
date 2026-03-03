@@ -26,6 +26,11 @@ Please read [this](GettingStarted.md) for directions on what is needed and how t
 
 ## Contributing
 
+#### Note for Microsoft internal developers: 
+- Internal Microsoft Developers should join the Core identity group [Agents SDK Contrib](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/agentssdkint-upyj)
+
+#### Non-Microsoft internal developers:
+
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.

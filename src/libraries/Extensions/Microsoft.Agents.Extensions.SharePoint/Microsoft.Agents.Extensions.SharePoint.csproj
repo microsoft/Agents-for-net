@@ -12,7 +12,9 @@
         <PackageId>Microsoft.Agents.Extensions.SharePoint</PackageId>
         <Description>Library for creating SharePoint agents using Microsoft Agent SDK</Description>
 		<Summary>Library for building SharePoint agents using Microsoft Agents SDK</Summary>
-    </PropertyGroup>
+		<!-- Set to true to see generated file in obj/Debug/.../Generated folder -->
+	    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>    
+	</PropertyGroup>
 	
 	<PropertyGroup>
 		<Nullable>annotations</Nullable>
@@ -32,6 +34,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
 	</ItemGroup>
 
 </Project>

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -28,7 +29,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
-        private readonly IChannelAdapter _adapter;
         private readonly int _shutdownTimeoutSeconds;
         private readonly IServiceProvider _serviceProvider;
 
@@ -41,21 +41,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </remarks>
         /// <param name="provider"></param>
         /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="adapter"><see cref="IChannelAdapter"/> used to process Activities. </param>
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
         /// <param name="options"></param>
-        public HostedActivityService(IServiceProvider provider, IConfiguration config, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
         {
             ArgumentNullException.ThrowIfNull(config);
-            ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _activityQueue = activityTaskQueue;
-            _adapter = adapter;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
         }
@@ -68,6 +65,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is stopping.");
+
+            _activityQueue.Stop();
 
             // Obtain a write lock and do not release it, preventing new tasks from starting
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
@@ -137,26 +136,42 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-
-                    if (activityWithClaims.IsProactive)
+                    if (agent == null)
                     {
-                        await _adapter.ProcessProactiveAsync(
-                            activityWithClaims.ClaimsIdentity,
-                            activityWithClaims.Activity,
-                            activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IAgent)agent).OnTurnAsync, 
-                            stoppingToken).ConfigureAwait(false);
+                        agent = _serviceProvider.GetService(typeof(IAgent));
                     }
-                    else
-                    {
-                        var response = await _adapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity, 
-                            activityWithClaims.Activity,
-                            ((IAgent)agent).OnTurnAsync, 
-                            stoppingToken).ConfigureAwait(false);
 
-                        activityWithClaims.OnComplete?.Invoke(response);
+                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
+                    activityWithClaims.TelemetryActivity?.Start();
+                    try
+                    {
+                        if (activityWithClaims.IsProactive)
+                        {
+                            await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
+                                activityWithClaims.ClaimsIdentity,
+                                activityWithClaims.Activity,
+                                activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
+                                ((IAgent)agent).OnTurnAsync,
+                                stoppingToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
+                                activityWithClaims.ClaimsIdentity,
+                                activityWithClaims.Activity,
+                                ((IAgent)agent).OnTurnAsync,
+                                stoppingToken).ConfigureAwait(false);
+
+                            if (activityWithClaims.OnComplete != null)
+                            {
+                                await activityWithClaims.OnComplete.Invoke(response);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        // make sure to close down any current activity once the turn is complete. 
+                        activityWithClaims.TelemetryActivity?.Stop();
                     }
                 }
                 catch (Exception ex)
@@ -167,7 +182,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     InvokeResponse invokeResponse = null;
                     if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
                     {
-                        invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
+                        invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError };
                     }
 
                     if (activityWithClaims.OnComplete != null)

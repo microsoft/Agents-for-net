@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetAppId_ThrowIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetAppId(null));
+            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetAppId((ClaimsIdentity)null));
         }
 
         [Fact]
@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Auth.Tests
 
             var audience = AgentClaims.GetTokenAudience(claims);
 
-            Assert.Equal("app://appId", audience);
+            Assert.Equal("api://appId", audience);
         }
 
         [Fact]

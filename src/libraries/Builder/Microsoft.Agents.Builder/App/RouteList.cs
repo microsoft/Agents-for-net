@@ -12,17 +12,22 @@ namespace Microsoft.Agents.Builder.App
         private readonly ReaderWriterLock rwl = new();
         private List<RouteEntry> routes = [];
 
-        public void AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, params string[] autoSignInHandlers)
+        public void AddRoute(Route route)
         {
             try
             {
                 rwl.AcquireWriterLock(1000);
-                routes.Add(new RouteEntry() { Rank = rank, Route = new(selector, handler, isInvokeRoute, autoSignInHandlers), IsInvokeRoute = isInvokeRoute });
+                routes.Add(new RouteEntry(route));
 
-                // Invoke selectors are first.
-                // Invoke Activities from Teams need to be responded to in less than 5 seconds and the selectors are async
-                // which could incur delays, so we need to limit this possibility.
-                routes = [.. routes.OrderByDescending(entry => entry.IsInvokeRoute).ThenBy(entry => entry.Rank)];
+                // Ordered by:
+                //    Agentic + Invoke
+                //    Invoke
+                //    Agentic
+                //    Other
+                // Then by Rank
+                routes = [.. routes
+                    .OrderByDescending(entry => entry.Order)
+                    .ThenBy(entry => entry.Route.Rank)];
             }
             finally
             {
@@ -44,10 +49,26 @@ namespace Microsoft.Agents.Builder.App
         }
     }
 
+    enum RouteEntryOrder
+    {
+        Other = 0,
+        Agentic = 1,
+        Invoke = 2,
+        AgenticInvoke = 3
+    }
+
     class RouteEntry
     {
-        public ushort Rank;
-        public Route Route;
-        public bool IsInvokeRoute;
+        public RouteEntry(Route route) 
+        { 
+            Route = route;
+            if (route.Flags.HasFlag(RouteFlags.Invoke))
+                Order = RouteEntryOrder.Invoke;
+            if (route.Flags.HasFlag(RouteFlags.Agentic))
+                Order |= RouteEntryOrder.Agentic;
+        }
+
+        public Route Route { get; private set; }
+        public RouteEntryOrder Order { get; private set; }
     }
 }

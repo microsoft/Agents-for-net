@@ -3,8 +3,8 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,11 +156,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="async"></param>
         public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
         {
-            AddAsyncCloudAdapterSupport(services);
+            AddAsyncAdapterSupport(services);
 
-            services.AddSingleton<CloudAdapter, T>();
-            services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
-            services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+            if (!services.Any(x => x.ServiceType == typeof(T)))
+            {
+                services.AddSingleton<CloudAdapter, T>();
+                services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
+                services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+            }
         }
 
         /// <summary>
@@ -192,11 +195,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder)
             where TAdapter : CloudAdapter
         {
-            // Add Connections object to access configured token connections.
-            builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IConnections)))
+            {
+                // Add Connections object to access configured token connections.
+                builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
+            }
 
-            // Add factory for ConnectorClient and UserTokenClient creation
-            builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            if (!builder.Services.Any(x => x.ServiceType == typeof(IChannelServiceClientFactory)))
+            {
+                // Add factory for ConnectorClient and UserTokenClient creation
+                builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            }
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             AddCloudAdapter<TAdapter>(builder.Services);
@@ -204,17 +213,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        private static void AddAsyncCloudAdapterSupport(this IServiceCollection services)
+        public static void AddAsyncAdapterSupport(this IServiceCollection services)
         {
-            // Activity specific BackgroundService for processing authenticated activities.
-            services.AddHostedService<HostedActivityService>();
-            // Generic BackgroundService for processing tasks.
-            services.AddHostedService<HostedTaskService>();
+            if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
+            {
+                // Activity specific BackgroundService for processing authenticated activities.
+                services.AddHostedService<HostedActivityService>();
+                // Generic BackgroundService for processing tasks.
+                services.AddHostedService<HostedTaskService>();
 
-            // BackgroundTaskQueue and ActivityTaskQueue are the entry points for
-            // the enqueueing activities or tasks to be processed by the BackgroundService.
-            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
-            services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
+                // BackgroundTaskQueue and ActivityTaskQueue are the entry points for
+                // the enqueueing activities or tasks to be processed by the BackgroundService.
+                services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+                services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
+            }
         }
     }
 }

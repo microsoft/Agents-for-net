@@ -31,7 +31,7 @@ builder.Services
     .AddTransient<IChatClient>((s) =>
         {
             return new AzureOpenAIClient(new Uri(settings.AzureOpenAiEndpoint), new ApiKeyCredential(settings.AzureOpenAiKey))
-                    .AsChatClient(settings.AzureOpenAiDeployment);        
+                    .GetChatClient(settings.AzureOpenAiDeployment).AsIChatClient();        
         }    
     )
     .AddHostedService<EvaluationService>();

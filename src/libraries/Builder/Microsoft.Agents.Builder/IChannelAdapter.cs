@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -76,7 +77,11 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// <para>Using this overload will only work against Azure Bot Service and Agentic.  For proactive to other agents (including Copilot Studio), use 
+        /// <see cref="ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)"/>.  Use <see cref="Microsoft.Agents.Authentication.AgentClaims.CreateIdentity(string, bool, string)"/>
+        /// to create a ClaimsIdentity with both the audience (your agents ClientId) and appId (the other agents ClientId).</para>
         /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)")]
         Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -102,7 +107,11 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
+        /// <para>Using this overload will only work against Azure Bot Service and Agentic.  For proactive to other agents (including Copilot Studio), use 
+        /// <see cref="ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/>.  Use <see cref="Microsoft.Agents.Authentication.AgentClaims.CreateIdentity(string, bool, string)"/>
+        /// to create a ClaimsIdentity with both the audience (your agents ClientId) and appId (the other agents ClientId).</para>
         /// </remarks>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)")]
         Task ContinueConversationAsync(string agentId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -116,6 +125,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
         /// </remarks>
+        [Obsolete("This method will be removed in future versions of the SDK")]
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -123,7 +133,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
         /// <param name="reference">A reference to the conversation to continue.</param>
-        /// <param name="audience">A value signifying the recipient of the proactive message.</param>
+        /// <param name="audience">A value signifying the recipient of the proactive message.  This overrides the default use of ClaimsIdentity for the audience.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
@@ -144,6 +154,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// <para>This is a convenience wrapper for <see cref="ProcessProactiveAsync(ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken)"/>.</para>
         /// </remarks>
+        [Obsolete("This method will be removed in future versions of the SDK. Use ProcessProactiveAsync instead.")]
         Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -253,5 +264,10 @@ namespace Microsoft.Agents.Builder
         /// the receiving channel assigned to the activities.</returns>
         /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
+        
+        /// <summary>
+        /// Channel Adapter Logger
+        /// </summary>
+        ILogger? Logger { get; set; }
     }
 }

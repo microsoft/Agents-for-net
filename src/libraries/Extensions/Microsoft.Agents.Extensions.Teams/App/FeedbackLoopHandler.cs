@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,5 +18,6 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
+    [Obsolete("Use Core FeedbackLoopHandler and AgentApplication.OnFeedbackLoop instead")]
     public delegate Task FeedbackLoopHandler(ITurnContext turnContext, ITurnState turnState, FeedbackLoopData feedbackLoopData, CancellationToken cancellationToken);
 }

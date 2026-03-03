@@ -21,6 +21,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" />
 		<PackageReference Include="Azure.Identity" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -9,6 +9,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Agents.Authentication;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -128,8 +129,11 @@ namespace Microsoft.Agents.Builder.App
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             string configKey = "AgentApplication") 
-        { 
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
             Adapter = channelAdapter;
+#pragma warning restore CS0618 // Type or member is obsolete
+            Connections = sp.GetService<IConnections>();
             TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
 
             var section = configuration.GetSection(configKey);
@@ -168,7 +172,13 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// An Adapter would be required to use IChannelAdapter.ContinueConversationAsync or IChannelAdapter.CreateConversation.
         /// </remarks>
+        [Obsolete("Use ITurnContext.Adapter property instead.")]
         public IChannelAdapter? Adapter { get; set; }
+
+        /// <summary>
+        /// The IConnections for this AgentApplication
+        /// </summary>
+        public IConnections? Connections { get; set; }
 
         /// <summary>
         /// Optional. Options used to customize the processing of Adaptive Card requests.

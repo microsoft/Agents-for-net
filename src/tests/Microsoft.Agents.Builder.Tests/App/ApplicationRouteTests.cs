@@ -22,27 +22,35 @@ namespace Microsoft.Agents.Builder.Tests.App
             RouteList routes = new();
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; },
-                rank: 2
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .WithOrderRank(2)
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; },
-                rank: 0
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .WithOrderRank(0)
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; },
-                rank: 1
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
+                    .WithOrderRank(1)
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("4"); return Task.CompletedTask; },
-                rank: 1
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("4"); return Task.CompletedTask; })
+                    .WithOrderRank(1)
+                    .Build()
             );
 
             foreach ( var route in routes.Enumerate())
@@ -58,36 +66,82 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public async Task Test_RouteList_ByInvokeThenByAddOrder()
+        public async Task Test_RouteList_ByAgenticThenInvokeThenRank()
         {
             List<string> values = [];
             RouteList routes = new();
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; }
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; }
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; },
-                isInvokeRoute: true
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; })
+                    .WithOrderRank(RouteRank.First)
+                    .Build()
             );
+
+            routes.AddRoute(
+                RouteBuilder.Create()
+                    .AsInvoke()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; })
+                    .Build()
+            );
+
+            routes.AddRoute(
+                RouteBuilder.Create()
+                    .AsAgentic()
+                    .AsInvoke()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke2"); return Task.CompletedTask; })
+                    .Build()
+            );
+
+            routes.AddRoute(
+                RouteBuilder.Create()
+                    .AsAgentic()
+                    .AsInvoke()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agenticInvoke1"); return Task.CompletedTask; })
+                    .WithOrderRank(RouteRank.First)
+                    .Build()
+            );
+
+            routes.AddRoute(
+                RouteBuilder.Create()
+                    .AsAgentic()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("agentic"); return Task.CompletedTask; })
+                    .Build()
+            );
+
 
             foreach (var route in routes.Enumerate())
             {
                 await route.Handler(null, null, CancellationToken.None);
             }
 
-            Assert.Equal(3, values.Count);
-            Assert.Equal("invoke", values[0]);
-            Assert.Equal("2", values[1]);
-            Assert.Equal("1", values[2]);
+            Assert.Equal(7, values.Count);
+            Assert.Equal("agenticInvoke1", values[0]);
+            Assert.Equal("agenticInvoke2", values[1]);
+            Assert.Equal("invoke", values[2]);
+            Assert.Equal("agentic", values[3]);
+            Assert.Equal("3", values[4]);
+            Assert.Equal("2", values[5]);
+            Assert.Equal("1", values[6]);
         }
 
         [Fact]
@@ -97,26 +151,36 @@ namespace Microsoft.Agents.Builder.Tests.App
             RouteList routes = new();
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; },
-                rank: RouteRank.Unspecified
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; })
+                    .WithOrderRank(RouteRank.Unspecified)
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; },
-                rank: 0
+                RouteBuilder.Create()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; })
+                    .WithOrderRank(0)
+                    .Build()
             );
 
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; },
-                isInvokeRoute: true, rank: RouteRank.Last
+                RouteBuilder.Create()
+                    .AsInvoke()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke1"); return Task.CompletedTask; })
+                    .WithOrderRank(RouteRank.Last)
+                    .Build()
             );
             routes.AddRoute(
-                (turnContext, CancellationToken) => { return Task.FromResult(true); },
-                (turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; },
-                isInvokeRoute: true, rank: 0
+                RouteBuilder.Create()
+                    .AsInvoke()
+                    .WithSelector((turnContext, CancellationToken) => { return Task.FromResult(true); })
+                    .WithHandler((turnContext, turnState, CancellationToken) => { values.Add("invoke2"); return Task.CompletedTask; })
+                    .WithOrderRank(0)
+                    .Build()
             );
 
             foreach (var route in routes.Enumerate())
@@ -155,9 +219,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var messages = new List<string>();
+
             app.AddRoute(
-                (context, _) =>
-                Task.FromResult(string.Equals("hello.1", context.Activity.Text)),
+                (context, _) => Task.FromResult(string.Equals("hello.1", context.Activity.Text)),
                 (context, _, _) =>
                 {
                     messages.Add(context.Activity.Text);
@@ -453,17 +517,37 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var types = new List<string>();
+            var agenticTypes = new List<string>();
+
+            // Agentic
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                agenticTypes.Add(context.Activity.Type);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Non-agentic
             app.OnActivity(ActivityTypes.Message, (context, _, _) =>
             {
                 types.Add(context.Activity.Type);
@@ -473,10 +557,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
             Assert.Equal(ActivityTypes.Message, types[0]);
+
+            Assert.Single(agenticTypes);
+            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -499,17 +587,37 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var types = new List<string>();
+            var agenticTypes = new List<string>();
+
+            // Agentic
+            app.OnActivity(new Regex("^message$"), (context, _, _) =>
+            {
+                agenticTypes.Add(context.Activity.Type);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Non-agentic
             app.OnActivity(new Regex("^message$"), (context, _, _) =>
             {
                 types.Add(context.Activity.Type);
@@ -519,10 +627,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
             Assert.Equal(ActivityTypes.Message, types[0]);
+
+            Assert.Single(agenticTypes);
+            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -546,30 +658,59 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Name = "Message",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var types = new List<string>();
+            var agenticTypes = new List<string>();
+
+            // agentic
+#pragma warning disable CS0618 // Type or member is obsolete
+            app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
+            {
+                agenticTypes.Add(context.Activity.Type);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // non-agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
             {
                 types.Add(context.Activity.Type);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
             Assert.Equal(ActivityTypes.Message, types[0]);
+
+            Assert.Single(agenticTypes);
+            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -613,6 +754,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var types = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity(new MultipleRouteSelector
             {
                 Strings = new[] { ActivityTypes.Invoke },
@@ -624,6 +766,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 types.Add(context.Activity.Type);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -667,18 +810,40 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                MembersAdded = new List<ChannelAccount> { new() },
+                Name = "agentic1",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var names = new List<string>();
+            var agenticNames = new List<string>();
+
+            // agentic
+            app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (context, _, _) =>
+            {
+                agenticNames.Add(context.Activity.Name);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (context, _, _) =>
             {
                 names.Add(context.Activity.Name);
@@ -689,10 +854,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
             Assert.Equal("1", names[0]);
+
+            Assert.Single(agenticNames);
+            Assert.Equal("agentic1", agenticNames[0]);
         }
 
         [Fact]
@@ -725,18 +894,40 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                MembersRemoved = new List<ChannelAccount> { new() },
+                Name = "agentic1",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var names = new List<string>();
+            var agenticNames = new List<string>();
+
+            // agentic
+            app.OnConversationUpdate(ConversationUpdateEvents.MembersRemoved, (context, _, _) =>
+            {
+                agenticNames.Add(context.Activity.Name);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersRemoved, (context, _, _) =>
             {
                 names.Add(context.Activity.Name);
@@ -747,10 +938,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
             Assert.Equal("1", names[0]);
+
+            Assert.Single(agenticNames);
+            Assert.Equal("agentic1", agenticNames[0]);
         }
 
         [Fact]
@@ -821,19 +1016,48 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
+            var nullTextActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
+            var nullTextContext = new TurnContext(adapter, nullTextActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var texts = new List<string>();
+            var agenticTexts = new List<string>();
+
+            // agentic
+            app.OnMessage("hello", (context, _, _) =>
+            {
+                agenticTexts.Add(context.Activity.Text);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnMessage("hello", (context, _, _) =>
             {
                 texts.Add(context.Activity.Text);
@@ -843,9 +1067,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(nullTextContext, CancellationToken.None);
 
             // Assert
             Assert.Equal(2, texts.Count);
+            Assert.Single(agenticTexts);
         }
 
         [Fact]
@@ -937,18 +1164,39 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "agentic hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var texts = new List<string>();
+            var agenticTexts = new List<string>();
+
+            // agentic
+            app.OnMessage(new Regex("llo"), (context, _, _) =>
+            {
+                agenticTexts.Add(context.Activity.Text);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnMessage(new Regex("llo"), (context, _, _) =>
             {
                 texts.Add(context.Activity.Text);
@@ -959,10 +1207,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(texts);
             Assert.Equal("hello", texts[0]);
+
+            Assert.Single(agenticTexts);
+            Assert.Equal("agentic hello", agenticTexts[0]);
         }
 
         [Fact]
@@ -986,30 +1238,59 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "agentic hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var texts = new List<string>();
+            var agenticTexts = new List<string>();
+
+            // agentic
+#pragma warning disable CS0618 // Type or member is obsolete
+            app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
+            {
+                agenticTexts.Add(context.Activity.Text);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // non-agentic
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
             {
                 texts.Add(context.Activity.Text);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(texts);
             Assert.Equal("hello", texts[0]);
+
+            Assert.Single(agenticTexts);
+            Assert.Equal("agentic hello", agenticTexts[0]);
         }
 
         [Fact]
@@ -1056,6 +1337,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var texts = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnMessage(new MultipleRouteSelector
             {
                 Strings = new[] { "hello" },
@@ -1067,6 +1349,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 texts.Add(context.Activity.Text);
                 return Task.CompletedTask;
             });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -1110,18 +1393,40 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ReactionsAdded = new List<MessageReaction> { new() },
+                Name = "agentic1",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var names = new List<string>();
+            var agenticNames = new List<string>();
+
+            // agentic
+            app.OnMessageReactionsAdded((context, _, _) =>
+            {
+                agenticNames.Add(context.Activity.Name);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnMessageReactionsAdded((context, _, _) =>
             {
                 names.Add(context.Activity.Name);
@@ -1132,10 +1437,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
             Assert.Equal("1", names[0]);
+
+            Assert.Single(agenticNames);
+            Assert.Equal("agentic1", agenticNames[0]);
         }
 
         [Fact]
@@ -1168,18 +1477,40 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ReactionsRemoved = new List<MessageReaction> { new() },
+                Name = "agentic1",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
 
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
             var names = new List<string>();
+            var agenticNames = new List<string>();
+
+            // agentic
+            app.OnMessageReactionsRemoved((context, _, _) =>
+            {
+                agenticNames.Add(context.Activity.Name);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnMessageReactionsRemoved((context, _, _) =>
             {
                 names.Add(context.Activity.Name);
@@ -1190,10 +1521,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
             Assert.Equal("1", names[0]);
+
+            Assert.Single(agenticNames);
+            Assert.Equal("agentic1", agenticNames[0]);
         }
 
         [Fact]
@@ -1235,9 +1570,22 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "handoff/action",
+                Value = new { Continuation = "test" },
+                Id = "agentic test",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId"
+            };
+
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
+            var agenticTurnContext = new TurnContext(adapter, agenticActivity);
             var expectedInvokeResponse = new InvokeResponse
             {
                 Status = 200
@@ -1248,7 +1596,19 @@ namespace Microsoft.Agents.Builder.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+
+
             var ids = new List<string>();
+            var agenticIds = new List<string>();
+
+            // agentic
+            app.OnHandoff((turnContext, _, _, _) =>
+            {
+                agenticIds.Add(turnContext.Activity.Id);
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // non-agentic
             app.OnHandoff((turnContext, _, _, _) =>
             {
                 ids.Add(turnContext.Activity.Id);
@@ -1259,6 +1619,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
             await app.OnTurnAsync(turnContext2, CancellationToken.None);
             await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(agenticTurnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(ids);
@@ -1267,6 +1628,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
             Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+
+            Assert.Single(agenticIds);
+            Assert.Equal("agentic test", agenticIds[0]);
         }
     }
 }

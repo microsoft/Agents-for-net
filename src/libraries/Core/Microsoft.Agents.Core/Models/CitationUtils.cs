@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Core.Models
@@ -42,9 +43,13 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="text">Text that has citation tags.</param>
         /// <param name="citations">List of citations</param>
-        /// <returns></returns>
+        /// <returns>List of citations found in the text, or null for no matches.</returns>
         public static List<ClientCitation>? GetUsedCitations(string text, List<ClientCitation> citations)
         {
+            if (citations == null)
+            {
+                return null;
+            }
             Regex regex = new(@"\[(\d+)\]");
             MatchCollection matches = regex.Matches(text);
 
@@ -61,13 +66,17 @@ namespace Microsoft.Agents.Core.Models
                     {
                         if ($"[{citation.Position}]" == match.Value)
                         {
+                            if (usedCitations.Any(a => a.Position == citation.Position))
+                            { // only add citation once if it has already been added to the list
+                                return false;
+                            }
                             usedCitations.Add(citation);
                             return true;
                         }
                         return false;
                     });
                 }
-                return usedCitations;
+                return usedCitations.Count > 0 ? usedCitations : null;
             }
         }
     }

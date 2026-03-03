@@ -30,5 +30,7 @@ namespace Microsoft.Agents.Core.Models
         public TokenExchangeInvokeRequest Authentication { get; set; }
         /// <summary> The 'state' or magic code for an OAuth flow. </summary>
         public string State { get; set; }
+        /// <summary> What triggered the action.</summary>
+        public string Trigger { get; set; }
     }
 }

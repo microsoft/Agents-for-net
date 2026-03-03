@@ -116,15 +116,34 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="isInvokeRoute">Boolean indicating if the RouteSelector is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers"></param>
+        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            _routes.AddRoute(selector, handler, isInvokeRoute, rank, autoSignInHandlers);
- 
+            var route = RouteBuilder.Create()
+                .AsAgentic(isAgenticOnly)
+                .AsInvoke(isInvokeRoute)
+                .WithSelector(selector)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+
+            _routes.AddRoute(route);
+
+            return this;
+        }
+
+        public AgentApplication AddRoute(Route route)
+        {
+            AssertionHelpers.ThrowIfNull(route, nameof(route));
+
+            _routes.AddRoute(route);
+
             return this;
         }
 
@@ -135,14 +154,18 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
-            OnActivity(routeSelector, handler, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(TypeRouteBuilder.Create()
+                .WithType(type)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
+            );
         }
 
         /// <summary>
@@ -152,14 +175,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(Regex typePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnActivity(Regex typePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type));
-            OnActivity(routeSelector, handler, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                TypeRouteBuilder.Create()
+                    .WithType(typePattern)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -169,13 +197,20 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use AddRoute(Route) or AddRoute(RouteSelector, RouteHandler, bool, ushort, string[], bool) instead.")]
+        public AgentApplication OnActivity(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                RouteBuilder.Create()
+                    .WithSelector(routeSelector)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -185,30 +220,33 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use AddRoute(Route) instead.")]
+        public AgentApplication OnActivity(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
             if (routeSelectors.Strings != null)
             {
                 foreach (string type in routeSelectors.Strings)
                 {
-                    OnActivity(type, handler, rank, autoSignInHandlers);
+                    OnActivity(type, handler, rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             if (routeSelectors.Regexes != null)
             {
                 foreach (Regex typePattern in routeSelectors.Regexes)
                 {
-                    OnActivity(typePattern, handler, rank, autoSignInHandlers);
+                    OnActivity(typePattern, handler, rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             if (routeSelectors.RouteSelectors != null)
             {
                 foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
-                    OnActivity(routeSelector, handler, rank, autoSignInHandlers);
+                    AddRoute(routeSelector, handler, false, rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             return this;
@@ -221,46 +259,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public virtual AgentApplication OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public virtual AgentApplication OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationUpdateEvent, nameof(conversationUpdateEvent));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            RouteSelector routeSelector;
-            switch (conversationUpdateEvent)
-            {
-                case ConversationUpdateEvents.MembersAdded:
-                    {
-                        routeSelector = (context, _) => Task.FromResult
-                        (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersAdded != null
-                            && context.Activity.MembersAdded.Count > 0
-                        );
-                        break;
-                    }
-                case ConversationUpdateEvents.MembersRemoved:
-                    {
-                        routeSelector = (context, _) => Task.FromResult
-                        (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersRemoved != null
-                            && context.Activity.MembersRemoved.Count > 0
-                        );
-                        break;
-                    }
-                default:
-                    {
-                        routeSelector = (context, _) => Task.FromResult
-                        (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        );
-                        break;
-                    }
-            }
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                ConversationUpdateRouteBuilder.Create()
+                    .WithUpdateEvent(conversationUpdateEvent)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -270,20 +281,28 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public virtual AgentApplication OnConversationUpdate(RouteSelector conversationUpdateSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use AddRoute(Route) instead.")]
+        public virtual AgentApplication OnConversationUpdate(RouteSelector conversationUpdateSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(conversationUpdateSelector, nameof(conversationUpdateSelector));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            async Task<bool> wrapper(ITurnContext turnContext, CancellationToken cancellationToken)
+            async Task<bool> ensureConversationUpdate(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                return string.Equals(turnContext.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                    && await conversationUpdateSelector(turnContext, cancellationToken);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(turnContext)) && turnContext.Activity.IsType(ActivityTypes.ConversationUpdate) && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
-            AddRoute(wrapper, handler, false, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                RouteBuilder.Create()
+                    .WithSelector(ensureConversationUpdate)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+
+            );
         }
 
         /// <summary>
@@ -293,14 +312,17 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnConversationUpdate(string[] conversationUpdateEvents, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use OnConversationUpdate(string) instead.")]
+        public AgentApplication OnConversationUpdate(string[] conversationUpdateEvents, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(conversationUpdateEvents, nameof(conversationUpdateEvents));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
             foreach (string conversationUpdateEvent in conversationUpdateEvents)
             {
-                OnConversationUpdate(conversationUpdateEvent, handler, rank, autoSignInHandlers);
+                OnConversationUpdate(conversationUpdateEvent, handler, rank, autoSignInHandlers, isAgenticOnly);
             }
             return this;
         }
@@ -319,20 +341,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessage(string text, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnMessage(string text, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
-                => Task.FromResult
-                (
-                    context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
-                    && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
-                );
-            OnMessage(routeSelector, handler, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                MessageRouteBuilder.Create()
+                    .WithText(text)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -349,20 +370,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessage(Regex textPattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnMessage(Regex textPattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
-                => Task.FromResult
-                (
-                    context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity?.Text != null
-                    && textPattern.IsMatch(context.Activity.Text)
-                );
-            OnMessage(routeSelector, handler, rank,autoSignInHandlers);
-            return this;
+            return AddRoute(
+                MessageRouteBuilder.Create()
+                    .WithText(textPattern)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -375,20 +395,26 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessage(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use AddRoute(Route) instead.")]
+        public AgentApplication OnMessage(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            // Enforce Activity.Type Message
-            async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
+            async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
-                return context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
-            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                RouteBuilder.Create()
+                    .WithSelector(ensureMessage)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -401,30 +427,33 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessage(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        [Obsolete("This method is deprecated use OnMessage instead.")]
+        public AgentApplication OnMessage(MultipleRouteSelector routeSelectors, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
             if (routeSelectors.Strings != null)
             {
                 foreach (string text in routeSelectors.Strings)
                 {
-                    OnMessage(text, handler, rank, autoSignInHandlers);
+                    OnMessage(text, handler, rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             if (routeSelectors.Regexes != null)
             {
                 foreach (Regex textPattern in routeSelectors.Regexes)
                 {
-                    OnMessage(textPattern, handler, rank, autoSignInHandlers);
+                    OnMessage(textPattern, handler, rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             if (routeSelectors.RouteSelectors != null)
             {
                 foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
-                    OnMessage(routeSelector, handler, rank: rank, autoSignInHandlers);
+                    AddRoute(routeSelector, handler, false, rank: rank, autoSignInHandlers, isAgenticOnly);
                 }
             }
             return this;
@@ -437,20 +466,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnEvent(string eventName, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnEvent(string eventName, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(eventName, nameof(eventName));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
-                => Task.FromResult
-                (
-                    context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity?.Name != null
-                    && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
-                );
-            OnEvent(routeSelector, handler, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                EventRouteBuilder.Create()
+                    .WithName(eventName)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -460,20 +488,19 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnEvent(Regex namePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnEvent(Regex namePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
-                => Task.FromResult
-                (
-                    context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity?.Name != null
-                    && namePattern.IsMatch(context.Activity.Name)
-                );
-            OnEvent(routeSelector, handler, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                EventRouteBuilder.Create()
+                    .WithName(namePattern)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -483,20 +510,18 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnEvent(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnEvent(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            // Enforce Activity.Type Event
-            async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
-            {
-                return context.Activity.IsType(ActivityTypes.Event) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
-            }
-
-            AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
-            return this;
+            return AddRoute(
+                EventRouteBuilder.Create()
+                    .WithSelector(routeSelector)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -505,18 +530,17 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
-                && context.Activity?.ReactionsAdded != null
-                && context.Activity.ReactionsAdded.Count > 0
+            return AddRoute(MessageReactionsAddedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
             );
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
-            return this;
         }
 
         /// <summary>
@@ -525,18 +549,17 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
-                && context.Activity?.ReactionsRemoved != null
-                && context.Activity.ReactionsRemoved.Count > 0
+            return AddRoute(MessageReactionsRemovedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
             );
-            AddRoute(routeSelector, handler, false, rank, autoSignInHandlers);
-            return this;
         }
 
         /// <summary>
@@ -545,26 +568,40 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnHandoff(HandoffHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        public AgentApplication OnHandoff(HandoffHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "handoff/action")
+            return AddRoute(
+                HandoffRouteBuilder.Create()
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
             );
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                string token = turnContext.Activity.Value.GetType().GetProperty("Continuation").GetValue(turnContext.Activity.Value) as string ?? "";
-                await handler(turnContext, turnState, token, cancellationToken);
-
-                var activity = Activity.CreateInvokeResponseActivity();
-                await turnContext.SendActivityAsync(activity, cancellationToken);
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank, autoSignInHandlers);
-            return this;
         }
+
+        /// <summary>
+        /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response.
+        /// </summary>
+        /// <param name="handler">Function to call when the route is triggered</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            return AddRoute(
+                FeedbackRouteBuilder.Create()
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build()
+            );
+        }
+
 
         /// <summary>
         /// Add a handler that will execute before the turn's activity handler logic is processed.
@@ -674,6 +711,11 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+
             try
             {
                 // Start typing timer if configured
@@ -713,6 +755,17 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
 
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    {
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        {
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                        }
+                    }
+
                     // Call before turn handler
                     foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                     {
@@ -727,23 +780,13 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
 
-                    // Download any input files
-                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                    if (fileDownloaders != null && fileDownloaders.Count > 0)
-                    {
-                        foreach (IInputFileDownloader downloader in fileDownloaders)
-                        {
-                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
-                        }
-                    }
-
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
                     foreach (Route route in _routes.Enumerate())
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
-                            if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
+                            var handlers = route.OAuthHandlers(turnContext);
+                            if (_userAuth == null || handlers?.Length == 0)
                             {
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }
@@ -751,7 +794,6 @@ namespace Microsoft.Agents.Builder.App
                             {
                                 bool signInComplete = false;
 
-                                var handlers = route.AutoSignInHandler;
                                 foreach (var handler in handlers)
                                 {
                                     signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, handler, forceAuto: true, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -767,7 +809,10 @@ namespace Microsoft.Agents.Builder.App
                                 }
                             }
 
-                            break;
+                            if (!route.Flags.HasFlag(RouteFlags.NonTerminal))
+                            {
+                                break;
+                            }
                         }
                     }
 

@@ -142,6 +142,8 @@ namespace Microsoft.Agents.Connector.Tests
 
         private class MockTokenAccess : IAccessTokenProvider
         {
+            public ImmutableConnectionSettings ConnectionSettings => throw new NotImplementedException();
+
             public Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
             {
                 return Task.FromResult(Token);

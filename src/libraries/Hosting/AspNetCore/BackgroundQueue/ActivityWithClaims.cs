@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -14,6 +15,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     public class ActivityWithClaims
     {
+        public IChannelAdapter ChannelAdapter { get; set; }
+
         /// <summary>
         /// Optional: Defaults to IAgent
         /// </summary>
@@ -41,5 +44,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Headers used for the current <see cref="Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
+
+        /// <summary>
+        /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and telemetry
+        /// correlation, cloned from the original request context to enable trace continuity across the
+        /// background queue boundary.
+        /// </summary>
+        public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }
