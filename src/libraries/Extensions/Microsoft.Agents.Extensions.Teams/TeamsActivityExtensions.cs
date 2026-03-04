@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Meetings;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.Teams
@@ -36,6 +38,22 @@ namespace Microsoft.Agents.Extensions.Teams
         }
 
         /// <summary>
+        /// Gets the TeamsMeetingInfo object from the current activity.
+        /// </summary>
+        /// <param name="activity">This activity.</param>
+        /// <returns>The current activity's team's meeting, or null.</returns>
+        public static Meeting TeamsGetMeetingInfo(this IActivity activity)
+        {
+            var channelData = activity.GetChannelData<ChannelData>();
+            if (channelData != null && channelData.Properties.TryGetValue("meeting", out var meetingObj))
+            {
+                return ProtocolJsonSerializer.ToObject<Meeting>(meetingObj);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Gets the TeamsInfo object from the current activity.
         /// </summary>
         /// <param name="activity">This activity.</param>
@@ -55,8 +73,7 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="externalResourceUrl">Url to external resource. Must be included in manifest's valid domains.</param>
         public static void TeamsNotifyUser(this IActivity activity, bool alertInMeeting, string externalResourceUrl = null)
         {
-            var teamsChannelData = activity.ChannelData as ChannelData;
-            if (teamsChannelData == null)
+            if (activity.ChannelData is not ChannelData teamsChannelData)
             {
                 teamsChannelData = new ChannelData();
                 activity.ChannelData = teamsChannelData;

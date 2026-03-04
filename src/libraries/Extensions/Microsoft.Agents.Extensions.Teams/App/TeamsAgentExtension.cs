@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App.Builders;
@@ -12,7 +11,6 @@ using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Config;
 using Microsoft.Teams.Api.O365;
-using Microsoft.VisualBasic;
 using System;
 using System.Text.Json;
 using System.Threading;
@@ -38,6 +36,12 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
             AgentApplication = agentApplication;
             MessageExtensions = new MessageExtension(agentApplication);
+
+            agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
+            {
+                turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
+                return true;
+            });
         }
 
         /// <summary>

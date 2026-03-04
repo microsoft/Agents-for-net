@@ -11,19 +11,18 @@ using Microsoft.Agents.Extensions.Teams.App;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace TeamsAgent;
+namespace MessageExtensions;
 
-public class TeamsAgent : AgentApplication
+public class TeamsMessageExtensionAgent : AgentApplication
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<TeamsAgent> _logger;
-    public TeamsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory, ILogger<TeamsAgent> logger) : base(options)
+    private readonly ILogger<TeamsMessageExtensionAgent> _logger;
+    public TeamsMessageExtensionAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory, ILogger<TeamsMessageExtensionAgent> logger) : base(options)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         RegisterExtension(new TeamsAgentExtension(this), tae =>
         {
-            tae.OnMessageEdit(MessageEdited);
             tae.MessageExtensions.OnQuery("findNuGetPackage", OnQueryAsync);
             tae.MessageExtensions.OnSelectItem(OnSelectItemAsync);
             tae.MessageExtensions.OnQueryLink(OnQueryLinkAsync);
@@ -31,7 +30,6 @@ public class TeamsAgent : AgentApplication
 
         AddRoute(MessageRouteBuilder.Create().WithChannelId(Channels.Msteams).WithText("-name").WithHandler(MyNameAsync).Build());
 
-        OnMessageReactionsAdded(OnMessageReactionAddedAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -128,15 +126,9 @@ public class TeamsAgent : AgentApplication
         return packages!;
     }
 
-    private Task OnMessageReactionAddedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
-        turnContext.SendActivityAsync("Message Reaction: " + turnContext.Activity.ReactionsAdded[0].Type, cancellationToken: cancellationToken);
-
-    private Task MessageEdited(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
-        turnContext.SendActivityAsync("Message Edited: " + turnContext.Activity.Id, cancellationToken: cancellationToken);
-
     private async Task MyNameAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var teamsApiClient = await this.GetTeamsApiClient(turnContext, cancellationToken);
+        var teamsApiClient = turnContext.GetTeamsApiClient();
         var member = await teamsApiClient.Conversations.Members.GetByIdAsync(turnContext.Activity.Conversation.Id, turnContext.Activity.From.Id);
         string name = member.Name ?? "No idea";
         await turnContext.SendActivityAsync($"Your name is: {name}", cancellationToken: cancellationToken);
