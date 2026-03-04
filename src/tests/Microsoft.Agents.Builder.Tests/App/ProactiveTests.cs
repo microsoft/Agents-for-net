@@ -34,10 +34,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             _storage = new MemoryStorage();
             var options = new AgentApplicationOptions(_storage)
             {
-                Proactive = new ProactiveOptions
-                {
-                    Storage = _storage
-                }
+                Proactive = new ProactiveOptions(_storage)
             };
             _app = new AgentApplication(options);
             _proactive = new Proactive(_app);

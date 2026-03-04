@@ -163,11 +163,7 @@ namespace Microsoft.Agents.Builder.App
                 AdaptiveCards = cardOptions ?? section.Get<AdaptiveCardsOptions>();
             }
 
-            Proactive = new ProactiveOptions
-            {
-                // TODO: Change after PR #712 merges, use Options.Storage
-                Storage = storage ?? sp.GetService<IStorage>()
-            };
+            Proactive = new ProactiveOptions(storage ?? sp.GetService<IStorage>(), configuration, configKey: $"{configKey}:Proactive");
 
             // Can't get these from config at the moment
             FileDownloaders = fileDownloaders;
