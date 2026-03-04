@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Core.Telemetry
 {
-    public static class TelemetryConstants
+    public static class AgentsTelemetryConstants
     {
         public static readonly string SourceName = "Microsoft.Agents.Builder";
         public static readonly string SourceVersion = "1.0.0";

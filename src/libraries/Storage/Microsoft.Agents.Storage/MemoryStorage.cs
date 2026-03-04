@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
-using System;
+using Microsoft.Agents.Storage.Telemetry;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
@@ -43,6 +43,8 @@ namespace Microsoft.Agents.Storage
 
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete");
+
             lock (_syncroot)
             {
                 foreach (var key in keys)
@@ -68,6 +70,7 @@ namespace Microsoft.Agents.Storage
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("read");
             var storeItems = new Dictionary<string, object>(keys.Length);
             lock (_syncroot)
             {
@@ -119,6 +122,7 @@ namespace Microsoft.Agents.Storage
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("write");
 
             lock (_syncroot)
             {

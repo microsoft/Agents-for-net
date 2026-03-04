@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.Telemetry;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 using System;
@@ -66,6 +67,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("read");
 
             if (keys.Length == 0)
             {
@@ -159,6 +162,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("write");
+
             if (changes.Count == 0)
             {
                 // Nothing to write is a no-op.
@@ -234,6 +239,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
         public async Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete");
 
             if (keys.Length == 0)
             {

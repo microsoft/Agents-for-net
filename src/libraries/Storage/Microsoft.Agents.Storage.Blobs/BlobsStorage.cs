@@ -17,6 +17,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.Telemetry;
 
 namespace Microsoft.Agents.Storage.Blobs
 {
@@ -106,6 +107,8 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete");
+
             foreach (var key in keys)
             {
                 var blobName = GetBlobName(key);
@@ -118,6 +121,7 @@ namespace Microsoft.Agents.Storage.Blobs
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("read");
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
@@ -170,6 +174,8 @@ namespace Microsoft.Agents.Storage.Blobs
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("write");
 
             if (changes.Count == 0)
             {
