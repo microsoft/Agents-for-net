@@ -8,8 +8,14 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MessageExtensions;
 
@@ -80,16 +86,10 @@ public class TeamsMessageExtensionAgent : AgentApplication
 
     private async Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryAsync(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken)
     {
-        string? text = string.Empty;
+        string text = string.Empty;
         if (query.Parameters.TryGetValue("NuGetPackageName", out var elObj))
         {
-            text = elObj.ToString();
-        }
-
-        if (string.IsNullOrEmpty(text))
-        {
-            _logger.LogWarning("Query Parameters does not include NuGetPackageName");
-            return await Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result());
+            text = elObj.ToString() ?? string.Empty;
         }
 
         var packages = await FindPackages(text);

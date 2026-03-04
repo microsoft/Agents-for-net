@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Agents.Samples;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
-using MessagingExtensionsSearch.Bots;
+using CompatMessageExtensions.Bots;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +20,7 @@ builder.Logging.AddDebug();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddAgent<TeamsMessagingExtensionsSearchBot>();
+builder.AddAgent<TeamsMessageExtensionsSearchBot>();
 
 var app = builder.Build();
 

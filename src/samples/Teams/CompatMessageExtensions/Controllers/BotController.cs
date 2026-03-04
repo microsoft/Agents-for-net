@@ -8,7 +8,7 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using System.Threading;
 using Microsoft.Agents.Builder;
 
-namespace MessagingExtensionsSearch.Controllers
+namespace CompatMessageExtensions.Controllers
 {
     // ASP.Net Controller that receives incoming HTTP requests from the Azure Bot Service or other configured event activity protocol sources.
     // When called, the request has already been authorized and credentials and tokens validated.

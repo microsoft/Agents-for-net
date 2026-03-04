@@ -16,10 +16,11 @@ using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Builder;
 
+#nullable disable
 
-namespace MessagingExtensionsSearch.Bots
+namespace CompatMessageExtensions.Bots
 {
-    public class TeamsMessagingExtensionsSearchBot(IConfiguration config) : TeamsActivityHandler
+    public class TeamsMessageExtensionsSearchBot(IConfiguration config) : TeamsActivityHandler
     {
         public readonly string _baseUrl = config["BaseUrl"];
 
