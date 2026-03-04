@@ -22,13 +22,13 @@ namespace Microsoft.Agents.Storage.Telemetry
             "ms"
         );
 
-        public static TimedActivity StartStorageOp(string operationType)
+        public static TimedActivity StartStorageOp(string operationType, int numKeys)
         {
             string operationName = String.Format(
                 StorageTelemetryConstants.OperationNameFormat,
                 operationType);
 
-            return AgentsTelemetry.StartTimedActivity(
+            TimedActivity timedActivity = AgentsTelemetry.StartTimedActivity(
                 operationName,
                 (activity, duration, error) =>
                 {
@@ -36,6 +36,10 @@ namespace Microsoft.Agents.Storage.Telemetry
                     OperationsDuration.Record(duration);
                 }
             );
+
+            timedActivity.Activity?.SetTag("keys.count", numKeys);
+
+            return timedActivity;
         }
     }
 }

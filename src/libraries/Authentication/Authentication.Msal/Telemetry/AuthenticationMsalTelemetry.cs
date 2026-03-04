@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Telemetry;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+
+#nullable enable
 
 namespace Microsoft.Agents.Authentication.Msal.Telemetry
 {
@@ -13,9 +16,14 @@ namespace Microsoft.Agents.Authentication.Msal.Telemetry
         private static readonly Histogram<long> AuthTokenRequestDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
             AuthenticationMsalTelemetryConstants.AuthTokenRequestDurationMetricName, "ms");
 
-        public static TimedActivity StartAuthTokenRequest()
+        public static TimedActivity StartAuthTokenRequest(
+                string? tenantId = null,
+                string? agenticAppInstanceId = null,
+                string? agenticUserId = null,
+                IList<string>? scopes = null
+            )
         {
-            return AgentsTelemetry.StartTimedActivity(
+            TimedActivity timedActivity = AgentsTelemetry.StartTimedActivity(
                 AuthenticationMsalTelemetryConstants.AuthTokenRequestOperationName,
                 (activity, duration, error) =>
                 {
@@ -23,6 +31,21 @@ namespace Microsoft.Agents.Authentication.Msal.Telemetry
                     AuthTokenRequestDuration.Record(duration);
                 }
             );
+
+            if (agenticAppInstanceId != null)
+            {
+                timedActivity.Activity?.SetTag("agentic.instanceId", agenticAppInstanceId);
+            }
+            if (agenticUserId != null)
+            {
+                timedActivity.Activity?.SetTag("agentic.userId", agenticUserId);
+            }
+            if (scopes != null)
+            {
+                timedActivity.Activity?.SetTag("auth.scopes", scopes);
+            }
+
+            return timedActivity;
         }
     }
 }

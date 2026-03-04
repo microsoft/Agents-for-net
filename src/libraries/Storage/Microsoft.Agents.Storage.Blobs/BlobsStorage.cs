@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete", keys.Length);
 
             foreach (var key in keys)
             {
@@ -121,7 +121,7 @@ namespace Microsoft.Agents.Storage.Blobs
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("read");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("read", keys.Length);
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("write");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("write", changes.Count);
 
             if (changes.Count == 0)
             {

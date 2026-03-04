@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("read");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("read", keys.Length);
 
             if (keys.Length == 0)
             {
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("write");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("write", changes.Count);
 
             if (changes.Count == 0)
             {
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete");
+            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete", keys.Length);
 
             if (keys.Length == 0)
             {

@@ -8,11 +8,11 @@ namespace Microsoft.Agents.Core.Telemetry
 {
     public sealed class TimedActivity : IDisposable
     {
-        private readonly Activity? Activity;
         private readonly Stopwatch Stopwatch;
         private readonly Action<Activity?, long, Exception?>? Callback;
         private bool Disposed;
         private Exception Error;
+        public Activity? Activity { get; }
 
         public TimedActivity(
             Activity? activity,
