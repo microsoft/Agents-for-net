@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -311,6 +313,80 @@ namespace Microsoft.Agents.Builder.Tests
 
             //Assert
             await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, [], default));
+        }
+
+        [Fact]
+        public async Task ProcessActivityAsync_ShouldUseBotFrameworkScopeForNonSkillRole()
+        {
+            // Arrange
+            var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
+            var mockConnectorClient = mockChannelServiceClientFactory
+                .Setup(x => x.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), CancellationToken.None))
+                .ReturnsAsync(CreateMockConnectorClient().Object);
+
+            var adapter = new TestChannelAdapter(mockChannelServiceClientFactory.Object);
+
+            var claimsIdentity = new ClaimsIdentity([
+                new(AuthenticationConstants.AudienceClaim, "audience"),
+                new(AuthenticationConstants.AuthorizedParty, "agentId"), 
+                new(AuthenticationConstants.VersionClaim, "2.0")
+            ]);
+            var activity = new Activity { Type = ActivityTypes.Message };
+
+            await adapter.ProcessActivityAsync(claimsIdentity, activity, null, CancellationToken.None);
+
+            //Assert
+            IList<string> scopes = [$"{AuthenticationConstants.BotFrameworkScope}/.default"];
+            mockChannelServiceClientFactory.Verify(e => e.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), scopes, It.IsAny<bool>(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ProcessActivityAsync_ShouldUseAgentAppIdAsScopeForSkillRole()
+        {
+            // Arrange
+            var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
+            var mockConnectorClient = mockChannelServiceClientFactory
+                .Setup(x => x.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), CancellationToken.None))
+                .ReturnsAsync(CreateMockConnectorClient().Object);
+
+            var adapter = new TestChannelAdapter(mockChannelServiceClientFactory.Object);
+
+            var claimsIdentity = new ClaimsIdentity([
+                new(AuthenticationConstants.AudienceClaim, "audience"),
+                new(AuthenticationConstants.AuthorizedParty, "agentId"), 
+                new(AuthenticationConstants.VersionClaim, "2.0")
+            ]);
+            var activity = new Activity { Type = ActivityTypes.Message, Recipient = new ChannelAccount { Role = RoleTypes.Skill } };
+
+            await adapter.ProcessActivityAsync(claimsIdentity, activity, null, CancellationToken.None);
+
+            //Assert
+            IList<string> scopes = [$"{claimsIdentity.Claims.First(e => e.Type == AuthenticationConstants.AuthorizedParty).Value}/.default"];
+            mockChannelServiceClientFactory.Verify(e => e.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), scopes, It.IsAny<bool>(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ProcessActivityAsync_ShouldUseBotFrameworkScopeForSkillRoleWithoutAzpAndAppId()
+        {
+            // Arrange
+            var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
+            var mockConnectorClient = mockChannelServiceClientFactory
+                .Setup(x => x.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), CancellationToken.None))
+                .ReturnsAsync(CreateMockConnectorClient().Object);
+
+            var adapter = new TestChannelAdapter(mockChannelServiceClientFactory.Object);
+
+            var claimsIdentity = new ClaimsIdentity([
+                new(AuthenticationConstants.AudienceClaim, "audience"),
+                new(AuthenticationConstants.VersionClaim, "2.0")
+            ]);
+            var activity = new Activity { Type = ActivityTypes.Message, Recipient = new ChannelAccount { Role = RoleTypes.Skill } };
+
+            await adapter.ProcessActivityAsync(claimsIdentity, activity, null, CancellationToken.None);
+
+            //Assert
+            IList<string> scopes = [$"{AuthenticationConstants.BotFrameworkScope}/.default"];
+            mockChannelServiceClientFactory.Verify(e => e.CreateConnectorClientAsync(It.IsAny<TurnContext>(), It.IsAny<string>(), scopes, It.IsAny<bool>(), CancellationToken.None));
         }
 
         private Task ContinueCallback(ITurnContext turnContext, CancellationToken cancellationToken)
