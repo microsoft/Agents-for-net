@@ -1,6 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
+using Azure.Core;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Microsoft.Agents.Storage.Blobs;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,13 +16,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
-using Azure.Core;
-using Azure.Storage;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Microsoft.Agents.Storage.Blobs;
-using Moq;
 using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests
@@ -80,16 +80,6 @@ namespace Microsoft.Agents.Storage.Tests
         public async Task WriteAsync()
         {
             InitStorage();
-
-            _client.Setup(e => e.UploadAsync(
-                It.IsAny<Stream>(),
-                It.IsAny<BlobHttpHeaders>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobRequestConditions>(),
-                It.IsAny<IProgress<long>>(),
-                It.IsAny<AccessTier?>(),
-                It.IsAny<StorageTransferOptions>(),
-                It.IsAny<CancellationToken>()));
 
             var changes = new Dictionary<string, object>
             {
@@ -164,6 +154,177 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldThrowOnNullInputs()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, new StorageWriteOptions(), CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync(new Dictionary<string, StoreItem>(), null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldReturnStoreItems()
+        {
+            InitStorage();
+
+            var expectedETag = new ETag("\"etag\"");
+            var blobContentInfo = BlobsModelFactory.BlobContentInfo(
+                eTag: expectedETag,
+                lastModified: DateTimeOffset.UtcNow,
+                contentHash: null,
+                versionId: null,
+                encryptionKeySha256: null,
+                encryptionScope: null,
+                blobSequenceNumber: 0);
+            var response = new Mock<Response<BlobContentInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobContentInfo);
+
+            _client.Setup(e => e.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobHttpHeaders>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<IProgress<long>>(),
+                It.IsAny<AccessTier?>(),
+                It.IsAny<StorageTransferOptions>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(response.Object);
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "testing" } }
+            };
+
+            var result = await _storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.Equal(expectedETag.ToString(), result["key"].ETag);
+            Assert.NotEqual(blobContentInfo.ETag.ToString(), changes["key"].ETag);
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldThrowWhenKeyExists()
+        {
+            InitStorage();
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem() }
+            };
+
+            _client.Setup(e => e.UploadAsync(
+                    It.IsAny<Stream>(),
+                    It.IsAny<BlobHttpHeaders>(),
+                    It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<BlobRequestConditions>(),
+                    It.IsAny<IProgress<long>>(),
+                    It.IsAny<AccessTier?>(),
+                    It.IsAny<StorageTransferOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.Conflict, "ETag Conflict error"));
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            await Assert.ThrowsAsync<ItemExistsException>(() =>
+                _storage.WriteAsync(
+                    new Dictionary<string, StoreItem> { { "key", new StoreItem() } },
+                    options,
+                    CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldUseIfNoneMatch()
+        {
+            InitStorage();
+
+            BlobRequestConditions capturedConditions = null;
+
+            var blobContentInfo = BlobsModelFactory.BlobContentInfo(
+                eTag: new ETag("\"etag\""),
+                lastModified: DateTimeOffset.UtcNow,
+                contentHash: null,
+                versionId: null,
+                encryptionKeySha256: null,
+                encryptionScope: null,
+                blobSequenceNumber: 0);
+            var response = new Mock<Response<BlobContentInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobContentInfo);
+
+            _client.Setup(e => e.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobHttpHeaders>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<IProgress<long>>(),
+                It.IsAny<AccessTier?>(),
+                It.IsAny<StorageTransferOptions>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<Stream, BlobHttpHeaders, IDictionary<string, string>, BlobRequestConditions, IProgress<long>, AccessTier?, StorageTransferOptions, CancellationToken>(
+                    (stream, headers, metadata, conditions, progress, tier, transferOptions, token) =>
+                    {
+                        capturedConditions = conditions;
+                    })
+                .ReturnsAsync(response.Object);
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "etag" } }
+            };
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            await _storage.WriteAsync(changes, options, CancellationToken.None);
+
+            Assert.NotNull(capturedConditions);
+            Assert.Equal(ETag.All, capturedConditions.IfNoneMatch);
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldUseIfMatchWhenETagProvided()
+        {
+            InitStorage();
+
+            BlobRequestConditions capturedConditions = null;
+
+            var blobContentInfo = BlobsModelFactory.BlobContentInfo(
+                eTag: new ETag("\"etag\""),
+                lastModified: DateTimeOffset.UtcNow,
+                contentHash: null,
+                versionId: null,
+                encryptionKeySha256: null,
+                encryptionScope: null,
+                blobSequenceNumber: 0);
+            var response = new Mock<Response<BlobContentInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobContentInfo);
+
+            _client.Setup(e => e.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobHttpHeaders>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<IProgress<long>>(),
+                It.IsAny<AccessTier?>(),
+                It.IsAny<StorageTransferOptions>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<Stream, BlobHttpHeaders, IDictionary<string, string>, BlobRequestConditions, IProgress<long>, AccessTier?, StorageTransferOptions, CancellationToken>(
+                    (stream, headers, metadata, conditions, progress, tier, transferOptions, token) =>
+                    {
+                        capturedConditions = conditions;
+                    })
+                .ReturnsAsync(response.Object);
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "etag" } }
+            };
+
+            await _storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
+
+            Assert.NotNull(capturedConditions);
+            Assert.Equal(new ETag("etag"), capturedConditions.IfMatch);
         }
 
         [Fact]
@@ -310,6 +471,28 @@ namespace Microsoft.Agents.Storage.Tests
             container.Setup(e => e.GetBlobClient(It.IsAny<string>()))
                 .Returns(_client.Object);
             container.Setup(e => e.CreateIfNotExistsAsync(It.IsAny<PublicAccessType>(), It.IsAny<IDictionary<string, string>>(), It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<CancellationToken>()));
+
+            var blobContentInfo = BlobsModelFactory.BlobContentInfo(
+                eTag: new ETag("\"etag\""),
+                lastModified: DateTimeOffset.UtcNow,
+                contentHash: null,
+                versionId: null,
+                encryptionKeySha256: null,
+                encryptionScope: null,
+                blobSequenceNumber: 0);
+            var response = new Mock<Response<BlobContentInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobContentInfo);
+
+            _client.Setup(e => e.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobHttpHeaders>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<IProgress<long>>(),
+                It.IsAny<AccessTier?>(),
+                It.IsAny<StorageTransferOptions>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(response.Object);
 
             _storage = new BlobsStorage(container.Object, jsonSerializerOptions: jsonSerializer);
         }

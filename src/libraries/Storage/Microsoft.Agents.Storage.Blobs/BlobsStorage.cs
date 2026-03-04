@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -151,7 +152,7 @@ namespace Microsoft.Agents.Storage.Blobs
             return items;
         }
 
-        //<inheritdoc/>
+        /// <inheritdoc/>
         public async Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             var storeItems = await ReadAsync(keys, cancellationToken).ConfigureAwait(false);
@@ -169,12 +170,59 @@ namespace Microsoft.Agents.Storage.Blobs
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Writes a set of typed items to blob storage using the provided write options.
+        /// </summary>
+        /// <typeparam name="TStoreItem">The item type to store.</typeparam>
+        /// <param name="changes">The items to write, keyed by storage key.</param>
+        /// <param name="options">Write options that control ETag and conditional behavior.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>A dictionary of write results keyed by storage key.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="changes"/> is null.</exception>
+        public Task<IDictionary<string, StorageWriteResponse>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TStoreItem : class
+        {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            Dictionary<string, object> changesAsObject = new(changes.Count);
+            foreach (var change in changes)
+            {
+                changesAsObject.Add(change.Key, change.Value);
+            }
+
+            return WriteAsync(changesAsObject, options, cancellationToken);
+        }
+
+        /// <summary>
+        /// Writes a set of items to blob storage using the provided write options.
+        /// </summary>
+        /// <param name="changes">The items to write, keyed by storage key.</param>
+        /// <param name="options">Write options that control ETag and conditional behavior.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>A dictionary of write results keyed by storage key.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="changes"/> or <paramref name="options"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the underlying storage returns an InvalidBlockList error, commonly due to concurrent uploads of large blobs.
+        /// </exception>
+        /// <exception cref="EtagException">Thrown when a write fails due to an ETag precondition failure.</exception>
+        public async Task<IDictionary<string, StorageWriteResponse>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions options, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
 
             if (changes.Count == 0)
             {
                 // No-op for no changes.
-                return;
+                return new Dictionary<string, StorageWriteResponse>();
             }
 
             // this should only happen once - assuming this is a singleton
@@ -183,15 +231,23 @@ namespace Microsoft.Agents.Storage.Blobs
                 await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
+            var storedItems = new Dictionary<string, StorageWriteResponse>(changes.Count);
+
             foreach (var keyValuePair in changes)
             {
                 var newValue = keyValuePair.Value;
                 var storeItem = newValue as IStoreItem;
 
-                // "*" eTag in IStoreItem converts to null condition for AccessCondition
-                var accessCondition = (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != "*")
-                    ? new BlobRequestConditions() { IfMatch = new ETag(storeItem?.ETag) }
-                    : null;
+                BlobRequestConditions accessCondition = null;
+                if (options.IfNotExists)
+                {
+                    accessCondition = new BlobRequestConditions { IfNoneMatch = ETag.All };
+                }
+                else if (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != ETag.All.ToString())
+                {
+                    // "*" eTag in IStoreItem converts to null condition for AccessCondition
+                    accessCondition = new BlobRequestConditions { IfMatch = new ETag(storeItem.ETag) };
+                }
 
                 var blobName = GetBlobName(keyValuePair.Key);
                 var blobReference = _containerClient.GetBlobClient(blobName);
@@ -209,39 +265,38 @@ namespace Microsoft.Agents.Storage.Blobs
                         JsonSerializer.Serialize(memoryStream, newState, _serializerOptions);
                         memoryStream.Seek(0, SeekOrigin.Begin);
 
-                        var blobHttpHeaders = new BlobHttpHeaders();
-                        blobHttpHeaders.ContentType = "application/json";
+                        var blobHttpHeaders = new BlobHttpHeaders
+                        {
+                            ContentType = "application/json",
+                        };
 
-                        await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+                        var uploadResponse = await blobReference
+                            .UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders)
+                            .ConfigureAwait(false);
+
+                        storedItems[keyValuePair.Key] = new StorageWriteResponse
+                        {
+                            ETag = uploadResponse.Value.ETag.ToString()
+                        };
                     }
                 }
-                catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.BadRequest
-                && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.BadRequest && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
                 {
                     throw new InvalidOperationException(
                         $"An error occurred while trying to write an object. The underlying '{BlobErrorCode.InvalidBlockList}' error is commonly caused due to concurrently uploading an object larger than 128MB in size.",
                         ex);
                 }
-                catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
                 {
-                    throw new EtagException($"Etag conflict: {ex.Message}");
+                    throw new EtagException($"Unable to write '{keyValuePair.Key}' due to an ETag conflict.");
+                }
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.Conflict)
+                {
+                    throw new ItemExistsException($"Unable to write '{keyValuePair.Key}' because it already exists.");
                 }
             }
-        }
 
-        //<inheritdoc/>
-        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
-        {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-            
-            Dictionary<string, object> changesAsObject = new(changes.Count);
-            foreach (var change in changes)
-            {
-                changesAsObject.Add(change.Key, change.Value);
-            }
-            return WriteAsync(changesAsObject, cancellationToken);
+            return storedItems;
         }
 
         private static string GetBlobName(string key)
