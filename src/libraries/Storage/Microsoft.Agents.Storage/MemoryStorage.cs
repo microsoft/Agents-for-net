@@ -119,6 +119,7 @@ namespace Microsoft.Agents.Storage
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
             lock (_syncroot)
             {
                 foreach (var change in changes)

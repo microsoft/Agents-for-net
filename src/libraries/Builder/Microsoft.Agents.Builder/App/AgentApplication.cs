@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Telemetry;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -780,11 +781,13 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
+                using var telemetryActivity = AgentsTelemetry.StartAgentTurnOperation(turnContext);
+ 
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
                     StartTypingTimer(turnContext);
-                };
+                }
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
