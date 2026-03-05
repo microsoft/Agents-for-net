@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         /// <returns>The Messaging Extension Action Response for the action.</returns>
         protected virtual async Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnTeamsMessagingExtensionSubmitActionDispatchAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
         {
-            if (!string.IsNullOrEmpty(action.BotMessagePreviewAction))
+            if (!string.IsNullOrEmpty(action.BotMessagePreviewAction?.Value))
             {
                 switch (action.BotMessagePreviewAction)
                 {

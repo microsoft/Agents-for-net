@@ -616,7 +616,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Query()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                }),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -708,7 +711,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/fetchTask",
-                Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action 
+                { 
+                    CommandId = "testCommand",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                }),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -1066,9 +1073,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 ChannelId = Channels.Msteams,
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingStart",
-                Value = JsonSerializer.SerializeToElement(new
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.Meetings.MeetingDetails
                 {
-                    StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
+                    Id = "meetingId",
+                    Type = "meetingStart",
+                    JoinUrl = "https://teams.microsoft.com/l/meetup-join/meetingId",
+                    Title = "Start Meeting Title",
+                    MSGraphResourceId = "msGraphResourceId",
+                    ScheduledStartTime = startTimeBase
                 }),
             };
 
@@ -1084,7 +1096,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Equal(startTimeBase, _activitiesToSend[0].Value);
         }
 
         [Fact]
@@ -1097,9 +1109,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 ChannelId = Channels.Msteams,
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingEnd",
-                Value = JsonSerializer.SerializeToElement(new
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.Meetings.MeetingDetails
                 {
-                    EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
+                    Id = "meetingId",
+                    Type = "meetingEnd",
+                    JoinUrl = "https://teams.microsoft.com/l/meetup-join/meetingId",
+                    Title = "End Meeting Title",
+                    MSGraphResourceId = "msGraphResourceId",
+                    ScheduledEndTime = endTimeBase
                 }),
             };
 
@@ -1115,7 +1132,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Equal(endTimeBase, _activitiesToSend[0].Value);
         }
 
         [Fact]

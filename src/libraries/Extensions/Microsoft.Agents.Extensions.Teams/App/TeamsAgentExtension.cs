@@ -7,7 +7,9 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App.Builders;
+using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
+using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Config;
 using Microsoft.Teams.Api.O365;
@@ -30,12 +32,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="agentApplication">The agent application to leverage for route registration.</param>
         /// <param name="options">Options for configuring TaskModules.</param>
-        public TeamsAgentExtension(AgentApplication agentApplication)
+        public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
         {
             ChannelId = Channels.Msteams;
 
             AgentApplication = agentApplication;
+
+            Meetings = new Meeting(agentApplication);
             MessageExtensions = new MessageExtension(agentApplication);
+            TaskModules = new TaskModule(agentApplication, options);
 
             agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
             {
@@ -45,9 +50,19 @@ namespace Microsoft.Agents.Extensions.Teams.App
         }
 
         /// <summary>
+        /// Fluent interface for accessing Meetings' specific features.
+        /// </summary>
+        public Meeting Meetings { get; }
+
+        /// <summary>
         /// Fluent interface for accessing Message Extensions' specific features.
         /// </summary>
         public MessageExtension MessageExtensions { get; }
+
+        /// <summary>
+        /// Fluent interface for accessing Task Modules' specific features.
+        /// </summary>
+        public TaskModule TaskModules { get; }
 
 #if !NETSTANDARD
         internal AgentApplication AgentApplication { get; init;}
@@ -158,7 +173,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AgentApplication.AddRoute(EventRouteBuilder.Create()
-                .WithName("application/vnd.microsoft.readReceipt")
+                .WithName(Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt)
                 .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
                 .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
                 {

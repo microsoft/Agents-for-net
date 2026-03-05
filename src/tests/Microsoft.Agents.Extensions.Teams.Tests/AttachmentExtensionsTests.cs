@@ -4,6 +4,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Xunit;
 
@@ -34,7 +35,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             
             if (previewAttachment != null)
             {
-                Assert.Equal(previewAttachment, messagingExtensionAttachment.Preview);
+                var previewAttachmentJson = ProtocolJsonSerializer.ToJson(attachment);
+                var teamsPreviewJson = ProtocolJsonSerializer.ToJson(ProtocolJsonSerializer.ToObject<Attachment>(messagingExtensionAttachment.Preview));
+                Assert.Equal(previewAttachmentJson, teamsPreviewJson);
             }
             else
             {

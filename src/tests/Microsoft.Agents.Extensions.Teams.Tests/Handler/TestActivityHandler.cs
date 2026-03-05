@@ -293,14 +293,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         protected override Task OnTeamsMeetingStartAsync(Microsoft.Teams.Api.Meetings.MeetingDetails meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
-            turnContext.SendActivityAsync(meeting.ScheduledStartTime.ToString());
+            turnContext.SendActivityAsync(new Activity() { Text = meeting.Title, Type = ActivityTypes.Message, Value = meeting.ScheduledStartTime });
             return Task.CompletedTask;
         }
 
         protected override Task OnTeamsMeetingEndAsync(Microsoft.Teams.Api.Meetings.MeetingDetails meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
-            turnContext.SendActivityAsync(meeting.ScheduledEndTime.ToString());
+            turnContext.SendActivityAsync(new Activity() { Text = meeting.Title, Type = ActivityTypes.Message, Value = meeting.ScheduledEndTime });
             return Task.CompletedTask;
         }
 
