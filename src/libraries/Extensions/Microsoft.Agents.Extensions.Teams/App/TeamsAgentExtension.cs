@@ -149,12 +149,12 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AgentApplication.AddRoute(TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.MessageUpdate)
+                .WithType(ActivityTypes.MessageDelete)
                 .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
                 .WithSelector((turnContext, cancellationToken) =>
                 {
-                    ChannelData ChannelData = turnContext.Activity.GetChannelData<ChannelData>();
-                    return Task.FromResult(string.Equals(ChannelData?.EventType, "softDeleteMessage", StringComparison.OrdinalIgnoreCase));
+                    ChannelData channelData = turnContext.Activity.GetChannelData<ChannelData>();
+                    return Task.FromResult(string.Equals(channelData?.EventType, "softDeleteMessage", StringComparison.OrdinalIgnoreCase));
                 })
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)

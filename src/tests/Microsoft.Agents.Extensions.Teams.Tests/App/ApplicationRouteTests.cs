@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
@@ -8,11 +9,14 @@ using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Config;
 using Moq;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -580,6 +584,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -724,6 +730,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -797,6 +805,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -864,6 +874,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -933,6 +945,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var names = new List<string>();
@@ -1017,6 +1031,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -1112,6 +1128,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1199,6 +1217,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -1283,6 +1303,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1360,6 +1382,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1394,11 +1418,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Event,
                 ChannelId = Channels.Msteams,
-                Name = "application/vnd.microsoft.readReceipt",
-                Value = new
+                Name = Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new ReadReceiptInfo
                 {
-                    lastReadMessageId = "10101010",
-                },
+                    LastReadMessageId = "10101010",
+                }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1410,6 +1434,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
@@ -1454,6 +1480,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);

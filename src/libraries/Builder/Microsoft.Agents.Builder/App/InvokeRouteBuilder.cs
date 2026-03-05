@@ -128,11 +128,12 @@ namespace Microsoft.Agents.Builder.App
                 if (_invokeName != null)
                 {
                     // Match on both the existing selector and the Activity.Name
+                    var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Invoke)
                         && _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
-                        && await _route.Selector(context, ct);
+                        && await existingSelector(context, ct);
                 }
                 return;
             }

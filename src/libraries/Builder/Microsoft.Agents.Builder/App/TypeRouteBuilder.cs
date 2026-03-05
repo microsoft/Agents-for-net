@@ -123,10 +123,11 @@ namespace Microsoft.Agents.Builder.App
                 if (_type != null)
                 {
                     // Match on both the existing selector and the Activity.Type
+                    var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && string.Equals(context.Activity.Type, _type, StringComparison.OrdinalIgnoreCase)
-                        && await _route.Selector(context, ct);
+                        && context.Activity.IsType(_type)
+                        && await existingSelector(context, ct);
                 }
                 return;
             }
