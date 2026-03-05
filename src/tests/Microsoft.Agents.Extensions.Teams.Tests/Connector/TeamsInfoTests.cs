@@ -21,6 +21,8 @@ using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Extensions.Logging;
+using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Meetings;
 using Moq;
 using Xunit;
 
@@ -88,9 +90,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetMeetingInfoAsync_ShouldReturnMeetingInfo()
         {
-            var channelData = new TeamsChannelData
+            var channelData = new ChannelData
             {
-                Meeting = new TeamsMeetingInfo
+                Meeting = new MeetingDetails
                 {
                     Id = "meeting-id"
                 }

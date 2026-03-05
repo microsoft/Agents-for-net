@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure.Core;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams
@@ -73,6 +72,17 @@ namespace Microsoft.Agents.Extensions.Teams
         {
             return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(channelAccount);
         }
+
+        public static Core.Models.MessageReaction ToCoreMessageReaction(this Microsoft.Teams.Api.Messages.Reaction teamsReaction)
+        {
+            return ProtocolJsonSerializer.ToObject<Core.Models.MessageReaction>(teamsReaction);
+        }
+
+        public static Microsoft.Teams.Api.Messages.Reaction ToTeamsReaction(this Core.Models.MessageReaction messageReaction)
+        {
+            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Messages.Reaction>(messageReaction);
+        }
+
         #endregion
     }
 }

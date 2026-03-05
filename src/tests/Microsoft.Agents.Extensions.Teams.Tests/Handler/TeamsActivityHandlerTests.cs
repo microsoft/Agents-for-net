@@ -6,7 +6,6 @@ using Microsoft.Agents.Core.Models;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Globalization;
 using Microsoft.Agents.Builder;
@@ -17,6 +16,8 @@ using Moq;
 using System.Net.Http;
 using System.Threading;
 using System.Net;
+using Microsoft.Teams.Api;
+using Microsoft.Agents.Extensions.Teams.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
@@ -46,10 +47,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     new ChannelAccount { Id = "bot" },
                 ],
                 Recipient = new ChannelAccount { Id = "bot" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamMemberAdded",
-                    Team = new TeamInfo
+                    Team = new Team
                     {
                         Id = "team-id",
                     },
@@ -120,7 +121,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
-                    new TeamsChannelAccount
+                    new Account
                     {
                         Id = "id-1",
                         Name = "name-1",
@@ -132,10 +133,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     },
                 ],
                 Recipient = new ChannelAccount { Id = "b" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamMemberAdded",
-                    Team = new TeamInfo
+                    Team = new Team
                     {
                         Id = "team-id",
                     },
@@ -166,7 +167,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     new ChannelAccount { Id = "a" },
                 ],
                 Recipient = new ChannelAccount { Id = "b" },
-                ChannelData = new TeamsChannelData { EventType = "teamMemberRemoved" },
+                ChannelData = new ChannelData { EventType = "teamMemberRemoved" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -188,7 +189,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelCreated" },
+                ChannelData = new ChannelData { EventType = "channelCreated" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -210,7 +211,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
+                ChannelData = new ChannelData { EventType = "channelDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -232,7 +233,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
+                ChannelData = new ChannelData { EventType = "channelRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -254,7 +255,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRestored" },
+                ChannelData = new ChannelData { EventType = "channelRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -276,7 +277,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamArchived" },
+                ChannelData = new ChannelData { EventType = "teamArchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -298,7 +299,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
+                ChannelData = new ChannelData { EventType = "teamDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -320,7 +321,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
+                ChannelData = new ChannelData { EventType = "teamHardDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -342,7 +343,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
+                ChannelData = new ChannelData { EventType = "teamRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -364,7 +365,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRestored" },
+                ChannelData = new ChannelData { EventType = "teamRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -386,7 +387,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
+                ChannelData = new ChannelData { EventType = "teamUnarchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1163,7 +1164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                         Members =
                         [
                             new TeamsMeetingMember(
-                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new Account { Id = "id", Name = "name"},
                                 new UserMeetingDetails { Role = "role", InMeeting = true }
                             )
                         ]
@@ -1207,7 +1208,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                         Members =
                         [
                             new TeamsMeetingMember(
-                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new Account { Id = "id", Name = "name"},
                                 new UserMeetingDetails { Role = "role", InMeeting = true }
                             )
                         ]
@@ -1239,7 +1240,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "editMessage" },
+                ChannelData = new ChannelData { EventType = "editMessage" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1261,7 +1262,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelData = new ChannelData { EventType = "undeleteMessage" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1283,7 +1284,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelData = new ChannelData { EventType = "undeleteMessage" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -1323,7 +1324,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageDelete,
-                ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
+                ChannelData = new ChannelData { EventType = "softDeleteMessage" },
                 ChannelId = Channels.Msteams
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1345,7 +1346,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageDelete,
-                ChannelData = new TeamsChannelData { EventType = "softMessage" }
+                ChannelData = new ChannelData { EventType = "softMessage" }
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -1391,7 +1392,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     {
                         Members =
                         [
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-1",
                                 Name = "name-1",
@@ -1402,7 +1403,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                                 UserRole = "userRole-1",
                                 TenantId = "tenantId-1",
                             },
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-2",
                                 Name = "name-2",
@@ -1425,7 +1426,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     {
                         Members =
                         [
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-3",
                                 Name = "name-3",
@@ -1436,7 +1437,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                                 UserRole = "userRole-3",
                                 TenantId = "tenantId-3",
                             },
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-4",
                                 Name = "name-4",

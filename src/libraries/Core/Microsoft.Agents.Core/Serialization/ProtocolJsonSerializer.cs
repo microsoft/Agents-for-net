@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Core.Serialization
                 return JsonSerializer.Deserialize<T>(stream, SerializationOptions);
             }
 
-            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
+            var serialized = JsonSerializer.SerializeToElement(value, SerializationOptions);
             return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 

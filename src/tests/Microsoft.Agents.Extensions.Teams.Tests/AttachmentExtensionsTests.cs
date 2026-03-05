@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
-using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
@@ -26,7 +25,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             var messagingExtensionAttachment = AttachmentExtensions.ToMessagingExtensionAttachment(attachment, previewAttachment);
 
             Assert.NotNull(messagingExtensionAttachment);
-            Assert.IsType<MessagingExtensionAttachment>(messagingExtensionAttachment);
+            Assert.IsType<Microsoft.Teams.Api.MessageExtensions.Attachment>(messagingExtensionAttachment);
             Assert.Equal(contentType, messagingExtensionAttachment.ContentType);
             Assert.Equal(contentUrl, messagingExtensionAttachment.ContentUrl);
             Assert.Equal(content, messagingExtensionAttachment.Content);

@@ -6,6 +6,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
     /// <summary>
     /// General information about a read receipt.
     /// </summary>
+    /// <remarks>Back-compat Teams Model that does not exist in Teams SDK</remarks>
     public class ReadReceiptInfo
     {
         /// <summary>

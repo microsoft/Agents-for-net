@@ -6,6 +6,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Clients;
 using Microsoft.Teams.Api.Meetings;
@@ -97,7 +98,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="pageSize"> number of entries on the page. </param>
         /// /// <param name="cancellationToken"> cancellation token. </param>
         /// <returns>TeamsPagedMembersResult.</returns>
-        public static Task<PagedMembersResult> GetPagedTeamMembersAsync(ITurnContext turnContext, string teamId = null, string continuationToken = default, int? pageSize = default, CancellationToken cancellationToken = default)
+        public static Task<TeamsPagedMembersResult> GetPagedTeamMembersAsync(ITurnContext turnContext, string teamId = null, string continuationToken = default, int? pageSize = default, CancellationToken cancellationToken = default)
         {
             var t = teamId ?? turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
             return GetPagedMembersAsync(GetConnectorClient(turnContext), t, continuationToken, cancellationToken, pageSize);
@@ -111,7 +112,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="continuationToken"> ContinuationToken token. </param>
         /// /// <param name="cancellationToken"> Cancellation token. </param>
         /// <returns>TeamsPagedMembersResult.</returns>
-        public static Task<PagedMembersResult> GetPagedMembersAsync(ITurnContext turnContext, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
+        public static Task<TeamsPagedMembersResult> GetPagedMembersAsync(ITurnContext turnContext, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
         {
             var teamInfo = turnContext.Activity.TeamsGetTeamInfo();
 
@@ -351,14 +352,15 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             return channelAccount.ToTeamsAccount();
         }
 
-        private static async Task<PagedMembersResult> GetPagedMembersAsync(IConnectorClient connectorClient, string conversationId, string continuationToken, CancellationToken cancellationToken, int? pageSize = default)
+        private static async Task<TeamsPagedMembersResult> GetPagedMembersAsync(IConnectorClient connectorClient, string conversationId, string continuationToken, CancellationToken cancellationToken, int? pageSize = default)
         {
             if (conversationId == null)
             {
                 throw new InvalidOperationException("The GetMembers operation needs a valid conversation Id.");
             }
 
-            return await connectorClient.Conversations.GetConversationPagedMembersAsync(conversationId, pageSize, continuationToken, cancellationToken).ConfigureAwait(false);
+            var corePagedResult = await connectorClient.Conversations.GetConversationPagedMembersAsync(conversationId, pageSize, continuationToken, cancellationToken).ConfigureAwait(false);
+            return new TeamsPagedMembersResult(corePagedResult.ContinuationToken, corePagedResult.Members);
         }
 
         private static IConnectorClient GetConnectorClient(ITurnContext turnContext)

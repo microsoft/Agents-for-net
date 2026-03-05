@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Teams.Api;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetSelectedChannelId_ShouldReturnChannelId()
         {
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData { Settings = new TeamsChannelDataSettings { SelectedChannel = new ChannelInfo("channel123") } } };
+            IActivity activity = new Activity { ChannelData = new ChannelData { Settings = new ChannelDataSettings { SelectedChannel = new Channel("channel123") } } };
 
             var channelId = activity.TeamsGetSelectedChannelId();
 
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetSelectedChannelId_ShouldReturnNullOnNullSettings()
         {
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData { Settings = null } };
+            IActivity activity = new Activity { ChannelData = new ChannelData { Settings = null } };
 
             var channelId = activity.TeamsGetSelectedChannelId();
 
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetMeetingInfo_ShouldReturnMeetingId()
         {
-            var activity = new Activity { ChannelData = new TeamsChannelData { Meeting = new TeamsMeetingInfo { Id = "meeting123" } } };
+            var activity = new Activity { ChannelData = new ChannelData { Meeting = new TeamsMeetingInfo { Id = "meeting123" } } };
 
             var meetingId = activity.TeamsGetMeetingInfo().Id;
 
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetChannelId_ShouldReturnChannelId()
         {
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData { Channel = new ChannelInfo { Id = "channel123" } } };
+            IActivity activity = new Activity { ChannelData = new ChannelData { Channel = new ChannelInfo { Id = "channel123" } } };
 
             var channelId = activity.TeamsGetChannelId();
 
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetChannelId_ShouldReturnNullOnNullChannel()
         {
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData { Channel = null } };
+            IActivity activity = new Activity { ChannelData = new ChannelData { Channel = null } };
 
             var channelId = activity.TeamsGetChannelId();
 
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetTeamInfo_ShouldReturnTeamId()
         {
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData { Team = new TeamInfo { Id = "team1234" } } };
+            IActivity activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team1234" } } };
 
             var teamId = activity.TeamsGetTeamInfo().Id;
 
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetTeamInfo_ShouldReturnTeamIdFromTypedActivity()
         {
-            IMessageActivity activity = new Activity { ChannelData = new TeamsChannelData { Team = new TeamInfo { Id = "team123" } } };
+            IMessageActivity activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team123" } } };
 
             var teamId = activity.TeamsGetTeamInfo().Id;
 
@@ -88,8 +88,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
             activity.TeamsNotifyUser();
 
-            Assert.Equal(true, ((TeamsChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal(false, ((TeamsChannelData)activity.ChannelData).Notification.AlertInMeeting);
+            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.Alert);
+            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
             activity.TeamsNotifyUser(alertInMeeting: true);
 
-            Assert.Equal(true, ((TeamsChannelData)activity.ChannelData).Notification.AlertInMeeting);
-            Assert.Equal(false, ((TeamsChannelData)activity.ChannelData).Notification.Alert);
+            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
+            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.Alert);
         }
 
         [Fact]
@@ -112,18 +112,18 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
             activity.TeamsNotifyUser(false, externalResourceUrl: resourceUrl);
 
-            Assert.Equal(resourceUrl, ((TeamsChannelData)activity.ChannelData).Notification.ExternalResourceUrl);
+            Assert.Equal(resourceUrl, ((ChannelData)activity.ChannelData).Notification.ExternalResourceUrl);
         }
 
         [Fact]
         public void TeamsNotifyUser_ShouldNotOverrideExistingChannelData()
         {
-            var activity = new Activity { ChannelData = new TeamsChannelData { Team = new TeamInfo { Id = "team123" } } };
+            var activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team123" } } };
 
             activity.TeamsNotifyUser();
 
-            Assert.True(((TeamsChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal("team123", ((TeamsChannelData)activity.ChannelData).Team.Id);
+            Assert.True(((ChannelData)activity.ChannelData).Notification.Alert);
+            Assert.Equal("team123", ((ChannelData)activity.ChannelData).Team.Id);
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 Mri = Guid.NewGuid().ToString()
             };
 
-            IActivity activity = new Activity { ChannelData = new TeamsChannelData(onBehalfOf: new List<OnBehalfOf> { onBehalfOf }) };
+            IActivity activity = new Activity { ChannelData = new ChannelData(onBehalfOf: new List<OnBehalfOf> { onBehalfOf }) };
 
             var onBehalfOfList = activity.TeamsGetTeamOnBehalfOf();
 
