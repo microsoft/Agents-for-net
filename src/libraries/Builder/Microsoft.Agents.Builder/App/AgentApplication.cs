@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -45,6 +46,8 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
+            Logger = options.LoggerFactory?.CreateLogger<AgentApplication>() ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
             if (Options.TurnStateFactory == null)
             {
                 // This defaults to a TurnState with TempState only
@@ -79,6 +82,8 @@ namespace Microsoft.Agents.Builder.App
         /// The application's configured options.
         /// </summary>
         public AgentApplicationOptions Options { get; }
+
+        public ILogger Logger { get; private set; }
 
         /// <summary>
         /// Accessing user authorization features.
