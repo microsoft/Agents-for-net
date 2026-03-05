@@ -157,30 +157,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn Begin
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
+                            Logger.LogDebug("Turn Begin (blocking): RequestId={RequestId}", activity.RequestId);
                         }
 
                         _responseQueue.StartHandlerForRequest(activity.RequestId);
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
-                        // Queue the activity to be processed by the ActivityTaskQueue, and stop ChannelResponseQueue when the
-                        // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
+                        _ = Task.Run(async () =>
                         {
-                            invokeResponse = response;
-
-                            // Stops response handling and waits for HandleResponsesAsync to finish
+                            invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-
-                            return Task.CompletedTask;
-                        });
+                        }, cancellationToken);
 
                         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
                             {
-                                Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
+                                Logger.LogDebug("Turn Response (blocking): RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
                             await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
@@ -189,7 +183,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn done
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn End: RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                            Logger.LogDebug("Turn End (blocking): RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
                         }
 
                         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);

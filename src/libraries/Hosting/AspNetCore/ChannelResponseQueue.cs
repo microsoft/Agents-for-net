@@ -89,12 +89,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                channelInfo.channel.Writer.Complete();
-                _conversations.Remove(requestId, out _);
+                if (channelInfo.channel.Writer.TryComplete())
+                {
+                    _conversations.Remove(requestId, out _);
 
-                // wait for reads to be done
-                channelInfo.readDone.WaitOne();
-                channelInfo.readDone.Dispose();
+                    // wait for reads to be done
+                    channelInfo.readDone.WaitOne();
+                    channelInfo.readDone.Dispose();
+                }
             }
         }
 
