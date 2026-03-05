@@ -2,22 +2,23 @@
 // Licensed under the MIT License.
 
 
-using Microsoft.Agents.Core.Models;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
-using System;
-using System.Globalization;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Testing;
-using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Agents.Connector;
-using Moq;
-using System.Net.Http;
-using System.Threading;
-using System.Net;
-using Microsoft.Teams.Api;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Tests.Model;
+using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Activities.Events;
+using Moq;
+using System;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
@@ -121,15 +122,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
-                    new Account
+                    new ChannelAccount
                     {
                         Id = "id-1",
                         Name = "name-1",
                         AadObjectId = "aadobject-1",
-                        Email = "test@microsoft.com",
-                        GivenName = "given-1",
-                        Surname = "surname-1",
-                        UserPrincipalName = "t@microsoft.com",
                     },
                 ],
                 Recipient = new ChannelAccount { Id = "b" },
@@ -412,7 +409,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Action = "accept",
+                    Action = Microsoft.Teams.Api.Action.Accept,
                     UploadInfo = new FileUploadInfo
                     {
                         UniqueId = "uniqueId",
@@ -449,7 +446,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Action = "decline",
+                    Action = Microsoft.Teams.Api.Action.Decline,
                     UploadInfo = new FileUploadInfo
                     {
                         UniqueId = "uniqueId",
@@ -484,7 +481,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "actionableMessage/executeAction",
-                Value = JsonSerializer.SerializeToElement(new O365ConnectorCardActionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.O365.ConnectorCardActionQuery()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -511,7 +508,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/queryLink",
-                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.AppBasedQueryLink()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -538,7 +535,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/anonymousQueryLink",
-                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.AppBasedQueryLink()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -565,7 +562,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/query",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Query()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -619,7 +616,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Query()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -647,9 +644,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    BotMessagePreviewAction = "edit",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    BotMessagePreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Edit,
                 }),
             };
 
@@ -678,9 +676,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    BotMessagePreviewAction = "send",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    BotMessagePreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Send,
                 }),
             };
 
@@ -1159,14 +1158,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingParticipantJoin",
                 Value = JsonSerializer.SerializeToElement(
-                    new MeetingParticipantsEventDetails
+                    new MeetingParticipantJoinActivityValue
                     {
                         Members =
                         [
-                            new TeamsMeetingMember(
-                                new Account { Id = "id", Name = "name"},
-                                new UserMeetingDetails { Role = "role", InMeeting = true }
-                            )
+                            new MeetingParticipantJoinActivityValue.Member
+                            {
+                                User = new Account { Id = "id", Name = "name"},
+                                Meeting = new MeetingParticipantJoinActivityValue.Meeting { Role = new("role"), InMeeting = true }
+                            }
                         ]
                     }
                 ),
@@ -1203,14 +1203,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingParticipantLeave",
                 Value = JsonSerializer.SerializeToElement(
-                    new MeetingParticipantsEventDetails
+                    new MeetingParticipantLeaveActivityValue
                     {
                         Members =
                         [
-                            new TeamsMeetingMember(
-                                new Account { Id = "id", Name = "name"},
-                                new UserMeetingDetails { Role = "role", InMeeting = true }
-                            )
+                            new MeetingParticipantLeaveActivityValue.Member
+                            {
+                                User = new Account { Id = "id", Name = "name"},
+                                Meeting = new MeetingParticipantLeaveActivityValue.Meeting { Role = new("role"), InMeeting = true }
+                            }
                         ]
                     }
                 ),
@@ -1396,23 +1397,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                             {
                                 Id = "id-1",
                                 Name = "name-1",
-                                GivenName = "givenName-1",
-                                Surname = "surname-1",
-                                Email = "email-1",
-                                UserPrincipalName = "userPrincipalName-1",
-                                UserRole = "userRole-1",
-                                TenantId = "tenantId-1",
+                                Role = new Role("role-1")
                             },
                             new Account
                             {
                                 Id = "id-2",
                                 Name = "name-2",
-                                GivenName = "givenName-2",
-                                Surname = "surname-2",
-                                Email = "email-2",
-                                UserPrincipalName = "userPrincipalName-2",
-                                UserRole = "userRole-2",
-                                TenantId = "tenantId-2",
+                                Role = new Role("role-2")
                             },
                         ]
                     };
@@ -1430,23 +1421,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                             {
                                 Id = "id-3",
                                 Name = "name-3",
-                                GivenName = "givenName-3",
-                                Surname = "surname-3",
-                                Email = "email-3",
-                                UserPrincipalName = "userPrincipalName-3",
-                                UserRole = "userRole-3",
-                                TenantId = "tenantId-3",
                             },
                             new Account
                             {
                                 Id = "id-4",
                                 Name = "name-4",
-                                GivenName = "givenName-4",
-                                Surname = "surname-4",
-                                Email = "email-4",
-                                UserPrincipalName = "userPrincipalName-4",
-                                UserRole = "userRole-4",
-                                TenantId = "tenantId-4",
                             },
                         ]
                     };

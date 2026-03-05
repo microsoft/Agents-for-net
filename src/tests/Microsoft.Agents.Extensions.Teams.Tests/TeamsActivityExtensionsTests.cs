@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetSelectedChannelId_ShouldReturnChannelId()
         {
-            IActivity activity = new Activity { ChannelData = new ChannelData { Settings = new ChannelDataSettings { SelectedChannel = new Channel("channel123") } } };
+            IActivity activity = new Activity { ChannelData = new { settings = new { selectedChannel = new { id = "channel123" } } } };
 
             var channelId = activity.TeamsGetSelectedChannelId();
 
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetSelectedChannelId_ShouldReturnNullOnNullSettings()
         {
-            IActivity activity = new Activity { ChannelData = new ChannelData { Settings = null } };
+            IActivity activity = new Activity { ChannelData = new { } };
 
             var channelId = activity.TeamsGetSelectedChannelId();
 
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetMeetingInfo_ShouldReturnMeetingId()
         {
-            var activity = new Activity { ChannelData = new ChannelData { Meeting = new TeamsMeetingInfo { Id = "meeting123" } } };
+            var activity = new Activity { ChannelData = new { meeting = new { id = "meeting123" } } };
 
             var meetingId = activity.TeamsGetMeetingInfo().Id;
 
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetChannelId_ShouldReturnChannelId()
         {
-            IActivity activity = new Activity { ChannelData = new ChannelData { Channel = new ChannelInfo { Id = "channel123" } } };
+            IActivity activity = new Activity { ChannelData = new { channel = new { id = "channel123" } } };
 
             var channelId = activity.TeamsGetChannelId();
 
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetChannelId_ShouldReturnNullOnNullChannel()
         {
-            IActivity activity = new Activity { ChannelData = new ChannelData { Channel = null } };
+            IActivity activity = new Activity { ChannelData = new { } };
 
             var channelId = activity.TeamsGetChannelId();
 
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetTeamInfo_ShouldReturnTeamId()
         {
-            IActivity activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team1234" } } };
+            IActivity activity = new Activity { ChannelData = new { team = new { id = "team1234" } } };
 
             var teamId = activity.TeamsGetTeamInfo().Id;
 
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsGetTeamInfo_ShouldReturnTeamIdFromTypedActivity()
         {
-            IMessageActivity activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team123" } } };
+            IMessageActivity activity = new Activity { ChannelData = new { team = new { id = "team123" } } };
 
             var teamId = activity.TeamsGetTeamInfo().Id;
 
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public void TeamsNotifyUser_ShouldNotOverrideExistingChannelData()
         {
-            var activity = new Activity { ChannelData = new ChannelData { Team = new TeamInfo { Id = "team123" } } };
+            var activity = new Activity { ChannelData = new { team = new { id = "team123" } } };
 
             activity.TeamsNotifyUser();
 
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 Mri = Guid.NewGuid().ToString()
             };
 
-            IActivity activity = new Activity { ChannelData = new ChannelData(onBehalfOf: new List<OnBehalfOf> { onBehalfOf }) };
+            IActivity activity = new Activity { ChannelData = new { onBehalfOf = new List<OnBehalfOf> { onBehalfOf } } };
 
             var onBehalfOfList = activity.TeamsGetTeamOnBehalfOf();
 
