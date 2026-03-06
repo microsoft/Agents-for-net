@@ -32,20 +32,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             Assert.Equal(content, messagingExtensionAttachment.Content);
             Assert.Equal(name, messagingExtensionAttachment.Name);
             Assert.Equal(thumbnailUrl, messagingExtensionAttachment.ThumbnailUrl);
-            
+
             if (previewAttachment != null)
             {
-                var previewAttachmentJson = ProtocolJsonSerializer.ToJson(attachment);
+                var previewAttachmentJson = ProtocolJsonSerializer.ToJson(previewAttachment);
                 var teamsPreviewJson = ProtocolJsonSerializer.ToJson(ProtocolJsonSerializer.ToObject<Attachment>(messagingExtensionAttachment.Preview));
                 Assert.Equal(previewAttachmentJson, teamsPreviewJson);
-            }
-            else
-            {
-                var preview = messagingExtensionAttachment.Preview;
-                Assert.Equal(contentType, preview.ContentType);
-                Assert.Equal(contentUrl, preview.ContentUrl);
-                Assert.Equal(name, preview.Name);
-                Assert.Equal(thumbnailUrl, preview.ThumbnailUrl);
             }
         }
 
@@ -53,7 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             public IEnumerator<object[]> GetEnumerator()
             {
-                yield return new object[] { new Attachment() };
+                yield return new object[] { new Attachment() { Name = "coreName", ContentType = "coreContentType", ContentUrl = "coreContentUrl" } };
                 yield return new object[] { null };
             }
 

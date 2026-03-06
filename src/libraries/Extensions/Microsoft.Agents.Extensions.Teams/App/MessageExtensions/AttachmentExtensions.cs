@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 ContentUrl = attachment.ContentUrl,
                 Name = attachment.Name,
                 ThumbnailUrl = attachment.ThumbnailUrl,
-                Preview = previewAttachment != null ? ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Attachment>(ProtocolJsonSerializer.ToJson(attachment)) : null
+                Preview = previewAttachment != null ? ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Attachment>(previewAttachment) : null
             };
         }
     }
