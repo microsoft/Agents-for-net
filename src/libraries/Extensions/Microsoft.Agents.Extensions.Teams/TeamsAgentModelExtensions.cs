@@ -53,14 +53,14 @@ namespace Microsoft.Agents.Extensions.Teams
         #endregion
 
         #region AP
-        public static Core.Models.IActivity ToCoreActivity(this Microsoft.Teams.Api.Activities.IActivity teamsActivity)
+        public static Core.Models.IActivity ToCoreActivity<T>(this T teamsActivity) where T : Microsoft.Teams.Api.Activities.Activity
         {
             return ProtocolJsonSerializer.ToObject<Core.Models.IActivity>(teamsActivity);
         }
 
-        public static Microsoft.Teams.Api.Activities.IActivity ToTeamsActivity(this Core.Models.IActivity activity)
+        public static Microsoft.Teams.Api.Activities.Activity ToTeamsActivity(this Core.Models.IActivity activity)
         {
-            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Activities.IActivity>(activity);
+            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Activities.Activity>(activity);
         }
 
         public static Core.Models.ChannelAccount ToCoreChannelAccount(this Microsoft.Teams.Api.Account teamsAccount)

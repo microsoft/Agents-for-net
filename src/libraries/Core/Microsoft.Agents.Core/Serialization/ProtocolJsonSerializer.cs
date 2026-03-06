@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new TokenResponseConverter());
             options.Converters.Add(new VideoCardConverter());
             options.Converters.Add(new Array2DConverter());
-            options.Converters.Add(new DictionaryOfObjectConverter());
+            //options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
             options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
             options.Converters.Add(new MessageReactionConverter());
@@ -227,7 +227,16 @@ namespace Microsoft.Agents.Core.Serialization
                 return JsonSerializer.Deserialize<T>(stream, SerializationOptions);
             }
 
-            var serialized = JsonSerializer.SerializeToElement(value, SerializationOptions);
+            /*
+            JsonElement serialized = JsonSerializer.SerializeToElement(value, SerializationOptions);
+            var typeT = typeof(T);
+            var typeSerialized = serialized.GetType();
+            if (typeof(T) == typeof(JsonElement))
+            {
+                return (T)(object)serialized;
+            }
+            */
+            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
             return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 

@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         private readonly DialogState _dialogState = new([
             new DialogInstance {
                 Id = "A",
-                State = new Dictionary<string, object> {
+                State = new PersistedState {
                     { "deliverymode", DeliveryModes.ExpectReplies},
                     { "Microsoft.Agents.Builder.Dialogs.SkillDialog.SkillConversationId", "conversationId"}
                 }

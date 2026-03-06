@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 dialogs.Add(new OAuthPrompt("OAuthPrompt", oauthPromptSettings));
 
                 var dialogContext = await dialogs.CreateContextAsync(turnContext);
-                dialogContext.Stack.Insert(0, new DialogInstance { Id = "OAuthPrompt", State = new Dictionary<string, object> { { "expires", DateTime.UtcNow.AddMinutes(-5) } } });
+                dialogContext.Stack.Insert(0, new DialogInstance { Id = "OAuthPrompt", State = new PersistedState { { "expires", DateTime.UtcNow.AddMinutes(-5) } } });
 
                 dialogTurnResult = await dialogContext.ContinueDialogAsync();
             };
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     new DialogInstance
                     {
                         Id = "OAuthPrompt",
-                        State = new Dictionary<string, object>
+                        State = new PersistedState
                         {
                             { "expires", DateTime.UtcNow.AddHours(8) },
                             { "caller", null },
@@ -452,7 +452,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     new DialogInstance
                     {
                         Id = "OAuthPrompt",
-                        State = new Dictionary<string, object>
+                        State = new PersistedState
                         {
                             { "expires", DateTime.UtcNow.AddHours(8) },
                             { "caller", null },
@@ -546,7 +546,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     new DialogInstance
                     {
                         Id = "OAuthPrompt",
-                        State = new Dictionary<string, object>
+                        State = new PersistedState
                         {
                             { "expires", DateTime.UtcNow.AddHours(8) },
                             { "caller", null },
@@ -632,7 +632,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     new DialogInstance
                     {
                         Id = "OAuthPrompt",
-                        State = new Dictionary<string, object>
+                        State = new PersistedState
                         {
                             { "expires", DateTime.UtcNow.AddHours(8) },
                             { "caller", null },
