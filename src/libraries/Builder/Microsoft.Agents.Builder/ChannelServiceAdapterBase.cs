@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Telemetry;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
@@ -43,6 +44,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryActivity = BuilderTelemetry.StartAdapterSendActivities(activities);
 
             var responses = new ResourceResponse[activities.Length];
 
@@ -98,6 +101,8 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
+            using var telemetryActivity = BuilderTelemetry.StartAdapterUpdateActivity(activity);
+
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
@@ -107,6 +112,8 @@ namespace Microsoft.Agents.Builder
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
+            
+            using var telemetryActivity = BuilderTelemetry.StartAdapterDeleteActivity(reference);
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
@@ -205,6 +212,8 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
+
+            using var telemetryActivity = BuilderTelemetry.StartAdapterContinueConversation(continuationActivity);
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {

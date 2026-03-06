@@ -781,7 +781,7 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
-                using var telemetryActivity = AgentsTelemetry.StartAgentTurnOperation(turnContext);
+                using var telemetryActivity = BuildterTelemetry.StartAgentTurnOperation(turnContext);
  
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
@@ -832,16 +832,19 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call before turn handler
-                    foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    using (var beforeTurnScope = BuilderTelemetry.StartAppBeforeTurn(telemetryActivity))
                     {
-                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                         {
-                            // Save turn state
-                            // - This lets the Agent keep track of why it ended the previous turn. It also
-                            //   allows the dialog system to be used before the AI system is called.
-                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                            if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                // Save turn state
+                                // - This lets the Agent keep track of why it ended the previous turn. It also
+                                //   allows the dialog system to be used before the AI system is called.
+                                await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                            return;
+                                return;
+                            }
                         }
                     }
 
@@ -870,6 +873,7 @@ namespace Microsoft.Agents.Builder.App
 
                                 if (signInComplete)
                                 {
+                                    using var routeHandlerScope = BuilderTelemetry.StartAppRouteHandler(telemetryActivity);
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
@@ -879,11 +883,14 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call after turn handler
-                    foreach (TurnEventHandler afterTurnHandler in _afterTurn)
+                    using (var afterTurnScope = BuilderTelemetry.StartAppAfterTurn(telemetryActivity))
                     {
-                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                         {
-                            return;
+                            if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                return;
+                            }
                         }
                     }
                 }

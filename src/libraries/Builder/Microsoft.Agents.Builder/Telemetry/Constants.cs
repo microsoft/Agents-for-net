@@ -31,10 +31,6 @@ namespace Microsoft.Agents.Builder.Telemetry
         public static readonly string ActivityConnectorUploadAttachment = "agents.connector.uploadAttachment";
         public static readonly string ActivityConnectorGetAttachment = "agents.connector.getAttachment";
 
-        public static readonly string ActivityStorageRead = "agents.storage.read";
-        public static readonly string ActivityStorageWrite = "agents.storage.write";
-        public static readonly string ActivityStorageDelete = "agents.storage.delete";
-
         public static readonly string ActivityTurnSendActivity = "agents.turn.sendActivity";
         public static readonly string ActivityTurnUpdateActivity = "agents.turn.updateActivity";
         public static readonly string ActivityTurnDeleteActivity = "agents.turn.deleteActivity";
@@ -51,7 +47,6 @@ namespace Microsoft.Agents.Builder.Telemetry
         public static readonly string MetricTurnTotal = "agents.turn.total";
         public static readonly string MetricTurnErrors = "agents.turn.errors";
 
-        public static readonly string MetricStorageOperationTotal = "agents.storage.operation.total";
         public static readonly string MetricConnectorRequestTotal = "agents.connector.request.total";
 
         // histograms
@@ -59,7 +54,5 @@ namespace Microsoft.Agents.Builder.Telemetry
         public static readonly string MetricTurnDuration = "agents.turn.duration";
         public static readonly string MetricAdapterProcessDuration = "agents.adapter.process.duration";
         public static readonly string MetricConnectorRequestDuration = "agents.connector.request.duration";
-        public static readonly string MetricStorageOperationDuration = "agents.storage.operation.duration";
-
     }
 }

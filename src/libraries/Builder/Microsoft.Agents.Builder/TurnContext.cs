@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -181,6 +182,8 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
+            using var telemetryActivity = BuilderTelemetry.StartTurnContextSendActivity(this);
+
             ResourceResponse[] responses = await SendActivitiesAsync(new[] { activity }, cancellationToken).ConfigureAwait(false);
             if (responses == null || responses.Length == 0)
             {
@@ -355,6 +358,8 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
+            using var telemetryActivity = BuilderTelemetry.StartTurnContextUpdateActivity(this);
+
             if (updateHandlers == null)
             {
                 throw new ArgumentException($"{nameof(updateHandlers)} is null.", nameof(updateHandlers));
@@ -394,6 +399,8 @@ namespace Microsoft.Agents.Builder
             CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(cr, nameof(cr));
+
+            using var telemetryActivity = BuilderTelemetry.StartTurnContextDeleteActivity(this);
 
             if (deleteHandlers == null)
             {

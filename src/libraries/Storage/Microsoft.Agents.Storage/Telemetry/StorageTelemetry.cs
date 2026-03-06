@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Microsoft.Agents.Core.Telemetry;
 
@@ -14,32 +17,44 @@ namespace Microsoft.Agents.Storage.Telemetry
         /* Metrics */
 
         private static readonly Counter<long> OperationsTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            StorageTelemetryConstants.OperationTotalMetricName,
+            Constants.MetricStorageOperationTotal,
             "operation"
         );
         private static readonly Histogram<long> OperationsDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            StorageTelemetryConstants.OperationDurationMetricName,
+            Constants.MetricStorageOperationDuration,
             "ms"
         );
 
-        public static TimedActivity StartStorageOp(string operationType, int numKeys)
-        {
-            string operationName = String.Format(
-                StorageTelemetryConstants.OperationNameFormat,
-                operationType);
+        /* Activity helpers */
 
+        public static Activity? StartStorageOp(string activityName, int numKeys)
+        {
             TimedActivity timedActivity = AgentsTelemetry.StartTimedActivity(
-                operationName,
+                activityName,
                 (activity, duration, error) =>
                 {
                     OperationsTotal.Add(1);
                     OperationsDuration.Record(duration);
                 }
             );
+            Activity? activity = timedActivity.Activity;
+            activity?.SetTag(Core.Telemetry.Constants.AttrNumKeys, numKeys);
+            return activity;
+        }
 
-            timedActivity.Activity?.SetTag("keys.count", numKeys);
+        public static IDisposable StartStorageRead(int numKeys)
+        {
+            return StartStorageOp(Constants.ActivityStorageRead, numKeys);
+        }
 
-            return timedActivity;
+        public static IDisposable StartStorageWrite(int numKeys)
+        {
+            return StartStorageOp(Constants.ActivityStorageWrite, numKeys);
+        }
+
+        public static IDisposable StartStorageDelete(int numKeys)
+        {
+            return StartStorageOp(Constants.ActivityStorageDelete, numKeys);
         }
     }
 }

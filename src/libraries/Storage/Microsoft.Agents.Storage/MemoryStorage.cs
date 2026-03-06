@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Storage
 
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("delete", keys.Length);
+            using var telemetryActivity = StorageTelemetry.StartStorageDelete(keys.Length);
 
             lock (_syncroot)
             {
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Storage
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("read", keys.Length);
+            using var telemetryActivity = StorageTelemetry.StartStorageRead(keys.Length);
             var storeItems = new Dictionary<string, object>(keys.Length);
             lock (_syncroot)
             {
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Storage
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-            using var telemetryActivity = StorageTelemetry.StartStorageOp("write", changes.Count);
+            using var telemetryActivity = StorageTelemetry.StartStorageWrite(changes.Count);
 
             lock (_syncroot)
             {
