@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
@@ -11,6 +12,7 @@ using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Moq;
 using System;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,6 +62,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -117,6 +121,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -154,6 +160,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -217,6 +225,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             SubmitHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
@@ -274,6 +284,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
 
@@ -312,6 +324,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
