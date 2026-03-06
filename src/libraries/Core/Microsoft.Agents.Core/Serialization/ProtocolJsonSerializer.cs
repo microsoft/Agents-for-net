@@ -227,16 +227,7 @@ namespace Microsoft.Agents.Core.Serialization
                 return JsonSerializer.Deserialize<T>(stream, SerializationOptions);
             }
 
-            /*
             JsonElement serialized = JsonSerializer.SerializeToElement(value, SerializationOptions);
-            var typeT = typeof(T);
-            var typeSerialized = serialized.GetType();
-            if (typeof(T) == typeof(JsonElement))
-            {
-                return (T)(object)serialized;
-            }
-            */
-            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
             return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 

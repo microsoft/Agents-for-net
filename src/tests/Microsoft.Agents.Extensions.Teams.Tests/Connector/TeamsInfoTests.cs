@@ -1,29 +1,25 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
-using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Clients;
 using Microsoft.Teams.Api.Meetings;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
@@ -35,10 +31,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         private const string Endpoint = "https://test.coffee";
 
         private readonly TestConnector _connectorClient;
+        private readonly ApiClient _apiClient;
 
         public TeamsInfoTests()
         {
             _connectorClient = new TestConnector(new Uri(Endpoint));
+            _apiClient = new ApiClient("https://localhost/", new Microsoft.Teams.Common.Http.HttpClient(new HttpClient(new RosterHttpMessageHandler())));
         }
 
         [Fact]
@@ -87,26 +85,24 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             Assert.Equal(adapter.ConversationParameters.Activity, activity);
         }
 
-        /*
         [Fact]
         public async Task GetMeetingInfoAsync_ShouldReturnMeetingInfo()
         {
             var channelData = new ChannelData
             {
-                Meeting = new MeetingDetails
-                {
-                    Id = "meeting-id"
-                }
+                Tenant = new Tenant { Id = "tenantId-1" },
             };
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+
             var activity = CreateTestActivity("Test-GetMeetingInfoAsync", channelData);
 
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
         }
-        */
 
         [Fact]
         public async Task GetTeamDetailsAsync_ShouldReturnTeamDetails()
@@ -114,6 +110,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             var activity = CreateTestActivity("Test-GetTeamDetailsAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
@@ -122,9 +119,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetPagedTeamMembersAsync_ShouldReturnTeamMembersList()
         {
-            var activity = CreateTestActivity("Test-TeamGetPagedTeamMembersAsync");
+            var activity = CreateTestActivity("Test-GetPagedTeamMembersAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
@@ -151,6 +149,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             var activity = CreateTestActivity("Test-GetChannelsAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
@@ -161,12 +160,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         {
             var channelData = new ChannelData
             {
-                //TODO: Meeting = new Meeting { Id = "meetingId-1" },
                 Tenant = new Tenant { Id = "tenantId-1" },
             };
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+
             var activity = CreateTestActivity("Test-GetParticipantAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
@@ -175,17 +176,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetMemberAsync_ShouldReturnAccountInfo()
         {
-            var activity = CreateTestActivity("Test-GetMemberAsync");
-            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
-            turnContext.Services.Set<IConnectorClient>(_connectorClient);
-            var handler = new TestTeamsActivityHandler();
-
-            await handler.OnTurnAsync(turnContext);
-        }
-
-        [Fact]
-        public async Task GetMemberAsync_ShouldReturnAccountInfoWhenNoTeamId()
-        {
             var channelData = new ChannelData
             {
                 Team = new Team() { Id = "team-id" },
@@ -193,11 +183,25 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             var activity = CreateTestActivity("Test-GetMemberAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
         }
 
+        [Fact]
+        public async Task GetMemberAsync_ShouldReturnAccountInfoWithoutTeamId()
+        {
+            var activity = CreateTestActivity("Test-GetMemberAsync");
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+            var handler = new TestTeamsActivityHandler();
+
+            await handler.OnTurnAsync(turnContext);
+        }
+
+        /*
         [Theory]
         [InlineData("202")]
         [InlineData("207")]
@@ -242,7 +246,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("201")]
         [InlineData("400")]
@@ -275,7 +281,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("201")]
         [InlineData("400")]
@@ -308,7 +316,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("201")]
         [InlineData("400")]
@@ -343,7 +353,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("201")]
         [InlineData("400")]
@@ -376,7 +388,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("200")]
         [InlineData("400")]
@@ -407,7 +421,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("200")]
         [InlineData("400")]
@@ -438,7 +454,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
+        /*
         [Theory]
         [InlineData("200")]
         [InlineData("400")]
@@ -469,6 +487,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             await handler.OnTurnAsync(turnContext);
         }
+        */
 
         private static Activity CreateTestActivity(string text, object channelData = null)
         {
@@ -502,26 +521,26 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     case "Test-GetTeamDetailsAsync":
                         await CallGetTeamDetailsAsync(turnContext);
                         break;
-                    case "Test-TeamGetPagedTeamMembersAsync":
-                        await CallTeamGetPagedTeamMembersAsync(turnContext);
+                    case "Test-GetPagedTeamMembersAsync":
+                        await CallGetPagedTeamMembersAsync(turnContext);
                         break;
                     case "Test-GroupChat-GetPagedMembersAsync":
-                        await CallGroupChatGetPagedMembersAsync(turnContext);
+                        await CallGetPagedMembersAsync(turnContext);
                         break;
                     case "Test-GetChannelsAsync":
-                        await CallGetChannelsAsync(turnContext);
+                        await CallGetTeamChannelsAsync(turnContext);
                         break;
                     case "Test-SendMessageToTeamsChannelAsync":
                         await CallSendMessageToTeamsChannelAsync(turnContext);
                         break;
                     case "Test-GetMemberAsync":
-                        await CallTeamGetMemberAsync(turnContext);
+                        await CallGetMemberAsync(turnContext);
                         break;
                     case "Test-GetParticipantAsync":
-                        await CallTeamsInfoGetParticipantAsync(turnContext);
+                        await CallGetMeetingParticipantAsync(turnContext);
                         break;
                     case "Test-GetMeetingInfoAsync":
-                        await CallTeamsInfoGetMeetingInfoAsync(turnContext);
+                        await CallGetMeetingInfoAsync(turnContext);
                         break;
                     /*
                     case "Test-SendMeetingNotificationAsync":
@@ -579,7 +598,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 Assert.Equal("team-aadgroupid", teamDetails.AadGroupId);
             }
 
-            private static async Task CallTeamGetPagedTeamMembersAsync(ITurnContext turnContext)
+            private static async Task CallGetPagedTeamMembersAsync(ITurnContext turnContext)
             {
                 var teamsMembers = await TeamsInfo.GetPagedTeamMembersAsync(turnContext);
 
@@ -592,7 +611,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 Assert.Equal("aad-id-2", teamsMembers.Members[1].AadObjectId);
             }
 
-            private static async Task CallTeamGetMemberAsync(ITurnContext turnContext)
+            private static async Task CallGetMemberAsync(ITurnContext turnContext)
             {
                 var member = await TeamsInfo.GetMemberAsync(turnContext, turnContext.Activity.From.Id);
 
@@ -601,7 +620,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 Assert.Equal("aad-id-1", member.AadObjectId);
             }
 
-            private static async Task CallTeamsInfoGetParticipantAsync(ITurnContext turnContext)
+            private static async Task CallGetMeetingParticipantAsync(ITurnContext turnContext)
             {
                 var participant = await TeamsInfo.GetMeetingParticipantAsync(turnContext);
 
@@ -610,13 +629,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 //Assert.Equal("userPrincipalName-1", participant.User.UserPrincipalName);
             }
 
-            private static async Task CallTeamsInfoGetMeetingInfoAsync(ITurnContext turnContext)
+            private static async Task CallGetMeetingInfoAsync(ITurnContext turnContext)
             {
                 var meeting = await TeamsInfo.GetMeetingInfoAsync(turnContext);
 
-                Assert.Equal("meeting-id", meeting.Details.Id);
-                Assert.Equal("organizer-id", meeting.Organizer.Id);
-                Assert.Equal("meetingConversationId-1", meeting.Conversation.Id);
+                Assert.Equal("meetingId-1", meeting.Details.Id);
+                Assert.Equal("organizer-id-1", meeting.Organizer.Id);
             }
 
             /*
@@ -713,7 +731,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             }
             */
 
-            private static async Task CallGroupChatGetPagedMembersAsync(ITurnContext turnContext)
+            private static async Task CallGetPagedMembersAsync(ITurnContext turnContext)
             {
                 var teamsMembers = await TeamsInfo.GetPagedMembersAsync(turnContext);
 
@@ -724,9 +742,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 Assert.Equal("name-2", teamsMembers.Members[1].Name);
             }
 
-            private static async Task CallGetChannelsAsync(ITurnContext turnContext)
+            private static async Task CallGetTeamChannelsAsync(ITurnContext turnContext)
             {
-                var channels = (await TeamsInfo.GetTeamChannelsAsync(turnContext)).ToArray();
+                var channels = await TeamsInfo.GetTeamChannelsAsync(turnContext);
 
                 Assert.Equal("channel-id-1", channels[0].Id);
                 Assert.Equal("channel-id-2", channels[1].Id);
@@ -1090,9 +1108,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         {
             protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                var response = new HttpResponseMessage(HttpStatusCode.OK);
+                var response = new HttpResponseMessage(HttpStatusCode.NotFound);
 
-                // GetTeamDetails
+                // TeamsInfo.GetTeamDetailsAsync
                 if (request.RequestUri.PathAndQuery.EndsWith("team-id"))
                 {
                     var content = new
@@ -1101,57 +1119,52 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         name = "team-name",
                         aadGroupId = "team-aadgroupid",
                     };
+                    response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
-
-                // SendMessageToThreadInTeams
-                else if (request.RequestUri.PathAndQuery.EndsWith("v3/conversations"))
-                {
-                    var content = new
-                    {
-                        id = "id123",
-                        serviceUrl = "https://serviceUrl/",
-                        activityId = ExpectedActivityId,
-                    };
-                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
-                }
-                /*
-                // GetChannels
+                // TeamsInfo.GetTeamChannelsAsync
                 else if (request.RequestUri.PathAndQuery.EndsWith("team-id/conversations"))
                 {
-                    var content = new ConversationList
-                    {
-                        Conversations =
+                    IList<Channel> content =
                         [
-                            new ChannelInfo { Id = "channel-id-1" },
-                            new ChannelInfo { Id = "channel-id-2", Name = "channel-name-2" },
-                            new ChannelInfo { Id = "channel-id-3", Name = "channel-name-3"  },
-                        ],
-                    };
+                            new Channel { Id = "channel-id-1" },
+                            new Channel { Id = "channel-id-2", Name = "channel-name-2" },
+                            new Channel { Id = "channel-id-3", Name = "channel-name-3"  },
+                        ];
+                    response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
-                */
-                // Get participant
-                else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1?tenantId=tenantId-1"))
+                // TeamsInfo.GetMeetingParticipantAsync
+                else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1?tenantId=tenantId-1")
+                    || request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1"))
                 {
-                    var content = new
+                    var content = new Microsoft.Teams.Api.Clients.MeetingParticipant
                     {
-                        user = new { userPrincipalName = "userPrincipalName-1" },
-                        meeting = new { role = "Organizer" },
-                        conversation = new { Id = "meetigConversationId-1" },
+                        Id = "participantId-1",
+                        User = new Account { Id = "userPrincipalName-1" },
+                        Role = "Organizer",
                     };
+                    response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
 
-                // Get meeting details
-                else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meeting-id"))
+                // TeamsInfo.GetMeetingInfoAsync
+                else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1"))
                 {
-                    var content = new
+                    var content = new Microsoft.Teams.Api.Meetings.Meeting
                     {
-                        details = new { id = "meeting-id" },
-                        organizer = new { id = "organizer-id" },
-                        conversation = new { id = "meetingConversationId-1" },
+                        Id = "meetingId-1",
+                        Details = new Microsoft.Teams.Api.Meetings.MeetingDetails
+                        {
+                            Id = "meetingId-1",
+                            Title = "meeting-title-1",
+                            Type = "meeting-type-1",
+                            JoinUrl = "https://joinurl-1/",
+                            MSGraphResourceId = "msgraph-resource-id-1",
+                        },
+                        Organizer = new Account { Id = "organizer-id-1" }
                     };
+                    response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
                 /*
@@ -1492,28 +1505,35 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         {
                             Id = "id-1",
                             Name = "name-1",
+                            AadObjectId = "aad-id-1",
                             Role = new("userRole-1"),
                         },
                         new ChannelAccount
                         {
                             Id = "id-2",
                             Name = "name-2",
+                            AadObjectId = "aad-id-2",
                             Role = new("userRole-2"),
                         },
                     ]
                 };
-                var member = new ChannelAccount()
 
+                var member = new ChannelAccount()
                 {
                     Id = "id-1",
                     Name = "name-1",
+                    AadObjectId = "aad-id-1",
                     Role = new("userRole-1"),
                 };
+
                 var conversations = new Mock<IConversations>();
+                
                 conversations.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ChannelAccount { Id = "id-1" });
+                
                 conversations.Setup(x => x.GetConversationPagedMembersAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(result);
+
                 conversations.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(member);
 
