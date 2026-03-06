@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Generic;
@@ -10,31 +11,31 @@ using System.Diagnostics.Metrics;
 namespace Microsoft.Agents.Builder.Telemetry
 {
 
-    public static class BuilderTelemetry
+    public static class AgentsBuilderTelemetry
     {
 
         /* AgentApplication metrics */
 
         private static readonly Counter<long> TurnTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            BuilderTelemetryConstants.AgentTurnTotalMetricName, "turn");
+            Constants.AgentTurnTotalMetricName, "turn");
         private static readonly Counter<long> TurnErrors = AgentsTelemetry.Meter.CreateCounter<long>(
-            BuilderTelemetryConstants.AgentTurnErrorsMetricName, "turn");
+            Constants.AgentTurnErrorsMetricName, "turn");
         private static readonly Histogram<long> TurnDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            BuilderTelemetryConstants.AgentTurnDurationMetricName, "ms");
+            Constants.AgentTurnDurationMetricName, "ms");
 
         /* ChannelAdapter metrics */
 
         private static readonly Counter<long> AdapterProcessTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            BuilderTelemetryConstants.AdapterProcessTotalMetricName, "request");
+            Constants.AdapterProcessTotalMetricName, "request");
         private static readonly Histogram<long> AdapterProcessDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            BuilderTelemetryConstants.AdapterProcessDurationMetricName, "ms");
+            Constants.AdapterProcessDurationMetricName, "ms");
 
         /* ConnectorClient metrics */
 
         private static readonly Counter<long> ConnectorRequestTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            BuilderTelemetryConstants.ConnectorRequestTotalMetricName, "request");
+            Constants.ConnectorRequestTotalMetricName, "request");
         private static readonly Histogram<long> ConnectorRequestDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            BuilderTelemetryConstants.ConnectorRequestDurationMetricName, "ms");
+            Constants.ConnectorRequestDurationMetricName, "ms");
 
         private static Dictionary<string, string> ExtractAttributesFromTurnContext(ITurnContext turnContext)
             {
@@ -58,9 +59,9 @@ namespace Microsoft.Agents.Builder.Telemetry
                 return attributes;
             }
 
-        public static Activity? StartActivity(string name, ITurnContext turnContext)
+        public static Activity? StartActivity(string name, ITurnContext? turnContext)
         {
-            var activity = AgentsTelemetryConstants.ActivitySource.StartActivity(name);
+            var activity = AgentsTelemetry..ActivitySource.StartActivity(name);
             if (turnContext != null)
             {
                 var attributes = ExtractAttributesFromTurnContext(turnContext);
@@ -68,6 +69,16 @@ namespace Microsoft.Agents.Builder.Telemetry
                 {
                     activity?.SetTag(kvp.Key, kvp.Value);
                 }
+            }
+            return activity;
+        }
+
+        public static Activity? StartActivity(string name, Core.Models.Activity? activity)
+        {
+            var activity = AgentsTelemetry.ActivitySource.StartActivity(name);
+            if (activity != null)
+            {
+                // Add any relevant tags from the Core.Models.Activity if needed
             }
             return activity;
         }
@@ -81,6 +92,18 @@ namespace Microsoft.Agents.Builder.Telemetry
             var activity = StartActivity(operationName, turnContext);
             return new TimedActivity(activity, callback);
         }
+
+        public static TimedActivity StartTimedActivity(
+            string operationName,
+            Core.Models.Activity? activityModel,
+            Action<Activity?, long, Exception?>? callback = null
+            )
+        {
+            var activity = StartActivity(operationName, activityModel);
+            return new TimedActivity(activity, callback);
+        }
+            
+            
 
         public static TimedActivity StartAgentTurnOperation(ITurnContext turnContext)
         {

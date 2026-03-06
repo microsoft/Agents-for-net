@@ -9,14 +9,15 @@ namespace Microsoft.Agents.Core.Telemetry
 {
     public static class AgentsTelemetry
     {
-        public static readonly Meter Meter = new(AgentsTelemetryConstants.SourceName, AgentsTelemetryConstants.SourceVersion);
+        public static readonly ActivitySource ActivitySource = new(Constants.SourceName, Constants.SourceVersion);
+        public static readonly Meter Meter = new(Constants.SourceName, Constants.SourceVersion);
 
 
         /* Metrics */
 
         public static Activity? StartActivity(string name)
         {
-            return AgentsTelemetryConstants.ActivitySource.StartActivity(name);
+            return ActivitySource.StartActivity(name);
         }
 
         public static TimedActivity StartTimedActivity(
@@ -24,7 +25,7 @@ namespace Microsoft.Agents.Core.Telemetry
             Action<Activity?, long, Exception?>? callback = null
             )
         {
-            var activity = AgentsTelemetryConstants.ActivitySource.StartActivity(operationName);
+            var activity = ActivitySource.StartActivity(operationName);
             return new TimedActivity(activity, callback);
         }
     }
