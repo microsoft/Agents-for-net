@@ -37,10 +37,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    commandId = "test-command",
-                    data = new
+                    CommandId = "test-command",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    Data = new
                     {
                         title = "test-title",
                         content = "test-content"
@@ -384,11 +385,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    commandId = "test-command",
-                    botMessagePreviewAction = "send",
-                    botActivityPreview = new List<Activity> { activity }
+                    CommandId = "test-command",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    BotMessagePreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Send,
+                    BotActivityPreview = [activity.ToTeamsActivity()]
                 }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },

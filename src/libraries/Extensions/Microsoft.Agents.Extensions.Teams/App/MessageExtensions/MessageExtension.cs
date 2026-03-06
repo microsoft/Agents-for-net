@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewEdit() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                Microsoft.Teams.Api.MessageExtensions.Response result = await handler(turnContext, turnState, ProtocolJsonSerializer.CloneTo<IActivity>(messagingExtensionAction.BotActivityPreview[0]), cancellationToken);
+                Microsoft.Teams.Api.MessageExtensions.Response result = await handler(turnContext, turnState, messagingExtensionAction.BotActivityPreview[0].ToCoreActivity(), cancellationToken);
                 await TeamsAgentExtension.SetResponse(turnContext, result);
             }
 
@@ -265,7 +265,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewSend() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                IActivity activityPreview = messagingExtensionAction.BotActivityPreview.Count > 0 ? ProtocolJsonSerializer.CloneTo<IActivity>(messagingExtensionAction.BotActivityPreview[0]) : new Activity();
+                IActivity activityPreview = messagingExtensionAction.BotActivityPreview.Count > 0 ? messagingExtensionAction.BotActivityPreview[0].ToCoreActivity() : new Activity();
                 await handler(turnContext, turnState, activityPreview, cancellationToken);
                 await TeamsAgentExtension.SetResponse(turnContext, new Response());
             }
