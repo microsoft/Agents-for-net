@@ -34,6 +34,7 @@ namespace Microsoft.Agents.Builder.App
     public class TypeRouteBuilder : RouteBuilderBase<TypeRouteBuilder>
     {
         private string _type;
+        private Regex _typePattern;
 
         /// <summary>
         /// Configures the route to match activities of the specified type.
@@ -45,6 +46,12 @@ namespace Microsoft.Agents.Builder.App
         public TypeRouteBuilder WithType(string type)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
+
+            if (_typePattern != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type Regex already set");
+            }
+
             _type = type;
             return this;
         }
@@ -62,18 +69,12 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
 
-            if (_route.Selector != null)
+            if (_type != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern}))");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern})) with Type already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.Type != null
-                    && typePattern.IsMatch(context.Activity.Type)
-                );
-
+            _typePattern = typePattern;
             return this;
         }
 
@@ -120,28 +121,28 @@ namespace Microsoft.Agents.Builder.App
         {
             if (_route.Selector != null)
             {
-                if (_type != null)
+                if (_type != null || _typePattern != null)
                 {
                     // Match on both the existing selector and the Activity.Type
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(_type)
+                        && (_type != null ? context.Activity.IsType(_type) : _typePattern.IsMatch(context.Activity.Type ?? string.Empty))
                         && await existingSelector(context, ct);
                 }
                 return;
             }
 
-            if (_type == null)
+            if (_type == null && _typePattern == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type or Selector");
             }
 
             // Just match on Activity.Type value
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && string.Equals(context.Activity.Type, _type, StringComparison.OrdinalIgnoreCase)
+                    && (_type != null ? context.Activity.IsType(_type) : _typePattern.IsMatch(context.Activity.Type ?? string.Empty))
                 );
         }
     }

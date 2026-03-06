@@ -152,24 +152,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_WithName_String_ThrowsWhenSelectorAlreadyDefined()
-        {
-            // Arrange
-            var builder = EventRouteBuilder.Create()
-                .WithName("myEvent");
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithName("anotherEvent"));
-            Assert.Contains("EventRouteBuilder.WithName(anotherEvent)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
-            Assert.Contains("EventRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithName(new Regex("pattern")));
-            Assert.Contains("EventRouteBuilder.WithName(", ex.Message);
-        }
-
-        [Fact]
         public async Task EventRouteBuilder_WithName_String_HandlesNullActivityName()
         {
             // Arrange
@@ -298,21 +280,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_WithName_Regex_ThrowsWhenSelectorAlreadyDefined()
+        public void EventRouteBuilder_WithName_Regex_ThrowsWhenNameAlreadyDefined()
         {
-            // Arrange
-            var builder = EventRouteBuilder.Create()
-                .WithName(new Regex("myEvent"));
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName("name")
+                .WithName(new Regex("^second.*")));
+        }
 
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithName("anotherEvent"));
-            Assert.Contains("EventRouteBuilder.WithName(anotherEvent)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
-            Assert.Contains("EventRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithName(new Regex(".*Event")));
-            Assert.Contains("EventRouteBuilder.WithName(Regex(.*Event))", ex.Message);
+        [Fact]
+        public void EventRouteBuilder_WithName_Name_ThrowsWhenRegexAlreadyDefined()
+        {
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName(new Regex("^second.*"))
+                .WithName("name"));
         }
 
         [Fact]
@@ -864,7 +844,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.Build());
+            Assert.Throws<InvalidOperationException>(() => builder.Build());
         }
 
         [Fact]

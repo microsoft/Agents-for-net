@@ -130,17 +130,12 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = TypeRouteBuilder.Create()
-                .WithType("myType");
+                .WithType("myType")
+                .WithSelector((ctx, ct) => Task.FromResult(true));
 
             // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithType("anotherType"));
-            Assert.Contains("TypeRouteBuilder.WithType(anotherType)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
+            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
             Assert.Contains("TypeRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithType(new Regex("pattern")));
-            Assert.Contains("TypeRouteBuilder.WithType(", ex.Message);
         }
 
         [Fact]
@@ -268,24 +263,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_WithType_Regex_ThrowsWhenSelectorAlreadyDefined()
-        {
-            // Arrange
-            var builder = TypeRouteBuilder.Create()
-                .WithType(new Regex("myType"));
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithType("anotherType"));
-            Assert.Contains("TypeRouteBuilder.WithType(anotherType)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
-            Assert.Contains("TypeRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithType(new Regex(".*Type")));
-            Assert.Contains("TypeRouteBuilder.WithType(Regex(.*Type))", ex.Message);
-        }
-
-        [Fact]
         public async Task TypeRouteBuilder_WithType_Regex_HandlesNullActivityType()
         {
             // Arrange
@@ -389,23 +366,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_WithSelector_ThrowsWhenSelectorAlreadyDefined()
+        public void TypeRouteBuilder_WithSelector_ThrowsWhenTypeAlreadyDefined()
         {
-            // Arrange
-            var builder = TypeRouteBuilder.Create()
-                .WithType("myType");
+            Assert.Throws<InvalidOperationException>(() => TypeRouteBuilder.Create()
+                .WithType("myType")
+                .WithType(new Regex("pattern")));
+        }
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.WithSelector((context, token) => Task.FromResult(false)));
-
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithType("myOtherType"));
-            Assert.Contains("TypeRouteBuilder.WithType(myOtherType)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
-            Assert.Contains("TypeRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithType(new Regex(".*Type")));
-            Assert.Contains("TypeRouteBuilder.WithType(Regex(.*Type))", ex.Message);
+        [Fact]
+        public void TypeRouteBuilder_WithSelector_ThrowsWhenTypeRegexAlreadyDefined()
+        {
+            Assert.Throws<InvalidOperationException>(() => TypeRouteBuilder.Create()
+                .WithType(new Regex("pattern"))
+                .WithType("myType"));
         }
 
         [Fact]
@@ -818,14 +791,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_Build_WithoutSelector_ThrowsArgumentNullException()
+        public void TypeRouteBuilder_Build_WithoutSelector_ThrowsException()
         {
             // Arrange
             var builder = TypeRouteBuilder.Create()
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.Build());
+            Assert.Throws<InvalidOperationException>(() => builder.Build());
         }
 
         [Fact]

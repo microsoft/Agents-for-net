@@ -22,6 +22,7 @@ namespace Microsoft.Agents.Builder.App
     public class InvokeRouteBuilder : RouteBuilderBase<InvokeRouteBuilder>
     {
         private string _invokeName;
+        private Regex _invokeRegex;
 
         public InvokeRouteBuilder() : base()
         {
@@ -39,6 +40,12 @@ namespace Microsoft.Agents.Builder.App
         public InvokeRouteBuilder WithName(string name)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            if (_invokeRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name Regex already set");
+            }
+
             _invokeName = name;
             return this;
         }
@@ -56,18 +63,12 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
-            if (_route.Selector != null)
+            if (_invokeName != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({namePattern})");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && namePattern.IsMatch(context.Activity.Name)
-                );
-
+            _invokeRegex = namePattern;
             return this;
         }
 
@@ -125,22 +126,22 @@ namespace Microsoft.Agents.Builder.App
         {
             if (_route.Selector != null)
             {
-                if (_invokeName != null)
+                if (_invokeName != null || _invokeRegex != null)
                 {
                     // Match on both the existing selector and the Activity.Name
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Invoke)
-                        && _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
                         && await existingSelector(context, ct);
                 }
                 return;
             }
 
-            if (_invokeName == null)
+            if (_invokeName == null && _invokeRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Name");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Name or Selector");
             }
 
             // Just match on Activity.Name value
@@ -148,7 +149,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Invoke)
-                    && _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
                 );
         }
     }

@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.App
 
         public bool IsChannelIdMatch(ChannelId channelId)
         {
-            return ChannelId == null || channelId == ChannelId;
+            return ChannelId == null || ChannelId.ToString().Equals(channelId?.ToString());
         }
     }
 }

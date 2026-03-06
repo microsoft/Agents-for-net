@@ -34,6 +34,7 @@ namespace Microsoft.Agents.Builder.App
     public class EventRouteBuilder : RouteBuilderBase<EventRouteBuilder>
     {
         private string _eventName;
+        private Regex _eventRegex;
 
         /// <summary>
         /// Configures the route to match event activities with the specified name, using a case-insensitive comparison.
@@ -46,6 +47,12 @@ namespace Microsoft.Agents.Builder.App
         public EventRouteBuilder WithName(string name)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            if (_eventRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name})) with Type Regex already set");
+            }
+
             _eventName = name;
             return this;
         }
@@ -62,19 +69,12 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
-            if (_route.Selector != null)
+            if (_eventName != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern}))");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern})) with Name already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity.Name != null
-                    && namePattern.IsMatch(context.Activity.Name)
-                );
-
+            _eventRegex = namePattern;
             return this;
         }
 
@@ -133,22 +133,22 @@ namespace Microsoft.Agents.Builder.App
         {
             if (_route.Selector != null)
             {
-                if (_eventName != null)
+                if (_eventName != null || _eventRegex != null)
                 {
                     // Match on both the existing selector and the Activity.Name
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Event)
-                        && _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                        && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
                         && await existingSelector(context, ct);
                 }
                 return;
             }
 
-            if (_eventName == null)
+            if (_eventName == null && _eventRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(EventRouteBuilder), "Name");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(EventRouteBuilder), "Name or Selector");
             }
 
             // Just match on Activity.Name value
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Builder.App
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Event)
                     && context.Activity.Name != null
-                    && _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                    && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
                 );
         }
     }
