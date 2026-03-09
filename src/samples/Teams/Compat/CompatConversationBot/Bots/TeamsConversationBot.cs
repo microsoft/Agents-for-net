@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Extensions.Configuration;
-using AdaptiveCards.Templating;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
@@ -20,9 +18,9 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Authentication;
 
-namespace ConversationBot.Bots
+namespace CompatConversationBot.Bots
 {
-    public class TeamsConversationBot(IConfiguration config) : TeamsActivityHandler
+    public class TeamsConversationBot() : TeamsActivityHandler
     {
         private readonly string _adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
 
@@ -272,18 +270,12 @@ namespace ConversationBot.Bots
             }
 
             var templateJSON = File.ReadAllText(_adaptiveCardTemplate);
-            AdaptiveCardTemplate template = new AdaptiveCardTemplate(templateJSON);
-            var memberData = new
-            {
-                userName = member.Name,
-                userUPN = member.Id,
-                userAAD = member.AadObjectId
-            };
-            string cardJSON = template.Expand(memberData);
+            templateJSON = templateJSON.Replace("${userName}", member.Name).Replace("${userUPN}", member.Id).Replace("${userAAD}", member.AadObjectId);
+
             var adaptiveCardAttachment = new Attachment
             {
                 ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = cardJSON
+                Content = templateJSON
             };
             await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
