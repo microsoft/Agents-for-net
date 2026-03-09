@@ -1,28 +1,41 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using CompatMessageExtensions.Bots;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.AspNetCore;
-using CompatMessageExtensions.Bots;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// Add AspNet token validation
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-
 // Add basic bot functionality
 builder.AddAgent<TeamsMessageExtensionsSearchBot>();
 
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operates correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+// Configure the HTTP request pipeline.
+
+// Add AspNet token validation
+builder.Services.AddControllers();
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+
 var app = builder.Build();
+
+// Enable AspNet authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

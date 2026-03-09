@@ -155,6 +155,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compat", "Compat", "{2D7C4F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompatTaskModule", "samples\Teams\Compat\CompatTaskModule\CompatTaskModule.csproj", "{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompatConversationBot", "samples\Teams\Compat\CompatConversationBot\CompatConversationBot.csproj", "{188897EB-098C-6586-D2B6-80004042C219}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -861,6 +863,18 @@ Global
 		{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0}.Release|x64.Build.0 = Release|Any CPU
 		{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0}.Release|x86.ActiveCfg = Release|Any CPU
 		{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0}.Release|x86.Build.0 = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|x64.Build.0 = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Debug|x86.Build.0 = Debug|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|Any CPU.Build.0 = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|x64.ActiveCfg = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|x64.Build.0 = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|x86.ActiveCfg = Release|Any CPU
+		{188897EB-098C-6586-D2B6-80004042C219}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -939,6 +953,7 @@ Global
 		{717AF297-4A3E-8127-0B87-6B1131699BE1} = {2D7C4F6C-924C-4254-BDD0-C3980619B8E5}
 		{2D7C4F6C-924C-4254-BDD0-C3980619B8E5} = {6348023E-F632-458A-9114-1CAD1D9A017C}
 		{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0} = {2D7C4F6C-924C-4254-BDD0-C3980619B8E5}
+		{188897EB-098C-6586-D2B6-80004042C219} = {2D7C4F6C-924C-4254-BDD0-C3980619B8E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

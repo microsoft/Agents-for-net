@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Activities.Events;
 using System.Collections.Generic;
