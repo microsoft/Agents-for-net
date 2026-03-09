@@ -110,9 +110,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.PropertyNameCaseInsensitive = true;
             options.IncludeFields = true;
             options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
-            //options.UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode;
-
-            //options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
@@ -129,7 +126,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new TokenResponseConverter());
             options.Converters.Add(new VideoCardConverter());
             options.Converters.Add(new Array2DConverter());
-            //options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
             options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
             options.Converters.Add(new MessageReactionConverter());

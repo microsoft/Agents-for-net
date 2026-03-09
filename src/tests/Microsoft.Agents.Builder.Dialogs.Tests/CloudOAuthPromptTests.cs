@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     new DialogInstance
                     {
                         Id = "OAuthPrompt",
-                        State = new PersistedState
+                        State = new Dictionary<string, object>
                         {
                             { "expires", DateTime.UtcNow.AddHours(8) },
                             { "caller", null },
