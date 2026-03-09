@@ -95,7 +95,7 @@ public class ProactiveAgent : AgentApplication
     // It can be used in a code-first approach using Proactive.ContinueConversationAsync, or if MapAgentProactiveEndpoints was called in
     // startup it can be mapped to an Http request to /proactive/continue that triggers this logic.
     // Either way the tokens will be provided from the indicated token handlers. This will fail if the user is not signed into "me".
-    [ContinueConversation(tokenHandlers: "me")]
+    [ContinueConversation(autoSignInHandlers: "me")]
     public async Task OnContinueConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await turnContext.GetTurnTokenAsync(cancellationToken: cancellationToken);
