@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <remarks>InvalidOperationException will be thrown if meetingId or notification have not been
         /// provided, and also cannot be retrieved from turnContext.Activity.</remarks>
         /// <returns> <see cref="MeetingNotificationResponse"/>.</returns>
-        public static async Task<object> SendMeetingNotificationAsync(ITurnContext turnContext, object notification, string meetingId = null, CancellationToken cancellationToken = default)
+        public static Task<object> SendMeetingNotificationAsync(ITurnContext turnContext, object notification, string meetingId = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="tenantId"> The tenant ID. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> The operation Id. </returns>
-        public static async Task<string> SendMessageToListOfUsersAsync(ITurnContext turnContext, IActivity activity, List<Account> teamsMembers, string tenantId, CancellationToken cancellationToken = default)
+        public static Task<string> SendMessageToListOfUsersAsync(ITurnContext turnContext, IActivity activity, List<Account> teamsMembers, string tenantId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -248,7 +248,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="tenantId"> The tenant ID. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> The operation Id. </returns>
-        public static async Task<string> SendMessageToAllUsersInTenantAsync(ITurnContext turnContext, IActivity activity, string tenantId, CancellationToken cancellationToken = default)
+        public static Task<string> SendMessageToAllUsersInTenantAsync(ITurnContext turnContext, IActivity activity, string tenantId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="tenantId"> The tenant ID. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns>The operation Id.</returns>
-        public static async Task<string> SendMessageToAllUsersInTeamAsync(ITurnContext turnContext, IActivity activity, string teamId, string tenantId, CancellationToken cancellationToken = default)
+        public static Task<string> SendMessageToAllUsersInTeamAsync(ITurnContext turnContext, IActivity activity, string teamId, string tenantId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -276,7 +276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="tenantId"> The tenant ID. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> The operation Id. </returns>
-        public static async Task<string> SendMessageToListOfChannelsAsync(ITurnContext turnContext, IActivity activity, List<object> channelsMembers, string tenantId, CancellationToken cancellationToken = default)
+        public static Task<string> SendMessageToListOfChannelsAsync(ITurnContext turnContext, IActivity activity, List<object> channelsMembers, string tenantId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -288,7 +288,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="operationId"> The operationId to get the state of. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> The state and responses of the operation. </returns>
-        public static async Task<object> GetOperationStateAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
+        public static Task<object> GetOperationStateAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -301,7 +301,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="continuationToken"> The continuation token. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> The list of failed entries of the operation. </returns>
-        public static async Task<object> GetPagedFailedEntriesAsync(ITurnContext turnContext, string operationId, string continuationToken = null, CancellationToken cancellationToken = default)
+        public static Task<object> GetPagedFailedEntriesAsync(ITurnContext turnContext, string operationId, string continuationToken = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -313,7 +313,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="operationId"> The id of the operation to cancel. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
         /// <returns> A <see cref="Task"/> representing the asynchronous operation. </returns>
-        public static async Task CancelOperationAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
+        public static Task CancelOperationAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
