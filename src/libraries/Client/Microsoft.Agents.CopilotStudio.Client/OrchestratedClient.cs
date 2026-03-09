@@ -197,6 +197,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }
                 };
                 httpRequest.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
+                httpRequest.Headers.Add(CopilotStudioHeaderNames.ConversationId, conversationId);
+                httpRequest.Headers.Add(CopilotStudioHeaderNames.ClientRequestId, Guid.NewGuid().ToString());
 
                 using HttpResponseMessage resp = await SetupAndExecutePostRequest(httpRequest, cancellationToken).ConfigureAwait(false);
 
@@ -226,7 +228,15 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         else if (item.EventType == "error")
                         {
                             OrchestratedErrorEnvelope envelope = ProtocolJsonSerializer.ToObject<OrchestratedErrorEnvelope>(item.Data);
-                            yield return new OrchestratedErrorResponse(envelope?.Error ?? new OrchestratedErrorPayload());
+                            var errorPayload = envelope?.Error ?? new OrchestratedErrorPayload();
+                            _logger.LogError(
+                                "Orchestrated error received for ConversationId {ConversationId}, RequestUri {RequestUri}: {ErrorCode} ({Code}) - {Message}",
+                                conversationId,
+                                uriExecute,
+                                errorPayload.ErrorCode,
+                                errorPayload.Code,
+                                errorPayload.Message);
+                            yield return new OrchestratedErrorResponse(errorPayload);
                         }
                         else if (item.EventType == "end")
                         {
