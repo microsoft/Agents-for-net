@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> <see cref="MeetingNotificationResponse"/>.</returns>
         public static Task<object> SendMeetingNotificationAsync(ITurnContext turnContext, object notification, string meetingId = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> The operation Id. </returns>
         public static Task<string> SendMessageToListOfUsersAsync(ITurnContext turnContext, IActivity activity, List<Account> teamsMembers, string tenantId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> The operation Id. </returns>
         public static Task<string> SendMessageToAllUsersInTenantAsync(ITurnContext turnContext, IActivity activity, string tenantId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns>The operation Id.</returns>
         public static Task<string> SendMessageToAllUsersInTeamAsync(ITurnContext turnContext, IActivity activity, string teamId, string tenantId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> The operation Id. </returns>
         public static Task<string> SendMessageToListOfChannelsAsync(ITurnContext turnContext, IActivity activity, List<object> channelsMembers, string tenantId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -294,7 +294,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> The state and responses of the operation. </returns>
         public static Task<object> GetOperationStateAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> The list of failed entries of the operation. </returns>
         public static Task<object> GetPagedFailedEntriesAsync(ITurnContext turnContext, string operationId, string continuationToken = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -319,7 +319,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <returns> A <see cref="Task"/> representing the asynchronous operation. </returns>
         public static Task CancelOperationAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
         #endregion
 
