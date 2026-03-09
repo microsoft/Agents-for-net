@@ -41,8 +41,9 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             participantId ??= turnContext.Activity.From.AadObjectId ?? throw new InvalidOperationException($"{nameof(participantId)} is required.");
             tenantId ??= turnContext.Activity.GetChannelData<ChannelData>()?.Tenant?.Id ?? throw new InvalidOperationException($"{nameof(tenantId)} is required.");
 
-            // Teams SDK 2.0.5 doesn't support supplying tenantId.  
-            return await GetTeamsApiClient(turnContext).Meetings.GetParticipantAsync(meetingId, participantId);
+            // Teams SDK 2.0.5 doesn't support supplying tenantId.
+            var teamsClient = GetTeamsApiClient(turnContext);
+            return await teamsClient.Meetings.GetParticipantAsync(meetingId, participantId);
         }
 
         /// <summary>
@@ -55,7 +56,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         public static async Task<Meeting> GetMeetingInfoAsync(ITurnContext turnContext, string meetingId = null, CancellationToken cancellationToken = default)
         {
             meetingId ??= turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("The meetingId can only be null if turnContext is within the scope of a MS Teams Meeting.");
-            return await GetTeamsApiClient(turnContext).Meetings.GetByIdAsync(meetingId);
+            var teamsClient = GetTeamsApiClient(turnContext);
+            return await teamsClient.Meetings.GetByIdAsync(meetingId);
         }
 
         /// <summary>
@@ -68,7 +70,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         public static async Task<Team> GetTeamDetailsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
         {
             teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-            return await GetTeamsApiClient(turnContext).Teams.GetByIdAsync(teamId);
+            var teamsClient = GetTeamsApiClient(turnContext);
+            return await teamsClient.Teams.GetByIdAsync(teamId);
         }
 
         /// <summary>
@@ -82,7 +85,8 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         public static async Task<IList<Channel>> GetTeamChannelsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
         {
             teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-            return await GetTeamsApiClient(turnContext).Teams.GetConversationsAsync(teamId);
+            var teamsClient = GetTeamsApiClient(turnContext);
+            return await teamsClient.Teams.GetConversationsAsync(teamId);
         }
 
         /// <summary>
