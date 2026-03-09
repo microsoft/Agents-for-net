@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         }
 
         /// <summary>
-        /// Handles read receipt events for messages sent by the bot in personal scope.
+        /// Handles read receipt events for messages sent by the agent in personal scope.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>

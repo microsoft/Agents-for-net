@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Invoked when a messaging extension bot message preview edit activity is received from the connector.
+        /// Invoked when a messaging extension agent message preview edit activity is received from the connector.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="action">The messaging extension action.</param>
@@ -338,7 +338,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         }
 
         /// <summary>
-        /// Invoked when a messaging extension bot message preview send activity is received from the connector.
+        /// Invoked when a messaging extension agent message preview send activity is received from the connector.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="action">The messaging extension action.</param>

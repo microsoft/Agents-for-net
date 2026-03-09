@@ -26,21 +26,16 @@ namespace Microsoft.Agents.Builder
 
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) 
         {
-            var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
-                bool isForChannel = false; 
-                if (turnContext.Activity.ChannelId != null && ChannelId != null)
-                {
-                    if (!string.IsNullOrEmpty(ChannelId.SubChannel) && ChannelId.SubChannel.Equals("*"))
-                    {
-                        isForChannel = turnContext.Activity.ChannelId.IsParentChannel(ChannelId.Channel);
-                    }
-                    else
-                        isForChannel = turnContext.Activity.ChannelId.Equals(ChannelId);
-                }
-                return isForChannel && await routeSelector(turnContext, cancellationToken);
-            });
+            var route = RouteBuilder.Create()
+                .WithChannelId(ChannelId)
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(isInvokeRoute)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .Build();
 
-            agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
+            agentApplication.AddRoute(route);
         }
 
         public void AddRoute(AgentApplication agentApplication, Route route)

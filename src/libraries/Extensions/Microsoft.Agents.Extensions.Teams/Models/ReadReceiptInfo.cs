@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
             if (long.TryParse(compareMessageId, out long compareMessageIdLong)
                 && long.TryParse(lastReadMessageId, out long lastReadMessageIdLong))
             {
-                // if compareMessageId is smaller than lastReadMessageId, it means the user read the bot's message. 
+                // if compareMessageId is smaller than lastReadMessageId, it means the user read the agent's message. 
                 return (compareMessageIdLong.CompareTo(lastReadMessageIdLong) <= 0) ? true : false;
             }
 

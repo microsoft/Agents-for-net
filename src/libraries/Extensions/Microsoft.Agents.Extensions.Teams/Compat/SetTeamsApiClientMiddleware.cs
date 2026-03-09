@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
     /// Middleware that configures the Teams API client for each turn in the Adapter pipeline.
     /// </summary>
     /// <remarks>
-    /// For TeamsActivityHandler based agents only: This middleware MUST be added to the Adapter 
+    /// For <see cref="TeamsActivityHandler"/> based agents <b>ONLY</b>: This middleware MUST be added to the Adapter 
     /// middleware pipeline to ensure that the Teams API client is properly set up for each incoming activity. 
     /// It relies on the provided IConnections and IHttpClientFactory instances to manage connections and HTTP 
     /// client creation. This middleware does not modify the activity or context, but prepares the necessary 

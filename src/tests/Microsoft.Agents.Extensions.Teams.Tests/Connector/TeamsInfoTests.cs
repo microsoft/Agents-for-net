@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         public async Task SendMessageToTeamsChannelAsync_ShouldReturnConversationReferenceUsingAdapter()
         {
             var expectedConversationId = "conversation-id";
-            var activity = CreateTestActivity("Test-SendMessageToTeamsChannelAsync");
+            var activity = CreateTestActivity("SendMessageToTeamsChannelAsync");
             var adapter = new TestCreateConversationAdapter(ExpectedActivityId, expectedConversationId);
             var turnContext = new TurnContext(adapter, activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             turnContextMock.Setup(tc => tc.Activity).Returns(requestActivity);
             turnContextMock.Setup(tc => tc.Adapter).Returns(adapter);
 
-            var activity = CreateTestActivity("Test-SendMessageToTeamsChannelAsync");
+            var activity = CreateTestActivity("SendMessageToTeamsChannelAsync");
 
             var reference = await TeamsInfo.SendMessageToTeamsChannelAsync(turnContextMock.Object, activity, ExpectedTeamsChannelId, expectedAppId, CancellationToken.None);
 
@@ -94,7 +94,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             };
             channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
 
-            var activity = CreateTestActivity("Test-GetMeetingInfoAsync", channelData);
+            var activity = CreateTestActivity("GetMeetingInfoAsync", channelData);
 
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetTeamDetailsAsync_ShouldReturnTeamDetails()
         {
-            var activity = CreateTestActivity("Test-GetTeamDetailsAsync");
+            var activity = CreateTestActivity("GetTeamDetailsAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetPagedTeamMembersAsync_ShouldReturnTeamMembersList()
         {
-            var activity = CreateTestActivity("Test-GetPagedTeamMembersAsync");
+            var activity = CreateTestActivity("GetPagedTeamMembersAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             {
                 Team = new Team() { Id = "team_id" },
             };
-            var activity = CreateTestActivity("Test-GroupChat-GetPagedMembersAsync", channelData);
+            var activity = CreateTestActivity("GetPagedMembersAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             var handler = new TestTeamsActivityHandler();
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetChannelsAsync_ShouldReturnChannelsList()
         {
-            var activity = CreateTestActivity("Test-GetChannelsAsync");
+            var activity = CreateTestActivity("GetChannelsAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             };
             channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
 
-            var activity = CreateTestActivity("Test-GetParticipantAsync", channelData);
+            var activity = CreateTestActivity("GetMeetingParticipantAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             {
                 Team = new Team() { Id = "team-id" },
             };
-            var activity = CreateTestActivity("Test-GetMemberAsync", channelData);
+            var activity = CreateTestActivity("GetMemberAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         [Fact]
         public async Task GetMemberAsync_ShouldReturnAccountInfoWithoutTeamId()
         {
-            var activity = CreateTestActivity("Test-GetMemberAsync");
+            var activity = CreateTestActivity("GetMemberAsync");
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
             turnContext.Services.Set<ApiClient>(_apiClient);
@@ -518,28 +518,28 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
                 switch (turnContext.Activity.Text)
                 {
-                    case "Test-GetTeamDetailsAsync":
+                    case "GetTeamDetailsAsync":
                         await CallGetTeamDetailsAsync(turnContext);
                         break;
-                    case "Test-GetPagedTeamMembersAsync":
+                    case "GetPagedTeamMembersAsync":
                         await CallGetPagedTeamMembersAsync(turnContext);
                         break;
-                    case "Test-GroupChat-GetPagedMembersAsync":
+                    case "GetPagedMembersAsync":
                         await CallGetPagedMembersAsync(turnContext);
                         break;
-                    case "Test-GetChannelsAsync":
+                    case "GetChannelsAsync":
                         await CallGetTeamChannelsAsync(turnContext);
                         break;
-                    case "Test-SendMessageToTeamsChannelAsync":
+                    case "SendMessageToTeamsChannelAsync":
                         await CallSendMessageToTeamsChannelAsync(turnContext);
                         break;
-                    case "Test-GetMemberAsync":
+                    case "GetMemberAsync":
                         await CallGetMemberAsync(turnContext);
                         break;
-                    case "Test-GetParticipantAsync":
+                    case "GetMeetingParticipantAsync":
                         await CallGetMeetingParticipantAsync(turnContext);
                         break;
-                    case "Test-GetMeetingInfoAsync":
+                    case "GetMeetingInfoAsync":
                         await CallGetMeetingInfoAsync(turnContext);
                         break;
                     /*
@@ -625,8 +625,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 var participant = await TeamsInfo.GetMeetingParticipantAsync(turnContext);
 
                 Assert.Equal("Organizer", participant.Role);
-                //Assert.Equal("meetigConversationId-1", participant.Conversation.Id);
-                //Assert.Equal("userPrincipalName-1", participant.User.UserPrincipalName);
+                Assert.Equal("id-1", participant.User.Id);
             }
 
             private static async Task CallGetMeetingInfoAsync(ITurnContext turnContext)
@@ -1141,7 +1140,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     var content = new Microsoft.Teams.Api.Clients.MeetingParticipant
                     {
                         Id = "participantId-1",
-                        User = new Account { Id = "userPrincipalName-1" },
+                        User = new Account { Id = "id-1" },
                         Role = "Organizer",
                     };
                     response.StatusCode = HttpStatusCode.OK;

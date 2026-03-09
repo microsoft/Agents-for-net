@@ -42,7 +42,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Connector\" />
-	  <Folder Include="Serialization\Converters\" />
 	</ItemGroup>
 
 </Project>
