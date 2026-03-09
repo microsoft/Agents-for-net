@@ -7,6 +7,7 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Activities.Events;
 using System.Collections.Generic;

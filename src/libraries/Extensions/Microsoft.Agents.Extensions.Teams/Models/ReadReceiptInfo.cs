@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Extensions.Teams.Compat
+namespace Microsoft.Agents.Extensions.Teams.Models
 {
     /// <summary>
     /// General information about a read receipt.
