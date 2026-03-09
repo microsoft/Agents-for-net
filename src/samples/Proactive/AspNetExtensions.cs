@@ -164,6 +164,17 @@ public static class AspNetExtensions
                     JwtSecurityToken token = new(parts[1]);
                     string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value!;
 
+                    if (validationOptions.AllowCallers?.Count > 0 && !AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer) && validationOptions.AllowCallers[0] != "*")
+                    {
+                        var caller = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim || claim.Type == AuthenticationConstants.AzpClaim)?.Value;
+                        if (string.IsNullOrEmpty(caller) || !validationOptions.AllowCallers.Where(c => c == "*" || c == caller).Any())
+                        {
+                            context.Fail("Caller not allowed");
+                            await Task.CompletedTask.ConfigureAwait(false);
+                            return;
+                        }
+                    }
+
                     if (validationOptions.AzureBotServiceTokenHandling && AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
                     {
                         // Use the Azure Bot authority for this configuration manager
@@ -247,5 +258,12 @@ public static class AspNetExtensions
         /// OpenIdMetadata refresh interval.  Defaults to 12 hours.
         /// </summary>
         public TimeSpan? OpenIdMetadataRefresh { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of caller identifiers that are permitted to access the resource.
+        /// </summary>
+        /// <remarks>A value of "*" allows all callers. To restrict access, specify explicit caller
+        /// identifiers. The list can be modified to control which callers are authorized.</remarks>
+        public IList<string>? AllowCallers { get; set; }
     }
 }
