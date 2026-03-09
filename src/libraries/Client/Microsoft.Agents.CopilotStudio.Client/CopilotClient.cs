@@ -31,11 +31,6 @@ namespace Microsoft.Agents.CopilotStudio.Client
     public class CopilotClient : ICopilotClient
     {
         /// <summary>
-        /// Header key for conversation ID.
-        /// </summary>
-        private static readonly string _conversationIdHeaderKey = "x-ms-conversationid";
-        private static readonly string _clientRequestIdHeaderKey = "x-ms-conversation-id";
-        /// <summary>
         /// The conversation ID being used for the current conversation.
         /// </summary>
         private string _conversationId = string.Empty;
@@ -63,10 +58,6 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// The token provider function to get the access token for the request.
         /// </summary>
         private readonly Func<string, Task<string>>? _tokenProviderFunction = null;
-        /// <summary>
-        /// The island header key.
-        /// </summary>
-        private static readonly string _islandExperimentalUrlHeaderKey = "x-ms-d2e-experimental";
         /// <summary>
         /// The island experimental URL for Copilot Studio.
         /// </summary>
@@ -168,7 +159,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 req.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
                 if (!string.IsNullOrEmpty(startRequest.ConversationId))
                 {
-                    req.Headers.Add(_clientRequestIdHeaderKey, startRequest.ConversationId);
+                    req.Headers.Add(CopilotStudioHeaderNames.ConversationId, startRequest.ConversationId);
                 }
                 await foreach (var activity in PostActivityRequestAsync(req, RequestTypes.StartSession, cancellationToken))
                 {
@@ -514,8 +505,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 _logger.LogInformation("Request sent successfully");
             }
 
-            // Check for the _islandExperimentalUrlHeaderKey key in the response headers
-            if (resp.Headers.TryGetValues(_islandExperimentalUrlHeaderKey, out var values))
+            // Check for the experimental URL header in the response headers
+            if (resp.Headers.TryGetValues(CopilotStudioHeaderNames.D2EExperimentalUrl, out var values))
             {
                 if (Settings.UseExperimentalEndpoint && string.IsNullOrEmpty(Settings.DirectConnectUrl))
                 {
@@ -525,8 +516,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 }
             }
 
-            // Check for the _conversationIdHeaderKey key in the response headers
-            if (resp.Headers.TryGetValues(_conversationIdHeaderKey, out var conversationIdValues))
+            // Check for the conversation ID header in the response headers
+            if (resp.Headers.TryGetValues(CopilotStudioHeaderNames.D2EConversationId, out var conversationIdValues))
             {
                 _conversationId = conversationIdValues.FirstOrDefault() ?? string.Empty;
                 _logger.LogTrace("Conversation ID: {ConversationId}", _conversationId);

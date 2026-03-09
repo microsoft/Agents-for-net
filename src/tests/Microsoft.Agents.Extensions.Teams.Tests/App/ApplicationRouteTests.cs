@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Config;
