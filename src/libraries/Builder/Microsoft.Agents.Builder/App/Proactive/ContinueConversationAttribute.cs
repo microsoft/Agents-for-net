@@ -23,12 +23,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// and optional token handler configuration.
         /// </summary>
         /// <param name="key">The conversation key used to identify the conversation context. If null, an ArgumentNullException is thrown.</param>
-        /// <param name="tokenHandlers">An optional comma, semicolon, or space delimted list of tokens to get.</param>
+        /// <param name="autoSignInHandlers">An optional comma, semicolon, or space delimted list of tokens to get.</param>
         /// <exception cref="ArgumentNullException">Thrown if the key parameter is null.</exception>
-        public ContinueConversationAttribute(string key = DefaultKey, string tokenHandlers = null)
+        public ContinueConversationAttribute(string key = DefaultKey, string autoSignInHandlers = null)
         {
             Key = key ?? throw new ArgumentNullException(nameof(key));
-            TokenHandlers = tokenHandlers;
+            TokenHandlers = autoSignInHandlers;
         }
 
         /// <summary>
