@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 Method = HttpMethod.Post,
                 RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities")
             };
-            if (body.IsTargetedActivity())
+            if (body.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
                 request.RequestUri = new Uri(request.RequestUri.ToString() + "?isTargetedActivity=true");
             }
@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 Method = HttpMethod.Post,
                 RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities/{HttpUtility.UrlEncode(activityId)}")
             };
-            if (body.IsTargetedActivity())
+            if (body.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
                 request.RequestUri = new Uri(request.RequestUri.ToString() + "?isTargetedActivity=true");
             }
