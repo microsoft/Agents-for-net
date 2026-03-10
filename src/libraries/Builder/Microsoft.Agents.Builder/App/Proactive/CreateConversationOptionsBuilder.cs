@@ -251,6 +251,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Specifies whether the conversation should be stored for future retrieval.
+        /// </summary>
+        /// <param name="store">true to store the conversation; otherwise, false.</param>
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> for method chaining.</returns>
+        public CreateConversationOptionsBuilder WithStoreConversation(bool store)
+        {
+            _record.StoreConversation = store;
+            return this;
+        }
+
+        /// <summary>
         /// Builds and returns a configured instance of the CreateConversation object.
         /// </summary>
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>

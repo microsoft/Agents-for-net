@@ -141,7 +141,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         .WithUser(body.User)
                         .WithChannelData(body.ChannelData)
                         .WithTeamsChannelId(body.TeamsChannelId)
-                        .WithTenantId(body.TenantId);
+                        .WithTenantId(body.TenantId)
+                        .WithStoreConversation(body.StoreConversation);
 
                     if ((bool)(body.IsGroup.HasValue))
                     {
@@ -149,7 +150,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
                         
                     var createOptions = createOptionsBuilder.Build();
-                    createOptions.StoreConversation = body.StoreConversation;
 
                     // Execute the conversation creation
                     var newConversation = await agent.Proactive.CreateConversationAsync(
