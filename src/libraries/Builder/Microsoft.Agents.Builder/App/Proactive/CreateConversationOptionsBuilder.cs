@@ -43,7 +43,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             var builder = new CreateConversationOptionsBuilder();
 
-            builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).Build();
+            builder._record.Identity = Conversation.IdentityFromClaims(new Dictionary<string, string>
+            {
+                { "aud", agentClientId }
+            });
+
+            builder._record.ChannelId = channelId;
+            builder._record.ServiceUrl = serviceUrl;
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)
@@ -80,8 +86,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             var builder = new CreateConversationOptionsBuilder();
 
-
-            builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).WithClaims(claims).Build();
+            builder._record.Identity = Conversation.IdentityFromClaims(claims);
+            builder._record.ChannelId = channelId;
+            builder._record.ServiceUrl = serviceUrl;
 
             builder._record.Parameters = parameters ?? new ConversationParameters();
             if (builder._record.Parameters.Agent == null)
@@ -123,7 +130,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (user != null)
             {
-                _record.Conversation.Reference.User = user;
                 _record.Parameters.Members =
                 [
                     user
@@ -203,7 +209,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             _record.Parameters.TenantId = tenantId?.Trim();
 
-            if (_record.Conversation.Reference.ChannelId == Channels.Msteams && !string.IsNullOrEmpty(_record.Parameters.TenantId))
+            if (_record.ChannelId == Channels.Msteams && !string.IsNullOrEmpty(_record.Parameters.TenantId))
             {
                 SetChannelData(new
                 {
@@ -229,7 +235,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> to allow method chaining.</returns>
         public CreateConversationOptionsBuilder WithTeamsChannelId(string teamsChannelId)
         {
-            if (_record.Conversation.Reference.ChannelId == Channels.Msteams && !string.IsNullOrWhiteSpace(teamsChannelId))
+            if (_record.ChannelId == Channels.Msteams && !string.IsNullOrWhiteSpace(teamsChannelId))
             {
                 IsGroup(true);
                 SetChannelData(new
@@ -256,14 +262,21 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveMissingMembers, null);
             }
 
+            if (string.IsNullOrWhiteSpace(_record.ServiceUrl))
+            {
+                _record.ServiceUrl = ConversationReferenceBuilder.ServiceUrlForChannel(_record.ChannelId);
+            }
+
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
                 _record.Scope = CreateConversationOptions.AzureBotScope;
             }
+
             if (_record.Parameters.Activity != null && string.IsNullOrWhiteSpace(_record.Parameters.Activity.Type))
             {
                 _record.Parameters.Activity.Type = ActivityTypes.Message;
             }
+
             return _record;
         }
 

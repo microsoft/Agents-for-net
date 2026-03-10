@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
@@ -15,6 +16,24 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public const string AzureBotScope = $"{AuthenticationConstants.BotFrameworkScope}/.default";
 
         /// <summary>
+        /// Gets or sets the claims-based identity associated with the current user.
+        /// </summary>
+        public ClaimsIdentity Identity { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the channel.
+        /// </summary>
+        public string ChannelId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the base URL of the remote service endpoint.
+        /// </summary>
+        /// <remarks>
+        /// If null, the default service URL for the channel will be used.
+        /// </remarks>
+        public string ServiceUrl { get; set; }
+
+        /// <summary>
         /// Gets or sets the OAuth scope to use when requesting authentication tokens.
         /// </summary>
         public string Scope { get; set; } = AzureBotScope;
@@ -23,7 +42,5 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Gets or sets the parameters used to configure the conversation.
         /// </summary>
         public ConversationParameters Parameters { get; set; }
-
-        internal Conversation Conversation { get; set; }
     }
 }

@@ -15,6 +15,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <exception cref="ArgumentException">Thrown when any required property is missing or invalid.</exception>
         public static void Validate(this CreateConversationOptions createConversation)
         {
+            if (string.IsNullOrWhiteSpace(createConversation.ChannelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.ChannelId));
+            }
+
+            if (string.IsNullOrWhiteSpace(createConversation.ServiceUrl))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.ServiceUrl));
+            }
+
             if (string.IsNullOrWhiteSpace(createConversation.Scope))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Scope));
@@ -25,12 +35,6 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Parameters));
             }
             createConversation.Parameters.Validate();
-
-            if (createConversation.Conversation == null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(Conversation));
-            }
-            createConversation.Conversation.Validate(false);
         }
 
         /// <summary>

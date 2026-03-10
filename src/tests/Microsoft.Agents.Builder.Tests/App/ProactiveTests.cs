@@ -568,9 +568,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             _mockAdapter
                 .Setup(a => a.CreateConversationAsync(
                     It.IsAny<ClaimsIdentity>(),
-                    It.IsAny<ConversationReference>(),
-                    It.IsAny<ConversationParameters>(),
                     It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ConversationParameters>(),
                     It.IsAny<AgentCallbackHandler>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(newReference);
@@ -614,10 +615,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             var newReference = new ConversationReference
             {
                 Conversation = new ConversationAccount { Id = "new-conversation-id" },
-                ServiceUrl = createInfo.Conversation.Reference.ServiceUrl,
-                ChannelId = createInfo.Conversation.Reference.ChannelId,
-                User = createInfo.Conversation.Reference.User,
-                Agent = createInfo.Conversation.Reference.Agent
+                ServiceUrl = createInfo.ServiceUrl,
+                ChannelId = createInfo.ChannelId,
+                User = createInfo.Parameters.Members[0],
+                Agent = createInfo.Parameters.Agent
             };
 
             var handlerCalled = false;
@@ -633,9 +634,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             _mockAdapter
                 .Setup(a => a.CreateConversationAsync(
                     It.IsAny<ClaimsIdentity>(),
-                    It.IsAny<ConversationReference>(),
-                    It.IsAny<ConversationParameters>(),
                     It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ConversationParameters>(),
                     It.IsAny<AgentCallbackHandler>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(newReference);

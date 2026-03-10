@@ -5,7 +5,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
-using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -142,6 +141,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return new ClaimsIdentity([.. claims.Select(kv => new Claim(kv.Key, kv.Value))]);
         }
 
+        /// <summary>
+        /// Serializes the current object to its JSON representation.
+        /// </summary>
+        /// <returns>A string containing the JSON representation of the current object.</returns>
         public string ToJson() => ProtocolJsonSerializer.ToJson(this);
     }
 }

@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Creates a new conversation using the specified channel adapter and conversation information.
         /// </summary>
         /// <param name="adapter">The channel adapter used to create the conversation. Cannot be null.</param>
-        /// <param name="createInfo">An object containing the details required to create the conversation, including conversation identity,
+        /// <param name="createOptions">An object containing the details required to create the conversation, including conversation identity,
         /// reference, parameters, and scope. Cannot be null. See <see cref="CreateConversationOptionsBuilder"/>.</param>
         /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
         /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
@@ -238,7 +238,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task<ConversationReference> CreateConversationAsync(
             IChannelAdapter adapter, 
-            CreateConversationOptions createInfo, 
+            CreateConversationOptions createOptions, 
             RouteHandler continuationHandler = null,
             string[] autoSignInHandlers = null,
             Func<ConversationReference, IActivity> continuationActivityFactory = null,
@@ -246,17 +246,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
             
-            if (createInfo == null)
+            if (createOptions == null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, "null instance");
             }
-            createInfo.Validate();
+            createOptions.Validate();
 
             var newReference = await adapter.CreateConversationAsync(
-                createInfo.Conversation.Identity,
-                createInfo.Conversation.Reference,
-                createInfo.Parameters,
-                createInfo.Scope,
+                createOptions.Identity,
+                createOptions.ChannelId,
+                createOptions.ServiceUrl,
+                createOptions.Scope,
+                createOptions.Parameters,
                 null,
                 cancellationToken).ConfigureAwait(false);
 
@@ -266,7 +267,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 {
                     await ContinueConversationAsync(
                         adapter,
-                        new Conversation(createInfo.Conversation.Identity, newReference),
+                        new Conversation(createOptions.Identity, newReference),
                         continuationHandler,
                         autoSignInHandlers,
                         continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity(),

@@ -158,29 +158,31 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        public override Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string scope, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(conversationParameters, nameof(conversationParameters));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
-            var createRecord = CreateConversationOptionsBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters)
-                .WithScope(audience)
+            var createOptions = CreateConversationOptionsBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters)
+                .WithScope(scope)
                 .WithUser((conversationParameters.Members?.Count > 0 ? conversationParameters.Members[0] : new ChannelAccount(agentAppId, role: RoleTypes.User)))
                 .Build();
-            return CreateConversationAsync(createRecord.Conversation.Identity, createRecord.Conversation.Reference, createRecord.Parameters, createRecord.Scope, callback, cancellationToken);
+            return CreateConversationAsync(createOptions.Identity, createOptions.ChannelId, createOptions.ServiceUrl, createOptions.Scope, createOptions.Parameters, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override async Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, ConversationReference reference, ConversationParameters parameters, string scope, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        public override async Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
             AssertionHelpers.ThrowIfNull(parameters, nameof(parameters));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
             scope ??= CreateConversationOptions.AzureBotScope;
+            var reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl)
+                .WithUser((parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(AgentClaims.GetAppId(identity), role: RoleTypes.User)))
+                .Build();
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(

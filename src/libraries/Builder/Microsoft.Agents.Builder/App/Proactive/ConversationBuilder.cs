@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;

@@ -129,18 +129,6 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("Custom Agent", result.Parameters.Agent.Name);
         }
 
-        [Fact]
-        public void Create_WithAgentClientId_AndServiceUrl_ShouldUseProvidedServiceUrl()
-        {
-            // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams, TestServiceUrl)
-                .WithUser(TestUserId, TestUserName)
-                .Build();
-
-            // Assert
-            Assert.Equal(TestServiceUrl, result.Conversation.Reference.ServiceUrl);
-        }
-
         #endregion
 
         #region Create with Claims Tests
@@ -243,7 +231,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.Equal(TestServiceUrl, result.Conversation.Reference.ServiceUrl);
+            Assert.Equal(TestServiceUrl, result.ServiceUrl);
         }
 
         #endregion
@@ -259,9 +247,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.NotNull(result.Conversation.Reference.User);
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
-            Assert.Equal(TestUserName, result.Conversation.Reference.User.Name);
+            Assert.NotNull(result.Parameters.Members);
+            Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
+            Assert.Equal(TestUserName, result.Parameters.Members[0].Name);
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
         }
@@ -275,9 +263,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.NotNull(result.Conversation.Reference.User);
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
-            Assert.Null(result.Conversation.Reference.User.Name);
+            Assert.NotNull(result.Parameters.Members[0]);
+            Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
+            Assert.Null(result.Parameters.Members[0].Name);
         }
 
         [Fact]
@@ -312,8 +300,6 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
-            Assert.Equal(TestUserName, result.Conversation.Reference.User.Name);
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
         }
@@ -582,7 +568,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Conversation);
+            Assert.NotNull(result.ChannelId);
+            Assert.NotNull(result.ServiceUrl);
+            Assert.Equal(ConversationReferenceBuilder.ServiceUrlForChannel(Channels.Msteams), result.ServiceUrl);
             Assert.NotNull(result.Parameters);
             Assert.NotNull(result.Scope);
         }
@@ -610,7 +598,8 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
+            Assert.Single(result.Parameters.Members);
+            Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
             Assert.Equal(TestScope, result.Scope);
             Assert.Equal("Test", result.Parameters.Activity.Text);
             Assert.Equal(channelData, result.Parameters.ChannelData);
@@ -646,9 +635,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(Channels.Msteams, result.Conversation.Reference.ChannelId);
-            Assert.Equal(TestServiceUrl, result.Conversation.Reference.ServiceUrl);
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
+            Assert.Equal(Channels.Msteams, result.ChannelId);
+            Assert.Equal(TestServiceUrl, result.ServiceUrl);
+            Assert.Single(result.Parameters.Members);
+            Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
             Assert.Equal("Hello Teams!", result.Parameters.Activity.Text);
             Assert.True(result.Parameters.IsGroup);
             Assert.Equal("Teams Discussion", result.Parameters.TopicName);
@@ -673,9 +663,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(result.Conversation);
-            Assert.Equal(Channels.Directline, result.Conversation.Reference.ChannelId);
-            Assert.Equal(TestUserId, result.Conversation.Reference.User.Id);
+            Assert.Equal(Channels.Directline, result.ChannelId);
+            Assert.Single(result.Parameters.Members);
+            Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
             Assert.Equal("DirectLine Chat", result.Parameters.TopicName);
         }
 
