@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (createOptions.StoreConversation)
             {
-                await StoreConversationAsync(new Conversation(createOptions.Identity, newReference), cancellationToken).ConfigureAwait(false);
+                await StoreConversationAsync(newConversation, cancellationToken).ConfigureAwait(false);
             }
 
             if (continuationHandler != null)
@@ -416,7 +416,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         private static string GetRecordKey(string conversationId)
         {
-            return $"conversationreferences/{conversationId}";
+            return $"proactive/conversations/{conversationId}";
         }
         #endregion
     }
