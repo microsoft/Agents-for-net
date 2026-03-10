@@ -3,7 +3,9 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -139,5 +141,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             return new ClaimsIdentity([.. claims.Select(kv => new Claim(kv.Key, kv.Value))]);
         }
+
+        public string ToJson() => ProtocolJsonSerializer.ToJson(this);
     }
 }
