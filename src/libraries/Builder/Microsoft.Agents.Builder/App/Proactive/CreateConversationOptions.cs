@@ -39,6 +39,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public string Scope { get; set; } = AzureBotScope;
 
         /// <summary>
+        /// Gets or sets a value indicating whether the conversation should be stored for later retrieval.
+        /// </summary>
+        public bool StoreConversation { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the parameters used to configure the conversation.
         /// </summary>
         public ConversationParameters Parameters { get; set; }

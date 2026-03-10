@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         };
                     }
 
-                    var createBuilder = CreateConversationOptionsBuilder.Create(claims, body.ChannelId)
+                    var createOptionsBuilder = CreateConversationOptionsBuilder.Create(claims, body.ChannelId)
                         .WithActivity(body.Activity)
                         .WithTopicName(body.TopicName)
                         .WithUser(body.User)
@@ -145,15 +145,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     if ((bool)(body.IsGroup.HasValue))
                     {
-                        createBuilder.IsGroup((bool)(body.IsGroup.Value));
+                        createOptionsBuilder.IsGroup((bool)(body.IsGroup.Value));
                     }
                         
-                    var createInfo = createBuilder.Build();
+                    var createOptions = createOptionsBuilder.Build();
+                    createOptions.StoreConversation = body.StoreConversation;
 
                     // Execute the conversation creation
                     var newReference = await agent.Proactive.CreateConversationAsync(
                         adapter,
-                        createInfo,
+                        createOptions,
                         body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
                         continueRoute.TokenHandlers,
                         (reference) =>
@@ -172,11 +173,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     // Store the conversation if requested, and return the Conversation in the response body.
                     var conversation = new Conversation(claims, newReference);
-
-                    if (body.StoreConversation)
-                    {
-                        await agent.Proactive.StoreConversationAsync(conversation, cancellationToken).ConfigureAwait(false);
-                    }
 
                     return new Result(StatusCodes.Status200OK, conversation);
                 },

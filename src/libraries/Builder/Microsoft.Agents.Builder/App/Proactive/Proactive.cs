@@ -261,13 +261,20 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 null,
                 cancellationToken).ConfigureAwait(false);
 
+            var newConversation = new Conversation(createOptions.Identity, newReference);
+
+            if (createOptions.StoreConversation)
+            {
+                await StoreConversationAsync(new Conversation(createOptions.Identity, newReference), cancellationToken).ConfigureAwait(false);
+            }
+
             if (continuationHandler != null)
             {
                 try
                 {
                     await ContinueConversationAsync(
                         adapter,
-                        new Conversation(createOptions.Identity, newReference),
+                        newConversation,
                         continuationHandler,
                         autoSignInHandlers,
                         continuationActivityFactory != null ? continuationActivityFactory(newReference) : newReference.GetCreateContinuationActivity(),
