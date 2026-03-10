@@ -577,11 +577,11 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .ReturnsAsync(newReference);
 
             // Act
-            var result = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo);
+            var newConversation = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal("new-conversation-id", result.Conversation.Id);
+            Assert.NotNull(newConversation);
+            Assert.Equal("new-conversation-id", newConversation.Reference.Conversation.Id);
         }
 
         [Fact]
@@ -654,12 +654,12 @@ namespace Microsoft.Agents.Builder.Tests.App
                     async (identity, activity, audience, callback, ct) => await callback(new TurnContext(_mockAdapter.Object, activity, identity), ct));
 
             // Act
-            var result = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo, handler, continuationActivityFactory: (reference) => newReference.GetCreateContinuationActivity());
+            var newConversation = await _proactive.CreateConversationAsync(_mockAdapter.Object, createInfo, handler, continuationActivityFactory: (reference) => newReference.GetCreateContinuationActivity());
 
             // Assert
             Assert.True(handlerCalled);
-            Assert.NotNull(result);
-            Assert.Equal("new-conversation-id", result.Conversation.Id);
+            Assert.NotNull(newConversation);
+            Assert.Equal("new-conversation-id", newConversation.Reference.Conversation.Id);
         }
 
         #endregion

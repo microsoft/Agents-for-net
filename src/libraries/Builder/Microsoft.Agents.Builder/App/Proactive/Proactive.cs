@@ -233,10 +233,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains a reference to the newly created
-        /// conversation.</returns>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the newly created <c>Conversation</c>.</returns>
         /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
-        public async Task<ConversationReference> CreateConversationAsync(
+        public async Task<Conversation> CreateConversationAsync(
             IChannelAdapter adapter, 
             CreateConversationOptions createOptions, 
             RouteHandler continuationHandler = null,
@@ -287,7 +286,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 }
             }
 
-            return newReference;
+            return newConversation;
         }
 
         #region Conversation Storage

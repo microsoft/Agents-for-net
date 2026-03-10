@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     createOptions.StoreConversation = body.StoreConversation;
 
                     // Execute the conversation creation
-                    var newReference = await agent.Proactive.CreateConversationAsync(
+                    var newConversation = await agent.Proactive.CreateConversationAsync(
                         adapter,
                         createOptions,
                         body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
@@ -171,10 +171,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         },
                         cancellationToken).ConfigureAwait(false);
 
-                    // Store the conversation if requested, and return the Conversation in the response body.
-                    var conversation = new Conversation(claims, newReference);
-
-                    return new Result(StatusCodes.Status200OK, conversation);
+                    return new Result(StatusCodes.Status200OK, newConversation);
                 },
                 null,
                 cancellationToken).ConfigureAwait(false);
