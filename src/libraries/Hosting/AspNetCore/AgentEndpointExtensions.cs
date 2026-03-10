@@ -5,6 +5,8 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Hosting.AspNetCore.Errors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -262,38 +264,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var continueHandler = method.GetCustomAttribute<ContinueConversationAttribute>(true);
                 if (continueHandler != null)
                 {
+                    if (handlers.ContainsKey(continueHandler.Key))
+                    {
+                        throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveDuplicateContinueKey, null, continueHandler.Key);
+                    }
                     handlers.Add(continueHandler.Key, new ContinueConversationRoute<TAgent>(method.Name, continueHandler.TokenHandlers));
                 }
             }
 
             return MapAgentProactiveEndpoints<TAgent>(endpoints, handlers, requireAuth, defaultPath);
-        }
-
-        /// <summary>
-        /// Maps endpoints to enable proactive messaging for an agent application, using the specified continue
-        /// conversation delegate.
-        /// </summary>
-        /// <typeparam name="TAgent">The type of the agent application for which proactive endpoints are being mapped. Must inherit from
-        /// AgentApplication.</typeparam>
-        /// <param name="endpoints">The WebApplication instance to which the proactive endpoints will be added.</param>
-        /// <param name="continueConversationDelegate">The name of the delegate or function to invoke when continuing a conversation proactively. Cannot be null or
-        /// whitespace.</param>
-        /// <param name="requireAuth">true to require authentication for the proactive endpoints; otherwise, false. The default is true.</param>
-        /// <param name="defaultPath">The base route path for the proactive endpoints. The default is "/proactive".</param>
-        /// <returns>An IEndpointConventionBuilder that can be used to further configure the mapped endpoints.</returns>
-        public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
-            this IEndpointRouteBuilder endpoints,
-            string continueConversationDelegate,
-            bool requireAuth = true,
-            [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
-        {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(continueConversationDelegate, nameof(continueConversationDelegate));
-
-            return MapAgentProactiveEndpoints<TAgent>(
-                endpoints,
-                new Dictionary<string, ContinueConversationRoute<TAgent>> { { "", new ContinueConversationRoute<TAgent>(continueConversationDelegate, string.Empty) } },
-                requireAuth,
-                defaultPath);
         }
 
         /// <summary>

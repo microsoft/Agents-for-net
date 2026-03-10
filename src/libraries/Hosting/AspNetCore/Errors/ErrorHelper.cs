@@ -33,5 +33,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Errors
         internal static readonly AgentErrorDefinition HttpProactiveMissingConversationBody = new(-40501, Properties.Resources.HttpProactiveMissingConversationBody, "https://aka.ms/M365AgentsErrorCodes/#-40501");
         internal static readonly AgentErrorDefinition HttpProactiveMissingActivityBody = new(-40502, Properties.Resources.HttpProactiveMissingActivityBody, "https://aka.ms/M365AgentsErrorCodes/#-40502");
         internal static readonly AgentErrorDefinition HttpProactiveMissingSendBody = new(-40503, Properties.Resources.HttpProactiveMissingSendBody, "https://aka.ms/M365AgentsErrorCodes/#-40503");
+        internal static readonly AgentErrorDefinition HttpProactiveDuplicateContinueKey = new(-40504, Properties.Resources.HttpProactiveDuplicateContinueKey, "https://aka.ms/M365AgentsErrorCodes/#-40504");
     }
 }

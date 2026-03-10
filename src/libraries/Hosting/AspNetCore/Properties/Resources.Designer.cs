@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A duplicate ContinueConversationAttribute was specified: &apos;{0}&apos;.
+        /// </summary>
+        internal static string HttpProactiveDuplicateContinueKey {
+            get {
+                return ResourceManager.GetString("HttpProactiveDuplicateContinueKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to SendActivity is missing the &apos;Activity&apos; JSON body.
         /// </summary>
         internal static string HttpProactiveMissingActivityBody {
