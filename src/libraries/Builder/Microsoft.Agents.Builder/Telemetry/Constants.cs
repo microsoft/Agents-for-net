@@ -21,16 +21,6 @@ namespace Microsoft.Agents.Builder.Telemetry
         public static readonly string ActivityAppAfterTurn = "agents.app.afterTurn";
         public static readonly string ActivityAppDownloadFiles = "agents.app.downloadFiles";
 
-        public static readonly string ActivityConnectorReplyToActivity = "agents.connector.replyToActivity";
-        public static readonly string ActivityConnectorSendToConversation = "agents.connector.sendToConversation";
-        public static readonly string ActivityConnectorUpdateActivity = "agents.connector.updateActivity";
-        public static readonly string ActivityConnectorDeleteActivity = "agents.connector.deleteActivity";
-        public static readonly string ActivityConnectorCreateConversation = "agents.connector.createConversation";
-        public static readonly string ActivityConnectorGetConversations = "agents.connector.getConversations";
-        public static readonly string ActivityConnectorGetConversationMembers = "agents.connector.getConversationMembers";
-        public static readonly string ActivityConnectorUploadAttachment = "agents.connector.uploadAttachment";
-        public static readonly string ActivityConnectorGetAttachment = "agents.connector.getAttachment";
-
         public static readonly string ActivityTurnSendActivity = "agents.turn.sendActivity";
         public static readonly string ActivityTurnUpdateActivity = "agents.turn.updateActivity";
         public static readonly string ActivityTurnDeleteActivity = "agents.turn.deleteActivity";
@@ -47,12 +37,9 @@ namespace Microsoft.Agents.Builder.Telemetry
         public static readonly string MetricTurnTotal = "agents.turn.total";
         public static readonly string MetricTurnErrors = "agents.turn.errors";
 
-        public static readonly string MetricConnectorRequestTotal = "agents.connector.request.total";
-
         // histograms
 
         public static readonly string MetricTurnDuration = "agents.turn.duration";
         public static readonly string MetricAdapterProcessDuration = "agents.adapter.process.duration";
-        public static readonly string MetricConnectorRequestDuration = "agents.connector.request.duration";
     }
 }
