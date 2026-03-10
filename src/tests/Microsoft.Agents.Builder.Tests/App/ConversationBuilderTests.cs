@@ -305,35 +305,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithUser_MergeReferenceWithReference()
-        {
-            // Note: This tests the internal behavior when _conversation.Reference is null
-            // We can't directly test this since Create() initializes the reference,
-            // but this validates the merge logic works correctly
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
-                .WithUser(TestUserId, TestUserName)
-                .WithReference(new ConversationReference
-                {
-                    ChannelId = "some-other-id",
-                    ServiceUrl = "some-other-serviceUrl",
-                    Locale = "en-US",
-                    ActivityId = "some-activity-id",
-                });
-            var conversation = builder.Build();
-
-            // Assert
-            Assert.NotNull(conversation.Reference);
-            Assert.Equal("some-other-id", conversation.Reference.ChannelId);
-            Assert.Equal("some-other-serviceUrl", conversation.Reference.ServiceUrl);
-            Assert.NotNull(conversation.Reference.Agent);
-            Assert.Equal(TestAgentClientId, conversation.Reference.Agent.Id);
-            Assert.NotNull(conversation.Reference.User);
-            Assert.Equal(TestUserId, conversation.Reference.User.Id);
-            Assert.Equal("en-US", conversation.Reference.Locale);
-            Assert.Equal("some-activity-id", conversation.Reference.ActivityId);
-        }
-
-        [Fact]
         public void WithUser_ReturnsBuilderForChaining()
         {
             // Act
@@ -424,89 +395,6 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
             var result = builder.WithConversation(TestConversationId);
-
-            // Assert
-            Assert.Same(builder, result);
-        }
-
-        #endregion
-
-        #region WithReference Tests
-
-        [Fact]
-        public void WithReference_WithValidReference_SetsReference()
-        {
-            // Arrange
-            var reference = new ConversationReference
-            {
-                ChannelId = "custom-channel",
-                ServiceUrl = "https://custom.service.url/",
-                User = new ChannelAccount("custom-user", "Custom User"),
-                Conversation = new ConversationAccount(id: "custom-conversation")
-            };
-
-            // Act
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
-                .WithReference(reference);
-            var conversation = builder.Build();
-
-            // Assert
-            Assert.NotNull(conversation.Reference);
-            Assert.Equal("custom-channel", conversation.Reference.ChannelId);
-            Assert.Equal("https://custom.service.url/", conversation.Reference.ServiceUrl);
-            Assert.Equal("custom-user", conversation.Reference.User.Id);
-            Assert.Equal("custom-conversation", conversation.Reference.Conversation.Id);
-        }
-
-        [Fact]
-        public void WithReference_WithNullReference_ThrowsArgumentNullException()
-        {
-            // Arrange
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
-
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.WithReference(null));
-        }
-
-        [Fact]
-        public void WithReference_MergesWithExistingReference()
-        {
-            // Arrange
-            var existingReference = new ConversationReference
-            {
-                ChannelId = TestChannelId,
-                ServiceUrl = TestServiceUrl,
-                User = new ChannelAccount(TestUserId, TestUserName)
-            };
-            var newReference = new ConversationReference
-            {
-                Conversation = new ConversationAccount(id: TestConversationId),
-                ActivityId = "test-activity-id"
-            };
-
-            // Act
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
-                .WithUser(TestUserId, TestUserName)
-                .WithReference(newReference);
-            var conversation = builder.Build();
-
-            // Assert
-            Assert.NotNull(conversation.Reference);
-            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
-            Assert.Equal(TestUserId, conversation.Reference.User.Id);
-            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
-            Assert.Equal("test-activity-id", conversation.Reference.ActivityId);
-        }
-
-        [Fact]
-        public void WithReference_ReturnsBuilderForChaining()
-        {
-            // Arrange
-            var reference = new ConversationReference { ChannelId = "test" };
-            var builder = ConversationBuilder.Create(TestAgentClientId, TestChannelId);
-
-            // Act
-            var result = builder.WithReference(reference);
 
             // Assert
             Assert.Same(builder, result);
@@ -696,31 +584,6 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
-        }
-
-        [Fact]
-        public void Builder_WithComplexReference_MergesCorrectly()
-        {
-            // Arrange
-            var partialReference = new ConversationReference
-            {
-                ActivityId = "test-activity",
-                Locale = "en-US"
-            };
-
-            // Act
-            var conversation = ConversationBuilder.Create(TestAgentClientId, TestChannelId)
-                .WithUser(TestUserId)
-                .WithConversation(TestConversationId)
-                .WithReference(partialReference)
-                .Build();
-
-            // Assert
-            Assert.Equal(TestChannelId, conversation.Reference.ChannelId);
-            Assert.Equal(TestUserId, conversation.Reference.User.Id);
-            Assert.Equal(TestConversationId, conversation.Reference.Conversation.Id);
-            Assert.Equal("test-activity", conversation.Reference.ActivityId);
-            Assert.Equal("en-US", conversation.Reference.Locale);
         }
 
         #endregion

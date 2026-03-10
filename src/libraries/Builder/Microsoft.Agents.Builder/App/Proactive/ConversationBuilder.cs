@@ -40,6 +40,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return builder;
         }
 
+        /// <summary>
+        /// Creates a new instance of the ConversationBuilder class initialized with the specified identity, channel ID,
+        /// and optional service URL.
+        /// </summary>
+        /// <param name="identity">The ClaimsIdentity representing the user or bot for whom the conversation is being created. Cannot be null.</param>
+        /// <param name="channelId">The identifier of the channel where the conversation will take place. Cannot be null or empty.</param>
+        /// <param name="serviceUrl">The service URL to use for the conversation. If null, a default service URL may be used.</param>
+        /// <returns>A ConversationBuilder instance configured with the provided identity, channel ID, and service URL.</returns>
         public static ConversationBuilder Create(ClaimsIdentity identity, string channelId, string serviceUrl = null)
         {
             var builder = new ConversationBuilder();
@@ -106,14 +114,13 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Sets the conversation reference for the record being built.
+        /// Sets the activity identifier for the reference being built.
         /// </summary>
-        /// <param name="reference">The conversation reference to associate with the record. Cannot be null.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance for method chaining.</returns>
-        public ConversationBuilder WithReference(ConversationReference reference)
+        /// <param name="activityId">The unique identifier to associate with the activity. Can be null or empty if no activity ID is required.</param>
+        /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated activity identifier.</returns>
+        public ConversationBuilder WithActivityId(string activityId)
         {
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-            _conversation.Reference = ObjectPath.Merge(_conversation.Reference, reference);
+            _conversation.Reference.ActivityId = activityId;
             return this;
         }
 
