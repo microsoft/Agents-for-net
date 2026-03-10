@@ -13,12 +13,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// <summary>
     /// Provides a builder for configuring and creating a new conversation with specified conversation parameters.
     /// </summary>
-    public class CreateConversationBuilder
+    public class CreateConversationOptionsBuilder
     {
-        private readonly CreateConversation _record = new();
+        private readonly CreateConversationOptions _record = new();
 
         /// <summary>
-        /// Creates a new instance of the CreateConversationBuilder class for initializing a conversation with the
+        /// Creates a new instance of the CreateConversationOptionsBuilder class for initializing a conversation with the
         /// specified agent and channel.
         /// </summary>
         /// <remarks>If the parameters argument is null, default conversation parameters are used. If the
@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="parameters">Optional parameters for configuring the conversation. If null, default parameters are used.</param>
         /// <returns>A CreateConversationBuilder instance configured with the specified agent, channel, and parameters.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
-        public static CreateConversationBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
+        public static CreateConversationOptionsBuilder Create(string agentClientId, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
         {
             if (string.IsNullOrWhiteSpace(agentClientId))
             {
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidChannelId, null);
             }
 
-            var builder = new CreateConversationBuilder();
+            var builder = new CreateConversationOptionsBuilder();
 
             builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).Build();
 
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Creates a new instance of the CreateConversationBuilder class for initializing a conversation with the
+        /// Creates a new instance of the CreateConversationOptionsBuilder class for initializing a conversation with the
         /// specified identity, channel, and parameters.
         /// </summary>
         /// <param name="claims">The ClaimsIdentity.Claims representing the agent or user initiating the conversation. Cannot be null.</param>
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// parameters are used.</param>
         /// <returns>A CreateConversationBuilder instance configured with the specified identity, channel, and parameters.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
-        public static CreateConversationBuilder Create(IDictionary<string, string> claims, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
+        public static CreateConversationOptionsBuilder Create(IDictionary<string, string> claims, ChannelId channelId, string serviceUrl = null, ConversationParameters parameters = null)
         {
             var agentClientId = claims?.FirstOrDefault(c => c.Key == "aud").Value;
             if (string.IsNullOrWhiteSpace(agentClientId))
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidChannelId, null);
             }
 
-            var builder = new CreateConversationBuilder();
+            var builder = new CreateConversationOptionsBuilder();
 
 
             builder._record.Conversation = ConversationBuilder.Create(agentClientId, channelId, serviceUrl).WithClaims(claims).Build();
@@ -97,9 +97,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="userId">The unique identifier of the user to add to the conversation. Cannot be null.</param>
         /// <param name="userName">The display name of the user to add to the conversation. This value is optional and can be null.</param>
-        /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the specified user set as a participant.</returns>
+        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the specified user set as a participant.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
-        public CreateConversationBuilder WithUser(string userId, string userName = null)
+        public CreateConversationOptionsBuilder WithUser(string userId, string userName = null)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
@@ -112,9 +112,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Specifies a user to include as a member in the conversation being created.
         /// </summary>
         /// <param name="user">The user account to add as a member of the conversation. Ignored if null.</param>
-        /// <returns>The current <see cref="CreateConversationBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance for method chaining.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
-        public CreateConversationBuilder WithUser(ChannelAccount user)
+        public CreateConversationOptionsBuilder WithUser(ChannelAccount user)
         {
             if (string.IsNullOrWhiteSpace(user?.Id))
             {
@@ -137,8 +137,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <remarks>Use this method to specify a custom scope for the conversation. This does not normally need to be set for Azure Bot Channels.</remarks>
         /// <param name="scope">The scope value to associate with the conversation. If null the default Azure Bot Service scope is used.</param>
-        /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the updated scope.</returns>
-        public CreateConversationBuilder WithScope(string scope)
+        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the updated scope.</returns>
+        public CreateConversationOptionsBuilder WithScope(string scope)
         {
             _record.Scope = scope;
             return this;
@@ -150,8 +150,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// this, the Activity will be ignored.
         /// </summary>
         /// <param name="message">The activity representing the message to include in the conversation. Ignored if null.</param>
-        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the specified message added.</returns>
-        public CreateConversationBuilder WithActivity(IActivity message)
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the specified message added.</returns>
+        public CreateConversationOptionsBuilder WithActivity(IActivity message)
         {
             _record.Parameters.Activity = message;
             return this;
@@ -162,8 +162,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="channelData">The channel-specific data to associate with the conversation. Can be any object required by the channel. May
         /// be null if no channel data is needed.</param>
-        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the specified channel data applied.</returns>
-        public CreateConversationBuilder WithChannelData(object channelData)
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the specified channel data applied.</returns>
+        public CreateConversationOptionsBuilder WithChannelData(object channelData)
         {
             SetChannelData(channelData);
             return this;
@@ -173,8 +173,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Specifies whether the conversation being created is a group conversation.
         /// </summary>
         /// <param name="isGroup">A value indicating whether the conversation should be treated as a group conversation.</param>
-        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the group setting applied.</returns>
-        public CreateConversationBuilder IsGroup(bool isGroup)
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the group setting applied.</returns>
+        public CreateConversationOptionsBuilder IsGroup(bool isGroup)
         {
             _record.Parameters.IsGroup = isGroup;
             return this;
@@ -186,8 +186,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <remarks>Use this method to specify a topic for the conversation before finalizing its
         /// creation. Calling this method multiple times will overwrite the previously set topic name.</remarks>
         /// <param name="topicName">The name of the topic to associate with the conversation. Ignored if null or empty.</param>
-        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> with the updated topic name.</returns>
-        public CreateConversationBuilder WithTopicName(string topicName)
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the updated topic name.</returns>
+        public CreateConversationOptionsBuilder WithTopicName(string topicName)
         {
             _record.Parameters.TopicName = topicName?.Trim();
             return this;
@@ -198,8 +198,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// chaining.
         /// </summary>
         /// <param name="tenantId">The unique identifier of the tenant to associate with the conversation. Ignored if null or empty.</param>
-        /// <returns>The current <see cref="CreateConversationBuilder"/> instance with the specified tenant identifier applied.</returns>
-        public CreateConversationBuilder WithTenantId(string tenantId)
+        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the specified tenant identifier applied.</returns>
+        public CreateConversationOptionsBuilder WithTenantId(string tenantId)
         {
             _record.Parameters.TenantId = tenantId?.Trim();
 
@@ -226,8 +226,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <see href="https://learn.microsoft.com/en-us/MicrosoftTeams/teams-powershell-overview">Teams PowerShell Overview</see>.
         /// </remarks>
         /// <param name="teamsChannelId">The unique identifier of the Microsoft Teams channel to set for the conversation. If null or empty this has no effect.</param>
-        /// <returns>The current instance of <see cref="CreateConversationBuilder"/> to allow method chaining.</returns>
-        public CreateConversationBuilder WithTeamsChannelId(string teamsChannelId)
+        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> to allow method chaining.</returns>
+        public CreateConversationOptionsBuilder WithTeamsChannelId(string teamsChannelId)
         {
             if (_record.Conversation.Reference.ChannelId == Channels.Msteams && !string.IsNullOrWhiteSpace(teamsChannelId))
             {
@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <returns>A CreateConversation instance containing the configured create conversation parameters.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
-        public CreateConversation Build()
+        public CreateConversationOptions Build()
         {
             if (_record.Parameters.Members?.Count == 0)
             {
@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
-                _record.Scope = CreateConversation.AzureBotScope;
+                _record.Scope = CreateConversationOptions.AzureBotScope;
             }
             if (_record.Parameters.Activity != null && string.IsNullOrWhiteSpace(_record.Parameters.Activity.Type))
             {

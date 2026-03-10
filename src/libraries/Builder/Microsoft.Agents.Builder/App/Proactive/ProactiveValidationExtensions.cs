@@ -13,16 +13,16 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Validates a CreateConversation instance to ensure all required properties are valid.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when any required property is missing or invalid.</exception>
-        public static void Validate(this CreateConversation createConversation)
+        public static void Validate(this CreateConversationOptions createConversation)
         {
             if (string.IsNullOrWhiteSpace(createConversation.Scope))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversation.Scope));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Scope));
             }
 
             if (createConversation.Parameters == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversation.Parameters));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Parameters));
             }
             createConversation.Parameters.Validate();
 

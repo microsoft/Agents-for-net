@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         };
                     }
 
-                    var createBuilder = CreateConversationBuilder.Create(claims, body.ChannelId)
+                    var createBuilder = CreateConversationOptionsBuilder.Create(claims, body.ChannelId)
                         .WithActivity(body.Activity)
                         .WithTopicName(body.TopicName)
                         .WithUser(body.User)
