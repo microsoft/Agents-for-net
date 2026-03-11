@@ -1105,7 +1105,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
         private class RosterHttpMessageHandler : HttpMessageHandler
         {
-            protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var response = new HttpResponseMessage(HttpStatusCode.NotFound);
 
@@ -1467,7 +1467,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 }
                 */
 
-                return response;
+                return Task.FromResult(response);
             }
         }
 
