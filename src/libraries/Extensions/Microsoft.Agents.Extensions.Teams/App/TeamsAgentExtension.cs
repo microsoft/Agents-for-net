@@ -42,10 +42,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
             MessageExtensions = new MessageExtension(agentApplication);
             TaskModules = new TaskModule(agentApplication, options);
 
-            agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
+            agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
             {
                 turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
-                return true;
+                return Task.FromResult(true);
             });
         }
 
