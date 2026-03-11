@@ -716,7 +716,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
             
-            items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/users/{responses[1].Recipient.Id}"]);
+            items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/users/{responses[1].Recipient.Id}"]);
             var newUserState = items.First().Value;
             Assert.True(newUserState.ContainsKey("lastConvoMessage"));
 
