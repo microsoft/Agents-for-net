@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
 /// <summary>
-/// Function for handling Message Extension submitAction events.
+/// Delegate for handling Message Extension submitAction events.
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
@@ -22,6 +22,20 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// or threads to receive notice of cancellation.</param>
 /// <returns>An instance of MessagingExtensionActionResponse.</returns>
 public delegate Task<Response> SubmitActionHandlerAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
+
+/// <summary>
+/// Delegate for handling Message Extension submitAction events.
+/// </summary>
+/// <typeparam name="TData">The type of the data associated with the submit action.</typeparam>
+/// <param name="turnContext">The context object for the current turn of the conversation. Provides information and operations for the ongoing
+/// interaction.</param>
+/// <param name="turnState">The state object for the current turn, used to access shared services and state information.</param>
+/// <param name="data">The data payload submitted with the action. The type and structure depend on the specific submit action being
+/// handled.</param>
+/// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+/// <returns>A task that represents the asynchronous operation. The task result contains a Response object that will be sent to
+/// the user.</returns>
+public delegate Task<Response> SubmitActionHandlerAsync<TData>(ITurnContext turnContext, ITurnState turnState, TData data, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension botMessagePreview edit events.
@@ -78,6 +92,18 @@ public delegate Task<Result> QueryHandlerAsync(ITurnContext turnContext, ITurnSt
 public delegate Task<Result> SelectItemHandlerAsync(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken);
 
 /// <summary>
+/// Function for handling Message Extension selecting item events.
+/// </summary>
+/// <typeparam name="TData">The type of the data associated with the select item action.</typeparam>
+/// <param name="turnContext">A strongly-typed context object for this turn.</param>
+/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="item">The item that was selected.</param>
+/// <param name="cancellationToken">A cancellation token that can be used by other objects
+/// or threads to receive notice of cancellation.</param>
+/// <returns>An instance of MessagingExtensionResult.</returns>
+public delegate Task<Result> SelectItemHandlerAsync<TData>(ITurnContext turnContext, ITurnState turnState, TData item, CancellationToken cancellationToken);
+
+/// <summary>
 /// Function for handling Message Extension link unfurling events.
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
@@ -110,6 +136,18 @@ public delegate Task<Result> QueryUrlSettingHandlerAsync(ITurnContext turnContex
 public delegate Task ConfigureSettingsHandler(ITurnContext turnContext, ITurnState turnState, object settings, CancellationToken cancellationToken);
 
 /// <summary>
+/// Function for handling Message Extension configuring settings events.
+/// </summary>
+/// <typeparam name="TData">The type of the settings data to be configured.</typeparam>
+/// <param name="turnContext">A strongly-typed context object for this turn.</param>
+/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="settings">The configuration settings that was submitted.</param>
+/// <param name="cancellationToken">A cancellation token that can be used by other objects
+/// or threads to receive notice of cancellation.</param>
+/// <returns>A task that represents the work queued to execute.</returns>
+public delegate Task ConfigureSettingsHandler<TData>(ITurnContext turnContext, ITurnState turnState, TData settings, CancellationToken cancellationToken);
+
+/// <summary>
 /// Function for handling Message Extension clicking card button events.
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
@@ -119,3 +157,14 @@ public delegate Task ConfigureSettingsHandler(ITurnContext turnContext, ITurnSta
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
 public delegate Task CardButtonClickedHandler(ITurnContext turnContext, ITurnState turnState, object cardData, CancellationToken cancellationToken);
+
+/// <summary>
+/// Function for handling Message Extension clicking card button events.
+/// </summary>
+/// <param name="turnContext">A strongly-typed context object for this turn.</param>
+/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="cardData">The card data.</param>
+/// <param name="cancellationToken">A cancellation token that can be used by other objects
+/// or threads to receive notice of cancellation.</param>
+/// <returns>A task that represents the work queued to execute.</returns>
+public delegate Task CardButtonClickedHandler<TData>(ITurnContext turnContext, ITurnState turnState, TData cardData, CancellationToken cancellationToken);

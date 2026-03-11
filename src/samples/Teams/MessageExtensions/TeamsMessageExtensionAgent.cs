@@ -30,7 +30,7 @@ public class TeamsMessageExtensionAgent : AgentApplication
         RegisterExtension(new TeamsAgentExtension(this), tae =>
         {
             tae.MessageExtensions.OnQuery("findNuGetPackage", OnQueryAsync);
-            tae.MessageExtensions.OnSelectItem(OnSelectItemAsync);
+            tae.MessageExtensions.OnSelectItem<PackageItem>(OnSelectItemAsync);
             tae.MessageExtensions.OnQueryLink(OnQueryLinkAsync);
         });
 
@@ -44,30 +44,28 @@ public class TeamsMessageExtensionAgent : AgentApplication
         return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result() { Text = "On Query Link" });
     }
 
-    private async Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken)
+    private async Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, PackageItem item, CancellationToken cancellationToken)
     {
-        PackageItem? package = JsonSerializer.Deserialize<PackageItem>((JsonElement)item);
-        if (package is null)
+        if (item is null)
         {
             await turnContext.SendActivityAsync("selected item is not a packageItem", cancellationToken: cancellationToken);
-            _logger.LogWarning("Selected Item cannot be deserialized as a PackageItem");
             return null!;
         }
 
         ThumbnailCard card = new()
         {
-            Title = $"{package.PackageId}, {package.Version}",
-            Subtitle = package.Description,
+            Title = $"{item.PackageId}, {item.Version}",
+            Subtitle = item.Description,
             Buttons =
                 [
-                    new() { Type = ActionTypes.OpenUrl, Title = "Nuget Package", Value = $"https://www.nuget.org/packages/{package.PackageId}" },
-                    new() { Type = ActionTypes.OpenUrl, Title = "Project", Value = package.ProjectUrl},
+                    new() { Type = ActionTypes.OpenUrl, Title = "Nuget Package", Value = $"https://www.nuget.org/packages/{item.PackageId}" },
+                    new() { Type = ActionTypes.OpenUrl, Title = "Project", Value = item.ProjectUrl},
                 ],
         };
 
-        if (!string.IsNullOrEmpty(package.IconUrl))
+        if (!string.IsNullOrEmpty(item.IconUrl))
         {
-            card.Images = [new(package.IconUrl, "Icon")];
+            card.Images = [new(item.IconUrl, "Icon")];
         }
 
         Microsoft.Teams.Api.MessageExtensions.Attachment attachment = new()
@@ -140,7 +138,7 @@ public class TeamsMessageExtensionAgent : AgentApplication
     }
 }
 
-class PackageItem
+public class PackageItem
 {
     [JsonPropertyName("@id")]
     public string? Id { get; set; }
