@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -312,30 +313,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 routeGroup.AllowAnonymous();
             }
 
-            routeGroup.MapPost("/sendactivity/{conversationId}", HttpProactive.SendActivityWithConversationId<TAgent>)
+            routeGroup.MapPost("/sendactivity/{conversationId}", HttpProactive.SendActivityWithConversationIdAsync<TAgent>)
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
-            routeGroup.MapPost("/sendactivity", HttpProactive.SendActivityWithConversation<TAgent>)
+            routeGroup.MapPost("/sendactivity", HttpProactive.SendActivityWithConversationAsync<TAgent>)
                 .WithMetadata(new AcceptsMetadata(["application/json"]));
 
             foreach (var continueRoute in continueRoutes)
             {
                 // Continue with ConversationId in the route
                 var withId = string.IsNullOrEmpty(continueRoute.Key) ? "/continue/{conversationId}" : $"/continue/{continueRoute.Key}/{{conversationId}}";
-                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, CancellationToken ct) => 
-                    HttpProactive.ContinueConversationWithConversationId<TAgent>(continueRoute.Value, req, resp, adapter, agent, conversationId, ct))
+                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken ct) => 
+                    HttpProactive.ContinueConversationWithConversationIdAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, conversationId, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Continue with Conversation in the body
                 var withConversation = string.IsNullOrEmpty(continueRoute.Key) ? "/continue" : $"/continue/{continueRoute.Key}";
-                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, CancellationToken ct) =>
-                    HttpProactive.ContinueConversationWithConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
+                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
+                    HttpProactive.ContinueConversationWithConversationAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Create with CreateConversation in the body
                 var createPattern = string.IsNullOrEmpty(continueRoute.Key) ? "/create" : $"/create/{continueRoute.Key}";
-                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, CancellationToken ct) =>
-                    HttpProactive.CreateConversation<TAgent>(continueRoute.Value, req, resp, adapter, agent, ct))
+                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
+                    HttpProactive.CreateConversationAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
             }
 

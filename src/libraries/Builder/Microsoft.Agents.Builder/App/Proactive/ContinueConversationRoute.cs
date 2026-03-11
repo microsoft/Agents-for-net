@@ -55,6 +55,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         public string[] TokenHandlers { get; private set; }
 
+        public override string ToString() => $"ContinueConversationRoute: Delegate={_delegate.Name}, TokenHandlers=[{string.Join(", ", TokenHandlers ?? [])}]";
+
         private static T CreateHandlerDelegate<T>(TAgent agent, MethodInfo attributedMethod)
     where T : class, Delegate
         {

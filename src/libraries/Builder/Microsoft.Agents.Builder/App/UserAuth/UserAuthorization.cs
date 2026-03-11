@@ -285,7 +285,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (response.Status == SignInStatus.Complete)
                 {
                     await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
-                    CacheToken(activeFlowName, response);
+                    CacheToken(activeFlowName, response.TokenResponse);
 
                     if (signInState.ContinuationActivity != null)
                     {

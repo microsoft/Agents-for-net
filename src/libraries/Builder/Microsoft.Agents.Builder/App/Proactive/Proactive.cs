@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -281,8 +282,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 }
                 catch (Exception ex)
                 {
-                    // TODO: use _app.Logger ince it is available after PR waiting to merge (#712)
-                    System.Diagnostics.Debug.WriteLine($"CreateConversationAsync continue failed: {ex.Message}");
+                    _app.Logger.LogWarning(ex, "CreateConversationAsync continue failed");
                 }
             }
 
