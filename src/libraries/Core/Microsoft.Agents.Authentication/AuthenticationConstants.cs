@@ -14,6 +14,11 @@ namespace Microsoft.Agents.Authentication
         public const string BotFrameworkScope = "https://api.botframework.com";
 
         /// <summary>
+        /// Represents the default OAuth scope used for Bot Framework authentication.
+        /// </summary>
+        public const string BotFrameworkDefaultScope = $"{BotFrameworkScope}/.default";
+
+        /// <summary>
         /// Token issuer for ABS tokens.
         /// </summary>
         public const string BotFrameworkTokenIssuer = "https://api.botframework.com";
