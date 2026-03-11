@@ -3,13 +3,12 @@
 
 using Microsoft.Agents.Core.Serialization;
 
-namespace Microsoft.Agents.Extensions.Teams.Serialization
+namespace Microsoft.Agents.Extensions.Teams.Serialization;
+
+[SerializationInit]
+internal class SerializationInit
 {
-    [SerializationInit]
-    internal class SerializationInit
+    public static void Init()
     {
-        public static void Init()
-        {
-        }
     }
 }

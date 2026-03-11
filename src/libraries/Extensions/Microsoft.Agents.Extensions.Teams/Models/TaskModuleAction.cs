@@ -7,50 +7,49 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Extensions.Teams.Models
-{
-    /// <summary>
-    /// Adapter class to represent BotBuilder card action as adaptive card action (in type of Action.Submit).
-    /// </summary>
-    /// <remarks>Back-compat Teams Model that does not exist in Teams SDK</remarks>
-    public class TaskModuleAction : CardAction
-    {
-        JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
+namespace Microsoft.Agents.Extensions.Teams.Models;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleAction"/> class.
-        /// </summary>
-        /// <param name="title">Button title.</param>
-        /// <param name="value">Free hidden value binding with button. The value will be sent out with "task/fetch" invoke event.</param>
-        public TaskModuleAction(string title, object value = null)
-            : base("invoke", title)
+/// <summary>
+/// Adapter class to represent BotBuilder card action as adaptive card action (in type of Action.Submit).
+/// </summary>
+/// <remarks>Back-compat Teams Model that does not exist in Teams SDK</remarks>
+public class TaskModuleAction : CardAction
+{
+    JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TaskModuleAction"/> class.
+    /// </summary>
+    /// <param name="title">Button title.</param>
+    /// <param name="value">Free hidden value binding with button. The value will be sent out with "task/fetch" invoke event.</param>
+    public TaskModuleAction(string title, object value = null)
+        : base("invoke", title)
+    {
+        JsonNode data;
+        if (value == null)
         {
-            JsonNode data;
-            if (value == null)
+            data = JsonNode.Parse("{}");
+        }
+        else
+        {
+            if (value is string)
             {
-                data = JsonNode.Parse("{}");
+                data = JsonNode.Parse(value as string);
+            }
+            else if (value is JsonElement)
+            {
+                data = JsonNode.Parse(((JsonElement) value).ToString());
             }
             else
             {
-                if (value is string)
-                {
-                    data = JsonNode.Parse(value as string);
-                }
-                else if (value is JsonElement)
-                {
-                    data = JsonNode.Parse(((JsonElement) value).ToString());
-                }
-                else
-                {
-                    data = JsonNode.Parse(JsonSerializer.Serialize(value, jsonSerializerOptions));
-                }
+                data = JsonNode.Parse(JsonSerializer.Serialize(value, jsonSerializerOptions));
             }
-
-            data["type"] = "task/fetch";
-            this.Value = data.ToString();
         }
+
+        data["type"] = "task/fetch";
+        this.Value = data.ToString();
     }
 }
