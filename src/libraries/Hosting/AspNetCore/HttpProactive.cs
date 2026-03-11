@@ -27,22 +27,21 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}'", "SendActivityWithConversationIdAsync", typeof(TAgent).Name))
             {
                 await Execute<TAgent>(
-                httpResponse,
-                async () =>
-                {
-                    var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false)
-                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingActivityBody, null);
+                    httpResponse,
+                    async () =>
+                    {
+                        var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false)
+                            ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingActivityBody, null);
 
-                    var conversation = await agent.Proactive.GetConversationWithThrowAsync(conversationId, cancellationToken).ConfigureAwait(false);
-                    conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
+                        var conversation = await agent.Proactive.GetConversationWithThrowAsync(conversationId, cancellationToken).ConfigureAwait(false);
+                        conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
 
-                    Log.WithConversationIdAndBody(logger, conversationId, ProtocolJsonSerializer.ToJson(activity));
+                        Log.WithConversationIdAndBody(logger, conversationId, ProtocolJsonSerializer.ToJson(activity));
 
-                    return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, conversation, activity, cancellationToken).ConfigureAwait(false));
-                },
-                null,
-                logger,
-                cancellationToken).ConfigureAwait(false);
+                        return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, conversation, activity, cancellationToken).ConfigureAwait(false));
+                    },
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -51,20 +50,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}'", "SendActivityWithConversationAsync", typeof(TAgent).Name))
             {
                 await Execute<TAgent>(
-                httpResponse,
-                async () =>
-                {
-                    var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false)
-                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingSendBody, null);
-                    body.Conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
+                    httpResponse,
+                    async () =>
+                    {
+                        var body = await HttpHelper.ReadRequestAsync<SendToConversationBody>(httpRequest).ConfigureAwait(false)
+                            ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingSendBody, null);
+                        body.Conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
 
-                    Log.WithBody(logger, ProtocolJsonSerializer.ToJson(body));
+                        Log.WithBody(logger, ProtocolJsonSerializer.ToJson(body));
 
-                    return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false));
-                },
-                null,
-                logger,
-                cancellationToken).ConfigureAwait(false);
+                        return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false));
+                    },
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -73,36 +71,35 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "ContinueConversationWithConversationIdAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
                 await Execute<TAgent>(
-                httpResponse,
-                async () =>
-                {
-                    Log.WithConversationId(logger, conversationId);
-
-                    var conversation = await agent.Proactive.GetConversationWithThrowAsync(conversationId, cancellationToken).ConfigureAwait(false);
-                    conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
-
-                    // Creating a continuation activity with Value containing Query args.
-                    var continuationActivity = conversation.Reference.GetContinuationActivity();
-                    var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                    if (eventValue.Count > 0)
+                    httpResponse,
+                    async () =>
                     {
-                        continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                        continuationActivity.Value = eventValue;
-                    }
+                        Log.WithConversationId(logger, conversationId);
 
-                    await agent.Proactive.ContinueConversationAsync(
-                        adapter,
-                        conversation,
-                        continueRoute.RouteHandler(agent),
-                        continueRoute.TokenHandlers,
-                        continuationActivity,
-                        cancellationToken).ConfigureAwait(false);
+                        var conversation = await agent.Proactive.GetConversationWithThrowAsync(conversationId, cancellationToken).ConfigureAwait(false);
+                        conversation.Reference.RequestId = httpRequest.HttpContext.TraceIdentifier;
 
-                    return new Result(StatusCodes.Status200OK);
-                },
-                null,
-                logger,
-                cancellationToken).ConfigureAwait(false);
+                        // Creating a continuation activity with Value containing Query args.
+                        var continuationActivity = conversation.Reference.GetContinuationActivity();
+                        var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
+                        if (eventValue.Count > 0)
+                        {
+                            continuationActivity.ValueType = Proactive.ContinueConversationValueType;
+                            continuationActivity.Value = eventValue;
+                        }
+
+                        await agent.Proactive.ContinueConversationAsync(
+                            adapter,
+                            conversation,
+                            continueRoute.RouteHandler(agent),
+                            continueRoute.TokenHandlers,
+                            continuationActivity,
+                            cancellationToken).ConfigureAwait(false);
+
+                        return new Result(StatusCodes.Status200OK);
+                    },
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -111,38 +108,37 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "ContinueConversationWithConversationAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
                 await Execute<TAgent>(
-                httpResponse,
-                async () =>
-                {
-                    var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false)
-                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingConversationBody, null);
-
-                    Log.WithBody(logger, ProtocolJsonSerializer.ToJson(conversation));
-
-                    // Creating a continuation activity with Value containing Query args.
-                    var continuationActivity = conversation.Reference.GetContinuationActivity();
-                    continuationActivity.RequestId = httpRequest.HttpContext.TraceIdentifier;
-
-                    var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                    if (eventValue.Count > 0)
+                    httpResponse,
+                    async () =>
                     {
-                        continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                        continuationActivity.Value = eventValue;
-                    }
+                        var conversation = await HttpHelper.ReadRequestAsync<Conversation>(httpRequest).ConfigureAwait(false)
+                            ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingConversationBody, null);
 
-                    await agent.Proactive.ContinueConversationAsync(
-                        adapter,
-                        conversation,
-                        continueRoute.RouteHandler(agent),
-                        continueRoute.TokenHandlers,
-                        continuationActivity,
-                        cancellationToken).ConfigureAwait(false);
+                        Log.WithBody(logger, ProtocolJsonSerializer.ToJson(conversation));
 
-                    return new Result(StatusCodes.Status200OK);
-                },
-                null,
-                logger,
-                cancellationToken).ConfigureAwait(false);
+                        // Creating a continuation activity with Value containing Query args.
+                        var continuationActivity = conversation.Reference.GetContinuationActivity();
+                        continuationActivity.RequestId = httpRequest.HttpContext.TraceIdentifier;
+
+                        var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
+                        if (eventValue.Count > 0)
+                        {
+                            continuationActivity.ValueType = Proactive.ContinueConversationValueType;
+                            continuationActivity.Value = eventValue;
+                        }
+
+                        await agent.Proactive.ContinueConversationAsync(
+                            adapter,
+                            conversation,
+                            continueRoute.RouteHandler(agent),
+                            continueRoute.TokenHandlers,
+                            continuationActivity,
+                            cancellationToken).ConfigureAwait(false);
+
+                        return new Result(StatusCodes.Status200OK);
+                    },
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -151,74 +147,73 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "CreateConversationAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
                 await Execute<TAgent>(
-                httpResponse,
-                async () =>
-                {
-                    var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false)
-                        ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingCreateBody, null);
-
-                    Log.WithBody(logger, ProtocolJsonSerializer.ToJson(body));
-
-                    // Create the CreateConversation instance from the request body.
-                    IDictionary<string, string> claims = null;
-                    if (string.IsNullOrWhiteSpace(body.AgentClientId))
+                    httpResponse,
+                    async () =>
                     {
-                        claims = Conversation.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
-                    }
-                    else
-                    {
-                        claims = new Dictionary<string, string>
+                        var body = await HttpHelper.ReadRequestAsync<CreateConversationBody>(httpRequest).ConfigureAwait(false)
+                            ?? throw ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.HttpProactiveMissingCreateBody, null);
+
+                        Log.WithBody(logger, ProtocolJsonSerializer.ToJson(body));
+
+                        // Create the CreateConversation instance from the request body.
+                        IDictionary<string, string> claims = null;
+                        if (string.IsNullOrWhiteSpace(body.AgentClientId))
                         {
-                            { "aud", body.AgentClientId },
-                        };
-                    }
-
-                    var createOptionsBuilder = CreateConversationOptionsBuilder.Create(claims, body.ChannelId)
-                        .WithActivity(body.Activity)
-                        .WithTopicName(body.TopicName)
-                        .WithUser(body.User)
-                        .WithChannelData(body.ChannelData)
-                        .WithTeamsChannelId(body.TeamsChannelId)
-                        .WithTenantId(body.TenantId)
-                        .WithStoreConversation(body.StoreConversation);
-
-                    if ((bool)(body.IsGroup.HasValue))
-                    {
-                        createOptionsBuilder.IsGroup((bool)(body.IsGroup.Value));
-                    }
-
-                    var createOptions = createOptionsBuilder.Build();
-
-                    // Execute the conversation creation
-                    var newConversation = await agent.Proactive.CreateConversationAsync(
-                        adapter,
-                        createOptions,
-                        body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
-                        continueRoute.TokenHandlers,
-                        (reference) =>
+                            claims = Conversation.ClaimsFromIdentity(HttpHelper.GetClaimsIdentity(httpRequest));
+                        }
+                        else
                         {
-                            // Creating a continuation activity with Value containing Query args.
-                            var continuationActivity = reference.GetCreateContinuationActivity();
-                            var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
-                            if (eventValue.Count > 0)
+                            claims = new Dictionary<string, string>
                             {
-                                continuationActivity.ValueType = Proactive.ContinueConversationValueType;
-                                continuationActivity.Value = eventValue;
-                            }
-                            continuationActivity.RequestId = httpRequest.HttpContext.TraceIdentifier;
-                            return continuationActivity;
-                        },
-                        cancellationToken).ConfigureAwait(false);
+                                { "aud", body.AgentClientId },
+                            };
+                        }
 
-                    return new Result(StatusCodes.Status200OK, newConversation);
-                },
-                null,
-                logger,
-                cancellationToken).ConfigureAwait(false);
+                        var createOptionsBuilder = CreateConversationOptionsBuilder.Create(claims, body.ChannelId)
+                            .WithActivity(body.Activity)
+                            .WithTopicName(body.TopicName)
+                            .WithUser(body.User)
+                            .WithChannelData(body.ChannelData)
+                            .WithTeamsChannelId(body.TeamsChannelId)
+                            .WithTenantId(body.TenantId)
+                            .WithStoreConversation(body.StoreConversation);
+
+                        if ((bool)(body.IsGroup.HasValue))
+                        {
+                            createOptionsBuilder.IsGroup((bool)(body.IsGroup.Value));
+                        }
+
+                        var createOptions = createOptionsBuilder.Build();
+
+                        // Execute the conversation creation
+                        var newConversation = await agent.Proactive.CreateConversationAsync(
+                            adapter,
+                            createOptions,
+                            body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
+                            continueRoute.TokenHandlers,
+                            (reference) =>
+                            {
+                                // Creating a continuation activity with Value containing Query args.
+                                var continuationActivity = reference.GetCreateContinuationActivity();
+                                var eventValue = httpRequest.Query.Select(p => KeyValuePair.Create(p.Key, p.Value.ToString())).ToDictionary();
+                                if (eventValue.Count > 0)
+                                {
+                                    continuationActivity.ValueType = Proactive.ContinueConversationValueType;
+                                    continuationActivity.Value = eventValue;
+                                }
+                                continuationActivity.RequestId = httpRequest.HttpContext.TraceIdentifier;
+                                return continuationActivity;
+                            },
+                            cancellationToken).ConfigureAwait(false);
+
+                        return new Result(StatusCodes.Status200OK, newConversation);
+                    },
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private static async Task Execute<TAgent>(HttpResponse httpResponse, Func<Task<Result>> action, Func<Exception, Result> exceptionHandler, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        private static async Task Execute<TAgent>(HttpResponse httpResponse, Func<Task<Result>> action, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             try 
             {
@@ -265,27 +260,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
             catch (Exception requestFailed)
             {
-                var result = exceptionHandler?.Invoke(requestFailed);
-                if (result != null)
-                {
-                    httpResponse.StatusCode = result.StatusCode;
-                    if (result.Body != null)
-                    {
-                        Log.Error(logger, ProtocolJsonSerializer.ToJson(result.Body));
+                var body = ErrorBody(requestFailed.Message, requestFailed.HResult, requestFailed.HelpLink);
+                Log.Error(logger, ProtocolJsonSerializer.ToJson(body));
 
-                        httpResponse.Headers.ContentType = "application/json";
-                        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(result.Body)));
-                        await memoryStream.CopyToAsync(httpResponse.Body, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    var body = ErrorBody(requestFailed.Message, requestFailed.HResult, requestFailed.HelpLink);
-                    Log.Error(logger, ProtocolJsonSerializer.ToJson(body));
-
-                    httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
-                    await httpResponse.WriteAsJsonAsync(body, cancellationToken).ConfigureAwait(false);
-                }
+                httpResponse.StatusCode = StatusCodes.Status500InternalServerError;
+                await httpResponse.WriteAsJsonAsync(body, cancellationToken).ConfigureAwait(false);
             }
         }
 
