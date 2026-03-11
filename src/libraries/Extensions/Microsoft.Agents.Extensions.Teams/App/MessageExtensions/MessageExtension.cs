@@ -184,6 +184,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
+    [Obsolete("OnAgentMessagePreviewEdit(MultipleRouteSelector) will be deprecated in future versions")]
     public AgentApplication OnAgentMessagePreviewEdit(MultipleRouteSelector routeSelectors, BotMessagePreviewEditHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
@@ -679,7 +680,7 @@ public class MessageExtension(AgentApplication app)
 
     private static RouteSelector CreateTaskSelector(Func<string, bool> isMatch, string invokeName, string? botMessagePreviewAction = default)
     {
-        RouteSelector routeSelector = (turnContext, cancellationToken) =>
+        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, invokeName);
@@ -697,12 +698,12 @@ public class MessageExtension(AgentApplication app)
 
             bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
 
-            bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken) 
+            bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken)
                 || string.IsNullOrEmpty(previewActionToken.ToString())
                 || string.Equals(botMessagePreviewAction, previewActionToken.ToString());
 
             return Task.FromResult(isCommandMatch && isPreviewActionMatch);
-        };
+        }
         return routeSelector;
     }
 }

@@ -44,7 +44,14 @@ public class TeamsAgentExtension : AgentExtension
 
         agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
-            turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
+            if (turnContext.Activity.ChannelId == Channels.Msteams)
+            {
+                // Set the TeamsApiClient in the turn context for use in handlers.
+                turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
+
+                // Explicit conversation of Activity.ChannelData to Teams' ChannelData for improved performance
+                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<ChannelData>(turnContext.Activity.ChannelData);
+            }
             return Task.FromResult(true);
         });
     }
@@ -258,7 +265,7 @@ public class TeamsAgentExtension : AgentExtension
     private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
         AgentApplication.AddRoute(InvokeRouteBuilder.Create()
-            .WithName("fileConsent/invoke")
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent)
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithSelector((turnContext, cancellationToken) =>
             {
@@ -291,7 +298,7 @@ public class TeamsAgentExtension : AgentExtension
     public TeamsAgentExtension OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
         AgentApplication.AddRoute(InvokeRouteBuilder.Create()
-            .WithName("actionableMessage/executeAction")
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction)
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithHandler(async (turnContext, turnState, cancellationToken) =>
             {

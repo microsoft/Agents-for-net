@@ -4,6 +4,8 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,7 +57,14 @@ public class SetTeamsApiClientMiddleware : IMiddleware
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
     {
-        turnContext.SetTeamsApiClient(_connections, _httpClientFactory, cancellationToken);
+        if (turnContext.Activity.ChannelId == Channels.Msteams)
+        {
+            // Set the TeamsApiClient in the turn context for use in ActivityHandler methods.
+            turnContext.SetTeamsApiClient(_connections, _httpClientFactory, cancellationToken);
+
+            // Explicit conversation of Activity.ChannelData to Teams' ChannelData for improved performance
+            turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
+        }
         await next(cancellationToken).ConfigureAwait(false);
     }
 }
