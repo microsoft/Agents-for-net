@@ -285,7 +285,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (response.Status == SignInStatus.Complete)
                 {
                     await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
-                    CacheToken(activeFlowName, response);
+                    CacheToken(activeFlowName, response.TokenResponse);
 
                     if (signInState.ContinuationActivity != null)
                     {
@@ -348,9 +348,24 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return true;
         }
 
-        private void CacheToken(string name, SignInResponse signInResponse)
+        internal async Task<bool> GetSignedInTokensAsync(ITurnContext turnContext, string[] handlerList, CancellationToken cancellationToken)
         {
-            CacheToken(name, signInResponse.TokenResponse);
+            int fetched = 0;
+            foreach (var handlerName in handlerList)
+            {
+                var handler = _dispatcher.Get(handlerName);
+                if (handler != null)
+                {
+                    var token = await handler.GetRefreshedUserTokenAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    if (token != null)
+                    {
+                        fetched++;
+                        CacheToken(handlerName, token);
+                    }
+                }
+            }
+
+            return fetched == handlerList.Length;
         }
 
         private void CacheToken(string name, TokenResponse tokenResponse)
