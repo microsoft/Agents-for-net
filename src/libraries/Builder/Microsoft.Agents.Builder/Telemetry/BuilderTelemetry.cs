@@ -15,16 +15,16 @@ namespace Microsoft.Agents.Builder.Telemetry
         /* AgentApplication metrics */
 
         private static readonly Counter<long> TurnTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            Constants.MetricTurnTotal, "turn");
+            Metrics.TurnTotal, "turn");
         private static readonly Counter<long> TurnErrors = AgentsTelemetry.Meter.CreateCounter<long>(
-            Constants.MetricTurnErrors, "turn");
+            Metrics.TurnErrors, "turn");
         private static readonly Histogram<long> TurnDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            Constants.MetricTurnDuration, "ms");
+            Metrics.TurnDuration, "ms");
 
         /* ChannelAdapter metrics */
 
         private static readonly Histogram<long> AdapterProcessDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            Constants.MetricAdapterProcessDuration, "ms");
+            Metrics.AdapterProcessDuration, "ms");
         
         private static Dictionary<string, string> ExtractAttributesFromTurnContext(ITurnContext turnContext)
             {
@@ -96,71 +96,71 @@ namespace Microsoft.Agents.Builder.Telemetry
 
         public static IDisposable StartAdapterProcess(Core.Models.IActivity activityModel)
         {
-            return StartTimedActivity(Constants.ActivityAdapterProcess, activityModel);
+            return StartTimedActivity(Scopes.AdapterProcess, activityModel);
         }
 
         public static IDisposable StartAdapterSendActivities(Core.Models.IActivity[] activityModels)
         {
-            return AgentsTelemetry.StartTimedActivity(Constants.ActivityAdapterProcess);
+            return AgentsTelemetry.StartTimedActivity(Scopes.AdapterSendActivities);
         }
 
         public static IDisposable StartAdapterUpdateActivity(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Constants.ActivityAdapterUpdateActivity, activityModel);
+            return StartActivity(Scopes.AdapterUpdateActivity, activityModel);
         }
 
         public static IDisposable StartAdapterDeleteActivity(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Constants.ActivityAdapterDeleteActivity, activityModel);
+            return StartActivity(Scopes.AdapterDeleteActivity, activityModel);
         }
 
         public static IDisposable StartAdapterContinueConversation(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Constants.ActivityAdapterContinueConversation, activityModel);
+            return StartActivity(Scopes.AdapterContinueConversation, activityModel);
         }
 
         /* AgentApplication activities */
 
         public static IDisposable StartAppRun(ITurnContext turnContext)
         {
-            return StartActivity(Constants.ActivityAppRun, turnContext);
+            return StartActivity(Scopes.AppRun, turnContext);
         }
 
         public static IDisposable StartAppRouteHandler(ITurnContext turnContext)
         {
-            return StartActivity(Constants.ActivityAppRouteHandler, turnContext);
+            return StartActivity(Scopes.AppRouteHandler, turnContext);
         }
 
         public static IDisposable StartAppBeforeTurn(ITurnContext turnContext)
         {
-            return StartActivity(Constants.ActivityAppBeforeTurn, turnContext);
+            return StartActivity(Scopes.AppBeforeTurn, turnContext);
         }
 
         public static IDisposable StartAppAfterTurn(ITurnContext turnContext)
         {
-            return StartActivity(Constants.ActivityAppAfterTurn, turnContext);
+            return StartActivity(Scopes.AppAfterTurn, turnContext);
         }
 
         public static IDisposable StartAppDownloadFiles(ITurnContext turnContext)
         {
-            return StartActivity(Constants.ActivityAppDownloadFiles, turnContext);
+            return StartActivity(Scopes.AppDownloadFiles, turnContext);
         }
 
         /* TurnContext */
 
         public static IDisposable StartTurnContextSendActivity(ITurnContext turnContext)
         {
-            return BuilderTelemetry.StartActivity(Constants.ActivityTurnSendActivity, turnContext);
+            return BuilderTelemetry.StartActivity(Scopes.TurnSendActivity, turnContext);
         }
 
         public static IDisposable StartTurnContextUpdateActivity(ITurnContext turnContext)
         {
-            return BuilderTelemetry.StartActivity(Constants.ActivityTurnUpdateActivity, turnContext);
+            return BuilderTelemetry.StartActivity(Scopes.TurnUpdateActivity, turnContext);
         }
 
         public static IDisposable StartTurnContextDeleteActivity(ITurnContext turnContext)
         {
-            return BuilderTelemetry.StartActivity(Constants.ActivityTurnDeleteActivity, turnContext);
+            return BuilderTelemetry.StartActivity(Scopes.TurnDeleteActivity, turnContext);
         }
     }
 }

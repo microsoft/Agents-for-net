@@ -17,17 +17,17 @@ namespace Microsoft.Agents.Storage.Telemetry
         /* Metrics */
 
         private static readonly Counter<long> OperationsTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            Constants.MetricStorageOperationTotal,
+            Metrics.OperationTotal,
             "operation"
         );
         private static readonly Histogram<long> OperationsDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            Constants.MetricStorageOperationDuration,
+            Metrics.OperationDuration,
             "ms"
         );
 
         /* Activity helpers */
 
-        public static Activity? StartStorageOp(string activityName, int numKeys)
+        public static TimedActivity StartStorageOp(string activityName, int numKeys)
         {
             TimedActivity timedActivity = AgentsTelemetry.StartTimedActivity(
                 activityName,
@@ -38,23 +38,23 @@ namespace Microsoft.Agents.Storage.Telemetry
                 }
             );
             Activity? activity = timedActivity.Activity;
-            activity?.SetTag(Core.Telemetry.Constants.AttrNumKeys, numKeys);
-            return activity;
+            activity?.SetTag(Attributes.NumKeys, numKeys);
+            return timedActivity;
         }
 
         public static IDisposable StartStorageRead(int numKeys)
         {
-            return StartStorageOp(Constants.ActivityStorageRead, numKeys);
+            return StartStorageOp(Scopes.Read, numKeys);
         }
 
         public static IDisposable StartStorageWrite(int numKeys)
         {
-            return StartStorageOp(Constants.ActivityStorageWrite, numKeys);
+            return StartStorageOp(Scopes.Write, numKeys);
         }
 
         public static IDisposable StartStorageDelete(int numKeys)
         {
-            return StartStorageOp(Constants.ActivityStorageDelete, numKeys);
+            return StartStorageOp(Scopes.Delete, numKeys);
         }
     }
 }

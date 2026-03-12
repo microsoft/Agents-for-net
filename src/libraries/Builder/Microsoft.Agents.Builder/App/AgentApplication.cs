@@ -781,7 +781,7 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
-                using var telemetryActivity = BuildterTelemetry.StartAgentTurnOperation(turnContext);
+                using var telemetryActivity = BuilderTelemetry.StartAppRun(turnContext);
  
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
@@ -832,7 +832,7 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call before turn handler
-                    using (var beforeTurnScope = BuilderTelemetry.StartAppBeforeTurn(telemetryActivity))
+                    using (var beforeTurnScope = BuilderTelemetry.StartAppBeforeTurn(turnContext))
                     {
                         foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                         {
@@ -873,7 +873,7 @@ namespace Microsoft.Agents.Builder.App
 
                                 if (signInComplete)
                                 {
-                                    using var routeHandlerScope = BuilderTelemetry.StartAppRouteHandler(telemetryActivity);
+                                    using var routeHandlerScope = BuilderTelemetry.StartAppRouteHandler(turnContext);
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
@@ -883,7 +883,7 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call after turn handler
-                    using (var afterTurnScope = BuilderTelemetry.StartAppAfterTurn(telemetryActivity))
+                    using (var afterTurnScope = BuilderTelemetry.StartAppAfterTurn(turnContext))
                     {
                         foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                         {

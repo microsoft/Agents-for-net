@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
             
-            using var telemetryActivity = BuilderTelemetry.StartAdapterDeleteActivity(reference);
+            using var telemetryActivity = BuilderTelemetry.StartAdapterDeleteActivity(turnContext.Activity);
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);

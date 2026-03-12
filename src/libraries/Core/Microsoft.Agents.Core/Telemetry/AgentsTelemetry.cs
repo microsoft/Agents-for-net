@@ -9,9 +9,11 @@ namespace Microsoft.Agents.Core.Telemetry
 {
     public static class AgentsTelemetry
     {
-        public static readonly ActivitySource ActivitySource = new(Constants.SourceName, Constants.SourceVersion);
-        public static readonly Meter Meter = new(Constants.SourceName, Constants.SourceVersion);
+        public static readonly string SourceName = "Microsoft.Agents.Builder";
+        public static readonly string SourceVersion = "1.0.0";
 
+        public static readonly ActivitySource ActivitySource = new(SourceName, SourceVersion);
+        public static readonly Meter Meter = new(SourceName, SourceVersion);
 
         /* Metrics */
 

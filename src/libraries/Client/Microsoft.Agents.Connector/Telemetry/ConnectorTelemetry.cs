@@ -1,12 +1,10 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Telemetry;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 #nullable enable
 
@@ -16,10 +14,10 @@ namespace Microsoft.Agents.Connector.Telemetry
     {
 
         private static readonly Counter<long> ConnectorRequestTotal = AgentsTelemetry.Meter.CreateCounter<long>(
-            Constants.MetricConnectorRequestTotal, "request");
+            Metrics.RequestTotal, "request");
         
         private static readonly Histogram<long> ConnectorRequestDuration = AgentsTelemetry.Meter.CreateHistogram<long>(
-            Constants.MetricConnectorRequestDuration, "ms");
+            Metrics.RequestDuration, "ms");
 
         /* ConnectorClient */
 
@@ -40,11 +38,11 @@ namespace Microsoft.Agents.Connector.Telemetry
             {
                 if (conversationId != null)
                 {
-                    activity.SetTag(Core.Telemetry.Constants.AttrConversationId, conversationId);
+                    activity.SetTag(Attributes.ConversationId, conversationId);
                 }
                 if (activityId != null)
                 {
-                    activity.SetTag(Core.Telemetry.Constants.AttrActivityId, activityId);
+                    activity.SetTag(Attributes.ActivityId, activityId);
                 }
             }
             return timedActivity;
@@ -52,48 +50,48 @@ namespace Microsoft.Agents.Connector.Telemetry
 
         public static IDisposable StartConnectorReplyToActivity(string conversationId, string activityId)
         {
-            return StartConnectorOp(Constants.ActivityConnectorReplyToActivity, conversationId, activityId);
+            return StartConnectorOp(Scopes.ReplyToActivity, conversationId, activityId);
         }
 
         public static IDisposable StartConnectorSendToConversation(string conversationId, string activityId)
         {
-            return StartConnectorOp(Constants.ActivityConnectorSendToConversation, conversationId, activityId);
+            return StartConnectorOp(Scopes.SendToConversation, conversationId, activityId);
         }
 
         public static IDisposable StartConnectorUpdateActivity(string conversationId, string activityId)
         {
-            return StartConnectorOp(Constants.ActivityConnectorUpdateActivity, conversationId, activityId);
+            return StartConnectorOp(Scopes.UpdateActivity, conversationId, activityId);
         }
 
         public static IDisposable StartConnectorDeleteActivity(string conversationId, string activityId)
         {
-            return StartConnectorOp(Constants.ActivityConnectorDeleteActivity, conversationId, activityId);
+            return StartConnectorOp(Scopes.DeleteActivity, conversationId, activityId);
         }
 
         public static IDisposable StartConnectorCreateConversation()
         {
-            return StartConnectorOp(Constants.ActivityConnectorCreateConversation);
+            return StartConnectorOp(Scopes.CreateConversation);
         }
 
         public static IDisposable StartConnectorGetConversations()
         {
-            return StartConnectorOp(Constants.ActivityConnectorGetConversations);
+            return StartConnectorOp(Scopes.GetConversations);
         }
 
         public static IDisposable StartConnectorGetConversationMembers()
         {
-            return StartConnectorOp(Constants.ActivityConnectorGetConversationMembers);
+            return StartConnectorOp(Scopes.GetConversationMembers);
         }
 
         public static IDisposable StartConnectorUploadAttachment(string conversationId)
         {
-            return StartConnectorOp(Constants.ActivityConnectorUploadAttachment, conversationId);
+            return StartConnectorOp(Scopes.UploadAttachment, conversationId);
         }
 
         public static IDisposable StartConnectorGetAttachment(string conversationId, string activityId, string attachmentId)
         {
-            TimedActivity timedActivity = StartConnectorOp(Constants.ActivityConnectorGetAttachment, conversationId, activityId);
-            timedActivity.Activity?.SetTag(Core.Telemetry.Constants.AttrAttachmentId, attachmentId);
+            TimedActivity timedActivity = StartConnectorOp(Scopes.GetAttachment, conversationId, activityId);
+            timedActivity.Activity?.SetTag(Attributes.AttachmentId, attachmentId);
             return timedActivity;
         }
     }
