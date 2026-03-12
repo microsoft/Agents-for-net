@@ -8,12 +8,10 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +35,7 @@ builder.AddAgent(sp =>
 
     var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
 
-    CopilotClient GetClient(AgentApplication app, ITurnContext turnContext)
+    CopilotClient GetClient(ITurnContext turnContext)
     {
         var settings = new ConnectionSettings(builder.Configuration.GetSection("CopilotStudioAgent"));
         string[] scopes = [CopilotClient.ScopeFromSettings(settings)];
@@ -50,7 +48,7 @@ builder.AddAgent(sp =>
                 // In this sample, the Azure Bot OAuth Connection is configured to return an 
                 // exchangeable token, that can be exchange for different scopes.  This can be
                 // done multiple times using different scopes.
-                return await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, "mcs", exchangeScopes: scopes);
+                return await turnContext.ExchangeTurnTokenAsync("mcs", exchangeScopes: scopes);
             },
             NullLogger.Instance,
             "mcs");
@@ -60,47 +58,49 @@ builder.AddAgent(sp =>
     {
         // Force a user signout to reset the user state
         // This is needed to reset the token in Azure Bot Services if needed. 
-        // Typically this wouldn't be need in a production Agent.  Made available to assist it starting from scratch.
+        // Typically this wouldn't be need in a production Agent.  Made available to assist it starting from scratch for this sample.
         await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
     }, rank: RouteRank.First);
 
-    // Since Auto SignIn is enabled, by the time this is called the token is already available via UserAuthorization.GetTurnTokenAsync or
-    // UserAuthorization.ExchangeTurnTokenAsync.
-    // NOTE:  This is a slightly unusual way to handle incoming Activities (but perfectly) valid.  For this sample,
-    // we just want to proxy messages to/from a Copilot Studio Agent.
-    app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
-    {
-        
-        var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
-        var cpsClient = GetClient(app, turnContext);
-
-        if (string.IsNullOrEmpty(mcsConversationId))
+    // By the time this is called the token is already available via ITurnContext.GetTurnTokenAsync or
+    // ITurnContext.ExchangeTurnTokenAsync.
+    app.AddRoute(RouteBuilder.Create()
+        .WithSelector((turnContext, cancellationToken) => Task.FromResult(true))
+        .WithHandler(async (turnContext, turnState, cancellationToken) =>
         {
-            // Regardless of the Activity  Type, start the conversation.
-            await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
-            {
-                if (activity.IsType(ActivityTypes.Message))
-                {
-                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
 
-                    // Record the conversationId MCS is sending. It will be used this for subsequent messages.
-                    turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+            var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
+            var cpsClient = GetClient(turnContext);
+
+            if (string.IsNullOrEmpty(mcsConversationId))
+            {
+                // Regardless of the Activity  Type, start the conversation.
+                await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+                {
+                    if (activity.IsType(ActivityTypes.Message))
+                    {
+                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+
+                        // Record the conversationId MCS is sending. It will be used this for subsequent messages.
+                        turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
+                    }
                 }
             }
-        }
-        else if (turnContext.Activity.IsType(ActivityTypes.Message))
-        {
-            // Send the Copilot Studio Agent whatever the sent and send the responses back.
-            await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
+            else if (turnContext.Activity.IsType(ActivityTypes.Message))
             {
-                if (activity.IsType(ActivityTypes.Message))
+                // Send the Copilot Studio Agent whatever the sent and send the responses back.
+                await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
                 {
-                    await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                    if (activity.IsType(ActivityTypes.Message))
+                    {
+                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                    }
                 }
             }
-        }
-    }, autoSignInHandlers: ["mcs"]);
+        })
+        .Build()
+    );
 
     // Called when the OAuth flow fails
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
@@ -125,19 +125,14 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
+// Map GET "/"
+app.MapAgentRootEndpoint();
 
-// This receives incoming messages from Azure Bot Service or other SDK Agents
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
+// Map the endpoints for all agents using the [AgentInterface] attribute.
+// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
+app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-if (!app.Environment.IsDevelopment())
-{
-    incomingRoute.RequireAuthorization();
-}
-else
+if (app.Environment.IsDevelopment())
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.

@@ -1,16 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Builder.Errors;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
-using Microsoft.Agents.Core.Errors;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -31,11 +34,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     public class UserAuthorization
     {
         private readonly AutoSignInSelector? _startSignIn;
-        private const string SIGN_IN_STATE_KEY = "__SignInState__";
         private readonly IUserAuthorizationDispatcher _dispatcher;
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
-        private readonly Dictionary<string, TokenResponse> _authTokens = [];
+        private readonly List<HandlerToken> _authTokens = [];
 
         /// <summary>
         /// Callback when user sign in fail
@@ -49,11 +51,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             _app = app ?? throw new ArgumentNullException(nameof(app));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _dispatcher = options.Dispatcher;
-
-            if (_app.Options.Adapter == null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.UserAuthorizationRequiresAdapter, null);
-            }
 
             if (_options.AutoSignIn != null)
             {
@@ -76,7 +73,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         [Obsolete("Use Task<string> GetTurnTokenAsync(ITurnContext, string) instead")]
         public string GetTurnToken(string handlerName)
         {
-            return _authTokens.TryGetValue(handlerName, out var token) ? token.Token : default;
+           return _authTokens.Find(ht => ht.Handler.Equals(handlerName))?.TokenResponse.Token;
         }
 
         /// <summary>
@@ -100,30 +97,46 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
-            handlerName ??= DefaultHandlerName;
-
-            if (_authTokens.TryGetValue(handlerName, out var token))
+            if (_authTokens == null || _authTokens.Count == 0)
             {
-                // An exchangeable token needs to be exchanged.
-                if (!turnContext.IsAgenticRequest())
+                return null;
+            }
+
+            TokenResponse token;
+            if (string.IsNullOrEmpty(handlerName))
+            {
+                // Cached turn tokens are stored in the order of addition (the order on the route).
+                // If no handler name is provided, return the first.
+                token = _authTokens[0].TokenResponse;
+                handlerName = _authTokens[0].Handler;
+            }
+            else
+            {
+                token = _authTokens.Find(ht => ht.Handler.Equals(handlerName))?.TokenResponse;
+            }
+
+            if (token != null)
+            {
+                // Return a non-expired non-exchangeable token.
+                if (!turnContext.IsAgenticRequest() && !token.IsExchangeable)
                 {
-                    if (!token.IsExchangeable)
+                    var diff = token.Expiration - DateTimeOffset.UtcNow;
+                    if (diff.HasValue && diff?.TotalMinutes >= 5)
                     {
-                        var diff = token.Expiration - DateTimeOffset.UtcNow;
-                        if (diff.HasValue && diff?.TotalMinutes >= 5)
-                        {
-                            return token.Token;
-                        }
+                        return token.Token;
                     }
                 }
 
-
-                // Get a new token if near expiration, or it's an exchangeable token.
+                // Refresh an exchangeable or expired token
                 var handler = _dispatcher.Get(handlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
-                    _authTokens[handlerName] = response;
+                    if (!token.IsExchangeable)
+                    {
+                        // Refresh cahce with the latest non-exchangeable token.
+                        CacheToken(handlerName, response);
+                    }
                     return response.Token;
                 }
 
@@ -135,11 +148,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return null;
         }
 
+        public IList<TurnToken> GetTurnTokens()
+        {
+            return [.. _authTokens.Select(ht => new TurnToken(ht.Handler, ht.TokenResponse.Token))];
+        }
+
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
         {
             var flow = flowName ?? DefaultHandlerName;
             DeleteCachedToken(flow);
-            DeleteSignInState(turnState);
+            await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
         }
 
@@ -175,7 +193,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         internal async Task<bool> StartOrContinueSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, bool forceAuto = false, CancellationToken cancellationToken = default)
         {
             // If a flow is active, continue that.
-            var signInState = GetSignInState(turnState);
+            var signInState = await GetSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             string? activeFlowName = signInState.ActiveHandler;
             bool flowContinuation = activeFlowName != null;
             bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
@@ -194,11 +212,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     exchangeScopes: signInState.RuntimeOBOScopes,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                if (response.Status == SignInStatus.Duplicate)
-                {
-                    return false;
-                }
-
                 if (response.Status == SignInStatus.Pending)
                 {
                     if (!flowContinuation)
@@ -207,7 +220,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         signInState.ContinuationActivity = turnContext.Activity;
                         signInState.ActiveHandler = activeFlowName;
 
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        await SetSignInStateAsync(turnContext, signInState, cancellationToken).ConfigureAwait(false);
                     }
 
                     // Flow started, pending user input
@@ -220,8 +233,42 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 {
                     // Clear user auth state
                     await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
-                    DeleteSignInState(turnState);
+                    await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    if (turnContext.Activity.IsType(ActivityTypes.Invoke))
+                    {
+                        if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
+                        {
+                            _app.Logger.LogWarning("UserAuthorization: InvokeResponse not set for '{Invoke.Name}'", turnContext.Activity.Name);
+
+                            // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
+                            await turnContext.SendActivityAsync(new Activity
+                            {
+                                Type = ActivityTypes.InvokeResponse,
+                                Value = new InvokeResponse
+                                {
+                                    Status = 500,
+                                    Body = new
+                                    {
+                                        activity = new
+                                        {
+                                            id = turnContext.Activity.Id,
+                                            channelId = turnContext.Activity.ChannelId.Channel,
+                                            type = turnContext.Activity.Type,
+                                            name = turnContext.Activity.Name,
+                                            conversation = turnContext.Activity.Conversation,
+                                            from = turnContext.Activity.From,
+                                            recipient = turnContext.Activity.Recipient,
+                                        },
+                                        cause = response.Cause.ToString(),
+                                        failureDetail = response.Error?.Message ?? string.Empty
+                                    }
+                                }
+                            }, cancellationToken).ConfigureAwait(false);
+                        }
+                        return false;
+                    }
 
                     if (_userSignInFailureHandler != null)
                     {
@@ -237,7 +284,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 if (response.Status == SignInStatus.Complete)
                 {
-                    DeleteSignInState(turnState);
+                    await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     CacheToken(activeFlowName, response);
 
                     if (signInState.ContinuationActivity != null)
@@ -250,14 +297,49 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                            await _app.Options.Adapter.ProcessProactiveAsync(
-                                turnContext.Identity, 
-                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
-                                _app, 
+                            await turnContext.Adapter.ProcessProactiveAsync(
+                                turnContext.Identity,
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true),
+                                _app,
                                 cancellationToken).ConfigureAwait(false);
                             return false;
                         }
                     }
+                }
+            }
+            else if (!flowContinuation)
+            {
+                if (turnContext.Activity.IsType(ActivityTypes.Invoke)
+                    && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.VerifyStateOperationName))
+                {
+                    _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active for user '{User.Id}' using handler '{Handler.Name}'", 
+                        turnContext.Activity.Name, turnContext.Activity.From.Id, handlerName ?? DefaultHandlerName);
+
+                    // This would mean we've received an OAuth related request, but we aren't in an active flow.
+                    // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
+                    await turnContext.SendActivityAsync(new Activity
+                    {
+                        Type = ActivityTypes.InvokeResponse,
+                        Value = new InvokeResponse
+                        {
+                            Status = (int)HttpStatusCode.BadRequest,
+                            Body = new
+                            {
+                                activity = new
+                                {
+                                    id = turnContext.Activity.Id,
+                                    channelId = turnContext.Activity.ChannelId.Channel,
+                                    type = turnContext.Activity.Type,
+                                    name = turnContext.Activity.Name,
+                                    conversation = turnContext.Activity.Conversation,
+                                    from = turnContext.Activity.From,
+                                    recipient = turnContext.Activity.Recipient,
+                                },
+                                cause = AuthExceptionReason.Other.ToString(),
+                                failureDetail = $"The user is not in an active OAuthFlow for handler:{handlerName ?? DefaultHandlerName}"
+                            }
+                        }
+                    }, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -266,33 +348,53 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return true;
         }
 
-        /// <summary>
-        /// Set token in state
-        /// </summary>
-        /// <param name="name">The name of token</param>
-        /// <param name="response">The value of token</param>
-        private void CacheToken(string name, SignInResponse response)
+        private void CacheToken(string name, SignInResponse signInResponse)
         {
-            _authTokens[name] = response.TokenResponse;
+            CacheToken(name, signInResponse.TokenResponse);
         }
 
-        /// <summary>
-        /// Delete token from turn state
-        /// </summary>
-        /// <param name="name">The name of token</param>
+        private void CacheToken(string name, TokenResponse tokenResponse)
+        {
+            var existing = _authTokens.Find(ht => ht.Handler.Equals(name));
+            if (existing != null)
+            {
+                existing.TokenResponse = tokenResponse;
+                return;
+            }
+            _authTokens.Add(new HandlerToken() { Handler = name, TokenResponse = tokenResponse });
+        }
+
         private void DeleteCachedToken(string name)
         {
-            _authTokens.Remove(name);
+            _authTokens.RemoveAll(ht => ht.Handler.Equals(name));
         }
 
-        private static SignInState GetSignInState(ITurnState turnState)
+        private async Task<SignInState> GetSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return turnState.User.GetValue<SignInState>(SIGN_IN_STATE_KEY, () => new());
+            var items = await _options.Storage.ReadAsync([GetStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
+            if (items.TryGetValue(GetStorageKey(turnContext), out var state) && state is SignInState signInState)
+            {
+                 return signInState;
+            }
+            return new();
         }
 
-        private static void DeleteSignInState(ITurnState turnState)
+        private Task SetSignInStateAsync(ITurnContext turnContext, SignInState state, CancellationToken cancellationToken)
         {
-            turnState.User.DeleteValue(SIGN_IN_STATE_KEY);
+            return _options.Storage.WriteAsync(new Dictionary<string, object> { { GetStorageKey(turnContext), state } }, cancellationToken);
+        }
+
+        private Task DeleteSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            return _options.Storage.DeleteAsync(new[] { GetStorageKey(turnContext) }, cancellationToken);
+        }
+
+        private static string GetStorageKey(ITurnContext turnContext)
+        {
+            // This key is used since per conversation, a user can only have one active flow at a time.
+            var channelId = turnContext.Activity.ChannelId?.Channel ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
+            var userId = turnContext.Activity.From?.Id ?? throw new InvalidOperationException("invalid activity-missing From.Id");
+            return $"oauth/{channelId}/{userId}/userAuthorizationState";
         }
     }
 
@@ -303,5 +405,17 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public IActivity ContinuationActivity { get; set; }
         public string RuntimeOBOConnectionName { get; set; }
         public IList<string> RuntimeOBOScopes { get; set; }
+    }
+
+    class HandlerToken
+    {
+        public string Handler { get; set; }
+        public TokenResponse TokenResponse { get; set; }
+    }
+
+    public class TurnToken(string handler, string token)
+    {
+        public string Handler { get; private set; } = handler;
+        public string Token { get; private set; } = token;
     }
 }

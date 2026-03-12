@@ -47,6 +47,10 @@ namespace Microsoft.Agents.Builder.UserAuth
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
             }
+            else if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(AzureBotUserAuthorization).FullName;
+            }
             else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
             {
                 typeName = typeof(AgenticUserAuthorization).FullName;
@@ -122,7 +126,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             return type.GetConstructor(
                 bindingAttr: BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
-                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection)],
+                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection), typeof(ILogger)],
                 modifiers: null);
         }
     }

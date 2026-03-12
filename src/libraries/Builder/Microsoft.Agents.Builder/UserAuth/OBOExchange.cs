@@ -4,7 +4,6 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +35,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             IList<string> scopes = exchangeScopes ?? oboSettings.OBOScopes;
 
             // If OBO is not supplied (by config or passed) return token as-is.
-            if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
+            if (scopes == null || !scopes.Any())
             {
                 return token;
             }
@@ -44,11 +43,11 @@ namespace Microsoft.Agents.Builder.UserAuth
             // Can we even exchange this?
             if (!token.IsExchangeable)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [token.ConnectionName]);
             }
 
             // Can the named Connection even do this?
-            if (!TryGetOBOProvider(connectionName, out var oboExchangeProvider))
+            if (!TryGetOBOProvider(turnContext, connectionName, out var oboExchangeProvider))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotSupported, null, [connectionName]);
             }
@@ -72,19 +71,28 @@ namespace Microsoft.Agents.Builder.UserAuth
             return token ?? null;
         }
 
-        protected bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)
+        protected bool TryGetOBOProvider(ITurnContext turnContext, string connectionName, out IOBOExchange oboExchangeProvider)
         {
-            if (_connections.TryGetConnection(connectionName, out var tokenProvider))
+            IAccessTokenProvider tokenProvider = null;
+
+            if (string.IsNullOrEmpty(connectionName))
             {
-                if (tokenProvider is IOBOExchange oboExchange)
-                {
-                    oboExchangeProvider = oboExchange;
-                    return true;
-                }
+                // Use default connection from turn context
+                tokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+            }
+            else
+            {
+                _connections.TryGetConnection(connectionName, out tokenProvider);
             }
 
-            oboExchangeProvider = null;
-            return false;
+            if (tokenProvider is not IOBOExchange)
+            {
+                oboExchangeProvider = null;
+                return false;
+            }
+
+            oboExchangeProvider = (IOBOExchange)tokenProvider;
+            return true;
         }
     }
 }

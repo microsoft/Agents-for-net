@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The content type value of a <see cref="OAuthCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.oauth";
+        public const string ContentType = Models.ContentTypes.OAuthCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="OAuthCard"/>.

@@ -135,9 +135,11 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                var content = new StringContent("data: {\"type\": \"message\", \"conversation\": {\"id\": \"test-convo\"}}");
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream"); 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("data: {\"type\": \"message\", \"conversation\": {\"id\": \"test-convo\"}}")
+                    Content = content
                 };
                 return Task.FromResult(response);
             }

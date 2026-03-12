@@ -108,7 +108,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
 
         // Stream the AI response and add to chat history
         var response = "";
-        await foreach (var item in chatClient.CompleteStreamingAsync(chatHistory))
+        await foreach (var item in chatClient.GetStreamingResponseAsync(chatHistory))
         {
             response += item.Text;
         }

@@ -75,7 +75,7 @@ namespace DialogRootBot.Bots
                     var adaptiveCard = reader.ReadToEnd();
                     return new Attachment
                     {
-                        ContentType = "application/vnd.microsoft.card.adaptive",
+                        ContentType = ContentTypes.AdaptiveCard,
                         Content = adaptiveCard
                     };
                 }

@@ -31,10 +31,7 @@
 	  This is the time to get all the necessary project references and add them to the package.
 	-->
 	<Target Name="GetAnalyzers" BeforeTargets="_GetTfmSpecificContentForPackage" Condition="'$(TargetFramework)' == 'netstandard2.0'">
-		<MSBuild 
-			Projects="@(ProjectReference)"
-			Condition="'%(ProjectReference.Filename)' == 'Microsoft.Agents.Core.Analyzers'"
-			Targets="GetTargetPath" >
+		<MSBuild Projects="@(ProjectReference)" Condition="'%(ProjectReference.Filename)' == 'Microsoft.Agents.Core.Analyzers'" Targets="GetTargetPath">
 			<Output TaskParameter="TargetOutputs" ItemName="Analyzers" />
 		</MSBuild>
 	</Target>
@@ -58,7 +55,7 @@
 		In order for packing targets to work correctly in this situation - analyzer project either should have <TargetFramework> (without 's'),
 		or be referenced with Condition on a single TargetFramework.
 	   -->
-	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" Condition="'$(TargetFramework)' == 'netstandard2.0'" PrivateAssets="all" />
+	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" Condition="'$(TargetFramework)' == 'netstandard2.0'" PrivateAssets="all" />
 	</ItemGroup>
 
 </Project>
