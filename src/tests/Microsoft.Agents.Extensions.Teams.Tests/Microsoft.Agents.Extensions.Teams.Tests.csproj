@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Teams</ComponentAreaName>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
@@ -10,12 +11,6 @@
 	  <Compile Remove="Properties\**" />
 	  <EmbeddedResource Remove="Properties\**" />
 	  <None Remove="Properties\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="Model\TestJson\*">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 
 	<ItemGroup>

@@ -112,6 +112,11 @@ namespace Microsoft.Agents.Connector.RestClients
                 Method = HttpMethod.Post,
                 RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities")
             };
+            if (body.ChannelId == Channels.Msteams && body.IsTargetedActivity())
+            {
+                request.RequestUri = new Uri(request.RequestUri.ToString() + "?isTargetedActivity=true");
+            }
+
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
@@ -259,11 +264,17 @@ namespace Microsoft.Agents.Connector.RestClients
                 Method = HttpMethod.Post,
                 RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities/{HttpUtility.UrlEncode(activityId)}")
             };
+            if (body.ChannelId == Channels.Msteams && body.IsTargetedActivity())
+            {
+                request.RequestUri = new Uri(request.RequestUri.ToString() + "?isTargetedActivity=true");
+            }
+
             request.Headers.Add("Accept", "application/json");
             if (body != null)
             {
                 request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
+
             return request;
         }
 

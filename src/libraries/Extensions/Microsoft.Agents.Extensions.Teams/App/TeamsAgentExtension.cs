@@ -2,354 +2,324 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Models;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.App.Builders;
 using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
-using Microsoft.Agents.Core;
-using Microsoft.Agents.Extensions.Teams.App.Builders;
+using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Config;
+using Microsoft.Teams.Api.O365;
+using System;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.App
+namespace Microsoft.Agents.Extensions.Teams.App;
+
+/// <summary>
+/// AgentExtension for Microsoft Teams.
+/// </summary>
+public class TeamsAgentExtension : AgentExtension
 {
     /// <summary>
-    /// AgentExtension for Microsoft Teams.
+    /// Creates a new TeamsAgentExtension instance.
+    /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.
+    /// Use the callback method to register routes for handling Teams-specific events.
     /// </summary>
-    public class TeamsAgentExtension : AgentExtension
+    /// <param name="agentApplication">The agent application to leverage for route registration.</param>
+    /// <param name="options">Options for configuring TaskModules.</param>
+    public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
     {
-        private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
-        private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
+        ChannelId = Channels.Msteams;
 
-        /// <summary>
-        /// Creates a new TeamsAgentExtension instance.
-        /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.
-        /// Use the callback method to register routes for handling Teams-specific events.
-        /// </summary>
-        /// <param name="agentApplication">The agent application to leverage for route registration.</param>
-        /// <param name="options">Options for configuring TaskModules.</param>
-        public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
+        AgentApplication = agentApplication;
+
+        Meetings = new Meeting(agentApplication);
+        MessageExtensions = new MessageExtension(agentApplication);
+        TaskModules = new TaskModule(agentApplication, options);
+
+        agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
-            ChannelId = Channels.Msteams;
+            if (turnContext.Activity.ChannelId == Channels.Msteams)
+            {
+                // Set the TeamsApiClient in the turn context for use in handlers.
+                turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
 
-            AgentApplication = agentApplication;
+                // Explicit conversation of Activity.ChannelData to Teams' ChannelData for improved performance
+                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<ChannelData>(turnContext.Activity.ChannelData);
+            }
+            return Task.FromResult(true);
+        });
+    }
 
-            Meetings = new Meeting(agentApplication);
-            MessageExtensions = new MessageExtension(agentApplication);
-            TaskModules = new TaskModule(agentApplication, options);
+    /// <summary>
+    /// Fluent interface for accessing Meetings' specific features.
+    /// </summary>
+    public Meeting Meetings { get; }
 
-            Options = options;
-        }
+    /// <summary>
+    /// Fluent interface for accessing Message Extensions' specific features.
+    /// </summary>
+    public MessageExtension MessageExtensions { get; }
 
-        public TaskModulesOptions Options { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Meetings' specific features.
-        /// </summary>
-        public Meeting Meetings { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Message Extensions' specific features.
-        /// </summary>
-        public MessageExtension MessageExtensions { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Task Modules' specific features.
-        /// </summary>
-        public TaskModule TaskModules { get; }
+    /// <summary>
+    /// Fluent interface for accessing Task Modules' specific features.
+    /// </summary>
+    public TaskModule TaskModules { get; }
 
 #if !NETSTANDARD
-        protected AgentApplication AgentApplication { get; init;}
+    internal AgentApplication AgentApplication { get; init;}
 #else
-        protected AgentApplication AgentApplication { get; set;}
+    internal AgentApplication AgentApplication { get; set;}
 #endif
 
-        /// <summary>
-        /// Handles conversation update events.
-        /// </summary>
-        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AddRoute(AgentApplication, TeamsConversationUpdateRouteBuilder.Create()
-                .AsAgentic(isAgenticOnly)
-                .WithUpdateEvent(conversationUpdateEvent)
-                .WithChannelId(ChannelId)
-                .WithOrderRank(rank)
-                .WithOAuthHandlers(autoSignInHandlers)
-                .WithHandler(handler)
-                .Build());
+    /// <summary>
+    /// Handles conversation update events.
+    /// </summary>
+    /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.</param>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(TeamsConversationUpdateRouteBuilder.Create()
+            .WithUpdateEvent(conversationUpdateEvent)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithHandler(handler)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
-            return this;
-        }
-
-        /// <summary>
-        /// Handles message edit events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
+    /// <summary>
+    /// Handles message edit events.
+    /// </summary>
+    /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnMessageEdit(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.MessageUpdate)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithSelector((turnContext, cancellationToken) =>
             {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "editMessage"));
-            };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
+                ChannelData ChannelData = turnContext.Activity.GetChannelData<ChannelData>();
+                return Task.FromResult(string.Equals(ChannelData?.EventType, "editMessage", StringComparison.OrdinalIgnoreCase));
+            })
+            .WithHandler(handler)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
-        /// <summary>
-        /// Handles message undo soft delete events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
+    /// <summary>
+    /// Handles message undo soft delete events.
+    /// </summary>
+    /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnMessageUndelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.MessageUpdate)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithSelector((turnContext, cancellationToken) =>
             {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
-            };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
+                ChannelData ChannelData = turnContext.Activity.GetChannelData<ChannelData>();
+                return Task.FromResult(string.Equals(ChannelData?.EventType, "undeleteMessage", StringComparison.OrdinalIgnoreCase));
+            })
+            .WithHandler(handler)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
-        /// <summary>
-        /// Handles message soft delete events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
+    /// <summary>
+    /// Handles message soft delete events.
+    /// </summary>
+    /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnMessageDelete(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.MessageDelete)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithSelector((turnContext, cancellationToken) =>
             {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageDelete, StringComparison.OrdinalIgnoreCase)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
-            };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
+                ChannelData channelData = turnContext.Activity.GetChannelData<ChannelData>();
+                return Task.FromResult(string.Equals(channelData?.EventType, "softDeleteMessage", StringComparison.OrdinalIgnoreCase));
+            })
+            .WithHandler(handler)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
-        /// <summary>
-        /// Handles read receipt events for messages sent by the bot in personal scope.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
-            );
-            RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
+    /// <summary>
+    /// Handles read receipt events for messages sent by the agent in personal scope.
+    /// </summary>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(EventRouteBuilder.Create()
+            .WithName(Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ReadReceiptInfo readReceiptInfo = ProtocolJsonSerializer.ToObject<ReadReceiptInfo>(turnContext.Activity.Value) ?? new();
+                JsonElement readReceiptInfo = (JsonElement)turnContext.Activity.Value;
                 await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
-            };
-            AddRoute(AgentApplication, routeSelector, routeHandler, false, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
+            })
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
-        /// <summary>
-        /// Handles config fetch events for Microsoft Teams.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
-            RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
+    /// <summary>
+    /// Handles config fetch events for Microsoft Teams.
+    /// </summary>
+    /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(InvokeRouteBuilder.Create()
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                await SetResponse(turnContext, result);
+            })
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
 
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
+        return this;
+    }
+
+    /// <summary>
+    /// Handles config submit events for Microsoft Teams.
+    /// </summary>
+    /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(InvokeRouteBuilder.Create()
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
+            {
+                ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                await SetResponse(turnContext, result);
+            })
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+
+        return this;
+    }
+
+    /// <summary>
+    /// Handles when a file consent card is accepted by the user.
+    /// </summary>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        => OnFileConsent(handler, "accept", rank, autoSignInHandlers, isAgenticOnly);
+
+    /// <summary>
+    /// Handles when a file consent card is declined by the user.
+    /// </summary>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        => OnFileConsent(handler, "decline", rank, autoSignInHandlers, isAgenticOnly);
+
+    private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(InvokeRouteBuilder.Create()
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithSelector((turnContext, cancellationToken) =>
+            {
+                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value);
+                return Task.FromResult(fileConsentCardResponse != null && string.Equals(fileConsentCardResponse.Action, fileConsentAction));
+            })
+            .WithHandler(async (turnContext, turnState, cancellationToken) =>
+            {
+                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value);
+                if (string.Equals(fileConsentCardResponse.Action, fileConsentAction))
                 {
-                    var activity = Activity.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                    await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken);
+                    await SetResponse(turnContext);
                 }
-            };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
+            })
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
 
-        /// <summary>
-        /// Handles config submit events for Microsoft Teams.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
-            RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
+        return this;
+    }
+
+    /// <summary>
+    /// Handles O365 Connector Card Action activities.
+    /// </summary>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
+    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <returns>The AgentExtension instance for chaining purposes.</returns>
+    public TeamsAgentExtension OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        AgentApplication.AddRoute(InvokeRouteBuilder.Create()
+            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction)
+            .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+            .WithHandler(async (turnContext, turnState, cancellationToken) =>
             {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var activity = Activity.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles when a file consent card is accepted by the user.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-            => OnFileConsent(handler, "accept", rank, autoSignInHandlers, isAgenticOnly);
-
-        /// <summary>
-        /// Handles when a file consent card is declined by the user.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-            => OnFileConsent(handler, "decline", rank, autoSignInHandlers, isAgenticOnly);
-
-        private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) =>
-            {
-                FileConsentCardResponse? fileConsentCardResponse;
-                return Task.FromResult
-                (
-                    string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(context.Activity?.Name, "fileConsent/invoke")
-                    && (fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(context.Activity!.Value)) != null
-                    && string.Equals(fileConsentCardResponse.Action, fileConsentAction)
-                );
-            };
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value) ?? new();
-                await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles O365 Connector Card Action activities.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns>The AgentExtension instance for chaining purposes.</returns>
-        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "actionableMessage/executeAction")
-            );
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                O365ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<O365ConnectorCardActionQuery>(turnContext.Activity.Value) ?? new();
+                ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<ConnectorCardActionQuery>(turnContext.Activity.Value) ?? new();
                 await handler(turnContext, turnState, query, cancellationToken);
+                await SetResponse(turnContext);
+            })
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
 
-                // Check to see if an invoke response has already been added
-                if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
-                {
-                    var activity = Activity.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
-            return AgentApplication;
-        }
+        return this;
+    }
 
-        /// <summary>
-        /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
-        /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered</param>
-        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-        /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
-        /// <returns></returns>
-        [Obsolete("Use AgentApplication.OnFeedbackLoop instead")]
-        public TeamsAgentExtension OnFeedbackLoop(FeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    internal static Task SetResponse(ITurnContext context, object result = null)
+    {
+        if (!context.StackState.Has(ChannelAdapter.InvokeResponseKey))
         {
-            // This is for back-compat with existing usage.  We need to convert from Core FeedbackData to existing Teams Extension FeedbackLoopData.
-            async Task coreHandler(ITurnContext turnContext, ITurnState turnState, Builder.App.FeedbackData coreFeedbackData, CancellationToken cancellationToken)
-            {
-                var teamsFeedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackLoopData>(coreFeedbackData);
-                await handler(turnContext, turnState, teamsFeedbackLoopData, cancellationToken).ConfigureAwait(false);
-            }
-
-            // Use Core route handling for this.
-            AgentApplication.OnFeedbackLoop(coreHandler, rank, autoSignInHandlers, isAgenticOnly);
-            return this;
+            var activity = Activity.CreateInvokeResponseActivity(result);
+            return context.SendActivityAsync(activity, CancellationToken.None);
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -203,10 +203,16 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The constructed <see cref="Route"/> instance representing the current route configuration.</returns>
         public Route Build()
         {
+            PreBuild();
+
             AssertionHelpers.ThrowIfNull(_route.Selector, nameof(_route.Selector));
             AssertionHelpers.ThrowIfNull(_route.Handler, nameof(_route.Handler));
 
             return _route;
+        }
+
+        protected virtual void PreBuild()
+        {
         }
     }
 }

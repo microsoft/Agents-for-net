@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
@@ -8,10 +9,15 @@ using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
+using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Config;
 using Moq;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -27,11 +33,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelCreated",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -70,11 +76,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelRenamed",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -113,11 +119,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelDeleted",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -157,11 +163,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelRestored",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -200,11 +206,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelUnshared",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -243,11 +249,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelShared",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -286,10 +292,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRenamed",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -328,10 +334,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamDeleted",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -370,10 +376,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamHardDeleted",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -412,10 +418,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamArchived",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -454,10 +460,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamUnarchived",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -496,10 +502,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRestored",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -538,10 +544,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity1 = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRenamed",
-                    Team = new TeamInfo(),
+                    Team = new Team() { Id = "id" },
                 },
                 Name = "1",
                 ChannelId = Channels.Msteams,
@@ -561,7 +567,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity3 = new Activity
             {
                 Type = ActivityTypes.Invoke,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRenamed"
                 },
@@ -579,6 +585,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -620,11 +628,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity2 = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelDeleted",
-                    Channel = new ChannelInfo(),
-                    Team = new TeamInfo(),
+                    Channel = new Channel() { Id = "id" },
+                    Team = new Team() { Id = "id" },
                 },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -634,7 +642,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity3 = new Activity
             {
                 Type = ActivityTypes.Invoke,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRenamed"
                 },
@@ -691,7 +699,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity2 = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "channelDeleted"
                 },
@@ -704,7 +712,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var activity3 = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamRenamed"
                 },
@@ -723,6 +731,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -760,7 +770,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.MessageUpdate,
                 ChannelId = Channels.Msteams,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "editMessage"
                 },
@@ -775,7 +785,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "softDeleteMessage"
                 }
@@ -796,6 +806,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -827,7 +839,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.MessageUpdate,
                 ChannelId = Channels.Msteams,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "undeleteMessage"
                 },
@@ -842,7 +854,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 ChannelId = Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "softDeleteMessage"
                 }
@@ -863,6 +875,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -894,7 +908,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.MessageDelete,
                 ChannelId = Channels.Msteams,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "softDeleteMessage"
                 },
@@ -907,7 +921,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.MessageDelete,
                 ChannelId = Channels.Msteams,
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "unknown"
                 },
@@ -932,6 +946,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var names = new List<string>();
@@ -1005,7 +1021,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnContext4 = new TurnContext(adapter, activity4);
-            var configResponseMock = new Mock<ConfigResponseBase>();
+            var configResponseMock = new Mock<ConfigResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
@@ -1016,6 +1032,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -1100,7 +1118,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnContext4 = new TurnContext(adapter, activity4);
-            var configResponseMock = new Mock<ConfigResponseBase>();
+            var configResponseMock = new Mock<ConfigResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
@@ -1111,6 +1129,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1198,6 +1218,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -1282,6 +1304,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1359,6 +1383,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -1393,11 +1419,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Event,
                 ChannelId = Channels.Msteams,
-                Name = "application/vnd.microsoft.readReceipt",
-                Value = new
+                Name = Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new ReadReceiptInfo
                 {
-                    lastReadMessageId = "10101010",
-                },
+                    LastReadMessageId = "10101010",
+                }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1409,6 +1435,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
@@ -1453,6 +1481,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
 
             var extension = new TeamsAgentExtension(app);

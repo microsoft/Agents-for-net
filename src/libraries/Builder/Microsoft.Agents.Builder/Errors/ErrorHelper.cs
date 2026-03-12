@@ -72,6 +72,7 @@ namespace Microsoft.Agents.Builder.Errors
 
         // RouteBuilders
         internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-50033, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-50033");
+        internal static readonly AgentErrorDefinition RouteBuilderMissingProperty = new AgentErrorDefinition(-50034, Properties.Resources.RouteBuilderMissingProperty, "https://aka.ms/M365AgentsErrorCodes/#-50034");
     }
 
 }
