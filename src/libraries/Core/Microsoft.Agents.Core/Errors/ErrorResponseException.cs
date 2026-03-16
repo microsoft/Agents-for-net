@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -21,6 +22,22 @@ namespace Microsoft.Agents.Core.Errors
     /// <param name="innerException">Inner exception.</param>
     public class ErrorResponseException(string message, System.Exception innerException = null) : Exception(message, innerException)
     {
+        /// <summary>
+        /// List of header names that should not be included in exception data to prevent information disclosure.
+        /// </summary>
+        private static readonly HashSet<string> SensitiveHeaders = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Authorization",
+            "Set-Cookie",
+            "Cookie",
+            "X-API-Key",
+            "X-Auth-Token",
+            "X-CSRF-Token",
+            "WWW-Authenticate",
+            "Proxy-Authorization",
+            "Proxy-Authenticate"
+        };
+
         public int? StatusCode { get; set; }
 
         /// <summary>
@@ -53,9 +70,19 @@ namespace Microsoft.Agents.Core.Errors
         {
             var ex = CreateErrorResponseException(message, innerException, errors);
             ex.StatusCode = (int) httpResponse.StatusCode;
-
             try
             {
+                // Report headers in the exception Data, excluding sensitive headers
+                if (httpResponse.Headers != null)
+                {
+                    foreach (var header in httpResponse.Headers)
+                    {
+                        if (!IsSensitiveHeader(header.Key))
+                        {
+                            ex.Data[header.Key] = string.Join(",", header.Value);
+                        }
+                    }
+                }
 
 #if !NETSTANDARD
                 string responseContent = httpResponse.Content?.ReadAsStringAsync(cancellationToken).Result;
@@ -91,5 +118,14 @@ namespace Microsoft.Agents.Core.Errors
             return ex; 
         }
 
+        /// <summary>
+        /// Determines whether a header name is considered sensitive and should not be included in exception data.
+        /// </summary>
+        /// <param name="headerName">The name of the header to check.</param>
+        /// <returns>True if the header is sensitive and should be filtered; otherwise, false.</returns>
+        private static bool IsSensitiveHeader(string headerName)
+        {
+            return SensitiveHeaders.Contains(headerName);
+        }
     }
 }

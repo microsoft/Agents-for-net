@@ -81,8 +81,8 @@
     <PackageVersion Include="xunit.v3.extensibility.core"                                                  Version="$(Xunit_v3_PackageVersion)" />      
 
     <!-- SDK Core -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.2" />
-	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.4" />
+	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.4" />
 	<PackageVersion Include="Azure.Identity" Version="1.17.1" />
 	<PackageVersion Include="Azure.Core" Version="1.50.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
@@ -114,11 +114,11 @@
 	<PackageVersion Include="CsvHelper" Version="33.0.1" />
 	<PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />  <!-- To override older version in AdaptiveCards -->
     <!-- Semantic Kernel Samples -->
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.45.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.45.0-preview" />
-	<PackageVersion Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.45.0-preview" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.45.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.73.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.73.0-preview" />
+	<PackageVersion Include="Microsoft.SemanticKernel.Agents.AzureAI" Version="1.73.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.73.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.73.0" />
     <!-- OpenAI -->
     <PackageVersion Include="OpenAI" Version="2.1.0" />
 	<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />

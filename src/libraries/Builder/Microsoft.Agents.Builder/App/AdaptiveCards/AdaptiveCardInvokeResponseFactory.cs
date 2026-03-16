@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Net;
 
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
@@ -23,6 +24,21 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 StatusCode = 200,
                 Type = ContentTypes.AdaptiveCard,
                 Value = adaptiveCardJson
+            };
+        }
+
+        /// <summary>
+        /// Create a search response with the specified value.
+        /// </summary>
+        /// <param name="result">The response value.</param>
+        /// <returns></returns>
+        public static AdaptiveCardInvokeResponse SearchResponse(object result)
+        {
+            return new AdaptiveCardInvokeResponse
+            {
+                StatusCode = 200,
+                Type = "application/vnd.microsoft.search.searchResponse",
+                Value = result
             };
         }
 
@@ -132,6 +148,97 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                     Message = message
                 }
             };
+        }
+
+        /// <summary>
+        /// Validates that the Activity.Value contains a valid AdaptiveCardSearchInvokeValue value.
+        /// </summary>
+        /// <param name="activity">The Activity to validate.</param>
+        /// <param name="searchInvokeValue">If successful, the AdaptiveCardSearchInvokeValue instance.</param>
+        /// <param name="errorResponse">If failed, the AdaptiveCardInvokeResponse to reply with.</param>
+        /// <returns>True if Acitivity.Value contains a valid AdaptiveCardSearchInvokeValue.</returns>
+        public static bool TryValidateSearchInvokeValue(IActivity activity, out AdaptiveCardSearchInvokeValue searchInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        {
+            searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(activity.Value);
+
+            if (searchInvokeValue == null)
+            {
+                errorResponse = BadRequest("Missing value property for search");
+                return false;
+            }
+
+            string missingField = null;
+
+            if (string.IsNullOrEmpty(searchInvokeValue.Kind))
+            {
+                // Teams does not always send the 'kind' field. Default to 'search'.
+                if (activity.ChannelId.IsParentChannel(Channels.Msteams))
+                {
+                    searchInvokeValue.Kind = SearchInvokeTypes.Search;
+                }
+                else
+                {
+                    missingField = "kind";
+                }
+            }
+
+            if (string.IsNullOrEmpty(searchInvokeValue.QueryText))
+            {
+                missingField = missingField == null ? "queryText" : $"{missingField}, queryText";
+            }
+
+            if (missingField != null)
+            {
+                errorResponse = BadRequest($"Missing '{missingField}' property for search");
+                return false;
+            }
+
+            errorResponse = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Validates that the Activity.Value contains a valid AdaptiveCardInvokeValue value.
+        /// </summary>
+        /// <param name="activity">The Activity to validate.</param>
+        /// <param name="expectedAction">The expected AdaptiveCardInvokeValue.Action.Type.</param>
+        /// <param name="actionInvokeValue">If successful, the AdaptiveCardInvokeValue instance.</param>
+        /// <param name="errorResponse">If failed, the AdaptiveCardInvokeResponse to reply with.</param>
+        /// <returns>True if Acitivity.Value contains a valid AdaptiveCardInvokeValue.</returns>
+        public static bool TryValidateActionInvokeValue(IActivity activity, string expectedAction, out AdaptiveCardInvokeValue actionInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        {
+            actionInvokeValue = null;
+
+            if (activity.Value == null)
+            {
+                errorResponse = BadRequest("Missing value property for Invoke Action");
+                return false;
+            }
+
+            try
+            {
+                actionInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(activity.Value);
+            }
+            catch
+            {
+                errorResponse = BadRequest("Value property is not a properly formed Invoke Action");
+                return false;
+            }
+
+            if (actionInvokeValue.Action == null)
+            {
+                errorResponse = BadRequest("Missing action property");
+                return false;
+            }
+
+            if (actionInvokeValue.Action.Type != expectedAction)
+            {
+                errorResponse = NotSupported($"The Invoke Action '{actionInvokeValue.Action.Type}' was not expected.");
+                return false;
+            }
+
+            errorResponse = null;
+            return true;
         }
     }
 }
