@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Storage
             return Task.FromResult<IDictionary<string, object>>(storeItems);
         }
 
-        //<inheritdoc/>
+        /// <inheritdoc/>
         public async Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             var storeItems = await ReadAsync(keys, cancellationToken).ConfigureAwait(false);
@@ -116,14 +116,70 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute. Throws ArgumentException for an ETag conflict.</returns>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
+        public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
+        {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        {
+            await WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Writes a set of typed items to memory storage using the provided write options.
+        /// </summary>
+        /// <typeparam name="TStoreItem">The item type to store.</typeparam>
+        /// <param name="changes">The items to write, keyed by storage key.</param>
+        /// <param name="options">Write options that control ETag and conditional behavior.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>A dictionary of write results keyed by storage key.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="changes"/> is null.</exception>
+        public Task<IDictionary<string, StorageWriteResponse>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            Dictionary<string, object> changesAsObject = new(changes.Count);
+            foreach (var change in changes)
+            {
+                changesAsObject.Add(change.Key, change.Value);
+            }
+
+            return WriteAsync(changesAsObject, options, cancellationToken);
+        }
+
+        /// <summary>
+        /// Writes storage items to storage.
+        /// </summary>
+        /// <param name="changes">The items to write, indexed by key.</param>
+        /// <param name="writeOptions">The write options to apply.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute. The task result contains
+        /// the items written (when they implement <see cref="IStoreItem"/>), indexed by key.</returns>
+        public Task<IDictionary<string, StorageWriteResponse>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            AssertionHelpers.ThrowIfNull(writeOptions, nameof(writeOptions));
+
+            if (changes.Count == 0)
+            {
+                // Nothing to write is a no-op.
+                return Task.FromResult<IDictionary<string, StorageWriteResponse>>(new Dictionary<string, StorageWriteResponse>());
+            }
+
+            var storedItems = new Dictionary<string, StorageWriteResponse>(changes.Count);
             lock (_syncroot)
             {
                 foreach (var change in changes)
                 {
                     var newValue = change.Value;
+
+                    if (writeOptions.IfNotExists && _memory.ContainsKey(change.Key))
+                    {
+                        throw new ItemExistsException($"Unable to write '{change.Key}' because it already exists.");
+                    }
 
                     var oldStateETag = default(string);
 
@@ -146,10 +202,15 @@ namespace Microsoft.Agents.Storage
                                 &&
                            newStoreItem.ETag != oldStateETag)
                         {
-                            throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                            throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict. Old: {oldStateETag} New: {newStoreItem.ETag}.");
                         }
 
-                        newState["ETag"] = (_eTag++).ToString(CultureInfo.InvariantCulture);
+                        var nextEtag = (_eTag++).ToString(CultureInfo.InvariantCulture);
+                        newState["ETag"] = nextEtag;
+                        storedItems[change.Key] = new StorageWriteResponse
+                        {
+                            ETag = nextEtag
+                        };
                     }
 
                     newState?.AddTypeInfo(change.Value);
@@ -157,20 +218,7 @@ namespace Microsoft.Agents.Storage
                 }
             }
 
-            return Task.CompletedTask;
-        }
-
-        //<inheritdoc/>
-        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
-        {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-
-            Dictionary<string, object> changesAsObject = new(changes.Count);
-            foreach (var change in changes)
-            {
-                changesAsObject.Add(change.Key, change.Value);
-            }
-            return WriteAsync(changesAsObject, cancellationToken);
+            return Task.FromResult<IDictionary<string, StorageWriteResponse>>(storedItems);
         }
     }
 }
