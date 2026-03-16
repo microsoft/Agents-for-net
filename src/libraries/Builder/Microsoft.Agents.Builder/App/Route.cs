@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,25 +30,31 @@ namespace Microsoft.Agents.Builder.App
 
     public delegate Task RouteHandler<in T>(ITurnContext<T> turnContext, ITurnState turnState, CancellationToken cancellationToken) where T : IActivity;
 
-    internal class Route
+    public enum RouteFlags
     {
-        public Route(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, bool isAgenticRoute = false, params string[] autoSignInHandler)
+        None = 0,
+        Agentic = 1,
+        Invoke = 2,
+        NonTerminal = 4
+    }
+
+    public class Route()
+    {
+        public ChannelId? ChannelId;
+
+        public RouteSelector Selector;
+
+        public RouteHandler Handler;
+
+        public RouteFlags Flags;
+
+        public ushort Rank = RouteRank.Unspecified;
+
+        public Func<ITurnContext, string[]> OAuthHandlers = context => [];
+
+        public bool IsChannelIdMatch(ChannelId channelId)
         {
-            Selector = selector;
-            Handler = handler;
-            IsInvokeRoute = isInvokeRoute;
-            IsAgenticRoute = isAgenticRoute;
-            AutoSignInHandler = autoSignInHandler;
+            return ChannelId == null || channelId == ChannelId;
         }
-
-        public RouteSelector Selector { get; private set; }
-
-        public RouteHandler Handler { get; private set; }
-
-        public bool IsAgenticRoute { get; private set; }
-
-        public bool IsInvokeRoute { get; private set; }
-
-        public string[] AutoSignInHandler { get; private set; }
     }
 }

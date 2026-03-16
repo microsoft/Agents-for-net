@@ -1,0 +1,15 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Core.Models
+{
+    public class TypingActivity : Activity, ITypingActivity
+    {
+        public TypingActivity() : base(ActivityTypes.Typing)
+        {
+        }
+
+        public string Text { get; set; }
+        public string TextFormat { get; set; }
+    }
+}

@@ -17,7 +17,6 @@ using Moq;
 using System.Net.Http;
 using System.Threading;
 using System.Net;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {

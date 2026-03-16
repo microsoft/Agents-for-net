@@ -1,78 +1,17 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 
 namespace Microsoft.Agents.Core.HeaderPropagation;
 
 /// <summary>
-/// Attribute to load headers for header propagation.
-/// This attribute should be applied to classes that implement the <see cref="IHeaderPropagationAttribute"/> interface.
+/// Attribute to register a type for header propagation initialization.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class)]
-public class HeaderPropagationAttribute : Attribute
+/// <remarks>
+/// Should be applied to classes that implement the <see cref="IHeaderPropagationAttribute"/> interface.
+/// </remarks>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+public sealed class HeaderPropagationAttribute : Attribute
 {
-    internal static void LoadHeaders()
-    {
-        // Init newly loaded assemblies
-        AppDomain.CurrentDomain.AssemblyLoad += (s, o) => LoadHeadersAssembly(o.LoadedAssembly);
-
-        // And all the ones we currently have loaded
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            LoadHeadersAssembly(assembly);
-        }
-    }
-
-    private static void LoadHeadersAssembly(Assembly assembly)
-    {
-        foreach (var type in GetLoadHeadersTypes(assembly))
-        {
-#if !NETSTANDARD
-            if (!typeof(IHeaderPropagationAttribute).IsAssignableFrom(type))
-            {
-                throw new InvalidOperationException(
-                    $"Type '{type.FullName}' is marked with [HeaderPropagation] but does not implement IHeaderPropagationAttribute.");
-            }
-#endif
-
-            var loadHeaders = type.GetMethod(nameof(LoadHeaders), BindingFlags.Static | BindingFlags.Public);
-
-            if (loadHeaders == null)
-            {
-                continue;
-            }
-
-            loadHeaders.Invoke(assembly, [HeaderPropagationContext.HeadersToPropagate]);
-        }
-    }
-
-    private static IEnumerable<Type> GetLoadHeadersTypes(Assembly assembly)
-    {
-        IList<Type> result = [];
-
-        Type[] types;
-
-        try
-        {
-            types = assembly.GetTypes();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Trace.WriteLine($"HeaderPropagationAttribute.GetLoadHeadersTypes: {ex.Message}");
-            return result;
-        }
-
-        foreach (Type type in types)
-        {
-            if (type.GetCustomAttributes(typeof(HeaderPropagationAttribute), true).Length > 0)
-            {
-                result.Add(type);
-            }
-        }
-
-        return result;
-    }
 }

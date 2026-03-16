@@ -2,7 +2,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Extensions.Teams.AI.Exceptions;
 using Microsoft.Agents.Extensions.Teams.AI.Planners;

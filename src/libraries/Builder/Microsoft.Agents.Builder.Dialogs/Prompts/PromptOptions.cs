@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Agents.Builder.Dialogs.Choices;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {

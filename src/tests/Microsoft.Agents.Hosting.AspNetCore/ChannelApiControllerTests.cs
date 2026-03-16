@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

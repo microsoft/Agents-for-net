@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 

@@ -11,7 +11,6 @@ using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Storage;
 using Moq;
 using Xunit;

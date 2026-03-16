@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Core.Models.Entities
 {

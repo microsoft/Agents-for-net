@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;

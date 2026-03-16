@@ -3,12 +3,13 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
@@ -27,7 +28,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <summary>
     /// AdaptiveCards class to enable fluent style registration of handlers related to Adaptive Cards.
     /// </summary>
-    public class AdaptiveCard
+    public partial class AdaptiveCard
     {
         private static readonly string ACTION_EXECUTE_TYPE = "Action.Execute";
         private static readonly string SEARCH_INVOKE_NAME = "application/search";
@@ -45,7 +46,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
+        /// Adds a route to the application for handling Adaptive Card Action.Execute events that will match on the verb using an exact string comparison.
         /// </summary>
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
@@ -59,7 +60,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
+        /// Adds a route to the application for handling Adaptive Card Action.Execute events that will match on the verb using a Regex pattern.
         /// </summary>
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
@@ -82,21 +83,17 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+
+            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
             {
-                AdaptiveCardInvokeValue? invokeValue;
-                if (!turnContext.Activity.IsType(ActivityTypes.Invoke)
-                    || !string.Equals((turnContext.Activity as IInvokeActivity).Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    || (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>((turnContext.Activity as IInvokeActivity).Value)) == null
-                    || invokeValue.Action == null
-                    || !string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE))
+                if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
                 {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: {turnContext.Activity.Type}");
+                    response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
                 }
 
-                AdaptiveCardInvokeResponse adaptiveCardInvokeResponse = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
-                await turnContext.SendActivityAsync(new InvokeResponseActivity(adaptiveCardInvokeResponse), cancellationToken);
-            };
+                var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                await turnContext.SendActivityAsync(activity, cancellationToken);
+            }
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
             return _app;
         }
@@ -330,31 +327,33 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+
+            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
             {
-                AdaptiveCardSearchInvokeValue? searchInvokeValue;
-                if (!turnContext.Activity.IsType(ActivityTypes.Invoke)
-                    || !string.Equals((turnContext.Activity as IInvokeActivity).Name, SEARCH_INVOKE_NAME)
-                    || (searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>((turnContext.Activity as IInvokeActivity).Value)) == null)
+                if (turnContext.Activity is not IInvokeActivity invoke || invoke.Name != SEARCH_INVOKE_NAME)
                 {
                     throw new InvalidOperationException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
-                AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
-                Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
-                IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
-
-                SearchInvokeResponse searchInvokeResponse = new()
+                if (AdaptiveCardInvokeResponseFactory.TryValidateSearchInvokeValue(turnContext.Activity, out var searchInvokeValue, out var response))
                 {
-                    StatusCode = 200,
-                    Type = ContentTypes.SearchResponse,
-                    Value = new AdaptiveCardsSearchInvokeResponseValue
-                    {
-                        Results = results
-                    }
-                };
-                await turnContext.SendActivityAsync(new InvokeResponseActivity(searchInvokeResponse), cancellationToken);
-            };
+                    AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
+                    Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
+
+                    IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
+
+                    response = AdaptiveCardInvokeResponseFactory.SearchResponse(
+                        new AdaptiveCardsSearchInvokeResponseValue
+                        {
+                            Results = results
+                        }
+                    );
+                }
+
+                var invokeResponse = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                await turnContext.SendActivityAsync(invokeResponse, cancellationToken);
+            }
+
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
             return _app;
         }
@@ -395,16 +394,11 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 
         private static RouteSelector CreateActionExecuteSelector(Func<string, bool> isMatch)
         {
-            Task<bool> routeSelector(ITurnContext turnContext, System.Threading.CancellationToken cancellationToken)
+            Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                AdaptiveCardInvokeValue? invokeValue;
                 return Task.FromResult(
-                    turnContext.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals((turnContext.Activity as IInvokeActivity)?.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    && (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>((turnContext.Activity as IInvokeActivity)?.Value)) != null
-                    && invokeValue.Action != null
-                    && string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE)
-                    && isMatch(invokeValue.Action.Verb));
+                    turnContext.Activity is IInvokeActivity invoke && string.Equals(invoke.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
+                    && isMatch(ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(invoke.Value)?.Action?.Verb));
             }
             return routeSelector;
         }
@@ -435,25 +429,11 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         {
             Task<bool> routeSelector(ITurnContext turnContext, System.Threading.CancellationToken cancellationToken)
             {
-                if (turnContext.Activity is IInvokeActivity invoke)
-                {
-                    AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(invoke.Value);
-                    return Task.FromResult(
-                        string.Equals(invoke.Name, SEARCH_INVOKE_NAME)
-                        && (searchInvokeValue != null
-                        && isMatch(searchInvokeValue.Dataset!)));
-                }
-                else
-                {
-                    return Task.FromResult(false);
-                }
-            }
+                return Task.FromResult(
+                    turnContext.Activity is IInvokeActivity invoke && invoke.Name == SEARCH_INVOKE_NAME
+                    && isMatch(ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(invoke.Value)?.Dataset!));
+            };
             return routeSelector;
-        }
-
-        private class AdaptiveCardSearchInvokeValue : SearchInvokeValue
-        {
-            public string? Dataset { get; set; }
         }
 
         private class AdaptiveCardsSearchInvokeResponseValue

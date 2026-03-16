@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 
 namespace TeamsConversationSsoQuickstart.Dialogs
 {

@@ -11,6 +11,8 @@ using Microsoft.Agents.Core.Models.Activities;
 
 namespace MultiAgent;
 
+[Agent(name: "Agent2", description: "Echo user messages back", version: "1.0")]
+[AgentInterface(protocol: AgentTransportProtocol.ActivityProtocol, path: "/agent2/messages")]
 public class Agent2 : AgentApplication
 {
     public Agent2(AgentApplicationOptions options) : base(options)

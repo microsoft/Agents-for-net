@@ -7,7 +7,6 @@ using System.Linq;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

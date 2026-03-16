@@ -8,8 +8,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client
 {
@@ -34,24 +32,17 @@ namespace Microsoft.Agents.Client
         {
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                var channelResponse = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>((turnContext.Activity as IEventActivity)?.Value);
+                var channelResponse = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(turnContext.Activity.Value);
                 await handler(turnContext, turnState, channelResponse.ChannelConversationReference, channelResponse.Activity, cancellationToken).ConfigureAwait(false);
             }
 
-            agentApplication.OnActivity(
-                (turnContext, CancellationToken) =>
-                {
-                    if (turnContext.Activity is not IEventActivity eventActivity)
-                    {
-                        return Task.FromResult(false);
-                    }
-                    else
-                    {
-                        return Task.FromResult(string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, eventActivity.Name, StringComparison.OrdinalIgnoreCase));
-                    }
-                },
-                routeHandler,
-                rank);
+            agentApplication.AddRoute(
+                EventRouteBuilder.Create()
+                    .WithName(AdapterChannelResponseHandler.ChannelReplyEventName)
+                    .WithHandler(routeHandler)
+                    .WithOrderRank(rank)
+                    .Build()
+            );
         }
 
         /// <summary>
@@ -77,10 +68,13 @@ namespace Microsoft.Agents.Client
                 await agentHost.EndAllConversations(turnContext, cancellationToken).ConfigureAwait(false);
             }
 
-            agentApplication.OnActivity(
-                (turnContext, CancellationToken) => Task.FromResult(turnContext.Activity.IsType(ActivityTypes.EndOfConversation)),
-                eocHandler,
-                rank);
+            agentApplication.AddRoute(
+                TypeRouteBuilder.Create()
+                    .WithType(ActivityTypes.EndOfConversation)
+                    .WithHandler(eocHandler)
+                    .WithOrderRank(rank)
+                    .Build()
+            );
 
 
             // On error, end all active Agent conversations and delete ConversationState.
@@ -103,9 +97,19 @@ namespace Microsoft.Agents.Client
         public ChannelId ChannelId { get; set; } = "*";
 #endif
 
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
+        {
+            AddRoute(agentApplication, routeSelector, routeHandler, isInvokeRoute, false, rank, autoSignInHandlers);
+        }
+
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
             agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
+        }
+
+        public void AddRoute(AgentApplication agentApplication, Route route)
+        {
+            agentApplication.AddRoute(route);
         }
     }
 }

@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

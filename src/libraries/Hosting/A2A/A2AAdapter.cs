@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
@@ -36,7 +35,7 @@ namespace Microsoft.Agents.Hosting.A2A;
 ///    app.MapA2A();
 /// </code>
 /// <see cref="A2AServiceExtensions.AddA2AAdapter(Microsoft.Extensions.DependencyInjection.IServiceCollection)"/>
-/// <see cref="A2AServiceExtensions.MapA2A(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, bool, string)"/>
+/// <see cref="A2AServiceExtensions.MapA2AEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, bool, string)"/>
 /// </remarks>
 public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {

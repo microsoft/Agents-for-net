@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 
 namespace TeamsConversationSsoQuickstart.Bots
 {

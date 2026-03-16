@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
 using Microsoft.Agents.Builder.Compat;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Tests.Handler
 {

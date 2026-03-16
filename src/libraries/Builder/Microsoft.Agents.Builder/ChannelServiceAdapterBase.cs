@@ -6,7 +6,6 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -239,7 +238,7 @@ namespace Microsoft.Agents.Builder
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
             }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))

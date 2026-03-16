@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Compat

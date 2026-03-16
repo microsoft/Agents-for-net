@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

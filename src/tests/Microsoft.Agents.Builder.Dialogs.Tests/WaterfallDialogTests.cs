@@ -8,7 +8,6 @@ using Microsoft.Agents.Core.Models;
 using Xunit;
 using Moq;
 using System.Collections.Generic;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

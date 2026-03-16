@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage.Transcript;
 using System;
@@ -12,7 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Activity = Microsoft.Agents.Core.Models.Activities.Activity;
+using Activity = Microsoft.Agents.Core.Models.Activity;
 
 namespace Microsoft.Agents.Storage.Tests
 {

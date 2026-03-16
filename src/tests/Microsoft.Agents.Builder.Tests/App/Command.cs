@@ -10,7 +10,6 @@ using Xunit;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Storage;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {

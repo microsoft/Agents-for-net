@@ -11,7 +11,6 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {

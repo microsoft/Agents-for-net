@@ -8,7 +8,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Newtonsoft.Json;
 
 namespace Microsoft.Agents.Storage.Tests
@@ -167,7 +166,7 @@ namespace Microsoft.Agents.Storage.Tests
                 foreach (var entry in zipArchive.Entries
                     .Where(e => e.FullName.StartsWith(zipFolderEntry.FullName)))
                 {
-                    var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);
+                    var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);  // CodeQL [SM02729] This is used for test validation. Both Source and destination are controlled and safe. 
 
                     // Validate entryName contains only allowed directory/file characters
                     EnsurePathIsSafe(path, Path.Combine(path, entryName));

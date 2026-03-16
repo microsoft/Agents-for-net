@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -129,6 +130,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
             options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
+            options.Converters.Add(new MessageReactionConverter());
 
             return options;
         }
@@ -221,6 +223,18 @@ namespace Microsoft.Agents.Core.Serialization
             else if (value is Stream stream)
             {
                 return JsonSerializer.Deserialize<T>(stream, SerializationOptions);
+            }
+            else if (value is JsonElement jsonElement)
+            {
+                return JsonSerializer.Deserialize<T>(jsonElement, SerializationOptions);
+            }
+            else if (value is JsonObject jsonObject)
+            {
+                return JsonSerializer.Deserialize<T>(jsonObject, SerializationOptions);
+            }
+            else if (value is JsonNode jsonNode)
+            {
+                return JsonSerializer.Deserialize<T>(jsonNode, SerializationOptions);
             }
 
             var serialized = JsonSerializer.Serialize(value, SerializationOptions);

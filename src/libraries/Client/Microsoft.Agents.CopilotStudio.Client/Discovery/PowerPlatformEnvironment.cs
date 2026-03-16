@@ -21,6 +21,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <param name="conversationId">Optional, Conversation ID to address</param>
         /// <param name="agentType">Type of Agent being addressed. <see cref="AgentType"/></param>
         /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
+        /// <param name="createSubscribeLink">Whether to create a subscribe link for the conversation</param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
@@ -30,6 +31,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 string? conversationId,
                 AgentType agentType = AgentType.Published,
                 PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
+                bool createSubscribeLink = false,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
@@ -40,6 +42,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
                 }
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
                 if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
                     throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
@@ -48,6 +51,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
                 }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
                     cloud = settings.Cloud.Value;
@@ -79,14 +83,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
                 var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId!, cloudBaseAddress);
-                return CreateUri(settings.SchemaName!, host, agentType, conversationId);
+                return CreateUri(settings.SchemaName!, host, agentType, conversationId, createSubscribeLink);
             }
             else
             {
                 directConnectUrl ??= settings.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    return CreateUri(directConnectUrl!, conversationId);
+                    return CreateUri(directConnectUrl!, conversationId, createSubscribeLink);
                 }
                 else
                 {
@@ -179,12 +183,97 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         }
 
 
+        /// <summary>
+        /// Gets the ExternalOrchestration API connection URL for the given settings.
+        /// The URL follows the pattern: copilotstudio/orchestrated/{cdsBotId}/conversations/{conversationId}
+        /// </summary>
+        /// <param name="settings">Configuration Settings to use</param>
+        /// <param name="conversationId">Conversation ID to address</param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
+        /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other"</param>
+        /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent</param>
+        /// <returns>The URI for the ExternalOrchestration API endpoint</returns>
+        /// <exception cref="System.ArgumentException">Thrown when required settings are missing or invalid</exception>
+        internal static Uri GetOrchestratedConnectionUrl(
+                ConnectionSettings settings,
+                string conversationId,
+                PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
+                string? cloudBaseAddress = default,
+                string? directConnectUrl = default
+            )
+        {
+            if (string.IsNullOrEmpty(conversationId))
+            {
+                throw new ArgumentException("conversationId must be provided for orchestrated connections", nameof(conversationId));
+            }
+
+            if (string.IsNullOrEmpty(directConnectUrl) && string.IsNullOrEmpty(settings.DirectConnectUrl))
+            {
+                if (cloud == PowerPlatformCloud.Other && string.IsNullOrWhiteSpace(cloudBaseAddress))
+                {
+                    throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
+                }
+
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
+                if (string.IsNullOrEmpty(settings.EnvironmentId))
+                {
+                    throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
+                }
+                if (string.IsNullOrEmpty(settings.CdsBotId))
+                {
+                    throw new ArgumentException("CdsBotId must be provided for orchestrated connections", nameof(settings.CdsBotId));
+                }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
+
+                if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
+                {
+                    cloud = settings.Cloud.Value;
+                }
+                if (cloud == PowerPlatformCloud.Other)
+                {
+                    if (!string.IsNullOrEmpty(cloudBaseAddress) && Uri.IsWellFormedUriString(cloudBaseAddress, UriKind.Absolute))
+                    {
+                        cloud = PowerPlatformCloud.Other;
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(settings.CustomPowerPlatformCloud) && Uri.IsWellFormedUriString(settings.CustomPowerPlatformCloud, UriKind.RelativeOrAbsolute))
+                        {
+                            cloud = PowerPlatformCloud.Other;
+                            cloudBaseAddress = settings.CustomPowerPlatformCloud;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Either CustomPowerPlatformCloud or cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other");
+                        }
+                    }
+                }
+
+                cloudBaseAddress ??= "api.unknown.powerplatform.com";
+
+                var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId!, cloudBaseAddress);
+                return CreateOrchestratedUri(settings.CdsBotId!, host, conversationId);
+            }
+            else
+            {
+                directConnectUrl ??= settings.DirectConnectUrl;
+                if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
+                {
+                    return CreateOrchestratedUri(directConnectUrl!, conversationId);
+                }
+                else
+                {
+                    throw new ArgumentException("DirectConnectUrl is invalid", nameof(directConnectUrl));
+                }
+            }
+        }
+
         #region Private 
 
         /// <summary>
         /// Creates the PowerPlatform API connection URL for the given settings.
         /// </summary>
-        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId)
+        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId, bool createSubscribeLink = false)
         {
             string agentPathName;
             if (AgentType.Published == agentType)
@@ -200,9 +289,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             builder.Host = host;
             builder.Query = $"api-version={ApiVersion}";
             if (string.IsNullOrEmpty(conversationId))
+            {
                 builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations";
+            }
             else
-                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}";
+            {
+                var conversationSuffix = createSubscribeLink ? "/subscribe" : string.Empty;
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}{conversationSuffix}";
+            }
             return builder.Uri;
         }
 
@@ -211,8 +305,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="baseaddress"></param>
         /// <param name="conversationId"></param>
+        /// <param name="createSubscribeLink"></param>
         /// <returns></returns>
-        private static Uri CreateUri(string baseaddress, string? conversationId)
+        private static Uri CreateUri(string baseaddress, string? conversationId, bool createSubscribeLink)
         {
             var builder = new UriBuilder(baseaddress);
             builder.Query = $"api-version={ApiVersion}";
@@ -234,9 +329,15 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             }
 
             if (string.IsNullOrEmpty(conversationId))
+            {
                 builder.Path = $"{builder.Path}/conversations";
+            }
             else
-                builder.Path = $"{builder.Path}/conversations/{conversationId}";
+            {
+                builder.Path = createSubscribeLink
+                    ? $"{builder.Path}/conversations/{conversationId}/subscribe"
+                    : $"{builder.Path}/conversations/{conversationId}";
+            }
 
             return builder.Uri;
         }
@@ -327,6 +428,47 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 default:
                     return PowerPlatformCloud.Unknown;
             }
+        }
+
+        /// <summary>
+        /// Creates the ExternalOrchestration API URL using environment-based host resolution.
+        /// </summary>
+        private static Uri CreateOrchestratedUri(string cdsBotId, string host, string conversationId)
+        {
+            var builder = new UriBuilder();
+            builder.Scheme = "https";
+            builder.Host = host;
+            builder.Query = $"api-version={ApiVersion}";
+            builder.Path = $"/powervirtualagents/orchestrated/{cdsBotId}/conversations/{conversationId}";
+            return builder.Uri;
+        }
+
+        /// <summary>
+        /// Creates the ExternalOrchestration API URL using a DirectConnect URL.
+        /// </summary>
+        private static Uri CreateOrchestratedUri(string directConnectUrl, string conversationId)
+        {
+            var builder = new UriBuilder(directConnectUrl);
+            builder.Query = $"api-version={ApiVersion}";
+
+            // if builder.path ends with /, remove it
+#if !NETSTANDARD
+            if (builder.Path.EndsWith('/') || builder.Path.EndsWith('\\'))
+#else
+            if (builder.Path.EndsWith("/") || builder.Path.EndsWith("\\"))
+#endif
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.Length - 1);
+            }
+
+            // if builder.path has /conversations, remove it
+            if (builder.Path.Contains("/conversations"))
+            {
+                builder.Path = builder.Path.Substring(0, builder.Path.IndexOf("/conversations"));
+            }
+
+            builder.Path = $"{builder.Path}/conversations/{conversationId}";
+            return builder.Uri;
         }
 
         /// <summary>

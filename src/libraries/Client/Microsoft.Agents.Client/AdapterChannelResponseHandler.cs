@@ -13,7 +13,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Client
 {

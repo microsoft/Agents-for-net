@@ -6,7 +6,6 @@ using Microsoft.Agents.Builder.Dialogs.Choices;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;

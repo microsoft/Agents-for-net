@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Testing.Adapters;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Builder.Testing

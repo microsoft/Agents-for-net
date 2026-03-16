@@ -19,7 +19,6 @@ using Microsoft.Agents.Core.Errors;
 using System.Text;
 using Microsoft.Agents.TestSupport;
 using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Tests
 {

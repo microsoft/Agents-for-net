@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.CopilotStudio.Client;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.CopilotStudio.Client.Models;
 
 namespace CopilotStudioClientSample;
 
@@ -12,6 +13,8 @@ namespace CopilotStudioClientSample;
 /// <param name="copilotClient">Connection Settings for connecting to Copilot Studio</param>
 internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
 {
+    string convo = $"Sample-{Guid.NewGuid().ToString()}";
+
     /// <summary>
     /// This is the main thread loop that manages the back and forth communication with the Copilot Studio Agent. 
     /// </summary>
@@ -24,7 +27,13 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
         Console.Write("\nagent> ");
         // Attempt to connect to the copilot studio hosted agent here
         // if successful, this will loop though all events that the Copilot Studio agent sends to the client setup the conversation. 
-        await foreach (IActivity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+        //await foreach (Activity act in copilotClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
+        await foreach (Activity act in copilotClient.StartConversationAsync(new StartRequest()
+        { 
+            EmitStartConversationEvent = true,
+            ConversationId = $"Sample-{convo.ToString()}"
+        },
+            cancellationToken))
         {
             System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
             sw.Restart();
@@ -45,7 +54,8 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
             // Send the user input to the Copilot Studio agent and await the response.
             // In this case we are not sending a conversation ID, as the agent is already connected by "StartConversationAsync", a conversation ID is persisted by the underlying client. 
             sw.Restart();
-            await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
+//            await foreach (Activity act in copilotClient.AskQuestionAsync(question, null, cancellationToken))
+            await foreach (Activity act in copilotClient.ExecuteAsync(convo, MessageFactory.CreateMessageActivity(question), cancellationToken))
             {
                 System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
                 // for each response,  report to the UX
@@ -63,34 +73,33 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
     /// <param name="act"></param>
     static void PrintActivity(IActivity act)
     {
-        if (act is IMessageActivity message)
+        switch (act.Type)
         {
-            if (message.TextFormat == "markdown")
-            {
-
-                Console.WriteLine(message.Text);
-                if (message.SuggestedActions?.Actions.Count > 0)
+            case "message":
+                if (act.TextFormat == "markdown")
                 {
-                    Console.WriteLine("Suggested actions:\n");
-                    message.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
+
+                    Console.WriteLine(act.Text);
+                    if (act.SuggestedActions?.Actions.Count > 0)
+                    {
+                        Console.WriteLine("Suggested actions:\n");
+                        act.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
+                    }
                 }
-            }
-            else
-            {
-                Console.Write($"\n{message.Text}\n");
-            }
-        }
-        else if (act is ITypingActivity)
-        {
-            Console.Write(".");
-        }
-        else if (act is IEventActivity)
-        {
-            Console.Write("+");
-        }
-        else 
-        {
-            Console.Write($"[{act.Type}]");
+                else
+                {
+                    Console.Write($"\n{act.Text}\n");
+                }
+                break;
+            case "typing":
+                Console.Write(".");
+                break;
+            case "event":
+                Console.Write("+");
+                break;
+            default:
+                Console.Write($"[{act.Type}]");
+                break;
         }
     }
 

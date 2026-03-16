@@ -17,7 +17,6 @@ using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

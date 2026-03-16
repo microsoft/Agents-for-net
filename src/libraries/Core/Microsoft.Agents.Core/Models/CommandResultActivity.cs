@@ -1,0 +1,16 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Core.Models
+{
+    public class CommandResultActivity : Activity, ICommandResultActivity
+    {
+        public CommandResultActivity() : base(ActivityTypes.CommandResult)
+        {
+        }
+
+        public string Name { get; set; }
+        public object Value { get; set; }
+        public string ValueType { get; set; }
+    }
+}

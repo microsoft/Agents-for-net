@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -40,7 +39,7 @@ namespace Microsoft.Agents.Builder.App
         public RouteType RouteType { get; set; }
 
         /// <summary>
-        /// Activity Type, <see cref="Core.Models.Activities.ActivityTypes"/>
+        /// Activity Type, <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
         /// </summary>
         public string Type { get; set; }
 
@@ -87,37 +86,43 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
-#if !NETSTANDARD
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
-#else
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
-#endif
-
             if (RouteType == RouteType.Activity)
             {
-                if (!string.IsNullOrWhiteSpace(Type))
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+
+                if (!string.IsNullOrWhiteSpace(Type) || !string.IsNullOrWhiteSpace(Regex))
                 {
-#if !NETSTANDARD
-                    app.OnActivity(Type, attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnActivity(Type, (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler),app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
-                }
-                else if (!string.IsNullOrWhiteSpace(Regex))
-                {
-#if !NETSTANDARD
-                    app.OnActivity(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnActivity(new Regex(Regex), (RouteHandler)attributedMethod.CreateDelegate(typeof(RouteHandler), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    var routeBuilder = TypeRouteBuilder.Create()
+                        .AsAgentic(IsAgentic)
+                        .WithHandler(delegateHandler)
+                        .WithOrderRank(Rank)
+                        .WithOAuthHandlers(SignInHandlers);
+
+                    if (!string.IsNullOrWhiteSpace(Type))
+                    {
+                        routeBuilder.WithType(Type);
+                    }
+                    else
+                    {
+                        routeBuilder.WithType(new Regex(Regex));
+                    }
+
+                    app.AddRoute(routeBuilder.Build());
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnActivity(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.AddRoute(
+                        RouteBuilder.Create()
+                            .WithSelector(delegateSelector)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else
                 {
@@ -126,29 +131,46 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (RouteType == RouteType.Message)
             {
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+
                 if (!string.IsNullOrWhiteSpace(Text))
                 {
-#if !NETSTANDARD
-                    app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnMessage(Text, (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    app.AddRoute(
+                        MessageRouteBuilder.Create()
+                            .WithText(Text)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
-#if !NETSTANDARD
-                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnMessage(new Regex(Regex), (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    app.AddRoute(
+                        MessageRouteBuilder.Create()
+                            .WithText(new Regex(Regex))
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler<IMessageActivity>>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnMessage(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.AddRoute(
+                        RouteBuilder.Create()
+                            .WithSelector(delegateSelector)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else
                 {
@@ -157,29 +179,46 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (RouteType == RouteType.Event)
             {
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
-#if !NETSTANDARD
-                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler<IEventActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnEvent(EventName, (RouteHandler<IEventActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IEventActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    app.AddRoute(
+                        EventRouteBuilder.Create()
+                            .WithName(EventName)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
-#if !NETSTANDARD
-                    app.OnEvent(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler<IEventActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnEvent(new Regex(Regex), (RouteHandler<IEventActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IEventActivity>), app), rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    app.AddRoute(
+                        EventRouteBuilder.Create()
+                            .WithName(new Regex(Regex))
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler<IEventActivity>>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnEvent(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.AddRoute(
+                        RouteBuilder.Create()
+                            .WithSelector(delegateSelector)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else
                 {
@@ -188,21 +227,34 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (RouteType == RouteType.Conversation)
             {
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
-#if !NETSTANDARD
-                    app.OnConversationUpdate(EventName, attributedMethod.CreateDelegate<RouteHandler<IConversationUpdateActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                    app.OnConversationUpdate(EventName, (RouteHandler<IConversationUpdateActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IConversationUpdateActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                    app.AddRoute(
+                        ConversationUpdateRouteBuilder.Create()
+                            .WithUpdateEvent(EventName)
+                            .AsAgentic(IsAgentic)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
                     CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
-                    CreateHandlerDelegate<RouteHandler<IConversationUpdateActivity>>(app, attributedMethod, out var delegateHandler);
 
-                    app.OnConversationUpdate(delegateSelector, delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                    app.AddRoute(
+                        RouteBuilder.Create()
+                            .AsAgentic(IsAgentic)
+                            .WithSelector(delegateSelector)
+                            .WithHandler(delegateHandler)
+                            .WithOrderRank(Rank)
+                            .WithOAuthHandlers(SignInHandlers)
+                            .Build()
+                    );
                 }
                 else
                 {
@@ -211,18 +263,18 @@ namespace Microsoft.Agents.Builder.App
             }
             else if (RouteType == RouteType.ReactionAdded)
             {
-                CreateHandlerDelegate<RouteHandler<IMessageReactionActivity>>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsAdded(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnMessageReactionsAdded(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
             }
             else if (RouteType == RouteType.ReactionRemoved)
             {
-                CreateHandlerDelegate<RouteHandler<IMessageReactionActivity>>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsRemoved(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnMessageReactionsRemoved(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
             }
             else if (RouteType == RouteType.HandOff)
             {
                 CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnHandoff(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+                app.OnHandoff(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
             }
         }
 

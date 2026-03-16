@@ -12,7 +12,6 @@ using Azure.Core;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Moq;
 using Xunit;

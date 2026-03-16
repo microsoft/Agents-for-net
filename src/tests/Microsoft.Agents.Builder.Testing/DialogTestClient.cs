@@ -10,7 +10,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using System.Security.Claims;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Builder.Testing
 {
