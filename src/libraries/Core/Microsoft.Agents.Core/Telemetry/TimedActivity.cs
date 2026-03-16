@@ -46,11 +46,14 @@ namespace Microsoft.Agents.Core.Telemetry
 
             Stopwatch.Stop();
 
-            Callback(
-                Activity,
-                Stopwatch.ElapsedMilliseconds,
-                Error
-            );
+            if (Callback != null)
+            {
+                Callback(
+                    Activity,
+                    Stopwatch.ElapsedMilliseconds,
+                    Error
+                );
+            }
 
             Activity?.Dispose();
 
