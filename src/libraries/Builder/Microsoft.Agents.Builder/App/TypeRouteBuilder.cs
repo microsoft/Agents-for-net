@@ -3,7 +3,9 @@
 
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -123,5 +125,19 @@ namespace Microsoft.Agents.Builder.App
             _route.Handler = handler;
             return (TypeRouteBuilder)this;
         }
+
+        public TypeRouteBuilder WithHandler<T>(RouteHandler<T> handler) where T : class, IActivity
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            Task typedHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                return handler(new TypedTurnContext<T>(turnContext), turnState, cancellationToken);
+            }
+
+            _route.Handler = typedHandler;
+            return this;
+        }
+
     }
 }

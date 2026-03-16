@@ -53,9 +53,9 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity.Name != null
-                    && name.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity is IEventActivity eventActivity
+                    && eventActivity.Name != null
+                    && name.Equals(eventActivity.Name, StringComparison.OrdinalIgnoreCase)
                 );
 
             return this;
@@ -81,9 +81,9 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Event)
-                    && context.Activity.Name != null
-                    && namePattern.IsMatch(context.Activity.Name)
+                    && context.Activity is IEventActivity eventActivity
+                    && eventActivity.Name != null
+                    && namePattern.IsMatch(eventActivity.Name)
                 );
 
             return this;

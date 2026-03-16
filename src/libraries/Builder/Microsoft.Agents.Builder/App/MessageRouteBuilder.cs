@@ -3,6 +3,7 @@
 
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -56,8 +57,8 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
-                    && text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity is IMessageActivity messageActivity
+                    && text.Equals(messageActivity.Text, StringComparison.OrdinalIgnoreCase)
                 );
 
             return this;
@@ -85,9 +86,9 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity.Text != null
-                    && textPattern.IsMatch(context.Activity.Text)
+                    && context.Activity is IMessageActivity messageActivity
+                    && messageActivity.Text != null
+                    && textPattern.IsMatch(messageActivity.Text)
                 );
 
             return this;
@@ -128,6 +129,19 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = handler;
+            return this;
+        }
+
+        public MessageRouteBuilder WithHandler(RouteHandler<IMessageActivity> handler)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            Task typedHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                return handler(new TypedTurnContext<IMessageActivity>(turnContext), turnState, cancellationToken);
+            }
+
+            _route.Handler = typedHandler;
             return this;
         }
 

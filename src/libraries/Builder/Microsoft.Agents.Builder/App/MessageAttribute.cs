@@ -31,31 +31,45 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// Valid delimiters are: comma, space, or semi-colon.
         /// </remarks>
-        public string SignInHandlers { get; set; }
+        public string AutoSignInHandlers { get; set; }
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
 #if !NETSTANDARD
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(AutoSignInHandlers) ? AutoSignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 #else
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(AutoSignInHandlers) ? AutoSignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+#endif
+
+#if !NETSTANDARD
+            var handler = attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app);
+#else
+            var handler = (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app);
 #endif
 
             if (string.IsNullOrWhiteSpace(Text))
             {
-#if !NETSTANDARD
-                app.OnActivity<IMessageActivity>(attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                app.OnActivity<IMessageActivity>((RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                app.AddRoute(
+                    TypeRouteBuilder.Create()
+                        .WithType(ActivityTypes.Message)
+                        .WithHandler(handler)
+                        .AsAgentic(IsAgentic)
+                        .WithOrderRank(Rank)
+                        .WithOAuthHandlers(autoSignInHandlers)
+                        .Build()
+                    );
             }
             else
             {
-#if !NETSTANDARD
-                app.OnMessage(Text, attributedMethod.CreateDelegate<RouteHandler<IMessageActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#else
-                app.OnMessage(Text, (RouteHandler<IMessageActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IMessageActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
-#endif
+                app.AddRoute(
+                    MessageRouteBuilder.Create()
+                        .WithText(Text)
+                        .WithHandler(handler)
+                        .AsAgentic(IsAgentic)
+                        .WithOrderRank(Rank)
+                        .WithOAuthHandlers(autoSignInHandlers)
+                        .Build()
+                    );
             }
         }
     }

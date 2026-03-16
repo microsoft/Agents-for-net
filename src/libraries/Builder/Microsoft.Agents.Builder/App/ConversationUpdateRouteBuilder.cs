@@ -3,6 +3,7 @@
 
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -54,8 +55,8 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.ConversationUpdate)
-                        && context.Activity.MembersAdded?.Count > 0
+                        && context.Activity is IConversationUpdateActivity conversationUpdateActivity
+                        && conversationUpdateActivity.MembersAdded?.Count > 0
                     );
             }
             else if (ConversationUpdateEvents.MembersRemoved.Equals(eventName))
@@ -63,8 +64,8 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.ConversationUpdate)
-                        && context.Activity.MembersRemoved?.Count > 0
+                        && context.Activity is IConversationUpdateActivity conversationUpdateActivity
+                        && conversationUpdateActivity.MembersRemoved?.Count > 0
                     );
             }
             else
@@ -111,6 +112,19 @@ namespace Microsoft.Agents.Builder.App
         public ConversationUpdateRouteBuilder WithHandler(RouteHandler handler)
         {
             _route.Handler = handler;
+            return this;
+        }
+
+        public ConversationUpdateRouteBuilder WithHandler(RouteHandler<IConversationUpdateActivity> handler)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            Task typedHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                return handler(new TypedTurnContext<IConversationUpdateActivity>(turnContext), turnState, cancellationToken);
+            }
+
+            _route.Handler = typedHandler;
             return this;
         }
 

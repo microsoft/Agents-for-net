@@ -11,7 +11,16 @@ namespace Microsoft.Agents.Builder.App
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     public class ConversationUpdateAttribute : Attribute, IRouteAttribute
     {
-        public string Event { get; set; }
+        public ConversationUpdateAttribute(string eventName) 
+        { 
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null, nameof(eventName));
+            }
+            Event = eventName;
+        }
+
+        public string Event { get; }
 
         /// <summary>
         /// Indicates if this is an Agentic route.  Defaults to false.
@@ -32,28 +41,31 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// Valid delimiters are: comma, space, or semi-colon.
         /// </remarks>
-        public string SignInHandlers { get; set; }
+        public string AutoSignInHandlers { get; set; }
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
 #if !NETSTANDARD
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(AutoSignInHandlers) ? AutoSignInHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 #else
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(SignInHandlers) ? SignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+            string[] autoSignInHandlers = !string.IsNullOrEmpty(AutoSignInHandlers) ? AutoSignInHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
 #endif
 
-            if (!string.IsNullOrWhiteSpace(Event))
-            {
 #if !NETSTANDARD
-                app.OnConversationUpdate(Event, attributedMethod.CreateDelegate<RouteHandler<IConversationUpdateActivity>>(app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+            var handler = attributedMethod.CreateDelegate<RouteHandler<IConversationUpdateActivity>>(app);
 #else
-                app.OnConversationUpdate(Event, (RouteHandler<IConversationUpdateActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IConversationUpdateActivity>), app), isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: autoSignInHandlers);
+            var handler = (RouteHandler<IConversationUpdateActivity>)attributedMethod.CreateDelegate(typeof(RouteHandler<IConversationUpdateActivity>), app);
 #endif
-            }
-            else
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
-            }
+
+            app.AddRoute(
+                ConversationUpdateRouteBuilder.Create()
+                    .WithUpdateEvent(Event)
+                    .WithHandler(handler)
+                    .AsAgentic(IsAgentic)
+                    .WithOrderRank(Rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .Build()
+            );
         }
     }
 }

@@ -51,21 +51,30 @@ namespace Microsoft.Agents.Builder.App
 
             Task<bool> routeSelector(ITurnContext context, CancellationToken _)
             {
-                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
+                if (context.Activity is not IInvokeActivity invokeActivity)
+                {
+                    return Task.FromResult(false);
+                }
+
+                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(invokeActivity.Value);
                 string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
                 return Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.Type == ActivityTypes.Invoke
-                    && context.Activity.Name == "message/submitAction"
+                    && invokeActivity.Name == "message/submitAction"
                     && actionName == "feedback"
                 );
             }
 
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value)!;
-                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
+                if (turnContext.Activity is not IInvokeActivity invokeActivity)
+                {
+                    return;
+                }
+
+                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(invokeActivity.Value)!;
+                feedbackLoopData.ReplyToId = invokeActivity.ReplyToId;
 
                 await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
                 await turnContext.SendActivityAsync(Activity.CreateInvokeResponseActivity(), cancellationToken);

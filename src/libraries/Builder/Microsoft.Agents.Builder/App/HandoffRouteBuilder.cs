@@ -41,13 +41,18 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(context.Activity?.Name, "handoff/action", System.StringComparison.OrdinalIgnoreCase)
+                    && context.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, "handoff/action", System.StringComparison.OrdinalIgnoreCase)
                 );
 
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                string token = turnContext.Activity.Value?.GetType()?.GetProperty("Continuation")?.GetValue(turnContext.Activity.Value) as string ?? "";
+                if (turnContext.Activity is not IInvokeActivity invokeActivity)
+                {
+                    return;
+                }
+
+                string token = invokeActivity.Value?.GetType()?.GetProperty("Continuation")?.GetValue(invokeActivity.Value) as string ?? "";
                 await handler(turnContext, turnState, token, cancellationToken);
                 await turnContext.SendActivityAsync(Activity.CreateInvokeResponseActivity(), cancellationToken);
             }

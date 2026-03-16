@@ -34,9 +34,9 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (ITurnContext context, CancellationToken _) => Task.FromResult
             (
                 (!_route.Flags.HasFlag(RouteFlags.Agentic) || AgenticAuthorization.IsAgenticRequest(context))
-                && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsAdded != null
-                && context.Activity.ReactionsAdded.Count > 0
+                && context.Activity is IMessageReactionActivity messageReactionActivity
+                && messageReactionActivity.ReactionsAdded != null
+                && messageReactionActivity.ReactionsAdded.Count > 0
             );
 
             _route.Handler = handler;

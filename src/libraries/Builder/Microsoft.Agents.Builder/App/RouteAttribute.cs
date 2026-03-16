@@ -82,7 +82,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// Valid delimiters are: comma, space, or semi-colon.
         /// </remarks>
-        public string SignInHandlers { get; set; }
+        public string AutoSignInHandlers { get; set; }
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Builder.App
                         .AsAgentic(IsAgentic)
                         .WithHandler(delegateHandler)
                         .WithOrderRank(Rank)
-                        .WithOAuthHandlers(SignInHandlers);
+                        .WithOAuthHandlers(AutoSignInHandlers);
 
                     if (!string.IsNullOrWhiteSpace(Type))
                     {
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Builder.App
                             .AsAgentic(IsAgentic)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Builder.App
                             .WithSelector(delegateSelector)
                             .WithHandler(delegateHandler)
                             .WithOrderRank(Rank)
-                            .WithOAuthHandlers(SignInHandlers)
+                            .WithOAuthHandlers(AutoSignInHandlers)
                             .Build()
                     );
                 }
@@ -264,17 +264,17 @@ namespace Microsoft.Agents.Builder.App
             else if (RouteType == RouteType.ReactionAdded)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsAdded(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
+                app.OnMessageReactionsAdded(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(AutoSignInHandlers));
             }
             else if (RouteType == RouteType.ReactionRemoved)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnMessageReactionsRemoved(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
+                app.OnMessageReactionsRemoved(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(AutoSignInHandlers));
             }
             else if (RouteType == RouteType.HandOff)
             {
                 CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
-                app.OnHandoff(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(SignInHandlers));
+                app.OnHandoff(delegateHandler, isAgenticOnly: IsAgentic, rank: Rank, autoSignInHandlers: RouteBuilder.GetOAuthHandlers(AutoSignInHandlers));
             }
         }
 

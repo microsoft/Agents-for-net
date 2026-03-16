@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>
         /// Valid delimiters are: comma, space, or semi-colon.
         /// </remarks>
-        string SignInHandlers { get; set; }
+        string AutoSignInHandlers { get; set; }
 
         void AddRoute(AgentApplication app, MethodInfo method);
     }

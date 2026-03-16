@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;

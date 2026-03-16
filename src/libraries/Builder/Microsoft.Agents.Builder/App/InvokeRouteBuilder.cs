@@ -46,8 +46,8 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && name.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity is IInvokeActivity invokeActivity
+                    && name.Equals(invokeActivity.Name, StringComparison.OrdinalIgnoreCase)
                 );
 
             return this;
@@ -74,8 +74,8 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && namePattern.IsMatch(context.Activity.Name)
+                    && context.Activity is IInvokeActivity invokeActivity
+                    && namePattern.IsMatch(invokeActivity.Name)
                 );
 
             return this;
