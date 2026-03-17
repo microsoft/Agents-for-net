@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using A2A;
+using Azure;
+using Azure.Core;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.AspNetCore.Builder;
@@ -260,13 +262,17 @@ public static class A2AServiceExtensions
         routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}/pushNotificationConfigs/{{notificationConfigId?}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
             adapter.GetPushNotificationAsync(request, response, agent, id, notificationConfigId, cancellationToken));
 
+        // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
+        routeGroup.MapGet("/v1/tasks/{id}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int ? pageSize, [FromQuery] string ? pageToken, CancellationToken cancellationToken) =>
+            adapter.ListPushNotificationConfigsAsync(request, response, agent, id, pageSize, pageToken, cancellationToken));
+
         // /v1/message:send endpoint
-        routeGroup.MapPost($"{prefixPath}/v1/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
-            adapter.SendMessageAsync(request, response, agent, sendParams, cancellationToken));
+        routeGroup.MapPost($"{prefixPath}/v1/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
+            adapter.SendMessageAsync(request, response, agent, sendRequest, cancellationToken));
 
         // /v1/message:stream endpoint
-        routeGroup.MapPost($"{prefixPath}/v1/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] MessageSendParams sendParams, CancellationToken cancellationToken) =>
-            adapter.SendMessageStream(request, response, agent, sendParams, cancellationToken));
+        routeGroup.MapPost($"{prefixPath}/v1/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
+            adapter.SendMessageStream(request, response, agent, sendRequest, cancellationToken));
 
         return routeGroup;
     }

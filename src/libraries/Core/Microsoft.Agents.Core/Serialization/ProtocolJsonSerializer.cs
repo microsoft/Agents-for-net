@@ -138,6 +138,11 @@ namespace Microsoft.Agents.Core.Serialization
             return options;
         }
 
+        public static JsonElement ToJsonElement(this object value)
+        {
+            return ToObject<JsonElement>(value);
+        }   
+
         /// <summary>
         /// Decompose an object into its constituent JSON elements.
         /// </summary>

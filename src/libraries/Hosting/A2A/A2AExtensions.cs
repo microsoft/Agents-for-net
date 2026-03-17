@@ -4,7 +4,6 @@
 using A2A;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;

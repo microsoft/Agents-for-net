@@ -4,9 +4,7 @@
 using A2A;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Storage;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,47 +36,7 @@ internal class StorageTaskStore : ITaskStore
     }
 
     /// <inheritdoc />
-    public async Task<TaskPushNotificationConfig?> GetPushNotificationAsync(string taskId, string notificationConfigId, CancellationToken cancellationToken = default)
-    {
-        AssertionHelpers.ThrowIfNullOrEmpty(taskId, "Task ID cannot be null or empty.");
-        AssertionHelpers.ThrowIfNullOrEmpty(notificationConfigId, "Notification ID cannot be null or empty.");
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var pushNotifications = await GetPushNotificationsAsync(taskId, cancellationToken).ConfigureAwait(false);
-        return pushNotifications.Where(config => config.PushNotificationConfig.Id == notificationConfigId).FirstOrDefault();
-    }
-
-    /// <inheritdoc />
-    public async Task<AgentTaskStatus> UpdateStatusAsync(string taskId, TaskState status, AgentMessage? message = null, CancellationToken cancellationToken = default)
-    {
-        AssertionHelpers.ThrowIfNullOrEmpty(taskId, "Task ID cannot be null or empty.");
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // TODO ETag UpdateStatusAsync
-        var key = GetTaskKey(taskId);
-        var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-        if (items.TryGetValue(key, out var existingItem) && existingItem is AgentTask task)
-        {
-            if ((bool)!task?.IsTerminal())
-            {
-                task.Status = new AgentTaskStatus
-                {
-                    Message = message,
-                    State = status,
-                    Timestamp = DateTimeOffset.UtcNow
-                };
-
-                await _storage.WriteAsync(new Dictionary<string, object> { { key, task } }, cancellationToken).ConfigureAwait(false);
-            }
-
-            return task.Status;
-        }
-
-        throw new A2AException("Task not found.", A2AErrorCode.TaskNotFound);
-    }
-
-    /// <inheritdoc />
-    public async Task SetTaskAsync(AgentTask task, CancellationToken cancellationToken = default)
+    public async Task SaveTaskAsync(string taskId, AgentTask task, CancellationToken cancellationToken = default)
     {
         AssertionHelpers.ThrowIfNull(task, "Task cannot be null.");
         cancellationToken.ThrowIfCancellationRequested();
@@ -91,43 +49,20 @@ internal class StorageTaskStore : ITaskStore
         await _storage.WriteAsync(new Dictionary<string, object> { { GetTaskKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
-    public async Task SetPushNotificationConfigAsync(TaskPushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken = default)
-    {
-        AssertionHelpers.ThrowIfNull(pushNotificationConfig, "Task ID cannot be null or empty.");
-        AssertionHelpers.ThrowIfNullOrEmpty(pushNotificationConfig.TaskId, "Task ID cannot be null or empty.");
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // TODO ETag SetPushNotificationConfigAsync
-        var key = GetPushKey(pushNotificationConfig.TaskId);
-        var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-        if (items.TryGetValue(key, out var existingItem) && existingItem is PushNotifications existingConfigs)
-        {
-            existingConfigs.Configs.Add(pushNotificationConfig);
-        }
-        else
-        {
-            existingConfigs = new PushNotifications([pushNotificationConfig]);
-        }
-
-        items[key] = existingConfigs;
-        await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<TaskPushNotificationConfig>> GetPushNotificationsAsync(string taskId, CancellationToken cancellationToken = default)
+    public Task DeleteTaskAsync(string taskId, CancellationToken cancellationToken = default)
     {
         AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
         cancellationToken.ThrowIfCancellationRequested();
+        // TODO ETag DeleteTaskAsync
+        return _storage.DeleteAsync([GetTaskKey(taskId)], cancellationToken);
+    }
 
-        var key = GetPushKey(taskId);
-        var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-        if (items.TryGetValue(key, out var existingItem) && existingItem is PushNotifications existingConfigs)
+    public Task<ListTasksResponse> ListTasksAsync(ListTasksRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new ListTasksResponse
         {
-            return existingConfigs.Configs;
-        }
-
-        return [];
+            Tasks = []
+        });
     }
 
     private static string GetTaskKey(string taskId)
