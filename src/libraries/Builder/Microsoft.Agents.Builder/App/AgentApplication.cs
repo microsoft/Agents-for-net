@@ -781,7 +781,7 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
-                using var telemetryActivity = BuilderTelemetry.StartAppRun(turnContext);
+                using var appRunTelemetryScope = BuilderTelemetry.StartAppRun(turnContext);
  
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
@@ -821,18 +821,21 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Download any input files
-                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    using (var fileDownloadTelemetryScope = BuilderTelemetry.StartAppDownloadFiles(turnContext))
                     {
-                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                        if (fileDownloaders != null && fileDownloaders.Count > 0)
                         {
-                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                            foreach (IInputFileDownloader downloader in fileDownloaders)
+                            {
+                                var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                                turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                            }
                         }
                     }
 
                     // Call before turn handler
-                    using (var beforeTurnScope = BuilderTelemetry.StartAppBeforeTurn(turnContext))
+                    using (var beforeTurnTelemetryScope = BuilderTelemetry.StartAppBeforeTurn(turnContext))
                     {
                         foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                         {
@@ -849,12 +852,17 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
+                    bool routeMatched = false;
+                    bool routeAuthorized = false;
                     foreach (Route route in _routes.Enumerate())
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
+                            routeMatched = true;
                             if (_userAuth == null || route.AutoSignInHandler == null || route.AutoSignInHandler.Length == 0)
                             {
+                                using var routehandlerTelemetryScope = BuilderTelemetry.StartAppRouteHandler(turnContext);
+                                routeAuthorized = true;
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }
                             else
@@ -873,7 +881,8 @@ namespace Microsoft.Agents.Builder.App
 
                                 if (signInComplete)
                                 {
-                                    using var routeHandlerScope = BuilderTelemetry.StartAppRouteHandler(turnContext);
+                                    using var routeHandlerTelemetryScope = BuilderTelemetry.StartAppRouteHandler(turnContext);
+                                    routeAuthorized = true;
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
@@ -881,6 +890,7 @@ namespace Microsoft.Agents.Builder.App
                             break;
                         }
                     }
+                    BuilderTelemetry.UpdateAppRun(appRunTelemetryScope, routeAuthorized: routeAuthorized, routeMatched: routeMatched)
 
                     // Call after turn handler
                     using (var afterTurnScope = BuilderTelemetry.StartAppAfterTurn(turnContext))

@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Builder.Telemetry
 
         public static Activity? StartActivity(string name, ITurnContext? turnContext)
         {
-            var activity = AgentsTelemetry.ActivitySource.StartActivity(name);
+            Activity? activity = AgentsTelemetry.ActivitySource.StartActivity(name);
             if (turnContext != null)
             {
                 var attributes = ExtractAttributesFromTurnContext(turnContext);
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Builder.Telemetry
             return activity;
         }
 
-        public static Activity? StartActivity(string name, Core.Models.IActivity? activityModel)
+        public static Activity? StartActivity(string name, Core.Models.IActivity? activityModel = null)
         {
             var activity = AgentsTelemetry.ActivitySource.StartActivity(name);
             if (activity != null)
@@ -78,17 +78,17 @@ namespace Microsoft.Agents.Builder.Telemetry
             Action<Activity?, long, Exception?>? callback = null
             )
         {
-            var activity = StartActivity(operationName, turnContext);
+            Activity? activity = StartActivity(operationName, turnContext);
             return new TimedActivity(activity, callback);
         }
 
         public static TimedActivity StartTimedActivity(
             string operationName,
-            Core.Models.IActivity? activityModel,
+            Core.Models.IActivity? activityModel = null,
             Action<Activity?, long, Exception?>? callback = null
             )
         {
-            var activity = StartActivity(operationName, activityModel);
+            Activity? activity = StartActivity(operationName, activityModel);
             return new TimedActivity(activity, callback);
         }
 
@@ -96,34 +96,124 @@ namespace Microsoft.Agents.Builder.Telemetry
 
         public static IDisposable StartAdapterProcess(Core.Models.IActivity activityModel)
         {
-            return StartTimedActivity(Scopes.AdapterProcess, activityModel);
+            TimedActivity timedActivity = StartTimedActivity(
+                Scopes.AdapterProcess,
+                activityModel,
+                (activity, duration, exception) =>
+                {
+                    AdapterProcessDuration.Record(duration);
+                });
+            Activity? activity = timedActivity.Activity;
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ActivityType, activityModel.Type);
+                activity.SetTag(Attributes.ActivityChannelId, activityModel.ChannelId);
+                activity.SetTag(Attributes.ActivityDeliveryMode, activityModel.DeliveryMode);
+                activity.SetTag(Attributes.ConversationId, activityModel.Conversation?.Id);
+                activity.SetTag(Attributes.IsAgenticRequest, activityModel.IsAgenticRequest());
+            }
+            return timedActivity;
         }
 
         public static IDisposable StartAdapterSendActivities(Core.Models.IActivity[] activityModels)
         {
-            return AgentsTelemetry.StartTimedActivity(Scopes.AdapterSendActivities);
+            TimedActivity timedActivity = AgentsTelemetry.StartTimedActivity(Scopes.AdapterSendActivities);
+            Activity? activity = timedActivity.Activity;
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ActivityCount, activityModels.Length);
+                if (activityModels.Length > 0)
+                {
+                    activity.SetTag(Attributes.ConversationId, activityModels[0].Conversation?.Id);
+                }
+            }
+            return timedActivity;
         }
 
         public static IDisposable StartAdapterUpdateActivity(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Scopes.AdapterUpdateActivity, activityModel);
+            var timedActivity = AgentsTelemetry.StartTimedActivity(Scopes.AdapterUpdateActivity);
+            var activity = timedActivity.Activity;
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ActivityId, activityModel.Id);
+                activity.SetTag(Attributes.ConversationId, activityModel.Conversation?.Id);
+            }
+            return timedActivity;
         }
 
         public static IDisposable StartAdapterDeleteActivity(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Scopes.AdapterDeleteActivity, activityModel);
+            Activity? activity = StartActivity(Scopes.AdapterDeleteActivity);
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ActivityId, activityModel.Id);
+                activity.SetTag(Attributes.ConversationId, activityModel.Conversation?.Id);
+            }
+            return activity;
         }
 
         public static IDisposable StartAdapterContinueConversation(Core.Models.IActivity activityModel)
         {
-            return StartActivity(Scopes.AdapterContinueConversation, activityModel);
+            Activity? activity = StartActivity(Scopes.AdapterContinueConversation, activityModel);
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ConversationId, activityModel.Conversation?.Id);
+                activity.SetTag(Attributes.IsAgenticRequest, activityModel.IsAgenticRequest());
+            }
+            return activity;
+        }
+
+        public static IDisposable StartAdapterCreateConnectorClient(string serviceUrl, IEnumerable<string> scopes, bool isAgenticRequest)
+        {
+            Activity? activity = StartActivity(Scopes.AdapterCreateConnectorClient);
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ServiceUrl, serviceUrl);
+                activity.SetTag(Attributes.AuthScopes, string.Join(",", scopes));
+                activity.SetTag(Attributes.IsAgenticRequest, isAgenticRequest.ToString());
+            }
+            return activity;
         }
 
         /* AgentApplication activities */
 
-        public static IDisposable StartAppRun(ITurnContext turnContext)
+        public static TimedActivity StartAppRun(ITurnContext turnContext)
         {
-            return StartActivity(Scopes.AppRun, turnContext);
+            TimedActivity timedActivity = StartTimedActivity(
+                Scopes.AppRun,
+                turnContext,
+                (activity, duration, exception) =>
+                {
+                    TurnDuration.Record(duration);
+                    if (exception != null)
+                    {
+                        TurnErrors.Add(1);
+                    }
+                    else
+                    {
+                        TurnTotal.Add(1);
+                    }
+
+                });
+
+            Activity? activity = timedActivity.Activity;
+            if (activity != null)
+            {
+                activity.SetTag(Attributes.ActivityType, turnContext.Activity.Type);
+                activity.SetTag(Attributes.ActivityId, turnContext.Activity.Id);
+            }
+            return timedActivity;
+        }
+
+        public static void UpdateAppRun(TimedActivity timedActivity, bool routeAuthorized, bool routeMatched)
+        {
+            Activity? activity = timedActivity.Activity;
+            if (activity != null)
+            {
+                activity.SetTag("route.authorized", routeAuthorized.ToString());
+                activity.SetTag("route.matched", routeMatched.ToString());
+            }
         }
 
         public static IDisposable StartAppRouteHandler(ITurnContext turnContext)

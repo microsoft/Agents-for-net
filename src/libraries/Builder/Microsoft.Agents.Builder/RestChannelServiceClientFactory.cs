@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -100,6 +100,11 @@ namespace Microsoft.Agents.Builder
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = BuilderTelemetry.StartAdapterCreateConnectorClient(
+                turnContext.Activity.ServiceUrl,
+                scopes,
+                turnContext.Activity.IsAgenticRequest());
+
             if (string.Equals(turnContext.Activity.Recipient.Role, RoleTypes.ConnectorUser, StringComparison.OrdinalIgnoreCase))
             {
                 return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
