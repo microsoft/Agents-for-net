@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            using var telemetryActivity = BuilderTelemetry.StartTurnContextSendActivity(this);
+            using var telemetryScope = BuilderTelemetry.StartTurnContextSendActivity(this);
 
             ResourceResponse[] responses = await SendActivitiesAsync(new[] { activity }, cancellationToken).ConfigureAwait(false);
             if (responses == null || responses.Length == 0)
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            using var telemetryActivity = BuilderTelemetry.StartTurnContextUpdateActivity(this);
+            using var telemetryScope = BuilderTelemetry.StartTurnContextUpdateActivity(this);
 
             if (updateHandlers == null)
             {
@@ -400,7 +400,7 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(cr, nameof(cr));
 
-            using var telemetryActivity = BuilderTelemetry.StartTurnContextDeleteActivity(this);
+            using var telemetryScope = BuilderTelemetry.StartTurnContextDeleteActivity(this);
 
             if (deleteHandlers == null)
             {

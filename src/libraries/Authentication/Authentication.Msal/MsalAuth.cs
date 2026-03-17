@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
-            using var telemetryActivity = AuthenticationMsalTelemetry.StartAuthGetAccessToken(scopes: scopes, authType: _connectionSettings.AuthType);
+            using var telemetryScope = AuthenticationMsalTelemetry.StartAuthGetAccessToken(scopes: scopes, authType: _connectionSettings.AuthType);
             var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
             return result.AccessToken;
         }
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Authentication.Msal
         #region IOBOExchange
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
-            using var telemetryActivity = AuthenticationTelemetry.StartAuthAcquireTokenOnBehalfOf(scopes: scopes);
+            using var telemetryScope = AuthenticationTelemetry.StartAuthAcquireTokenOnBehalfOf(scopes: scopes);
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            using var telemetryActivity = AuthenticationTelemetry.StartAuthGetAgenticInstanceToken(agentAppInstanceId: agentAppInstanceId);
+            using var telemetryScope = AuthenticationTelemetry.StartAuthGetAgenticInstanceToken(agentAppInstanceId: agentAppInstanceId);
 
             var agentTokenResult = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
 
-            using var telemetryActivity = AuthenticationTelemetry.StartAuthGetAgenticUserToken(agentAppInstanceId: agentAppInstanceId, agenticUserId: agenticUserId, scopes: scopes);
+            using var telemetryScope = AuthenticationTelemetry.StartAuthGetAgenticUserToken(agentAppInstanceId: agentAppInstanceId, agenticUserId: agenticUserId, scopes: scopes);
 
             var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);

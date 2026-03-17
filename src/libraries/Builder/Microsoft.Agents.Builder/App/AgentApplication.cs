@@ -886,11 +886,10 @@ namespace Microsoft.Agents.Builder.App
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
-
                             break;
                         }
                     }
-                    BuilderTelemetry.UpdateAppRun(appRunTelemetryScope, routeAuthorized: routeAuthorized, routeMatched: routeMatched)
+                    BuilderTelemetry.UpdateAppRun(appRunTelemetryScope, routeAuthorized: routeAuthorized, routeMatched: routeMatched);
 
                     // Call after turn handler
                     using (var afterTurnScope = BuilderTelemetry.StartAppAfterTurn(turnContext))

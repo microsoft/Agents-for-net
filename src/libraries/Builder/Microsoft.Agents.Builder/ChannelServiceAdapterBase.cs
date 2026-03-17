@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
 
-            using var telemetryActivity = BuilderTelemetry.StartAdapterSendActivities(activities);
+            using var telemetryScope = BuilderTelemetry.StartAdapterSendActivities(activities);
 
             var responses = new ResourceResponse[activities.Length];
 
@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
-            using var telemetryActivity = BuilderTelemetry.StartAdapterUpdateActivity(activity);
+            using var telemetryScope = BuilderTelemetry.StartAdapterUpdateActivity(activity);
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
             
-            using var telemetryActivity = BuilderTelemetry.StartAdapterDeleteActivity(turnContext.Activity);
+            using var telemetryScope = BuilderTelemetry.StartAdapterDeleteActivity(turnContext.Activity);
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
-            using var telemetryActivity = BuilderTelemetry.StartAdapterContinueConversation(continuationActivity);
+            using var telemetryScope = BuilderTelemetry.StartAdapterContinueConversation(continuationActivity);
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {

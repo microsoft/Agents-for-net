@@ -129,6 +129,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentNullException.ThrowIfNull(httpResponse);
             ArgumentNullException.ThrowIfNull(agent);
 
+            using var telemetryScope = BuilderTelemetry.StartAdapterProcess();
+
             if (httpRequest.Method != HttpMethods.Post)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
@@ -141,13 +143,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
+                BuilderTelemetry.UpdateAdapterProcess(telemetryScope, activity);
                 activity.RequestId ??= Guid.NewGuid().ToString();
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
                 try
                 {
-                    using var telemetryActivity = BuilderTelemetry.StartAdapterProcess(activity);
                     if (activity.IsType(ActivityTypes.Invoke) || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         InvokeResponse invokeResponse = null;
