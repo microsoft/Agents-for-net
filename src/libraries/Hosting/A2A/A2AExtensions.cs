@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using A2A;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
 using System.Collections.Concurrent;
@@ -16,14 +15,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 internal static class A2AExtensions
 {
     private static readonly ConcurrentDictionary<string, JsonNode> _schemas = new();
-
-    public static bool IsTerminal(this AgentTask task)
-    {
-        return task.Status.State == TaskState.Completed
-            || task.Status.State == TaskState.Canceled
-            || task.Status.State == TaskState.Rejected
-            || task.Status.State == TaskState.Failed;
-    }
 
     public static Dictionary<string, JsonElement> ToA2AMetadata(this object data, string contentType)
     {

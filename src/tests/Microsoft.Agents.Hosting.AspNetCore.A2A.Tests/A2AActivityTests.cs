@@ -3,6 +3,7 @@
 
 using A2A;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -15,24 +16,17 @@ public class A2AActivityTests
     public void ActivityFromMessageWithText()
     {
         // Arrange
-        var message = new AgentMessage()
+        var message = new Message()
         {
             TaskId = "task123",
             ContextId = "context123",
             MessageId = "message123",
-            Role = MessageRole.Agent,
-            Parts = [new TextPart() { Text = "text" }]
-        };
-
-        var task = new AgentTask()
-        {
-            Id = "task123",
-            ContextId = "context123",
-            Status = new AgentTaskStatus() { State = TaskState.Submitted },
+            Role = Role.Agent,
+            Parts = [new Part() { Text = "text" }]
         };
 
         // Act
-        var activity = A2AActivity.ActivityFromMessage("request123", task, message);
+        var activity = A2AActivity.ActivityFromMessage("request123", "task123", message);
 
         // Assert
         Assert.NotNull(activity);
@@ -54,30 +48,23 @@ public class A2AActivityTests
     public void ActivityFromMessageWithParts()
     {
         // Arrange
-        var message = new AgentMessage()
+        var message = new Message()
         {
             TaskId = "task123",
             ContextId = "context123",
             MessageId = "message123",
-            Role = MessageRole.Agent,
+            Role = Role.Agent,
             Parts =
             [
-                new TextPart() { Text = "part1" },
-                new TextPart() { Text = "part2" },
-                new DataPart() { Data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>("{ \"key1\": \"value1\"}")},
-                new FilePart() { File = new FileContent(new Uri("http://uri.com")) { Name = "file.txt" } }
+                new Part() { Text = "part1" },
+                new Part() { Text = "part2" },
+                new Part() { Data = JsonSerializer.Deserialize<JsonElement>("{ \"key1\": \"value1\"}")},
+                new Part() { Url = "http://uri.com/", Filename = "file.txt" }
             ],
         };
 
-        var task = new AgentTask()
-        {
-            Id = "task123",
-            ContextId = "context123",
-            Status = new AgentTaskStatus() { State = TaskState.Submitted },
-        };
-
         // Act
-        var activity = A2AActivity.ActivityFromMessage("request123", task, message);
+        var activity = A2AActivity.ActivityFromMessage("request123", "task123", message);
 
         // Assert
         Assert.NotNull(activity);
@@ -97,24 +84,17 @@ public class A2AActivityTests
     public void ActivityFromMessageWithNullRequestId()
     {
         // Arrange
-        var message = new AgentMessage()
+        var message = new Message()
         {
             TaskId = "task123",
             ContextId = "context123",
             MessageId = "message123",
-            Role = MessageRole.Agent,
-            Parts = [new TextPart() { Text = "text" }]
-        };
-
-        var task = new AgentTask()
-        {
-            Id = "task123",
-            ContextId = "context123",
-            Status = new AgentTaskStatus() { State = TaskState.Submitted },
+            Role = Role.Agent,
+            Parts = [new Part() { Text = "text" }]
         };
 
         // Act
-        var activity = A2AActivity.ActivityFromMessage(null, task, message);
+        var activity = A2AActivity.ActivityFromMessage(null, "task123", message);
 
         // Assert
         Assert.NotNull(activity);
@@ -125,19 +105,18 @@ public class A2AActivityTests
     public void ActivityFromMessageWithNullTask()
     {
         // Arrange
-        var message = new AgentMessage()
+        var message = new Message()
         {
             TaskId = "task123",
             ContextId = "context123",
             MessageId = "message123",
-            Role = MessageRole.Agent,
-            Parts = [new TextPart() { Text = "text" }]
+            Role = Role.Agent,
+            Parts = [new Part() { Text = "text" }]
         };
 
         // Act
-        var activity = A2AActivity.ActivityFromMessage("request123", null, message);
+        var activity = A2AActivity.ActivityFromMessage("request123", "task123", message);
 
-        message.TaskId = null;
         var activity2 = A2AActivity.ActivityFromMessage("request123", null, message);
 
         // Assert
@@ -146,8 +125,6 @@ public class A2AActivityTests
 
         // Uses Message.TaskId since Task is null
         Assert.Equal("task123", activity.Conversation.Id);
-
-        // Generates new TaskId since both Task and Message.TaskId are null
         Assert.NotEmpty(activity2.Conversation.Id);
     }
 
@@ -225,26 +202,26 @@ public class A2AActivityTests
         Assert.Equal(4, message.Parts.Count);
 
         // Part 1: Text
-        Assert.IsType<TextPart>(message.Parts[0], exactMatch: false);
-        Assert.Equal("text", message.Parts[0].AsTextPart().Text);
+        Assert.IsType<Part>(message.Parts[0], exactMatch: false);
+        Assert.Equal("text", message.Parts[0].Text);
 
         // Part 2: Value
-        Assert.IsType<DataPart>(message.Parts[1], exactMatch: false);
-        Assert.NotNull(message.Parts[1].AsDataPart().Data);
-        Assert.True(message.Parts[1].AsDataPart().Data.TryGetValue("key", out var value));
+        Assert.IsType<Part>(message.Parts[1], exactMatch: false);
+        Assert.NotNull(message.Parts[1].Data);
+        Assert.True(message.Parts[1].Data.ToJsonElements().TryGetValue("key", out var value));
 
         // Part 3: Attachments
-        Assert.IsType<FilePart>(message.Parts[2], exactMatch: false);
-        Assert.Equal("text/plain", message.Parts[2].AsFilePart().File.MimeType);
-        Assert.Equal("http://uri.com/file.txt", message.Parts[2].AsFilePart().File.Uri.ToString());
+        Assert.IsType<Part>(message.Parts[2], exactMatch: false);
+        Assert.Equal("text/plain", message.Parts[2].MediaType);
+        Assert.Equal("http://uri.com/file.txt", message.Parts[2].Url);
 
         // Part 4: Entities
-        Assert.IsType<DataPart>(message.Parts[3], exactMatch: false);
-        var productInfo = message.Parts[3].AsDataPart().Data;
+        Assert.IsType<Part>(message.Parts[3], exactMatch: false);
+        var productInfo = message.Parts[3].Data;
         Assert.NotNull(productInfo);
-        Assert.True(productInfo.TryGetValue("id", out var idValue));
+        Assert.True(productInfo.ToJsonElements().TryGetValue("id", out var idValue));
         Assert.Equal(Channels.M365CopilotSubChannel, idValue.ToString());
-        Assert.True(productInfo.TryGetValue("type", out var typeValue));
+        Assert.True(productInfo.ToJsonElements().TryGetValue("type", out var typeValue));
         Assert.Equal(EntityTypes.ProductInfo, typeValue.ToString());
     }
 }

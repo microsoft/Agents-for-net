@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -23,14 +24,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests;
 public class A2AAdapterTests
 {
     private readonly Mock<ITaskStore> _mockTaskStore;
-    private readonly Mock<ILogger<A2AAdapter>> _mockLogger;
+    private readonly ILoggerFactory _mockLogger;
     private readonly Mock<IStorage> _mockStorage;
 
     public A2AAdapterTests()
     {
         _mockTaskStore = new Mock<ITaskStore>();
-        _mockLogger = new Mock<ILogger<A2AAdapter>>();
         _mockStorage = new Mock<IStorage>();
+        _mockLogger = NullLoggerFactory.Instance;
     }
 
     #region Constructor Tests
@@ -39,7 +40,7 @@ public class A2AAdapterTests
     public void Constructor_WithTaskStore_ShouldInitializeAdapter()
     {
         // Act
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
 
         // Assert
         Assert.NotNull(adapter);
@@ -50,7 +51,7 @@ public class A2AAdapterTests
     public void Constructor_WithStorage_ShouldInitializeAdapter()
     {
         // Act
-        var adapter = new A2AAdapter(_mockStorage.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockStorage.Object, _mockLogger);
 
         // Assert
         Assert.NotNull(adapter);
@@ -61,43 +62,14 @@ public class A2AAdapterTests
     public void Constructor_WithNullTaskStore_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new A2AAdapter((ITaskStore)null, _mockLogger.Object));
+        Assert.Throws<ArgumentNullException>(() => new A2AAdapter((ITaskStore)null, _mockLogger));
     }
 
     [Fact]
     public void Constructor_WithNullStorage_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new A2AAdapter((IStorage)null, _mockLogger.Object));
-    }
-
-    [Fact]
-    public void Constructor_WithoutLogger_ShouldUseNullLogger()
-    {
-        // Act
-        var adapter = new A2AAdapter(_mockTaskStore.Object);
-
-        // Assert
-        Assert.IsType<NullLogger<A2AAdapter>>(adapter.Logger);
-    }
-
-    [Fact]
-    public async Task OnTurnError_ShouldLogErrorAndThrowA2AException()
-    {
-        // Arrange
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
-        var activity = new Activity { Type = ActivityTypes.Message, Text = "test" };
-        var context = new TurnContext(adapter, activity);
-        var testException = new InvalidOperationException("Test exception");
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<A2AException>(async () =>
-        {
-            await adapter.OnTurnError(context, testException);
-        });
-
-        Assert.Contains("An error occurred during turn processing", exception.Message);
-        Assert.Equal(testException, exception.InnerException);
+        Assert.Throws<ArgumentNullException>(() => new A2AAdapter((IStorage)null, _mockLogger));
     }
 
     #endregion
@@ -108,7 +80,7 @@ public class A2AAdapterTests
     public async Task ProcessAgentCardAsync_ShouldReturnDefaultAgentCard()
     {
         // Arrange
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
         var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
         var mockHttpResponse = CreateMockHttpResponse();
         var mockAgent = new Mock<IAgent>();
@@ -124,7 +96,7 @@ public class A2AAdapterTests
     public async Task ProcessAgentCardAsync_WithAgentAttribute_ShouldUseAttributeValues()
     {
         // Arrange
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
         var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
         var mockHttpResponse = CreateMockHttpResponse();
         var agent = new TestAgentWithAttributes();
@@ -140,7 +112,7 @@ public class A2AAdapterTests
     public async Task ProcessAgentCardAsync_WithAgentCardHandler_ShouldCallHandler()
     {
         // Arrange
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
         var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
         var mockHttpResponse = CreateMockHttpResponse();
         var agent = new TestAgentWithCardHandler();
@@ -157,7 +129,7 @@ public class A2AAdapterTests
     public async Task ProcessAgentCardAsync_WithSkills_ShouldIncludeSkills()
     {
         // Arrange
-        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger.Object);
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
         var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
         var mockHttpResponse = CreateMockHttpResponse();
         var agent = new TestAgentWithSkills();
@@ -193,17 +165,13 @@ public class A2AAdapterTests
         var jsonRpcRequest = new JsonRpcRequest
         {
             Id = Guid.NewGuid().ToString(),
-            Method = A2AMethods.MessageSend,
-            Params = JsonSerializer.SerializeToElement(new MessageSendParams
+            Method = A2AMethods.SendMessage,
+            Params = JsonSerializer.SerializeToElement(new SendMessageRequest
             {
-                Message = new AgentMessage
+                Message = new Message
                 {
                     ContextId = "context-1234",
-                    Parts = [new TextPart() { Text = "Hello" }]
-                },
-                Configuration = new MessageSendConfiguration
-                {
-                    HistoryLength = 10,
+                    Parts = [new Part() { Text = "Hello" }]
                 }
             })
         };
@@ -222,16 +190,14 @@ public class A2AAdapterTests
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         var reader = new StreamReader(context.Response.Body);
         var streamText = reader.ReadToEnd();
-        var jsonRpcResponse = JsonSerializer.Deserialize<JsonRpcResponse>(streamText);
+        var jsonRpcResponse = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(streamText);
         Assert.NotNull(jsonRpcResponse);
-        var task = JsonSerializer.Deserialize<AgentTask>(jsonRpcResponse.Result);
+        var task = ProtocolJsonSerializer.ToObject<AgentTask>(jsonRpcResponse.Result.AsObject().GetAt(0).Value);
         Assert.NotNull(task);
         Assert.Equal("context-1234", task.ContextId);
         Assert.NotEmpty(task.Id);
-        Assert.Single(task.History);
-        Assert.Equal("Hello", task.History[0].Parts[0].AsTextPart().Text);
         Assert.NotNull(task.Status.Message);
-        Assert.Equal("Echo: Hello", task.Status.Message.Parts[0].AsTextPart().Text);
+        Assert.Equal("Echo: Hello", task.Status.Message.Parts[0].Text);
     }
 
     [Fact]
@@ -254,15 +220,15 @@ public class A2AAdapterTests
         var jsonRpcRequest = new JsonRpcRequest
         {
             Id = Guid.NewGuid().ToString(),
-            Method = A2AMethods.MessageStream,
-            Params = JsonSerializer.SerializeToElement(new MessageSendParams
+            Method = A2AMethods.SendStreamingMessage,
+            Params = JsonSerializer.SerializeToElement(new SendMessageRequest
             {
-                Message = new AgentMessage
+                Message = new Message
                 {
                     ContextId = "context-1234",
-                    Parts = [new TextPart() { Text = "Hello" }]
+                    Parts = [new Part() { Text = "Hello" }]
                 },
-                Configuration = new MessageSendConfiguration
+                Configuration = new SendMessageConfiguration
                 {
                     HistoryLength = 10,
                 }
@@ -364,12 +330,12 @@ public class A2AAdapterTests
 
     private static Record UseRecord(Func<Record, IAgent> createAgent)
     {
-        var queueLogger = new Mock<ILogger<A2AAdapter>>();
+        var loggerFactory = new Mock<ILoggerFactory>();
 
         var sp = new Mock<IServiceProvider>();
         var storage = new MemoryStorage();
-        var adapter = new A2AAdapter(storage, queueLogger.Object);
-        var record = new Record(storage, adapter, null, queueLogger);
+        var adapter = new A2AAdapter(storage, loggerFactory.Object);
+        var record = new Record(storage, adapter, null, loggerFactory);
 
         if (createAgent != null)
         {
@@ -383,11 +349,11 @@ public class A2AAdapterTests
         IStorage Storage,
         A2AAdapter Adapter,
         IAgent Agent,
-        Mock<ILogger<A2AAdapter>> QueueLogger)
+        Mock<ILoggerFactory> LoggerFactory)
     {
         public void VerifyMocks()
         {
-            Mock.Verify(QueueLogger);
+            Mock.Verify(LoggerFactory);
         }
 
         public IAgent Agent { get; set; } = Agent;

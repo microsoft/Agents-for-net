@@ -26,7 +26,7 @@ internal static class A2AActivity
     public static IActivity ActivityFromMessage(string requestId, string taskId, Message message)
     {
         AssertionHelpers.ThrowIfNull(message, nameof(message));
-
+        taskId ??= message.TaskId ?? throw new ArgumentException("TaskId must be provided either in the parameter or in the message");
         var activity = CreateActivity(taskId, message.Parts, true, true);
         activity.RequestId = requestId ?? Guid.NewGuid().ToString("N");
         activity.ChannelData = message;

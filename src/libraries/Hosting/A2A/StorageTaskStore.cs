@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Storage;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,10 +42,12 @@ internal class StorageTaskStore : ITaskStore
         AssertionHelpers.ThrowIfNull(task, "Task cannot be null.");
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrEmpty(task.Id))
+        if (string.IsNullOrWhiteSpace(taskId))
         {
-            throw new A2AException("Invalid task ID", A2AErrorCode.InvalidParams);
+            throw new ArgumentException("Invalid task ID", nameof(taskId));
         }
+
+        task.Id ??= taskId;
 
         await _storage.WriteAsync(new Dictionary<string, object> { { GetTaskKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
     }
