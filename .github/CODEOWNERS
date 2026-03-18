@@ -12,4 +12,6 @@
 # This should make it easy to add new rules without breaking existing ones.
 
 # Global rule:
-* @microsoft/agents-sdk
+* @microsoft/agents-sdk @sw-joelmut @ceciliaavila
+
+

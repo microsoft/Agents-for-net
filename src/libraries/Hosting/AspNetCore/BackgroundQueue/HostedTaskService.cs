@@ -55,24 +55,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
-            await base.StopAsync(stoppingToken);
+            await base.StopAsync(stoppingToken).ConfigureAwait(false);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.{Environment.NewLine}", Environment.NewLine);
             
-            await BackgroundProcessing(stoppingToken);
+            await BackgroundProcessing(stoppingToken).ConfigureAwait(false);
         }
 
         private async Task BackgroundProcessing(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var workItem = await _taskQueue.DequeueAsync(stoppingToken);
+                var workItem = await _taskQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
                 if (workItem != null)
                 {
                     try
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         // New tasks should not be starting during shutdown.
                         if (_lock.TryEnterReadLock(500))
                         {
-                            var task = GetTaskFromWorkItem(workItem, stoppingToken)
+                            var task = workItem(stoppingToken) //GetTaskFromWorkItem(workItem, stoppingToken)
                                 .ContinueWith(t =>
                                 {
                                     // After the work item completes, clear the running tasks of all completed tasks.
@@ -98,30 +98,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             _logger.LogError("Work item not processed.  Server is shutting down.");
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred executing WorkItem.");
+                    }
                     finally
                     {
                         _lock.ExitReadLock();
                     }
                 }
             }
-        }
-
-        private Task GetTaskFromWorkItem(Func<CancellationToken, Task> workItem, CancellationToken stoppingToken)
-        {
-            // Start the work item, and return the task
-            return Task.Run(
-                async () =>
-                {
-                    try
-                    {
-                        await workItem(stoppingToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Agent Errors should be processed in the Adapter.OnTurnError.
-                        _logger.LogError(ex, "Error occurred executing WorkItem.");
-                    }
-                }, stoppingToken);
         }
     }
 }

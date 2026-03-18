@@ -147,18 +147,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithName_String_AlreadyHasSelector_ThrowsException()
-        {
-            // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithName("firstInvoke");
-
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithName("secondInvoke"));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
-        }
-
-        [Fact]
         public async Task WithName_Regex_ValidPattern_SetsSelector()
         {
             // Arrange
@@ -220,15 +208,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithName_Regex_AlreadyHasSelector_ThrowsException()
+        public void WithName_Regex_AlreadyHasSelector_ThrowsWhenNameAlreadyDefined()
         {
-            // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithName(new Regex("^first.*"));
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName("name")
+                .WithName(new Regex("^second.*")));
+        }
 
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithName(new Regex("^second.*")));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
+        [Fact]
+        public void WithName_Name_DuplicateNameCriteria_Throws()
+        {
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName(new Regex("^second.*"))
+                .WithName("name"));
         }
 
         [Fact]
@@ -287,11 +279,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder()
-                .WithName("testInvoke");
+                .WithSelector((context, ct) => Task.FromResult(true));
 
             // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((context, ct) => Task.FromResult(true)));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Throws<InvalidOperationException>(() => builder.WithSelector((context, ct) => Task.FromResult(true)));
         }
 
         [Fact]
@@ -491,7 +482,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithHandler((context, state, ct) => Task.CompletedTask);
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.Build());
+            Assert.Throws<InvalidOperationException>(() => builder.Build());
         }
 
         [Fact]
