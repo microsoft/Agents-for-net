@@ -25,6 +25,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public class ChannelResponseQueue(ILogger logger)
     {
         private readonly ConcurrentDictionary<string, ChannelInfo> _conversations = new();
+        private static readonly TimeSpan HandlerWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Processes queued responses.  This blocks until CompleteHandlerForRequest is called.
@@ -37,9 +38,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
+                channelInfo.readStarted.Set();
                 try
                 {
-                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
                     {
                         var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
                         action(activity);
@@ -54,6 +56,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     channelInfo.readDone.Set();
                 }
+            }
+            else
+            {
+                logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' in HandleResponsesAsync.", requestId);
             }
         }
 
@@ -89,12 +95,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                channelInfo.channel.Writer.Complete();
-                _conversations.Remove(requestId, out _);
+                // need to wait for HandleResponsesAsync to start
+                channelInfo.readStarted.WaitOne(HandlerWaitTimeout);
 
-                // wait for reads to be done
-                channelInfo.readDone.WaitOne();
-                channelInfo.readDone.Dispose();
+                if (channelInfo.channel.Writer.TryComplete())
+                {
+                    _conversations.Remove(requestId, out _);
+
+                    channelInfo.readStarted.Dispose();
+
+                    // wait for reads to be done
+                    channelInfo.readDone.WaitOne();
+                    channelInfo.readDone.Dispose();
+                }
             }
         }
 
@@ -139,6 +152,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         public EventWaitHandle readDone = new(false, EventResetMode.ManualReset);
+        public EventWaitHandle readStarted = new(false, EventResetMode.ManualReset);
         public Channel<IActivity> channel = Channel.CreateUnbounded<IActivity>();
     }
 }

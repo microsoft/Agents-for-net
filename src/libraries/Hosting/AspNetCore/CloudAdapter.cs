@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
-                activity.RequestId ??= Guid.NewGuid().ToString();
+                activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
@@ -157,30 +157,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn Begin
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
+                            Logger.LogDebug("Turn Begin (blocking): RequestId={RequestId}", activity.RequestId);
                         }
 
                         _responseQueue.StartHandlerForRequest(activity.RequestId);
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
-                        // Queue the activity to be processed by the ActivityTaskQueue, and stop ChannelResponseQueue when the
-                        // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
+                        // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
+                        _ = ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ContinueWith(t =>
                         {
-                            invokeResponse = response;
-
-                            // Stops response handling and waits for HandleResponsesAsync to finish
-                            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-
-                            return Task.CompletedTask;
-                        });
+                            try
+                            {
+                                invokeResponse = t.Result;
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
+                            }
+                            finally
+                            {
+                                // Ensure the handler is always completed so HandleResponsesAsync can finish.
+                                _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                            }
+                        }, cancellationToken).ConfigureAwait(false);
 
                         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
                             {
-                                Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
+                                Logger.LogDebug("Turn Response (blocking): RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
                             await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
@@ -189,7 +195,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn done
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn End: RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                            Logger.LogDebug("Turn End (blocking): RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
                         }
 
                         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
