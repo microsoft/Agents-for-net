@@ -33,6 +33,9 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class TypeRouteBuilder : RouteBuilderBase<TypeRouteBuilder>
     {
+        private string _type;
+        private Regex _typePattern;
+
         /// <summary>
         /// Configures the route to match activities of the specified type.
         /// </summary>
@@ -44,17 +47,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
 
-            if (_route.Selector != null)
+            if (_type != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type})");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(type)
-                );
+            if (_typePattern != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type Regex already set");
+            }
 
+            _type = type;
             return this;
         }
 
@@ -71,18 +74,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
 
-            if (_route.Selector != null)
+            if (_typePattern != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern}))");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern})) with Type Regex already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.Type != null
-                    && typePattern.IsMatch(context.Activity.Type)
-                );
+            if (_type != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern})) with Type already set");
+            }
 
+            _typePattern = typePattern;
             return this;
         }
 
@@ -90,7 +92,8 @@ namespace Microsoft.Agents.Builder.App
         /// Sets the route selector used to determine how incoming requests are matched to this route builder.
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
-        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// routing scenarios where requests are selected based on custom rules or patterns. If WithType was
+        /// also called, this selector is in addition to the Type selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc...</param>
         /// <returns>A TypeRouteBuilder instance configured with the specified custom selector.</returns>
@@ -122,6 +125,35 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = handler;
             return (TypeRouteBuilder)this;
+        }
+
+        protected override void PreBuild()
+        {
+            if (_route.Selector != null)
+            {
+                if (_type != null || _typePattern != null)
+                {
+                    // Match on both the existing selector and the Activity.Type
+                    var existingSelector = _route.Selector;
+                    _route.Selector = async (context, ct) =>
+                        IsContextMatch(context, _route)
+                        && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
+                        && await existingSelector(context, ct);
+                }
+                return;
+            }
+
+            if (_type == null && _typePattern == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type or Selector");
+            }
+
+            // Just match on Activity.Type value
+            _route.Selector = (context, ct) => Task.FromResult
+                (
+                    IsContextMatch(context, _route)
+                    && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
+                );
         }
     }
 }

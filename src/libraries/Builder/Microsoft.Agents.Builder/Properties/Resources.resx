@@ -230,6 +230,10 @@
     <value>A selector has already been defined for this route. Multiple selectors are not supported. Builder method '{0}'.</value>
     <comment>Raised when using a RouteBuilder and using more than one selector method.</comment>
   </data>
+  <data name="RouteBuilderMissingProperty" xml:space="preserve">
+    <value>RouteBuilder '{0}' missing required property '{1}'</value>
+    <comment>Raised when calling RouteBuilder.Build() and a required value was not defined.</comment>
+  </data>
   <data name="ProactiveNotAllHandlersSignedIn" xml:space="preserve">
     <value>Continuing the conversation with OAuth failed because the user is not signed into all handlers.</value>
     <comment>Raised during Proactive.ContinueConversation with token handlers specified and not all handler had been signed into.</comment>
