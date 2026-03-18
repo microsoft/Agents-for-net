@@ -196,6 +196,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to RouteBuilder &apos;{0}&apos; missing required property &apos;{1}&apos;.
+        /// </summary>
+        internal static string RouteBuilderMissingProperty {
+            get {
+                return ResourceManager.GetString("RouteBuilderMissingProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A selector has already been defined for this route. Multiple selectors are not supported. Builder method &apos;{0}&apos;..
         /// </summary>
         internal static string RouteSelectorAlreadyDefined {
