@@ -837,7 +837,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_Build_WithoutSelector_ThrowsArgumentNullException()
+        public void EventRouteBuilder_Build_WithoutSelector_ThrowsInvalidOperationException()
         {
             // Arrange
             var builder = EventRouteBuilder.Create()

@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.App
 
             if (_eventRegex != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name})) with Name Regex already set");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name}) with Name Regex already set");
             }
 
             _eventName = name;
