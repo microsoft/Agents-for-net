@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
         {
-            lock(_optionsLock)
+            lock (_optionsLock)
             {
                 var newOptions = SerializationOptions;
                 if (newOptions.IsReadOnly)
@@ -127,11 +127,22 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new TokenResponseConverter());
             options.Converters.Add(new VideoCardConverter());
             options.Converters.Add(new Array2DConverter());
+            options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
             options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
             options.Converters.Add(new MessageReactionConverter());
 
             return options;
+        }
+
+        /// <summary>
+        /// Object to JsonElement conversion.
+        /// </summary>
+        /// <param name="value">The object to convert to a <see cref="JsonElement"/>.</param>
+        /// <returns>A <see cref="JsonElement"/> representing the specified object.</returns>
+        public static JsonElement ToJsonElement(this object value)
+        {
+            return ToObject<JsonElement>(value);
         }
 
         /// <summary>

@@ -48,9 +48,14 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
+            if (_eventName != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name}) with Name already set");
+            }
+
             if (_eventRegex != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name})) with Type Regex already set");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name}) with Name Regex already set");
             }
 
             _eventName = name;
@@ -69,6 +74,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
+            if (_eventRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern})) with Name Regex already set");
+            }
+
             if (_eventName != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern})) with Name already set");
@@ -83,7 +93,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
         /// routing scenarios where requests are selected based on custom rules or patterns. If WithName was
-        /// also called, this selector is in addition to the Name selctor.</remarks>
+        /// also called, this selector is in addition to the Name selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "event" is enforced.</param>
         /// <returns>A EventRouteBuilder instance configured with the custom selector.</returns>
@@ -140,7 +150,7 @@ namespace Microsoft.Agents.Builder.App
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Event)
-                        && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                        && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                         && await existingSelector(context, ct);
                 }
                 return;
@@ -157,7 +167,7 @@ namespace Microsoft.Agents.Builder.App
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Event)
                     && context.Activity.Name != null
-                    && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                    && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                 );
         }
     }

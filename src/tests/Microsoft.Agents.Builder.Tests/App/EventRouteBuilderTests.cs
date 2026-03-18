@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void EventRouteBuilder_WithName_Regex_ThrowsWhenNameAlreadyDefined()
         {
-            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+            Assert.Throws<InvalidOperationException>(() => EventRouteBuilder.Create()
                 .WithName("name")
                 .WithName(new Regex("^second.*")));
         }
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void EventRouteBuilder_WithName_Name_ThrowsWhenRegexAlreadyDefined()
         {
-            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+            Assert.Throws<InvalidOperationException>(() => EventRouteBuilder.Create()
                 .WithName(new Regex("^second.*"))
                 .WithName("name"));
         }
@@ -837,7 +837,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_Build_WithoutSelector_ThrowsArgumentNullException()
+        public void EventRouteBuilder_Build_WithoutSelector_ThrowsInvalidOperationException()
         {
             // Arrange
             var builder = EventRouteBuilder.Create()

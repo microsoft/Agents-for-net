@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithName_Name_AlreadyHasSelector_ThrowsWhenRegexAlreadyDefined()
+        public void WithName_Name_DuplicateNameCriteria_Throws()
         {
             Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
                 .WithName(new Regex("^second.*"))

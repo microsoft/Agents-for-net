@@ -366,7 +366,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_WithSelector_ThrowsWhenTypeAlreadyDefined()
+        public void TypeRouteBuilder_WithType_ThrowsWhenTypeAlreadyDefined()
         {
             Assert.Throws<InvalidOperationException>(() => TypeRouteBuilder.Create()
                 .WithType("myType")
@@ -374,7 +374,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_WithSelector_ThrowsWhenTypeRegexAlreadyDefined()
+        public void TypeRouteBuilder_WithType_ThrowsWhenTypeRegexAlreadyDefined()
         {
             Assert.Throws<InvalidOperationException>(() => TypeRouteBuilder.Create()
                 .WithType(new Regex("pattern"))

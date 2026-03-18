@@ -41,6 +41,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
+            if (_invokeName != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name already set");
+            }
+
             if (_invokeRegex != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name Regex already set");
@@ -63,6 +68,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
+            if (_invokeRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name Regex already set");
+            }
+
             if (_invokeName != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name already set");
@@ -77,7 +87,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
         /// routing scenarios where requests are selected based on custom rules or patterns. If WithName was
-        /// also called, this selector is in addition to the Name selctor.</remarks>
+        /// also called, this selector is in addition to the Name selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "invoke" is enforced.</param>
         /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with the specified selector applied.</returns>
@@ -133,7 +143,7 @@ namespace Microsoft.Agents.Builder.App
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Invoke)
-                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
                         && await existingSelector(context, ct);
                 }
                 return;
@@ -141,7 +151,7 @@ namespace Microsoft.Agents.Builder.App
 
             if (_invokeName == null && _invokeRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Name or Selector");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(InvokeRouteBuilder), "Name or Selector");
             }
 
             // Just match on Activity.Name value
@@ -149,7 +159,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Invoke)
-                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
                 );
         }
     }
