@@ -4,19 +4,17 @@ This is a sample of a simple Agent that adds A2A support.
 
 > Note that this is a preview version of A2A support and is likely to change.
 
-### Overview of A2A in Agents SDK
+## Overview of A2A in Agents SDK
 - SDK Agents can add support to an existing Agent in order to particapte in an A2A multi-agent scenario.
 - Messages sent via A2A are handled in the same `AgentApplication` as other channels.  This allows the SDK developer to leverage existing functionality and stack knowledge.
 - The `Microsoft.Agents.Hosting.AspNetCore.A2A` package enables support for A2A requests and response handling:
   - A2A `Task` state handling and persistence via `IStorage`.
   - SSE and polling
 
-### Not supported in this version
+## Not supported in this version
 - A2A
   - Push Notifications.  This will most likely be handled via `Adapter.ContinueConversation`
-  - `tasks/resubscribe`.  This will be coming in order to fully support SSE.
   - Extensions.  These would be useful to support knowledge about Agents SDK payloads.  For example Streamed Responses, AI Citations, or Adaptive Cards responses.
-  - We are not supplying an A2A Client.  Future support will come for this when Agents SDK adopts [a2aproject/a2a-dotnet](https://github.com/a2aproject/a2a-dotnet).
 - SDK
   - Not implemented
     - `Adapter.ContinueConversation`
@@ -25,7 +23,7 @@ This is a sample of a simple Agent that adds A2A support.
     - `Adapter.DeleteActivity`
   - `Message` responses.  All interactions create an A2A `Task` (see details below)
   - `ITurnState.UserState` will not function as expected as we currently lack a unique userId for the A2A request.
-- Multiple A2A agents in the same host are not supported.  All A2A request are routed to the registered `IAgent`.
+- Multiple A2A agents in the same host are not supported.  All A2A request are routed to the registered `IAgent` with a single A2A adapter.
 
 ## Prerequisites
 
@@ -67,12 +65,12 @@ This is a sample of a simple Agent that adds A2A support.
 1. Add the A2A endpoints in Program.cs
 
    ```csharp
-   app.MapA2A(requireAuth: !app.Environment.IsDevelopment());
+   app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
+   app.MapWellKnownAgentCard();
+   app.MapA2AHttp(requireAuth: !app.Environment.IsDevelopment()); 
    ```
 
-1. It is recommended that your `AgentApplication` implement `IAgentCardHandler`.  Not doing so will work fine for development purposes.  However, `AgentCard` properties like `Name`, `Description`, `Version`, and `Skills` will be defaulted.
-   - Before `IAgentCardHandler.GetAgentCard` is called, the other properties on `AgentCard` have already been setup properly. See `MyAgent.cs` in this project.
-   - The preview version of this will allow you change the other `AgentCard` values.  Do so at your A2A agents peril.  This will be restricted in the future as the SDK Hosting manages some of these values.
+1. It is recommended that your `AgentApplication` add the `Agent` and `A2ASkill` attributes (see the sample). Not doing so will work fine for development purposes.  However, `AgentCard` properties like `Name`, `Description`, `Version`, and `Skills` will be defaulted.
 
 ## Overview of A2A to Activity Protocol (and back)
 
