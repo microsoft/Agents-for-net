@@ -321,7 +321,7 @@ namespace Microsoft.Agents.Auth.Tests
 
             var audience = AgentClaims.GetTokenAudience(claims);
 
-            Assert.Equal(AuthenticationConstants.BotFrameworkScope, audience);
+            Assert.Equal(AuthenticationConstants.BotFrameworkAudience, audience);
         }
     }
 }

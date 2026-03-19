@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Authentication
 {
     /// <summary>
@@ -11,7 +13,18 @@ namespace Microsoft.Agents.Authentication
         /// <summary>
         /// Bot Framework OAuth scope to request.
         /// </summary>
+        [Obsolete("This constant is deprecated. Please use BotFrameworkAudience or BotFrameworkDefaultScope instead.")]
         public const string BotFrameworkScope = "https://api.botframework.com";
+
+        /// <summary>
+        /// Bot Framework audience to request.
+        /// </summary>
+        public const string BotFrameworkAudience = "https://api.botframework.com";
+
+        /// <summary>
+        /// Bot Framework OAuth scope to request.
+        /// </summary>
+        public const string BotFrameworkDefaultScope = "https://api.botframework.com/.default";
 
         /// <summary>
         /// Token issuer for ABS tokens.
@@ -19,7 +32,7 @@ namespace Microsoft.Agents.Authentication
         public const string BotFrameworkTokenIssuer = "https://api.botframework.com";
 
         /// <summary>
-        /// Default OAuth Url used to get a token from IUserTokenClient.
+        /// Default Url for the Azure Bot Token Service.
         /// </summary>
         public const string BotFrameworkOAuthUrl = "https://api.botframework.com";
 

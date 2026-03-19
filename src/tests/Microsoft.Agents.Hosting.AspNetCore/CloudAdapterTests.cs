@@ -709,9 +709,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 ));
 
             record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
-                .Returns(Task.FromResult(mockConnectorClient.Object));
-            record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 

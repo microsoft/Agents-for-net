@@ -13,7 +13,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// </summary>
     public class CreateConversationOptions
     {
-        public const string AzureBotScope = $"{AuthenticationConstants.BotFrameworkScope}/.default";
+        public const string AzureBotAudience = AuthenticationConstants.BotFrameworkAudience;
+        public const string AzureBotScope = AuthenticationConstants.BotFrameworkDefaultScope;
 
         /// <summary>
         /// Gets or sets the claims-based identity associated with the current user.
@@ -32,6 +33,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// If null, the default service URL for the channel will be used.
         /// </remarks>
         public string ServiceUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the audience to use when requesting authentication tokens for Azure Bot Service.
+        /// </summary>
+        public string Audience { get; set; } = AzureBotAudience;
 
         /// <summary>
         /// Gets or sets the OAuth scope to use when requesting authentication tokens.

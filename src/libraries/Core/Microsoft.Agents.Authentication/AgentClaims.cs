@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Authentication
         {
             return AgentClaims.IsAgentClaim(identity)
                 ? $"api://{AgentClaims.GetOutgoingAppId(identity)}"
-                : AuthenticationConstants.BotFrameworkScope;
+                : AuthenticationConstants.BotFrameworkAudience;
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Authentication
         {
             return AgentClaims.IsAgentClaim(identity)
                 ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
-                : null;
+                : [AuthenticationConstants.BotFrameworkDefaultScope];
         }
 
         /// <summary>

@@ -151,6 +151,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Sets the audience for the conversation being created.
+        /// </summary>
+        /// <remarks>Use this method to specify a custom audience for the conversation. This does not normally need to be set for Azure Bot Channels.</remarks>
+        /// <param name="audience">The audience value to associate with the conversation. If null the default Azure Bot Service audience is used.</param>
+        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the updated audience.</returns>
+        public CreateConversationOptionsBuilder WithAudience(string audience)
+        {
+            _record.Audience = audience;
+            return this;
+        }
+
+        /// <summary>
         /// Adds an Activity to the conversation being creatged.  This does not apply to all Channel types, but can be used to specify the initial message 
         /// for those that do.  Teams supports this, and will use the Activity as the initial message in the conversation.  For channels that do not support 
         /// this, the Activity will be ignored.
@@ -281,6 +293,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
             if (string.IsNullOrWhiteSpace(_record.Scope))
             {
                 _record.Scope = CreateConversationOptions.AzureBotScope;
+            }
+
+            if (string.IsNullOrWhiteSpace(_record.Audience))
+            {
+                _record.Audience = CreateConversationOptions.AzureBotAudience;
             }
 
             if (_record.Parameters.Activity != null && string.IsNullOrWhiteSpace(_record.Parameters.Activity.Type))
