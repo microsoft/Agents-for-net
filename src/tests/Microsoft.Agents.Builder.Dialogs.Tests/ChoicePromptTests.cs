@@ -15,7 +15,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Models.Activities;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

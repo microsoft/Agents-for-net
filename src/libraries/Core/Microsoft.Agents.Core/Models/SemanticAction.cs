@@ -3,7 +3,6 @@
 
 #nullable disable
 
-using Microsoft.Agents.Core.Models.Entities;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core.Models

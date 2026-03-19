@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

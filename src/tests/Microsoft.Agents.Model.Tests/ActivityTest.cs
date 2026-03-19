@@ -4,7 +4,6 @@
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Models.Activities;
-using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using System.Text.Json;

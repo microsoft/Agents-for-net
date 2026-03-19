@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models.Entities;
-using Microsoft.Agents.Core.Serialization.Converters;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,6 +8,8 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -55,20 +55,20 @@ namespace Microsoft.Agents.Core.Serialization
         private static ConcurrentDictionary<string, Type> CoreEntities()
         {
             var entities = new ConcurrentDictionary<string, Type>();
-            entities[Models.Entities.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
-            entities[Models.Entities.EntityTypes.AICitation] = typeof(AIEntity);
-            entities[Models.Entities.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
-            entities[Models.Entities.EntityTypes.Mention] = typeof(Mention);
-            entities[Models.Entities.EntityTypes.Place] = typeof(Place);
-            entities[Models.Entities.EntityTypes.ProductInfo] = typeof(ProductInfo);
-            entities[Models.Entities.EntityTypes.StreamInfo] = typeof(StreamInfo);
-            entities[Models.Entities.EntityTypes.Thing] = typeof(Thing);
+            entities[Models.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
+            entities[Models.EntityTypes.AICitation] = typeof(AIEntity);
+            entities[Models.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
+            entities[Models.EntityTypes.Mention] = typeof(Mention);
+            entities[Models.EntityTypes.Place] = typeof(Place);
+            entities[Models.EntityTypes.ProductInfo] = typeof(ProductInfo);
+            entities[Models.EntityTypes.StreamInfo] = typeof(StreamInfo);
+            entities[Models.EntityTypes.Thing] = typeof(Thing);
             return entities;
         }
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
         {
-            lock(_optionsLock)
+            lock (_optionsLock)
             {
                 var newOptions = SerializationOptions;
                 if (newOptions.IsReadOnly)
@@ -133,6 +133,16 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new MessageReactionConverter());
 
             return options;
+        }
+
+        /// <summary>
+        /// Object to JsonElement conversion.
+        /// </summary>
+        /// <param name="value">The object to convert to a <see cref="JsonElement"/>.</param>
+        /// <returns>A <see cref="JsonElement"/> representing the specified object.</returns>
+        public static JsonElement ToJsonElement(this object value)
+        {
+            return ToObject<JsonElement>(value);
         }
 
         /// <summary>
@@ -237,7 +247,7 @@ namespace Microsoft.Agents.Core.Serialization
                 return JsonSerializer.Deserialize<T>(jsonNode, SerializationOptions);
             }
 
-            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
+            JsonElement serialized = JsonSerializer.SerializeToElement(value, SerializationOptions);
             return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 

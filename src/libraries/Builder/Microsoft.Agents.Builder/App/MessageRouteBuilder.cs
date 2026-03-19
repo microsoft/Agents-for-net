@@ -135,13 +135,7 @@ namespace Microsoft.Agents.Builder.App
         public MessageRouteBuilder WithHandler(RouteHandler<IMessageActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            Task typedHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-            {
-                return handler(new TypedTurnContext<IMessageActivity>(turnContext), turnState, cancellationToken);
-            }
-
-            _route.Handler = typedHandler;
+            _route.Handler = (ct, ts, ctok) => handler(new TypedTurnContext<IMessageActivity>(ct), ts, ctok);
             return this;
         }
 

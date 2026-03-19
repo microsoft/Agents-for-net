@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

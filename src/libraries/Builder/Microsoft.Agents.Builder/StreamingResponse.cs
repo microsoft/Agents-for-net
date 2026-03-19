@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;

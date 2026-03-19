@@ -7,7 +7,6 @@ using Xunit;
 using System.Text.Json;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Models.Entities;
 
 namespace Microsoft.Agents.Model.Tests
 {

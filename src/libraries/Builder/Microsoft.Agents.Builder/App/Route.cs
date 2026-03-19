@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.App
     /// <returns></returns>
     public delegate Task RouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
-    public delegate Task RouteHandler<in T>(ITurnContext<T> turnContext, ITurnState turnState, CancellationToken cancellationToken) where T : IActivity;
+    public delegate Task RouteHandler<T>(ITurnContext<T> turnContext, ITurnState turnState, CancellationToken cancellationToken) where T : IActivity;
 
     public enum RouteFlags
     {

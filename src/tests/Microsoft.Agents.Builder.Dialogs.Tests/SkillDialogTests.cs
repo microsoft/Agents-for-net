@@ -21,7 +21,7 @@ using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Authentication;
 using System.Security.Claims;
 using System.Net;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests

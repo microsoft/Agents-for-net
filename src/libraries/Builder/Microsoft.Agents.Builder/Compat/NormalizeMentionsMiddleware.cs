@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-using Microsoft.Agents.Core.Models.Entities;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Compat
 {

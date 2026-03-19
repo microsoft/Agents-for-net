@@ -3,8 +3,6 @@
 
 #nullable disable
 
-using Microsoft;
-using Microsoft.Agents.Core.Models.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

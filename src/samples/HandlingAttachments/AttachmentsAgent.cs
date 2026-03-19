@@ -7,7 +7,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Cards;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.IO;
 using System.Linq;
