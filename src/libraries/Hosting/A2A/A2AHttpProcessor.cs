@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -16,6 +15,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 /// <summary>
 /// Static processor class for handling A2A HTTP requests in ASP.NET Core applications.
 /// </summary>
+/// <remarks>This is a copy of the a2a-dotnet version since those are internal and can't be used directly.</remarks>
 internal static class A2AHttpProcessor
 {
     internal static Task<IResult> GetTaskAsync(IA2ARequestHandler requestHandler, ILogger logger, string id, int? historyLength, string? metadata, CancellationToken cancellationToken)

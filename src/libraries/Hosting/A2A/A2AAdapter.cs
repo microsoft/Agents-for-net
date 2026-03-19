@@ -255,41 +255,50 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     #region A2A Agent
     internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, CancellationToken cancellationToken)
     {
-        var activity = A2AActivity.ActivityFromMessage(requestId, context.TaskId, context.Message);
-        if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
+        using (Logger.BeginScope("ExecuteAgentTurnAsync: Agent={AgentType}, RequestId={RequestId}, TaskId={TaskId}", agent.GetType().Name, requestId, context.TaskId))
         {
-            throw new A2AException($"Invalid Activity for RequestId={requestId}", A2AErrorCode.InternalError);
-        }
+            var activity = A2AActivity.ActivityFromMessage(requestId, context.TaskId, context.Message);
+            if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
+            {
+                Logger.LogError("Invalid Activity for RequestId={RequestId}, TaskId={TaskId}", requestId, context.TaskId);
+                throw new A2AException($"Invalid Activity for RequestId={requestId}", A2AErrorCode.InternalError);
+            }
 
-        try
-        {
-            _ = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            _a2aAgentContext.TryRemove(requestId, out _);
+            Log.WithRequestIdAndBody(Logger, context.TaskId, ProtocolJsonSerializer.ToJson(activity));
+
+            try
+            {
+                _ = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _a2aAgentContext.TryRemove(requestId, out _);
+            }
         }
     }
 
     internal async Task ExecuteAgentCancelTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, CancellationToken cancellationToken)
     {
-        var eoc = new Activity()
+        using (Logger.BeginScope("ExecuteAgentCancelTaskAsync: Agent={AgentType}, RequestId={RequestId}", agent.GetType().Name, requestId))
         {
-            Type = ActivityTypes.EndOfConversation,
-            Code = EndOfConversationCodes.UserCancelled,
-            ChannelId = Channels.A2A,
-            Conversation = new ConversationAccount() { Id = context.TaskId },
-            Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
-            From = new ChannelAccount { Id = A2AActivity.DefaultUserId, Role = RoleTypes.User }
-        };
+            var eoc = new Activity()
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Code = EndOfConversationCodes.UserCancelled,
+                ChannelId = Channels.A2A,
+                Conversation = new ConversationAccount() { Id = context.TaskId },
+                Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
+                From = new ChannelAccount { Id = A2AActivity.DefaultUserId, Role = RoleTypes.User }
+            };
 
-        try
-        {
-            _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            _a2aAgentContext.TryRemove(requestId, out _);
+            try
+            {
+                _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _a2aAgentContext.TryRemove(requestId, out _);
+            }
         }
     }
     #endregion
@@ -491,4 +500,13 @@ class AgentRequestContext : IAgentHandler
         }, cancellationToken).ConfigureAwait(false);
         EventQueue.Complete();
     }
+}
+
+static partial class Log
+{
+    [LoggerMessage(
+        EventId = 1,
+        Level = LogLevel.Debug,
+        Message = "A2A turn with requestId '{RequestId}', and Activity: {Activity}")]
+    public static partial void WithRequestIdAndBody(ILogger logger, string requestId, string activity);
 }

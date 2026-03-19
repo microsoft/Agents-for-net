@@ -2,7 +2,6 @@ using A2A;
 using A2A.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -13,6 +12,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 /// <summary>
 /// Static processor class for handling A2A JSON-RPC requests in ASP.NET Core applications.
 /// </summary>
+/// <remarks>This is a copy of the a2a-dotnet version since those are internal and can't be used directly.</remarks>
 public static class A2AJsonRpcProcessor
 {
     internal static async Task<IResult> ProcessRequestAsync(IA2ARequestHandler requestHandler, HttpRequest request, CancellationToken cancellationToken)
