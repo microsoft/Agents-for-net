@@ -71,24 +71,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
-            await base.StopAsync(stoppingToken);
+            await base.StopAsync(stoppingToken).ConfigureAwait(false);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.");
 
-            await BackgroundProcessing(stoppingToken);
+            await BackgroundProcessing(stoppingToken).ConfigureAwait(false);
         }
 
         private async Task BackgroundProcessing(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken);
+                var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken).ConfigureAwait(false);
                 if (activityWithClaims != null)
                 {
                     try
@@ -123,65 +123,65 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             }
         }
 
-        private Task GetTaskFromWorkItem(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
+        private async Task GetTaskFromWorkItem(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
         {
-            // Start the work item, and return the task
-            return Task.Run(
-                async () =>
+            try
             {
+                // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
+                // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
+                // and disposed before this gets called.
+                var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                agent ??= _serviceProvider.GetService(typeof(IAgent));
+
+                HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
+                activityWithClaims.TelemetryActivity?.Start();
                 try
                 {
-                    // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
-                    // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
-                    // and disposed before this gets called.
-                    var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                    if (agent == null)
-                    {
-                        agent = _serviceProvider.GetService(typeof(IAgent));
-                    }
-
-                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-
                     if (activityWithClaims.IsProactive)
                     {
                         await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IAgent)agent).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
                     {
                         var response = await activityWithClaims.ChannelAdapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-                            ((IAgent)agent).OnTurnAsync, 
+                            ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
 
                         if (activityWithClaims.OnComplete != null)
                         {
-                            await activityWithClaims.OnComplete.Invoke(response);
+                            await activityWithClaims.OnComplete.Invoke(response).ConfigureAwait(false);
                         }
                     }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    // Agent Errors should be processed in the Adapter.OnTurnError.  Unlikely this will be hit.
-                    _logger.LogError(ex, "Error occurred executing WorkItem.");
-
-                    InvokeResponse invokeResponse = null;
-                    if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
-                    {
-                        invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
-                    }
-
-                    if (activityWithClaims.OnComplete != null)
-                    {
-                        await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
-                    }
+                    // make sure to close down any current activity once the turn is complete. 
+                    activityWithClaims.TelemetryActivity?.Stop();
                 }
-            }, stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                // Agent Errors should be processed in the Adapter.OnTurnError.  Unlikely this will be hit.
+                _logger.LogError(ex, "Error occurred executing WorkItem.");
+
+                InvokeResponse invokeResponse = null;
+                if (activityWithClaims.Activity.IsType(ActivityTypes.Invoke))
+                {
+                    invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError };
+                }
+
+                if (activityWithClaims.OnComplete != null)
+                {
+                    await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
+                }
+            }
         }
     }
 }

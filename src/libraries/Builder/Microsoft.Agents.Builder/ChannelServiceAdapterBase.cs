@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -113,7 +114,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(string agentAppId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
@@ -122,7 +123,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
@@ -131,7 +132,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(string agentAppId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
 
@@ -139,60 +140,78 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override async Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string scope, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(serviceUrl))
-            {
-                throw new ArgumentNullException(nameof(serviceUrl));
-            }
-
-            _ = conversationParameters ?? throw new ArgumentNullException(nameof(conversationParameters));
-            _ = callback ?? throw new ArgumentNullException(nameof(callback));
+            AssertionHelpers.ThrowIfNull(conversationParameters, nameof(conversationParameters));
+            AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
-            var claimsIdentity = AgentClaims.CreateIdentity(agentAppId);
-            bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
+            var createOptions = CreateConversationOptionsBuilder.Create(agentAppId, channelId, serviceUrl: serviceUrl, parameters: conversationParameters)
+                .WithScope(scope)
+                .WithUser((conversationParameters.Members?.Count > 0 ? conversationParameters.Members[0] : new ChannelAccount(agentAppId, role: RoleTypes.User)))
+                .Build();
+            return CreateConversationAsync(createOptions.Identity, createOptions.ChannelId, createOptions.ServiceUrl, createOptions.Scope, createOptions.Parameters, callback, cancellationToken);
+        }
 
-            // This is really the "From".  User can supply otherwise default to this Agent.
-            conversationParameters.Agent ??= new ChannelAccount(id: agentAppId, role: RoleTypes.Agent);
+        /// <inheritdoc/>
+        public override async Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
+            AssertionHelpers.ThrowIfNull(parameters, nameof(parameters));
+
+            bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
+
+            scope ??= CreateConversationOptions.AzureBotScope;
+            var reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl)
+                .WithUser((parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(AgentClaims.GetAppId(identity), role: RoleTypes.User)))
+                .Build();
 
             // Create the connector client to use for outbound requests.
-            using (var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, useAnonymous: useAnonymousAuthCallback, cancellationToken: cancellationToken).ConfigureAwait(false))
+            using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
+                identity,
+                reference.ServiceUrl,
+                scope,
+                cancellationToken,
+                useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+
+            // Make the actual create conversation call using the connector.
+            var createConversationResult = await connectorClient.Conversations.CreateConversationAsync(parameters, cancellationToken).ConfigureAwait(false);
+
+            // Create the create activity to communicate the results to the application.
+            var createActivity = reference.GetCreateContinuationActivity(new ConversationAccount(id: createConversationResult.Id, tenantId: parameters.TenantId), parameters.ChannelData);
+
+            if (callback != null)
             {
-                // Make the actual create conversation call using the connector.
-                var createConversationResult = await connectorClient.Conversations.CreateConversationAsync(conversationParameters, cancellationToken).ConfigureAwait(false);
-
-                // Create the create activity to communicate the results to the application.
-                var createActivity = CreateConversationEvent(createConversationResult, channelId, serviceUrl, conversationParameters);
-
                 // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
-                using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, useAnonymous: useAnonymousAuthCallback, cancellationToken: cancellationToken).ConfigureAwait(false);
+                using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(identity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
                 // Create a turn context and run the pipeline.
-                using var context = new TurnContext(this, createActivity, claimsIdentity);
+                using var context = new TurnContext(this, createActivity, identity);
                 SetTurnContextServices(context, connectorClient, userTokenClient);
 
                 // Run the pipeline.
                 await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
             }
+
+            return createActivity.GetConversationReference();
         }
 
         public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)
@@ -225,7 +244,7 @@ namespace Microsoft.Agents.Builder
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
-            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, useAnonymous: useAnonymousAuthCallback, cancellationToken: cancellationToken).ConfigureAwait(false);
+            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             SetTurnContextServices(context, connectorClient, userTokenClient);
 
@@ -238,7 +257,7 @@ namespace Microsoft.Agents.Builder
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
             }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
@@ -271,7 +290,7 @@ namespace Microsoft.Agents.Builder
                     : null;
 
             // Create a UserTokenClient instance for OAuth flow.
-            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(context, useAnonymous: useAnonymousAuthCallback, cancellationToken: cancellationToken).ConfigureAwait(false);
+            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             SetTurnContextServices(context, connectorClient, userTokenClient);
 
@@ -288,21 +307,6 @@ namespace Microsoft.Agents.Builder
             return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
-        private static Activity CreateConversationEvent(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
-        {
-            // Create a conversation update activity to represent the TurnContext.Activity context.
-            var activity = Activity.CreateEventActivity();
-            activity.Name = ActivityEventNames.CreateConversation;
-            activity.ChannelId = channelId;
-            activity.ServiceUrl = serviceUrl;
-            activity.Conversation = new ConversationAccount(id: createConversationResult.Id, tenantId: conversationParameters.TenantId);
-            activity.ChannelData = conversationParameters.ChannelData;
-            activity.Recipient = conversationParameters.Agent;
-            activity.From = conversationParameters.Agent;
-            activity.Value = createConversationResult;
-            return (Activity)activity;
-        }
-
         private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
         {
             if (connectorClient != null)
@@ -317,7 +321,7 @@ namespace Microsoft.Agents.Builder
         private static void ValidateContinuationActivity(IActivity continuationActivity)
         {
             _ = continuationActivity ?? throw new ArgumentNullException(nameof(continuationActivity));
-            _ = continuationActivity.Conversation ?? throw new ArgumentException("The continuation Activity should contain a Conversation value.");
+            _ = continuationActivity.Conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidConversationAccount, null);
         }
 
         private static InvokeResponse ProcessTurnResults(TurnContext turnContext)

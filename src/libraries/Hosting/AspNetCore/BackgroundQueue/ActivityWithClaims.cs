@@ -15,6 +15,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     public class ActivityWithClaims
     {
+        /// <summary>
+        /// Gets or sets the channel adapter used to send and receive messages.
+        /// </summary>
         public IChannelAdapter ChannelAdapter { get; set; }
 
         /// <summary>
@@ -32,7 +35,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </summary>
         public IActivity Activity { get; set; }
         
+        /// <summary>
+        /// Gets or sets a value indicating whether the operation should be performed proactively.
+        /// </summary>
         public bool IsProactive { get; set; }
+
+        /// <summary>
+        /// Gets or sets the audience claim value used for proactive authentication requests.
+        /// </summary>
         public string ProactiveAudience { get; set; }
 
         /// <summary>
@@ -44,5 +54,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Headers used for the current <see cref="Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
+
+        /// <summary>
+        /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and telemetry
+        /// correlation, cloned from the original request context to enable trace continuity across the
+        /// background queue boundary.
+        /// </summary>
+        public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }

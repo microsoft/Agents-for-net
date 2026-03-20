@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
-                activity.RequestId ??= Guid.NewGuid().ToString();
+                activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
@@ -157,30 +157,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn Begin
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
+                            Logger.LogDebug("Turn Begin (blocking): RequestId={RequestId}", activity.RequestId);
                         }
 
                         _responseQueue.StartHandlerForRequest(activity.RequestId);
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
-                        // Queue the activity to be processed by the ActivityTaskQueue, and stop ChannelResponseQueue when the
-                        // turn is done.
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
+                        // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
+                        _ = ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ContinueWith(t =>
                         {
-                            invokeResponse = response;
-
-                            // Stops response handling and waits for HandleResponsesAsync to finish
-                            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-
-                            return Task.CompletedTask;
-                        });
+                            try
+                            {
+                                invokeResponse = t.Result;
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
+                            }
+                            finally
+                            {
+                                // Ensure the handler is always completed so HandleResponsesAsync can finish.
+                                _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                            }
+                        }, cancellationToken).ConfigureAwait(false);
 
                         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
                             {
-                                Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
+                                Logger.LogDebug("Turn Response (blocking): RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
                             await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
@@ -189,7 +195,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn done
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn End: RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                            Logger.LogDebug("Turn End (blocking): RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
                         }
 
                         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -209,6 +215,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // Request was cancelled (e.g. client disconnected). This is expected and not an error.
+                    Logger.LogWarning("CloudAdapter.ProcessAsync cancelled for RequestId={RequestId}", activity.RequestId);
+                    _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                }
                 catch (Exception ex)
                 {
                     // OnTurnError should be catching these.  
@@ -221,7 +233,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
-        /// as <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// as <see cref="ChannelServiceAdapterBase.ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
         /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
@@ -242,6 +254,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
+        /// <summary>
+        /// Processes an outgoing activity in response to an incoming activity, handling delivery modes that require
+        /// immediate response from the host.
+        /// </summary>
+        /// <remarks>This method handles activities with delivery modes <see cref="DeliveryModes.Stream"/>
+        /// and <see cref="DeliveryModes.ExpectReplies"/> by sending the response activity through the response queue.
+        /// For other delivery modes, the method returns <see langword="false"/> and does not process the
+        /// response.</remarks>
+        /// <param name="incomingActivity">The incoming activity that triggered the response. The delivery mode of this activity determines how the
+        /// response is handled.</param>
+        /// <param name="outActivity">The activity to be sent as a response to the incoming activity.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result is <see langword="true"/> if the response
+        /// was handled by the host; otherwise, <see langword="false"/>.</returns>
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are treated as Normal and

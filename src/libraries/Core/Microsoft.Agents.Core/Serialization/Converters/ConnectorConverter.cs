@@ -72,6 +72,15 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     continue;
                 }
 
+                if (property.Name == "Properties" && typeof(IDictionary<string, JsonElement>).IsAssignableFrom(property.PropertyType))
+                {
+                    IDictionary<string, JsonElement> propertyValue = (IDictionary<string, JsonElement>) property.GetValue(value);
+                    if (propertyValue.Count == 0)
+                    {
+                        continue;
+                    }
+                }
+
                 if (!TryWriteExtensionData(writer, value, property.Name))
                 {
                     var propertyValue = property.GetValue(value);

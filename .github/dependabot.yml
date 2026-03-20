@@ -13,6 +13,10 @@ updates:
       - 'dependencies'
     reviewers:
       - 'microsoft/botframework-sdk'
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: dotnet-sdk
     directory: /
     schedule:
@@ -23,6 +27,10 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+    groups:
+      dotnet-sdk:
+        patterns:
+          - "*"
 #- package-ecosystem: dotnet-sdk
 #  directory: "/"
 #  schedule:

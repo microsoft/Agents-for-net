@@ -10,6 +10,8 @@ using System.Threading;
 
 namespace MultiAgent;
 
+[Agent(name: "Agent1", description: "Echo user messages back", version: "1.0")]
+[AgentInterface(protocol: AgentTransportProtocol.ActivityProtocol, path: "/api/messages")]
 public class Agent1 : AgentApplication
 {
     public Agent1(AgentApplicationOptions options) : base(options)

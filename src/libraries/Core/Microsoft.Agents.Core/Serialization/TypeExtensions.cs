@@ -19,8 +19,7 @@ namespace Microsoft.Agents.Core.Serialization
         {
             if (jsonObject.ContainsKey("$type"))
             {
-                var assembly = AppDomain.CurrentDomain.Load(jsonObject["$typeAssembly"].ToString().Trim());
-                type = assembly.GetType(jsonObject["$type"].ToString().Trim());
+                type = GetType(jsonObject);
                 return type != null;
             }
 
@@ -41,10 +40,11 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static IDictionary<string, string> GetTypeInfoProperties(this JsonObject jsonObject)
         {
+            var type = GetType(jsonObject);
             return new Dictionary<string, string>
             {
-                { "$type", jsonObject["$type"].ToString() },
-                { "$typeAssembly", jsonObject["$typeAssembly"].ToString() }
+                { "$type", type?.FullName },
+                { "$typeAssembly", type.Assembly.FullName }
             };
         }
 
@@ -59,6 +59,38 @@ namespace Microsoft.Agents.Core.Serialization
         {
             jsonObject["$type"] = properties["$type"];
             jsonObject["$typeAssembly"] = properties["$typeAssembly"];
+        }
+
+        private static Type GetType(JsonObject jsonObject)
+        {
+            string assemblyName;
+            var typeName = jsonObject["$type"]?.ToString()?.Trim();
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return null;
+            }
+
+            var assemblyProperty = jsonObject["$typeAssembly"];
+            if (assemblyProperty != null)
+            {
+                assemblyName = assemblyProperty.ToString().Trim();
+            }
+            else
+            {
+                var split = typeName.ToString().Split(',');
+                if (split.Length > 1)
+                {
+                    typeName = split[0].Trim();
+                    assemblyName = split[1].Trim();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            var assembly = AppDomain.CurrentDomain.Load(assemblyName);
+            return assembly?.GetType(typeName);
         }
     }
 }

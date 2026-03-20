@@ -10,6 +10,7 @@ using System.Threading;
 
 namespace EmptyAgent;
 
+[Agent(name: "MyAgent", description: "Echo user messages back", version: "1.0")]
 public class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)

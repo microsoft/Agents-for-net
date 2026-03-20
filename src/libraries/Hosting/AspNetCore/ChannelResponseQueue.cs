@@ -25,6 +25,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public class ChannelResponseQueue(ILogger logger)
     {
         private readonly ConcurrentDictionary<string, ChannelInfo> _conversations = new();
+        private static readonly TimeSpan HandlerWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Processes queued responses.  This blocks until CompleteHandlerForRequest is called.
@@ -37,17 +38,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-
-                while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                channelInfo.readStarted.Set();
+                try
                 {
-                    var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    action(activity);
+                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                        action(activity);
+                    }
                 }
-
-                channelInfo.readDone.Set();
+                catch (OperationCanceledException)
+                {
+                    // Request was cancelled (e.g. client disconnected). Drain any remaining items and clean up.
+                    logger.LogWarning("ChannelResponseQueue: HandleResponsesAsync cancelled for requestId '{RequestId}'.", requestId);
+                }
+                finally
+                {
+                    channelInfo.readDone.Set();
+                }
+            }
+            else
+            {
+                logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' in HandleResponsesAsync.", requestId);
             }
         }
 
+        /// <summary>
+        /// Reads all available responses for the specified request and invokes the provided action for each response.
+        /// </summary>
+        /// <remarks>This method processes all currently available responses for the given request. If no
+        /// responses are available, the action is not invoked. The method does not wait for additional responses to
+        /// arrive after it is called.</remarks>
+        /// <param name="requestId">The identifier of the request whose responses are to be read. Must not be null.</param>
+        /// <param name="action">An action to invoke for each response activity. Cannot be null.</param>
         public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
@@ -80,12 +103,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                channelInfo.channel.Writer.Complete();
-                _conversations.Remove(requestId, out _);
-            }
+                // need to wait for HandleResponsesAsync to start
+                channelInfo.readStarted.WaitOne(HandlerWaitTimeout);
 
-            // wait for reads to be done
-            channelInfo.readDone.WaitOne();
+                if (channelInfo.channel.Writer.TryComplete())
+                {
+                    _conversations.Remove(requestId, out _);
+
+                    channelInfo.readStarted.Dispose();
+
+                    // wait for reads to be done
+                    channelInfo.readDone.WaitOne();
+                    channelInfo.readDone.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -106,8 +137,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 foreach (var activity in activities)
                 {
-                    // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
-                    await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        // Write the Activity to the Channel.  It is consumed on the other side via HandleResponses.
+                        await channelInfo.channel.Writer.WriteAsync(activity, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ChannelClosedException)
+                    {
+                        // The channel was completed (e.g. due to cancellation). Stop writing.
+                        logger.LogWarning("ChannelResponseQueue: Channel closed for requestId '{RequestId}'. Remaining activities will not be sent.", requestId);
+                        break;
+                    }
                 }
             }
         }
@@ -120,6 +160,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         public EventWaitHandle readDone = new(false, EventResetMode.ManualReset);
+        public EventWaitHandle readStarted = new(false, EventResetMode.ManualReset);
         public Channel<IActivity> channel = Channel.CreateUnbounded<IActivity>();
     }
 }

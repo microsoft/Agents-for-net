@@ -653,6 +653,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
             var names = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             app.OnConversationUpdate(
                 new[] { TeamsConversationUpdateEvents.TeamRenamed, TeamsConversationUpdateEvents.ChannelDeleted, ConversationUpdateEvents.MembersAdded },
                 (context, _, _) =>
@@ -660,6 +661,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                     names.Add(context.Activity.Name);
                     return Task.CompletedTask;
                 });
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
