@@ -1591,12 +1591,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 throw new NotImplementedException();
             }
 
-            public Task CreateConversationAsync(string botAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
+            public Task CreateConversationAsync(string botAppId, string channelId, string serviceUrl, string scope, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 AppId = botAppId;
                 ChannelId = channelId;
                 ServiceUrl = serviceUrl;
-                Audience = audience;
+                Audience = scope;
                 ConversationParameters = conversationParameters;
 
                 var activity = new Activity { Id = _activityId, ChannelId = channelId, ServiceUrl = serviceUrl, Conversation = new ConversationAccount { Id = _conversationId } };
@@ -1608,7 +1608,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 return Task.CompletedTask;
             }
 
-            public Task DeleteActivityAsync(ITurnContext turnContext, Core.Models.ConversationReference reference, CancellationToken cancellationToken)
+            public Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }

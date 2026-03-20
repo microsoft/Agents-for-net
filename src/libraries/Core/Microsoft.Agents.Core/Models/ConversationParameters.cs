@@ -11,12 +11,6 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Parameters for creating a new conversation. </summary>
     public class ConversationParameters
     {
-        /// <summary> Initializes a new instance of ConversationParameters. </summary>
-        internal ConversationParameters()
-        {
-            Members = [];
-        }
-
         /// <summary>Initializes a new instance of the <see cref="ConversationParameters"/> class.</summary>
         /// <param name="isGroup">IsGroup.</param>
         /// <param name="agent">This represents "From".  Defaults to ChannelAccount with <see cref="RoleTypes.Agent"/>.</param>
@@ -25,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="activity">(Optional) When creating a new conversation, use this activity as the initial message to the conversation.</param>
         /// <param name="channelData">Channel specific payload for creating the conversation.</param>
         /// <param name="tenantId">(Optional) The tenant ID in which the conversation should be created.</param>
-        public ConversationParameters(bool? isGroup = default, ChannelAccount agent = default, IReadOnlyList<ChannelAccount> members = default, string topicName = default, Activity activity = default, object channelData = default, string tenantId = default)
+        public ConversationParameters(bool? isGroup = default, ChannelAccount agent = default, IReadOnlyList<ChannelAccount> members = default, string topicName = default, IActivity activity = default, object channelData = default, string tenantId = default)
         {
             IsGroup = isGroup;
             Agent = agent;
@@ -53,7 +47,7 @@ namespace Microsoft.Agents.Core.Models
         public string TenantId { get; set; }
 
         /// <summary> An Activity is the basic communication type for the Activity Protocol. </summary>
-        public Activity Activity { get; set; }
+        public IActivity Activity { get; set; }
 
         /// <summary> Channel specific payload for creating the conversation. </summary>
         public object ChannelData { get; set; }
