@@ -1608,12 +1608,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 return Task.CompletedTask;
             }
 
-            public Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
+            public Task<Core.Models.ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
+            public Task DeleteActivityAsync(ITurnContext turnContext, Core.Models.ConversationReference reference, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
@@ -1644,6 +1644,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             }
 
             public IChannelAdapter Use(IMiddleware middleware)
+            {
+                throw new NotImplementedException();
+            }
+
+            Task<Core.Models.ConversationReference> IChannelAdapter.CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string scope, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
