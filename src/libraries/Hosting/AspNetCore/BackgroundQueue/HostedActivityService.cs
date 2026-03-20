@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Hosting.AspNetCore.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -142,7 +143,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-                    activityWithClaims.TelemetryActivity?.Start();
+                    System.Diagnostics.Activity parentTelemetryActivity = activityWithClaims.TelemetryActivity;
+                    System.Diagnostics.Activity prevActiveTelemetryActivity = System.Diagnostics.Activity.Current;
+                    System.Diagnostics.Activity newTelemetryActivity = parentTelemetryActivity.Source.CreateActivity(
+                            "testing",
+                            ActivityKind.Internal
+                        );
+
+
+                    if (newTelemetryActivity != null)
+                    {
+                        System.Diagnostics.Activity.Current = newTelemetryActivity;
+                        newTelemetryActivity.SetParentId(parentTelemetryActivity.Id);
+                        if (parentTelemetryActivity.TraceStateString != null) // todo
+                        {
+                            newTelemetryActivity.TraceStateString = parentTelemetryActivity.TraceStateString;
+                        }
+                        newTelemetryActivity.Start();
+                    }
                     try
                     {
                         if (activityWithClaims.IsProactive)
@@ -171,7 +189,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     finally
                     {
                         // make sure to close down any current activity once the turn is complete. 
-                        activityWithClaims.TelemetryActivity?.Stop();
+                        if (newTelemetryActivity != null)
+                        {
+                            newTelemetryActivity.Stop();
+                            System.Diagnostics.Activity.Current = prevActiveTelemetryActivity;
+                        }
                     }
                 }
                 catch (Exception ex)

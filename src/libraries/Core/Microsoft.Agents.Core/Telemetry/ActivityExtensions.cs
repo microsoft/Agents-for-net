@@ -27,8 +27,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// </returns>
         public static Activity CloneActivity(this Activity source, bool start = false)
         {
-            var clone = new Activity(source.OperationName)
-                .SetIdFormat(source.IdFormat);
+            var clone = source.Source.CreateActivity(source.OperationName, source.Kind).SetIdFormat(source.IdFormat);
 
             if (source.ParentId != null)
             {

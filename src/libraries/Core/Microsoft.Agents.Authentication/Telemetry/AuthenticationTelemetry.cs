@@ -8,6 +8,9 @@ using System.Diagnostics.Metrics;
 
 #nullable enable
 
+// TODO:
+// alternative -> use protected or internal
+// friend library (internals visible to)
 namespace Microsoft.Agents.Authentication.Telemetry
 {
     public static class AuthenticationTelemetry
