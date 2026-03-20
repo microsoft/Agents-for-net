@@ -19,16 +19,20 @@ public class MyAgent : AgentApplication
     {
         // Register a route for Agentic-only Messages.
         OnMessage("-signout", OnSignOutAgenticAsync, isAgenticOnly: true);
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic", "me"]);
-
-        // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandlers: ["bot"]);
         OnMessage("-signout", OnSignOutBotAsync);
+
+        AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.Message)
+            .WithHandler(OnMessageAsync)
+            .WithOAuthHandlers(ctx => ctx.Activity.IsAgenticRequest() ? ["agentic", "me"] : ["bot"])
+            .Build()
+        );
     }
 
-    private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
+        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(aauToken);
@@ -52,11 +56,6 @@ public class MyAgent : AgentApplication
         });
         await turnContext.SendActivityAsync(msgActivity);
 
-    }
-
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
     private async Task OnSignOutBotAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

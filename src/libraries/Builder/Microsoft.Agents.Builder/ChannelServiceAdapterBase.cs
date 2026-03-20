@@ -189,8 +189,9 @@ namespace Microsoft.Agents.Builder
                 identity,
                 reference.ServiceUrl,
                 scope,
-                cancellationToken,
-                useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+                null,
+                useAnonymousAuthCallback,
+                cancellationToken).ConfigureAwait(false);
 
             // Make the actual create conversation call using the connector.
             var createConversationResult = await connectorClient.Conversations.CreateConversationAsync(parameters, cancellationToken).ConfigureAwait(false);
@@ -201,7 +202,7 @@ namespace Microsoft.Agents.Builder
             if (callback != null)
             {
                 // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
-                using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(identity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+                using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(identity, cancellationToken: cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
                 // Create a turn context and run the pipeline.
                 using var context = new TurnContext(this, createActivity, identity);
@@ -244,7 +245,7 @@ namespace Microsoft.Agents.Builder
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for the application to use. (For example, in the OAuthPrompt.)
-            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken: cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             SetTurnContextServices(context, connectorClient, userTokenClient);
 
@@ -290,7 +291,7 @@ namespace Microsoft.Agents.Builder
                     : null;
 
             // Create a UserTokenClient instance for OAuth flow.
-            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
+            using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(context, cancellationToken: cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             SetTurnContextServices(context, connectorClient, userTokenClient);
 
