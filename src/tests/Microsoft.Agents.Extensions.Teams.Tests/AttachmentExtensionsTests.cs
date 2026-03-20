@@ -4,7 +4,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
@@ -25,24 +26,18 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             var messagingExtensionAttachment = AttachmentExtensions.ToMessagingExtensionAttachment(attachment, previewAttachment);
 
             Assert.NotNull(messagingExtensionAttachment);
-            Assert.IsType<MessagingExtensionAttachment>(messagingExtensionAttachment);
+            Assert.IsType<Microsoft.Teams.Api.MessageExtensions.Attachment>(messagingExtensionAttachment);
             Assert.Equal(contentType, messagingExtensionAttachment.ContentType);
             Assert.Equal(contentUrl, messagingExtensionAttachment.ContentUrl);
             Assert.Equal(content, messagingExtensionAttachment.Content);
             Assert.Equal(name, messagingExtensionAttachment.Name);
             Assert.Equal(thumbnailUrl, messagingExtensionAttachment.ThumbnailUrl);
-            
+
             if (previewAttachment != null)
             {
-                Assert.Equal(previewAttachment, messagingExtensionAttachment.Preview);
-            }
-            else
-            {
-                var preview = messagingExtensionAttachment.Preview;
-                Assert.Equal(contentType, preview.ContentType);
-                Assert.Equal(contentUrl, preview.ContentUrl);
-                Assert.Equal(name, preview.Name);
-                Assert.Equal(thumbnailUrl, preview.ThumbnailUrl);
+                var previewAttachmentJson = ProtocolJsonSerializer.ToJson(previewAttachment);
+                var teamsPreviewJson = ProtocolJsonSerializer.ToJson(ProtocolJsonSerializer.ToObject<Attachment>(messagingExtensionAttachment.Preview));
+                Assert.Equal(previewAttachmentJson, teamsPreviewJson);
             }
         }
 
@@ -50,7 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             public IEnumerator<object[]> GetEnumerator()
             {
-                yield return new object[] { new Attachment() };
+                yield return new object[] { new Attachment() { Name = "coreName", ContentType = "coreContentType", ContentUrl = "coreContentUrl" } };
                 yield return new object[] { null };
             }
 

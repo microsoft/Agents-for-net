@@ -117,5 +117,39 @@ namespace Microsoft.Agents.Core.Models
                 return false;
             }
         }
+
+        /// <summary>
+        /// Determines whether the specified activity represents a targeted activity treatment.
+        /// </summary>
+        /// <remarks>Use this method to identify activities that are specifically marked as targeted
+        /// treatments. This can be useful for filtering or processing activities based on their treatment
+        /// type.</remarks>
+        /// <param name="activity">The activity to evaluate for targeted treatment. Cannot be null.</param>
+        /// <returns>true if the activity contains an entity of type ActivityTreatment with a treatment of Targeted; otherwise,
+        /// false.</returns>
+        public static bool IsTargetedActivity(this IActivity activity)
+        {
+            if (activity.Entities == null || activity.Entities.Count == 0)
+                return false;
+            foreach (var entity in activity.Entities)
+            {
+                if (entity.Type == EntityTypes.ActivityTreatment && entity is ActivityTreatment treatment && treatment.Treatment == ActivityTreatmentTypes.Targeted)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Marks the specified activity as targeted by adding a targeted treatment entity to its collection.
+        /// </summary>
+        /// <remarks>This method ensures that the activity's Entities collection is initialized before
+        /// adding the targeted treatment. Use this extension to indicate that an activity should be processed or
+        /// interpreted as targeted in downstream workflows.</remarks>
+        /// <param name="activity">The activity to be marked as targeted. Cannot be null.</param>
+        public static void MakeTargetedActivity(this IActivity activity)
+        {
+            activity.Entities ??= [];
+            activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
+        }
     }
 }

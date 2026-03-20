@@ -84,13 +84,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             // Initialize prompt state
             var state = dc.ActiveDialog.State;
             state[PersistedOptions] = opt;
-            state[PersistedState] = new Dictionary<string, object>
+            state[PersistedState] = new PersistedState
             {
                 { Prompt<int>.AttemptCountKey, 0 },
             };
 
             // Send initial prompt
-            await OnPromptAsync(dc.Context, (IDictionary<string, object>)state[PersistedState], (PromptOptions)state[PersistedOptions], false, cancellationToken).ConfigureAwait(false);
+            await OnPromptAsync(dc.Context, (PersistedState)state[PersistedState], (PromptOptions)state[PersistedOptions], false, cancellationToken).ConfigureAwait(false);
             return EndOfTurn;
         }
 
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
 
             // Perform base recognition
             var instance = dc.ActiveDialog;
-            var state = (IDictionary<string, object>)instance.State[PersistedState];
+            var state = (PersistedState)instance.State[PersistedState];
             var options = (PromptOptions)instance.State[PersistedOptions];
             var recognized = await OnRecognizeAsync(dc.Context, state, options, cancellationToken).ConfigureAwait(false);
 
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public override async Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
-            var state = (IDictionary<string, object>)instance.State[PersistedState];
+            var state = (PersistedState)instance.State[PersistedState];
             var options = (PromptOptions)instance.State[PersistedOptions];
 
             try

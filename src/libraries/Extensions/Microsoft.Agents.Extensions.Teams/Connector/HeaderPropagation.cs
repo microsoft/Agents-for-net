@@ -3,19 +3,18 @@
 
 using Microsoft.Agents.Core.HeaderPropagation;
 
-namespace Microsoft.Agents.Extensions.Teams.Connector
-{
-    [HeaderPropagation]
+namespace Microsoft.Agents.Extensions.Teams.Connector;
+
+[HeaderPropagation]
 
 #if !NETSTANDARD
-    internal class HeaderPropagation : IHeaderPropagationAttribute
+internal class HeaderPropagation : IHeaderPropagationAttribute
 #else
-    internal class HeaderPropagation
+internal class HeaderPropagation
 #endif
+{
+    public static void LoadHeaders(HeaderPropagationEntryCollection collection)
     {
-        public static void LoadHeaders(HeaderPropagationEntryCollection collection)
-        {
-            // Propagate headers to the outgoing request by adding them to the HeaderPropagationEntryCollection.
-        }
+        // Propagate headers to the outgoing request by adding them to the HeaderPropagationEntryCollection.
     }
 }
