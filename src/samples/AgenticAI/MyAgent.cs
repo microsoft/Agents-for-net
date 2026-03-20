@@ -18,15 +18,21 @@ public class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // Register a route for Agentic-only Messages.
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
+        OnMessage("-signout", OnSignOutAgenticAsync, isAgenticOnly: true);
+        OnMessage("-signout", OnSignOutBotAsync);
 
-        // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.Message)
+            .WithHandler(OnMessageAsync)
+            .WithOAuthHandlers(ctx => ctx.Activity.IsAgenticRequest() ? ["agentic", "me"] : ["bot"])
+            .Build()
+        );
     }
 
-    private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
+        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(aauToken);
@@ -52,9 +58,13 @@ public class MyAgent : AgentApplication
 
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnSignOutBotAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "bot", cancellationToken: cancellationToken);
     }
 
+    private async Task OnSignOutAgenticAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken: cancellationToken);
+    }
 }

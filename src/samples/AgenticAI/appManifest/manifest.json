@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
   "manifestVersion": "1.22",
   "version": "1.0.0",
-  "id": "${{AAD_APP_CLIENT_ID}}",
+  "id": "51edf3ff-24a6-4466-8a8b-1ba81ba37d34",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -14,25 +14,25 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "AgentSDK EmptyAgent",
-    "full": "AgentSDK EmptyAgent"
+    "short": "Agentic AI",
+    "full": "Agentic AI"
   },
   "description": {
-    "short": "Sample demonstrating a simple Agent that echos back user messages.",
-    "full": "Sample demonstrating AgentSDK + Teams to demonstrate a simple Agent that echos back user messages."
+    "short": "Sample demonstrating a core Agentic token handling.",
+    "full": "Sample demonstrating a core Agentic token handling."
   },
   "accentColor": "#FFFFFF",
   "copilotAgents": {
     "customEngineAgents": [
       {
-        "id": "${{AAD_APP_CLIENT_ID}}",
+        "id": "51edf3ff-24a6-4466-8a8b-1ba81ba37d34",
         "type": "bot"
       }
     ]
   },
   "bots": [
     {
-      "botId": "${{AAD_APP_CLIENT_ID}}",
+      "botId": "51edf3ff-24a6-4466-8a8b-1ba81ba37d34",
       "scopes": [
         "personal"
       ],
@@ -45,6 +45,6 @@
     "messageTeamMembers"
   ],
   "validDomains": [
-    "<<BOT_DOMAIN>>"
+    "trboehre-relay-asdkt1.servicebus.windows.net"
   ]
 }
