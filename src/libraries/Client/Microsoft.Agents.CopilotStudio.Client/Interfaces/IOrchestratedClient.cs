@@ -19,12 +19,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// Starts a new externally orchestrated conversation.
         /// </summary>
         /// <param name="conversationId">The conversation ID for the new conversation.</param>
+        /// <param name="requestProperties">Optional properties mapped to HTTP request headers.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable stream of orchestrated responses from the copilot.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="conversationId"/> is null or empty.</exception>
         /// <exception cref="System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
         /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
-        IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, OrchestratedRequestProperties? requestProperties = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Invokes a tool (topic) in an externally orchestrated conversation.
@@ -32,47 +33,51 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <param name="conversationId">The conversation ID.</param>
         /// <param name="toolInputs">The tool invocation input containing the tool schema name and parameters.</param>
         /// <param name="activity">An optional activity to include with the tool invocation.</param>
+        /// <param name="requestProperties">Optional properties mapped to HTTP request headers.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable stream of orchestrated responses from the copilot.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="conversationId"/> or <paramref name="toolInputs"/> is null.</exception>
         /// <exception cref="System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
         /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
-        IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, OrchestratedRequestProperties? requestProperties = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Forwards a user response to an in-progress externally orchestrated conversation.
         /// </summary>
         /// <param name="conversationId">The conversation ID.</param>
         /// <param name="activity">The user activity to forward.</param>
+        /// <param name="requestProperties">Optional properties mapped to HTTP request headers.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable stream of orchestrated responses from the copilot.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="conversationId"/> or <paramref name="activity"/> is null.</exception>
         /// <exception cref="System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
         /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
-        IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, OrchestratedRequestProperties? requestProperties = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends a conversation update event to the bot in an externally orchestrated conversation.
         /// </summary>
         /// <param name="conversationId">The conversation ID.</param>
+        /// <param name="requestProperties">Optional properties mapped to HTTP request headers.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable stream of orchestrated responses from the copilot.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="conversationId"/> is null or empty.</exception>
         /// <exception cref="System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
         /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
-        IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, OrchestratedRequestProperties? requestProperties = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Executes an orchestrated turn with a custom request. 
+        /// Executes an orchestrated turn with a custom request.
         /// This is the low-level method that all other methods delegate to.
         /// </summary>
         /// <param name="conversationId">The conversation ID.</param>
         /// <param name="request">The orchestrated turn request to send.</param>
+        /// <param name="requestProperties">Optional properties mapped to HTTP request headers.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable stream of orchestrated responses from the copilot.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="conversationId"/> or <paramref name="request"/> is null.</exception>
         /// <exception cref="System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
         /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
-        IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, OrchestratedRequestProperties? requestProperties = null, CancellationToken cancellationToken = default);
     }
 }
