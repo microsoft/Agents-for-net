@@ -1,22 +1,23 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
 namespace Microsoft.Agents.Builder.App
 {
-    internal class RouteList
+    internal class RouteList : IDisposable
     {
-        private readonly ReaderWriterLock rwl = new();
+        private readonly ReaderWriterLockSlim rwl = new();
         private List<RouteEntry> routes = [];
 
         public void AddRoute(Route route)
         {
+            rwl.EnterWriteLock();
             try
             {
-                rwl.AcquireWriterLock(1000);
                 routes.Add(new RouteEntry(route));
 
                 // Ordered by:
@@ -31,21 +32,26 @@ namespace Microsoft.Agents.Builder.App
             }
             finally
             {
-                rwl.ReleaseWriterLock();
+                rwl.ExitWriteLock();
             }
         }
 
         public IEnumerable<Route> Enumerate()
         {
+            rwl.EnterReadLock();
             try
             {
-                rwl.AcquireReaderLock(1000);
-                return [.. routes.Select(e => e.Route).ToList()];
+                return [.. routes.Select(e => e.Route)];
             }
             finally
             {
-                rwl.ReleaseReaderLock();
+                rwl.ExitReadLock();
             }
+        }
+
+        public void Dispose()
+        {
+            rwl.Dispose();
         }
     }
 
