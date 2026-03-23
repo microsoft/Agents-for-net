@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent
+    public class AgentApplication : IAgent, IDisposable
     {
         private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
@@ -70,6 +70,21 @@ namespace Microsoft.Agents.Builder.App
             }
 
             ApplyRouteAttributes();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _routes?.Dispose();
+                _typingTimer?.Dispose();
+            }
         }
 
         #region Application Features
