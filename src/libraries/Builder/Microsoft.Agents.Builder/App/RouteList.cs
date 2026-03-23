@@ -12,6 +12,7 @@ namespace Microsoft.Agents.Builder.App
     {
         private readonly ReaderWriterLockSlim rwl = new();
         private List<RouteEntry> routes = [];
+        private bool _disposedValue = false;
 
         public void AddRoute(Route route)
         {
@@ -63,7 +64,21 @@ namespace Microsoft.Agents.Builder.App
 
         public void Dispose()
         {
-            rwl.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    rwl.Dispose();
+                }
+
+                _disposedValue = true;
+            }
         }
     }
 

@@ -28,6 +28,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
+        private bool _disposedValue = false;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -80,10 +81,15 @@ namespace Microsoft.Agents.Builder.App
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!_disposedValue)
             {
-                _routes?.Dispose();
-                _typingTimer?.Dispose();
+                if (disposing)
+                {
+                    _routes?.Dispose();
+                    _typingTimer?.Dispose();
+                }
+
+                _disposedValue = true;
             }
         }
 
