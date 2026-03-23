@@ -15,37 +15,49 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(Route route)
         {
-            rwl.EnterWriteLock();
-            try
+            if (rwl.TryEnterWriteLock(1000))
             {
-                routes.Add(new RouteEntry(route));
+                try
+                {
+                    routes.Add(new RouteEntry(route));
 
-                // Ordered by:
-                //    Agentic + Invoke
-                //    Invoke
-                //    Agentic
-                //    Other
-                // Then by Rank
-                routes = [.. routes
-                    .OrderByDescending(entry => entry.Order)
-                    .ThenBy(entry => entry.Route.Rank)];
+                    // Ordered by:
+                    //    Agentic + Invoke
+                    //    Invoke
+                    //    Agentic
+                    //    Other
+                    // Then by Rank
+                    routes = [.. routes
+                        .OrderByDescending(entry => entry.Order)
+                        .ThenBy(entry => entry.Route.Rank)];
+                }
+                finally
+                {
+                    rwl.ExitWriteLock();
+                }
             }
-            finally
+            else
             {
-                rwl.ExitWriteLock();
+                throw new TimeoutException("Failed to acquire write lock to add route.");
             }
         }
 
         public IEnumerable<Route> Enumerate()
         {
-            rwl.EnterReadLock();
-            try
+            if (rwl.TryEnterReadLock(1000))
             {
-                return [.. routes.Select(e => e.Route)];
+                try
+                {
+                    return [.. routes.Select(e => e.Route)];
+                }
+                finally
+                {
+                    rwl.ExitReadLock();
+                }
             }
-            finally
+            else
             {
-                rwl.ExitReadLock();
+                throw new TimeoutException("Failed to acquire read lock to enumerate routes.");
             }
         }
 
