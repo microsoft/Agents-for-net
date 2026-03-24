@@ -24,7 +24,7 @@ public class MyAgent : AgentApplication
         AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Message)
             .WithHandler(OnMessageAsync)
-            .WithOAuthHandlers(ctx => ctx.Activity.IsAgenticRequest() ? ["agentic", "me"] : ["bot"])
+            .WithOAuthHandlers(ctx => ctx.Activity.IsAgenticRequest() ? ["agentic", "agentic_graph"] : ["bot"])
             .Build()
         );
     }
@@ -32,7 +32,7 @@ public class MyAgent : AgentApplication
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "me", cancellationToken);
+        var meToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic_graph", cancellationToken);
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(aauToken);
@@ -65,6 +65,6 @@ public class MyAgent : AgentApplication
 
     private async Task OnSignOutAgenticAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken: cancellationToken);
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "agentic_graph", cancellationToken: cancellationToken);
     }
 }
