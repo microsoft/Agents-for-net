@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
-namespace Microsoft.Agents.Core.Serialization.Converters
+namespace Microsoft.Agents.Builder.Dialogs.Serialization
 {
     internal class Array2DConverter : JsonConverterFactory
     {

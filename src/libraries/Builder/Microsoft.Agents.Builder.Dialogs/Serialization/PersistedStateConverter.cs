@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.Dialogs;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Core.Serialization.Converters
+namespace Microsoft.Agents.Builder.Dialogs.Serialization
 {
     /// <summary>
     /// This handles serializing a Dictionary&lt;string, object> with type information.

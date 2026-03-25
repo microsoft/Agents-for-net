@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Agents.Core.Serialization.Converters
+namespace Microsoft.Agents.Builder.Dialogs.Serialization
 {
     internal static partial class ArrayExtensions
     {
