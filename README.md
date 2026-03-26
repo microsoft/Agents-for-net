@@ -12,7 +12,7 @@ For more information please see the parent project information here [Microsoft 3
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/packages?q=microsoft.agents+AND+nugetbotbuilder&includeComputedFrameworks=true&prerel=false&sortby=relevance). They will all begin with **Microsoft.Agents**
 
 ### Nightly Nuget feed.
-**Updated March 11 2025** :  Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-alpha.**
+**Updated March 11 2025** :  Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-beta.**
 - This feed is updated overnight (PT) whenever commits occur in our repo. 
 - This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
 
