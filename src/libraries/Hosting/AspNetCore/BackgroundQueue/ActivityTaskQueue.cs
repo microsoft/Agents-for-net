@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 ProactiveAudience = proactiveAudience, 
                 OnComplete = onComplete, 
                 Headers = copyHeaders,
-                TelemetryActivity = System.Diagnostics.Activity.Current?.CloneActivity()
+                TelemetryActivity = System.Diagnostics.Activity.Current
             });
             _queueEmpty.Reset();
             _signal.Release();

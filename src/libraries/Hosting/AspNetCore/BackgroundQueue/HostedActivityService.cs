@@ -142,7 +142,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-                    activityWithClaims.TelemetryActivity?.Start();
+                    System.Diagnostics.Activity newTelemetryActivity = activityWithClaims.TelemetryActivity?.Source.StartActivity(
+                        "HostedActivityService.GetTaskFromWorkItem",
+                        ActivityKind.Internal,
+                        activityWithClaims.TelemetryActivity.Context
+                    );
                     try
                     {
                         if (activityWithClaims.IsProactive)
@@ -170,8 +174,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
                     finally
                     {
-                        // make sure to close down any current activity once the turn is complete. 
-                        activityWithClaims.TelemetryActivity?.Stop();
+                        if (newTelemetryActivity != null)
+                        {
+                            newTelemetryActivity.Stop();
+                        }
                     }
                 }
                 catch (Exception ex)
