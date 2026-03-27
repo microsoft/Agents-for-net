@@ -1,17 +1,15 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
-    internal class DeleteActivity : TelemetryScope
+    internal class ScopeDeleteActivity : TelemetryScope
     {
-        private Core.Models.Activity _activity;
+        private IActivity _activity;
 
-        public DeleteActivity(Core.Models.Activity activity) : base(Constants.ScopeUpdateActivity)
+        public ScopeDeleteActivity(IActivity activity) : base(Constants.ScopeDeleteActivity)
         {
             _activity = activity;
         }

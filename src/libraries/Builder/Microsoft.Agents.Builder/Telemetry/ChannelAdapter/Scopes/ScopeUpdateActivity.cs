@@ -1,17 +1,15 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
-    internal class UpdateActivity : TelemetryScope
+    internal class ScopeUpdateActivity : TelemetryScope
     {
-        private Core.Models.Activity _activity;
+        private IActivity _activity;
 
-        public UpdateActivity(Core.Models.Activity activity) : base(Constants.ScopeUpdateActivity)
+        public ScopeUpdateActivity(IActivity activity) : base(Constants.ScopeUpdateActivity)
         {
             _activity = activity;
         }

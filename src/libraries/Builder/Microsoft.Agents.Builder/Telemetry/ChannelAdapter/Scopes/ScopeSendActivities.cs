@@ -1,24 +1,22 @@
 ﻿using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
-    internal class SendActivities : TelemetryScope
+    internal class ScopeSendActivities : TelemetryScope
     {
-        private IEnumerable<Core.Models.Activity> _activities;
+        private IActivity[] _activities;
 
-        public SendActivities(IEnumerable<Core.Models.Activity> activities) : base(Constants.ScopeSendActivities)
+        public ScopeSendActivities(IActivity[] activities) : base(Constants.ScopeSendActivities)
         {
             _activities = activities;
         }
 
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
         {
-            int count = _activities.Count();
+            int count = _activities.Length;
             telemetryActivity.SetTag(TagNames.ActivityCount, count);
             if (count > 0)
             {

@@ -4,6 +4,8 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.ChannelAdapter;
+using Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -100,6 +102,8 @@ namespace Microsoft.Agents.Builder
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
+            using var telemetryActivity = new ScopeCreateConnectorClient(turnContext.Activity.ServiceUrl, scopes, turnContext.Activity.IsAgenticRequest());
+
             if (string.Equals(turnContext.Activity.Recipient.Role, RoleTypes.ConnectorUser, StringComparison.OrdinalIgnoreCase))
             {
                 return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
@@ -160,6 +164,8 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
 
+            using var telemetryActivity = new ScopeCreateUserTokenClient(_tokenServiceEndpoint);
+
             var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 
             return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
@@ -171,7 +177,8 @@ namespace Microsoft.Agents.Builder
                     try
                     {
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
-                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, [$"{_tokenServiceAudience}/.default"]);
+                        string[] scopes = [$"{_tokenServiceAudience}/.default"];
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, scopes);
                     }
                     catch (Exception ex)
                     {

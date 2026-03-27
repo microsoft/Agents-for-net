@@ -1,17 +1,14 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
-    internal class ContinueConversation : TelemetryScope
+    internal class ScopeContinueConversation : TelemetryScope
     {
-        private Core.Models.Activity _activity;
+        private IActivity _activity;
 
-        public ContinueConversation(Core.Models.Activity activity) : base(Constants.ScopeContinueConversation)
+        public ScopeContinueConversation(IActivity activity) : base(Constants.ScopeContinueConversation)
         {
             _activity = activity;
         }

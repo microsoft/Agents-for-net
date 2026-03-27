@@ -1,19 +1,16 @@
 ﻿using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
-    internal class CreateConnectorClient : TelemetryScope
+    internal class ScopeCreateConnectorClient : TelemetryScope
     {
         private string _serviceUrl;
         private IEnumerable<string>? _scopes;
         private bool _isAgenticRequest;
 
-        public CreateConnectorClient(string serviceUrl, IEnumerable<string>? scopes, bool isAgenticRequest) : base(Constants.ScopeContinueConversation)
+        public ScopeCreateConnectorClient(string serviceUrl, IEnumerable<string>? scopes, bool isAgenticRequest) : base(Constants.ScopeContinueConversation)
         {
             _serviceUrl = serviceUrl;
             _scopes = scopes;
