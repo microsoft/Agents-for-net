@@ -16,14 +16,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings;
 public class Meeting
 {
     private readonly AgentApplication _app;
+    private readonly ChannelId _channelId;
 
-    /// <summary>
-    /// Creates a new instance of the Meetings class.
-    /// </summary>
-    /// <param name="app"></param> The top level application class to register handlers with.
-    public Meeting(AgentApplication app)
+    internal Meeting(AgentApplication app, ChannelId channelId)
     {
-        this._app = app;
+        _app = app;
+        _channelId = channelId;
     }
 
     /// <summary>
@@ -31,13 +29,13 @@ public class Meeting
     /// </summary>
     /// <param name="handler">Function to call when a Microsoft Teams meeting start event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnStart(MeetingStartHandler handler)
+    public Meeting OnStart(MeetingStartHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
         (
             context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == Channels.Msteams
+            && context.Activity?.ChannelId == _channelId
             && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingStart)
         );
         async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
@@ -46,7 +44,7 @@ public class Meeting
             await handler(turnContext, turnState, meeting, cancellationToken);
         }
         _app.AddRoute(routeSelector, routeHandler);
-        return _app;
+        return this;
     }
 
     /// <summary>
@@ -54,13 +52,13 @@ public class Meeting
     /// </summary>
     /// <param name="handler">Function to call when a Microsoft Teams meeting end event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnEnd(MeetingEndHandler handler)
+    public Meeting OnEnd(MeetingEndHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
+        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
         (
             context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == Channels.Msteams
+            && context.Activity?.ChannelId == _channelId
             && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingEnd)
         );
         async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
@@ -69,7 +67,7 @@ public class Meeting
             await handler(turnContext, turnState, meeting, cancellationToken);
         }
         _app.AddRoute(routeSelector, routeHandler);
-        return _app;
+        return this;
     }
 
     /// <summary>
@@ -77,14 +75,14 @@ public class Meeting
     /// </summary>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants join event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnParticipantsJoin(MeetingParticipantsEventHandler handler)
+    public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-        static Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
+        Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
         (
             context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == Channels.Msteams
+            && context.Activity?.ChannelId == _channelId
             && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantJoin)
         );
         async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
@@ -93,7 +91,7 @@ public class Meeting
             await handler(turnContext, turnState, meeting, cancellationToken);
         }
         _app.AddRoute(routeSelector, routeHandler);
-        return _app;
+        return this;
     }
 
     /// <summary>
@@ -101,14 +99,14 @@ public class Meeting
     /// </summary>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants leave event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnParticipantsLeave(MeetingParticipantsEventHandler handler)
+    public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
         Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
         (
             context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == Channels.Msteams
+            && context.Activity?.ChannelId == _channelId
             && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantLeave)
         );
         async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
@@ -117,6 +115,6 @@ public class Meeting
             await handler(turnContext, turnState, meeting, cancellationToken);
         }
         _app.AddRoute(routeSelector, routeHandler);
-        return _app;
+        return this;
     }
 }

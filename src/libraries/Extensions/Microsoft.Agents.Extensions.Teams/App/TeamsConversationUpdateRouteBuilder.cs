@@ -9,7 +9,7 @@ using System;
 using System.Threading.Tasks;
 using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
 
-namespace Microsoft.Agents.Extensions.Teams.App.Builders;
+namespace Microsoft.Agents.Extensions.Teams.App;
 
 /// <summary>
 /// RouteBuilder for routing Teams ConversationUpdate activities in an AgentApplication.

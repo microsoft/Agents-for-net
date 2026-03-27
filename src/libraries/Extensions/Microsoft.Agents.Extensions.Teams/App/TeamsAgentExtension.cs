@@ -6,10 +6,11 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App.Builders;
 using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
+using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
+using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Config;
 using Microsoft.Teams.Api.O365;
@@ -29,27 +30,58 @@ public class TeamsAgentExtension : AgentExtension
     /// Creates a new TeamsAgentExtension instance.
     /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.
     /// Use the callback method to register routes for handling Teams-specific events.
+    /// <code>
+    /// public class MyAgentApplication : AgentApplication
+    /// {
+    ///    public MyAgentApplication(AgentApplicationOptions options) : base(options)
+    ///    {
+    ///       RegisterExtension(new TeamsAgentExtension(this), teams =>
+    ///       {
+    ///          teams.Channels
+    ///             .OnCreated(async (turnContext, turnState, channelInfo, cancellationToken) =>
+    ///                {
+    ///                   // Handle channel created event
+    ///                })
+    ///             .OnDeleted(async (turnContext, turnState, channelInfo, cancellationToken) =>
+    ///                {
+    ///                   // Handle channel deleted event
+    ///                });
+    ///                
+    ///          teams.Meetings
+    ///             .OnStart(async (turnContext, turnState, meetingInfo, cancellationToken) =>
+    ///                {
+    ///                   // Handle meeting started event
+    ///                })
+    ///             .OnEnd(async (turnContext, turnState, meetingInfo, cancellationToken) =>
+    ///                {
+    ///                   // Handle meeting ended event
+    ///                });
+    ///       });
+    ///    }
+    /// }
+    /// </code>
     /// </summary>
-    /// <param name="agentApplication">The agent application to leverage for route registration.</param>
+    /// <param name="agentApplication">The AgentApplication for this extension.</param>
     /// <param name="options">Options for configuring TaskModules.</param>
     public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
     {
-        ChannelId = Channels.Msteams;
-
+        ChannelId = Core.Models.Channels.Msteams;
         AgentApplication = agentApplication;
 
-        Meetings = new Meeting(agentApplication);
-        MessageExtensions = new MessageExtension(agentApplication);
-        TaskModules = new TaskModule(agentApplication, options);
+        Meetings = new Meeting(agentApplication, ChannelId);
+        MessageExtensions = new MessageExtension(agentApplication, ChannelId);
+        TaskModules = new TaskModule(agentApplication, ChannelId, options);
+        Channels = new TeamsChannel(agentApplication, ChannelId);
+        Teams = new TeamsTeam(agentApplication, ChannelId);
 
         agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
-            if (turnContext.Activity.ChannelId == Channels.Msteams)
+            if (turnContext.Activity.ChannelId == ChannelId)
             {
                 // Set the TeamsApiClient in the turn context for use in handlers.
                 turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
 
-                // Explicit conversation of Activity.ChannelData to Teams' ChannelData for improved performance
+                // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
                 turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<ChannelData>(turnContext.Activity.ChannelData);
             }
             return Task.FromResult(true);
@@ -57,19 +89,29 @@ public class TeamsAgentExtension : AgentExtension
     }
 
     /// <summary>
-    /// Fluent interface for accessing Meetings' specific features.
+    /// Teams Meetings features.
     /// </summary>
     public Meeting Meetings { get; }
 
     /// <summary>
-    /// Fluent interface for accessing Message Extensions' specific features.
+    /// Teams Message Extensions features.
     /// </summary>
     public MessageExtension MessageExtensions { get; }
 
     /// <summary>
-    /// Fluent interface for accessing Task Modules' specific features.
+    /// Teams Task Modules features.
     /// </summary>
     public TaskModule TaskModules { get; }
+
+    /// <summary>
+    /// Teams Channel features.
+    /// </summary>
+    public TeamsChannel Channels { get; }
+
+    /// <summary>
+    /// Teams Team features.
+    /// </summary>
+    public TeamsTeam Teams { get; }
 
 #if !NETSTANDARD
     internal AgentApplication AgentApplication { get; init;}

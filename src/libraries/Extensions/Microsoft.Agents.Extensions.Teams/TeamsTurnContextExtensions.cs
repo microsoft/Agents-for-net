@@ -27,12 +27,7 @@ public static class TeamsTurnContextExtensions
     /// information about the sent activity.</returns>
     public static Task<ResourceResponse> SendTargetedActivityAsync(this ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
-        var clone = activity.Clone();
-
-        clone.Entities ??= [];
-        clone.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
-
-        return turnContext.SendActivityAsync(clone, cancellationToken);
+        return turnContext.SendActivityAsync(activity.Clone().MakeTargetedActivity(), cancellationToken);
     }
 
     /// <summary>
@@ -52,10 +47,7 @@ public static class TeamsTurnContextExtensions
         var clonedActivities = new List<IActivity>(activities.Length);
         foreach (var activity in activities)
         {
-            var clone = activity.Clone();
-            clone.Entities ??= [];
-            clone.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
-            clonedActivities.Add(clone);
+            clonedActivities.Add(activity.Clone().MakeTargetedActivity());
         }
 
         return turnContext.SendActivitiesAsync([.. clonedActivities], cancellationToken);

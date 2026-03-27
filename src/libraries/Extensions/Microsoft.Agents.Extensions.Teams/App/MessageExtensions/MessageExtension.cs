@@ -25,14 +25,20 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// </summary>
 /// <remarks>
 /// Creates a new instance of the MessageExtensions class.
-/// </remarks>
-/// <param name="app"></param> The top level application class to register handlers with.
-public class MessageExtension(AgentApplication app)
+/// </remarks> The top level application class to register handlers with.
+public class MessageExtension
 {
-    private readonly AgentApplication _app = app;
+    private readonly AgentApplication _app;
+    private readonly Core.Models.ChannelId _channelId;
+
+    internal MessageExtension(AgentApplication app, Core.Models.ChannelId channelId)
+    {
+        _app = app;
+        _channelId = channelId;
+    }
 
     [Obsolete("OnSubmitAction(string, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(string, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(commandId, (turnContext, turnState, data, cancellationToken) =>
@@ -48,17 +54,17 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnSubmitAction<TData>(string commandId, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(string commandId, SubmitActionHandlerAsync<TData> handler)
     {
         AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-        RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction);
+        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction);
         return OnSubmitAction(routeSelector, handler);
     }
 
     [Obsolete("OnSubmitAction(Regex, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(Regex, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(commandIdPattern, (turnContext, turnState, data, cancellationToken) =>
@@ -74,16 +80,16 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandlerAsync<TData> handler)
     {
         AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction);
+        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction);
         return OnSubmitAction(routeSelector, handler);
     }
 
     [Obsolete("OnSubmitAction(RouteSelector, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(RouteSelector, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnSubmitAction(RouteSelector routeSelector, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(RouteSelector routeSelector, SubmitActionHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(routeSelector, (turnContext, turnState, data, cancellationToken) =>
@@ -101,7 +107,7 @@ public class MessageExtension(AgentApplication app)
     /// <returns>The application instance for chaining purposes.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the incoming activity is not a valid Message Extension SubmitAction invoke or if the payload cannot be
     /// deserialized.</exception>
-    public AgentApplication OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandlerAsync<TData> handler)
     {
         async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
@@ -118,7 +124,8 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, result);
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -128,11 +135,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "edit");
+        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "edit");
         return OnAgentMessagePreviewEdit(routeSelector, handler);
     }
 
@@ -143,11 +150,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "edit");
+        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "edit");
         return OnAgentMessagePreviewEdit(routeSelector, handler);
     }
 
@@ -158,7 +165,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
     {
         async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
@@ -175,7 +182,8 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, result);
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -185,11 +193,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
     {
         AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "send");
+        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "send");
         return OnAgentMessagePreviewSend(routeSelector, handler);
     }
 
@@ -200,11 +208,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
     {
         AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "send");
+        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "send");
         return OnAgentMessagePreviewSend(routeSelector, handler);
     }
 
@@ -215,7 +223,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAgentMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
     {
         AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
@@ -236,7 +244,8 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, new Response());
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -245,11 +254,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.FetchTask);
+        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.FetchTask);
         return OnFetchTask(routeSelector, handler);
     }
 
@@ -259,11 +268,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.FetchTask);
+        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.FetchTask);
         return OnFetchTask(routeSelector, handler);
     }
 
@@ -273,7 +282,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnFetchTask(RouteSelector routeSelector, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(RouteSelector routeSelector, FetchTaskHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
@@ -290,7 +299,8 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, result);
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -299,11 +309,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnQuery(string commandId, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(string commandId, QueryHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.Query);
+        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.Query);
         return OnQuery(routeSelector, handler);
     }
 
@@ -313,11 +323,11 @@ public class MessageExtension(AgentApplication app)
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateTaskSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.Query);
+        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.Query);
         return OnQuery(routeSelector, handler);
     }
 
@@ -327,7 +337,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnQuery(RouteSelector routeSelector, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(RouteSelector routeSelector, QueryHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
@@ -356,11 +366,12 @@ public class MessageExtension(AgentApplication app)
             });
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     [Obsolete("OnSelectItem(SelectItemHandlerAsync) will be deprecated in future versions. Please use OnSelectItem<TData>(SelectItemHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnSelectItem(SelectItemHandlerAsync handler)
+    public MessageExtension OnSelectItem(SelectItemHandlerAsync handler)
     {
         return OnSelectItem<object>((turnContext, turnState, data, cancellationToken) =>
         {
@@ -381,7 +392,7 @@ public class MessageExtension(AgentApplication app)
     /// <typeparam name="TData">The type of the data object expected from the SelectItem event payload.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnSelectItem<TData>(SelectItemHandlerAsync<TData> handler)
+    public MessageExtension OnSelectItem<TData>(SelectItemHandlerAsync<TData> handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -400,7 +411,8 @@ public class MessageExtension(AgentApplication app)
             });
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -408,7 +420,7 @@ public class MessageExtension(AgentApplication app)
     /// </summary>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnQueryLink(QueryLinkHandlerAsync handler)
+    public MessageExtension OnQueryLink(QueryLinkHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -428,7 +440,8 @@ public class MessageExtension(AgentApplication app)
             }); 
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -441,7 +454,7 @@ public class MessageExtension(AgentApplication app)
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
+    public MessageExtension OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -461,7 +474,8 @@ public class MessageExtension(AgentApplication app)
             }); 
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     /// <summary>
@@ -472,7 +486,7 @@ public class MessageExtension(AgentApplication app)
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public AgentApplication OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
+    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -491,11 +505,12 @@ public class MessageExtension(AgentApplication app)
             });
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     [Obsolete("OnConfigureSettings(ConfigureSettingsHandlerAsync) will be deprecated in future versions. Please use OnConfigureSettings<TData>(ConfigureSettingsHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnConfigureSettings(ConfigureSettingsHandler handler)
+    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnConfigureSettings<object>((turnContext, turnState, data, cancellationToken) =>
@@ -513,8 +528,8 @@ public class MessageExtension(AgentApplication app)
     /// <typeparam name="TData">The type of the settings data expected from the message extension settings event.</typeparam>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type TData, and a cancellation token. Cannot be null.</param>
-    /// <returns>The current AgentApplication instance for method chaining.</returns>
-    public AgentApplication OnConfigureSettings<TData>(ConfigureSettingsHandler<TData> handler)
+    /// <returns>The current MessageExtension instance for method chaining.</returns>
+    public MessageExtension OnConfigureSettings<TData>(ConfigureSettingsHandler<TData> handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -530,11 +545,12 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, null);
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
     [Obsolete("OnCardButtonClicked(CardButtonClickedHandler) will be deprecated in future versions. Please use OnCardButtonClicked<TData>(CardButtonClickedHandler<TData>) instead for strongly-typed data handling.")]
-    public AgentApplication OnCardButtonClicked(CardButtonClickedHandler handler)
+    public MessageExtension OnCardButtonClicked(CardButtonClickedHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnCardButtonClicked<object>((turnContext, turnState, data, cancellationToken) =>
@@ -555,7 +571,7 @@ public class MessageExtension(AgentApplication app)
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
     /// deserialized value payload of type TData, and a cancellation token. Cannot be null.</param>
     /// <returns>The current AgentApplication instance for method chaining.</returns>
-    public AgentApplication OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler)
+    public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -571,15 +587,20 @@ public class MessageExtension(AgentApplication app)
             await TeamsAgentExtension.SetResponse(turnContext, null);
         }
 
-        return _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        return this;
     }
 
-    private static RouteSelector CreateTaskSelector(Func<string, bool> isMatch, string invokeName, string? botMessagePreviewAction = default)
+    private RouteSelector CreateSelector(Func<string, bool> isMatch, string invokeName, string? botMessagePreviewAction = default)
     {
         Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, invokeName);
+            if (turnContext.Activity.ChannelId != _channelId)
+            {
+                return Task.FromResult(false);
+            }
+
+            bool isInvoke = turnContext.Activity.IsType(ActivityTypes.Invoke) && string.Equals(turnContext.Activity.Name, invokeName);
             if (!isInvoke)
             {
                 return Task.FromResult(false);
