@@ -54,8 +54,4 @@
 	  </EmbeddedResource>
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Telemetry\" />
-	</ItemGroup>
-
 </Project>

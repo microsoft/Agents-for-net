@@ -7,7 +7,6 @@ namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
     internal class ScopeCreateUserTokenClient : TelemetryScope
     {
         private string _tokenServiceEndpoint;
-        private IEnumerable<string>? _scopes;
 
         public ScopeCreateUserTokenClient(string tokenServiceEndpoint) : base(Constants.ScopeContinueConversation)
         {
