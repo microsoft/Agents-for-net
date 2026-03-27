@@ -256,7 +256,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 createOptions.Identity,
                 createOptions.ChannelId,
                 createOptions.ServiceUrl,
-                createOptions.Scope,
+                createOptions.Audience,
                 createOptions.Parameters,
                 null,
                 cancellationToken).ConfigureAwait(false);
