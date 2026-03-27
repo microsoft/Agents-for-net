@@ -103,60 +103,62 @@ namespace Microsoft.Agents.Builder
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             using var telemetryActivity = new ScopeCreateConnectorClient(turnContext.Activity.ServiceUrl, scopes, turnContext.Activity.IsAgenticRequest());
-
-            if (string.Equals(turnContext.Activity.Recipient.Role, RoleTypes.ConnectorUser, StringComparison.OrdinalIgnoreCase))
+            return telemetryActivity.Wrap(() =>
             {
-                return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
-            }
-
-            if (!turnContext.Activity.IsAgenticRequest())
-            {
-                // Non agentic, so use legacy tokens
-                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
-            }
-
-            // Use an Agentic token for the ConnectorClient
-            return Task.FromResult<IConnectorClient>(new RestConnectorClient(
-                new Uri(turnContext.Activity.ServiceUrl),
-                _httpClientFactory,
-                () =>
+                if (string.Equals(turnContext.Activity.Recipient.Role, RoleTypes.ConnectorUser, StringComparison.OrdinalIgnoreCase))
                 {
-                    var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
-                    if (connection is IAgenticTokenProvider agenticTokenProvider)
+                    return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
+                }
+
+                if (!turnContext.Activity.IsAgenticRequest())
+                {
+                    // Non agentic, so use legacy tokens
+                    return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
+                }
+
+                // Use an Agentic token for the ConnectorClient
+                return Task.FromResult<IConnectorClient>(new RestConnectorClient(
+                    new Uri(turnContext.Activity.ServiceUrl),
+                    _httpClientFactory,
+                    () =>
                     {
-                        try
+                        var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                        if (connection is IAgenticTokenProvider agenticTokenProvider)
                         {
-                            if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+                            try
                             {
-                                return agenticTokenProvider.GetAgenticInstanceTokenAsync(
+                                if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+                                {
+                                    return agenticTokenProvider.GetAgenticInstanceTokenAsync(
+                                        turnContext.Activity.GetAgenticTenantId(),
+                                        turnContext.Activity.GetAgenticInstanceId(),
+                                        cancellationToken);
+                                }
+
+                                return agenticTokenProvider.GetAgenticUserTokenAsync(
                                     turnContext.Activity.GetAgenticTenantId(),
                                     turnContext.Activity.GetAgenticInstanceId(),
+                                    turnContext.Activity.GetAgenticUser(),
+                                    connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope],
                                     cancellationToken);
                             }
-
-                            return agenticTokenProvider.GetAgenticUserTokenAsync(
-                                turnContext.Activity.GetAgenticTenantId(),
-                                turnContext.Activity.GetAgenticInstanceId(),
-                                turnContext.Activity.GetAgenticUser(),
-                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
-                                cancellationToken);
+                            catch (Exception ex)
+                            {
+                                // have to do it this way b/c of the lambda expression. 
+                                throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                        ErrorHelper.AgenticTokenProviderFailed, ex, turnContext.Activity.GetAgenticTenantId(), turnContext.Activity.GetAgenticInstanceId(), turnContext.Activity.GetAgenticUser(), turnContext.Activity.Recipient.Role);
+                            }
                         }
-                        catch (Exception ex)
+                        else
                         {
                             // have to do it this way b/c of the lambda expression. 
                             throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                    ErrorHelper.AgenticTokenProviderFailed, ex, turnContext.Activity.GetAgenticTenantId(), turnContext.Activity.GetAgenticInstanceId(), turnContext.Activity.GetAgenticUser(), turnContext.Activity.Recipient.Role);
+                                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                         }
-                    }
-                    else
-                    {
-                        // have to do it this way b/c of the lambda expression. 
-                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
-                    }
-                },
-                typeof(RestChannelServiceClientFactory).FullName, 
-                maxApxConversationIdLength: _iMaxApxConversationIdLength));
+                    },
+                    typeof(RestChannelServiceClientFactory).FullName,
+                    maxApxConversationIdLength: _iMaxApxConversationIdLength));
+            });
         }
 
         /// <inheritdoc />
@@ -165,30 +167,32 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
 
             using var telemetryActivity = new ScopeCreateUserTokenClient(_tokenServiceEndpoint);
+            return telemetryActivity.Wrap(() =>
+            {
+                var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 
-            var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
-
-            return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
-                appId,
-                new Uri(_tokenServiceEndpoint),
-                _httpClientFactory,
-                useAnonymous ? null : () =>
-                {
-                    try
+                return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
+                    appId,
+                    new Uri(_tokenServiceEndpoint),
+                    _httpClientFactory,
+                    useAnonymous ? null : () =>
                     {
-                        var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
-                        string[] scopes = [$"{_tokenServiceAudience}/.default"];
-                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, scopes);
-                    }
-                    catch (Exception ex)
-                    {
-                        // have to do it this way b/c of the lambda expression. 
-                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
-                    }
-                },
-                typeof(RestChannelServiceClientFactory).FullName,
-                _logger));
+                        try
+                        {
+                            var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
+                            string[] scopes = [$"{_tokenServiceAudience}/.default"];
+                            return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, scopes);
+                        }
+                        catch (Exception ex)
+                        {
+                            // have to do it this way b/c of the lambda expression. 
+                            throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                    ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                        }
+                    },
+                    typeof(RestChannelServiceClientFactory).FullName,
+                    _logger));
+            });
         }
     }
 }

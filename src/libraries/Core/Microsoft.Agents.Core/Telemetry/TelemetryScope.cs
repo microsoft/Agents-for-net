@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.Telemetry
 {
     public class TelemetryScope : IDisposable
     {
-        public readonly Activity? _telemetryActivity;
+        private readonly Activity? _telemetryActivity;
         private Exception? _error = null;
         private bool _disposed = false;
 
@@ -64,6 +64,51 @@ namespace Microsoft.Agents.Core.Telemetry
                 }
                 // Dispose unmanaged resources here if needed
                 _disposed = true;
+            }
+        }
+
+        public void Wrap(Action action)
+        {
+            Wrap(() =>
+            {
+                action();
+                return true; // Return value is not used
+            });
+        }
+
+        public T Wrap<T>(Func<T> func)
+        {
+            try
+            {
+                return func();
+            }
+            catch (Exception ex)
+            {
+                if (!_disposed)
+                    SetError(ex);
+                throw;
+            }
+        }
+
+        public async Task WrapAsync(Func<Task> action)
+        {
+            await WrapAsync<bool>(async () =>
+            {
+                await action();
+                return true; // Return value is not used
+            });
+        }
+
+        public async Task<T> WrapAsync<T>(Func<Task<T>> action)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (Exception ex)
+            {
+                SetError(ex);
+                throw;
             }
         }
     }

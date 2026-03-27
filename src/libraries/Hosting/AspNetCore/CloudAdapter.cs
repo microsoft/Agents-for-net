@@ -213,11 +213,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;
                     }
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
                 {
                     // Request was cancelled (e.g. client disconnected). This is expected and not an error.
                     Logger.LogWarning("CloudAdapter.ProcessAsync cancelled for RequestId={RequestId}", activity.RequestId);
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                    telemetryScope.SetError(ex);
                 }
                 catch (Exception ex)
                 {
@@ -225,6 +226,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
                     httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                    telemetryScope.SetError(ex);
                 }
             }
         }
