@@ -59,7 +59,7 @@ public static class TeamsApiClientExtensions
         Microsoft.Teams.Common.Http.IHttpClientOptions.HttpTokenFactory tokenFactory = useAnonymous ? null : () =>
         {
             var tokenAccess = connections.GetTokenProvider(context.Identity, context.Activity.ServiceUrl);
-            return tokenAccess.GetAccessTokenAsync(AuthenticationConstants.BotFrameworkScope, [$"{AuthenticationConstants.BotFrameworkScope}/.default"]).ConfigureAwait(false).GetAwaiter().GetResult();
+            return tokenAccess.GetAccessTokenAsync(AuthenticationConstants.BotFrameworkAudience, [AuthenticationConstants.BotFrameworkDefaultScope]).ConfigureAwait(false).GetAwaiter().GetResult();
         };
 
         var client = new Microsoft.Teams.Api.Clients.ApiClient(
