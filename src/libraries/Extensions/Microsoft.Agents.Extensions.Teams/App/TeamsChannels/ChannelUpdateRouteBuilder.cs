@@ -6,6 +6,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Teams.Api;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
 
@@ -113,6 +114,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
 
     protected override void PreBuild()
     {
+        _route.ChannelId ??= Channels.Msteams;
         _route.Selector = (context, _) =>
         {
             var teamChannelData = context.Activity.GetChannelData<ChannelData>();

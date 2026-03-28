@@ -93,6 +93,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
 
     protected override void PreBuild()
     {
+        _route.ChannelId ??= Channels.Msteams;
         _route.Selector = (context, _) =>
         {
             var teamChannelData = context.Activity.GetChannelData<ChannelData>();

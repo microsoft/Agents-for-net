@@ -27,11 +27,11 @@ public class TeamsMessageExtensionAgent : AgentApplication
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        RegisterExtension(new TeamsAgentExtension(this), tae =>
+        RegisterExtension(new TeamsAgentExtension(this), teams =>
         {
-            tae.MessageExtensions.OnQuery("findNuGetPackage", OnQueryAsync);
-            tae.MessageExtensions.OnSelectItem<PackageItem>(OnSelectItemAsync);
-            tae.MessageExtensions.OnQueryLink(OnQueryLinkAsync);
+            teams.MessageExtensions.OnQuery("findNuGetPackage", OnQueryAsync);
+            teams.MessageExtensions.OnSelectItem<PackageItem>(OnSelectItemAsync);
+            teams.MessageExtensions.OnQueryLink(OnQueryLinkAsync);
         });
 
         AddRoute(MessageRouteBuilder.Create().WithChannelId(Channels.Msteams).WithText("-name").WithHandler(MyNameAsync).Build());
