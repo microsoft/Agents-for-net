@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var expectedInvokeResponse = new InvokeResponse()
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var expectedInvokeResponse = new InvokeResponse()

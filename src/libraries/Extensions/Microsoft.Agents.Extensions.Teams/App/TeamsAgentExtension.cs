@@ -11,9 +11,6 @@ using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
-using Microsoft.Teams.Api;
-using Microsoft.Teams.Api.Config;
-using Microsoft.Teams.Api.O365;
 using System;
 using System.Text.Json;
 using System.Threading;
@@ -82,7 +79,7 @@ public class TeamsAgentExtension : AgentExtension
                 turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
 
                 // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
-                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<ChannelData>(turnContext.Activity.ChannelData);
+                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
             }
             return Task.FromResult(true);
         });
@@ -154,7 +151,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithSelector((turnContext, cancellationToken) =>
             {
-                ChannelData ChannelData = turnContext.Activity.GetChannelData<ChannelData>();
+                Microsoft.Teams.Api.ChannelData ChannelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
                 return Task.FromResult(string.Equals(ChannelData?.EventType, "editMessage", StringComparison.OrdinalIgnoreCase));
             })
             .WithHandler(handler)
@@ -178,7 +175,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithSelector((turnContext, cancellationToken) =>
             {
-                ChannelData ChannelData = turnContext.Activity.GetChannelData<ChannelData>();
+                Microsoft.Teams.Api.ChannelData ChannelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
                 return Task.FromResult(string.Equals(ChannelData?.EventType, "undeleteMessage", StringComparison.OrdinalIgnoreCase));
             })
             .WithHandler(handler)
@@ -202,7 +199,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithSelector((turnContext, cancellationToken) =>
             {
-                ChannelData channelData = turnContext.Activity.GetChannelData<ChannelData>();
+                Microsoft.Teams.Api.ChannelData channelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
                 return Task.FromResult(string.Equals(channelData?.EventType, "softDeleteMessage", StringComparison.OrdinalIgnoreCase));
             })
             .WithHandler(handler)
@@ -249,7 +246,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                Microsoft.Teams.Api.Config.ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
                 await SetResponse(turnContext, result);
             })
             .WithOAuthHandlers(autoSignInHandlers)
@@ -273,7 +270,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithHandler(async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                Microsoft.Teams.Api.Config.ConfigResponse result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
                 await SetResponse(turnContext, result);
             })
             .WithOAuthHandlers(autoSignInHandlers)
@@ -311,12 +308,12 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithSelector((turnContext, cancellationToken) =>
             {
-                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value);
+                Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(turnContext.Activity.Value);
                 return Task.FromResult(fileConsentCardResponse != null && string.Equals(fileConsentCardResponse.Action, fileConsentAction));
             })
             .WithHandler(async (turnContext, turnState, cancellationToken) =>
             {
-                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value);
+                Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(turnContext.Activity.Value);
                 if (string.Equals(fileConsentCardResponse.Action, fileConsentAction))
                 {
                     await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken);
@@ -344,7 +341,7 @@ public class TeamsAgentExtension : AgentExtension
             .WithChannelId(ChannelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
             .WithHandler(async (turnContext, turnState, cancellationToken) =>
             {
-                ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<ConnectorCardActionQuery>(turnContext.Activity.Value) ?? new();
+                Microsoft.Teams.Api.O365.ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(turnContext.Activity.Value) ?? new();
                 await handler(turnContext, turnState, query, cancellationToken);
                 await SetResponse(turnContext);
             })

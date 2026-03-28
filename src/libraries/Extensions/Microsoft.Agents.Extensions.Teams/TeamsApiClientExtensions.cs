@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.HeaderPropagation;
-using System;
 using System.Threading;
 
 namespace Microsoft.Agents.Extensions.Teams;

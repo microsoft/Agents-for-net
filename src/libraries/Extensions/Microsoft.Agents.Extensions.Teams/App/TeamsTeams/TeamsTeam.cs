@@ -18,7 +18,11 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsTeams
         }
 
         /// <summary>
-        /// Handle any team update event.  Use <see cref="TeamUpdateActivity.EventType"/> to differentiate between team update event types (e.g. archived, deleted, etc.).
+        /// Handle any team update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between 
+        /// team update event types (e.g. archived, deleted, etc.) using:
+        /// <code>
+        /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
+        /// </code>
         /// </summary>
         /// <param name="handler"></param>
         /// <param name="rank"></param>

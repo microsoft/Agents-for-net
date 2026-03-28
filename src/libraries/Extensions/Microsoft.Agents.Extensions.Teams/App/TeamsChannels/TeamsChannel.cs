@@ -21,7 +21,11 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Handle any channel update event.  Use <see cref="ChannelUpdateActivity.EventType"/> to differentiate between channel update event types (e.g. created, deleted, renamed, etc.).
+        /// Handle any channel update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between 
+        /// channel update event types (e.g. created, deleted, etc.) using:
+        /// <code>
+        /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
+        /// </code>
         /// </summary>
         /// <param name="handler"></param>
         /// <param name="rank"></param>

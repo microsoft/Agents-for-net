@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 
 /// <summary>
-/// Represents a delegate that handles team update events in Microsoft Teams, processing the provided context and
-/// team data asynchronously.
+/// Represents a delegate that handles team update events in Microsoft Teams.
 /// </summary>
 /// <remarks>Use this delegate to implement custom logic in response to team update events, such as when a
 /// team is created, renamed, or deleted in Microsoft Teams.</remarks>

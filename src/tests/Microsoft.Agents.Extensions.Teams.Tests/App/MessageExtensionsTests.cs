@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var actionResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var actionResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             };
 
             var turnContext = new TurnContext(adapter, new Activity()
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var actionResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
@@ -448,7 +448,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             };
 
             var turnContext = new TurnContext(adapter, new Activity()
@@ -465,7 +465,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var expectedInvokeResponse = new InvokeResponse()
             {
@@ -624,7 +624,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var expectedInvokeResponse = new InvokeResponse()
@@ -780,7 +780,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
             var expectedInvokeResponse = new InvokeResponse()

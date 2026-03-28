@@ -6,7 +6,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Teams.Api;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
 
@@ -16,7 +15,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 /// RouteBuilder for routing Channel ConversationUpdate activities in an AgentApplication.
 /// </summary>
 /// <remarks>Use <see cref="ChannelUpdateRouteBuilder"/> to create and configure routes that respond to conversation
-/// update activities. This builder allows matching update activities by name, and supports agentic routing scenarios.</remarks>
+/// update events. This builder allows matching update events, ordering, oauth, and agentic routing scenarios.  This
+/// builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
+/// <code>
+/// var route = ChannelUpdateRouteBuilder.Create()
+///    .ForChannelCreated()
+///    .ForChannelDeleted()
+///    .WithHandler(async (context, state, channel, cancellationToken) => { /* handler logic */ })
+///    .Build();
+///    
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateRouteBuilder>
 {
     private readonly IList<string> _channelEvents = [];
@@ -115,14 +125,14 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     protected override void PreBuild()
     {
         _route.ChannelId ??= Channels.Msteams;
-        _route.Selector = (context, _) =>
+        _route.Selector ??= (context, _) =>
         {
             var teamChannelData = context.Activity.GetChannelData<ChannelData>();
             return Task.FromResult
             (
-                _route.IsChannelIdMatch(context.Activity.ChannelId)
+                IsContextMatch(context, _route)
                 && context.Activity.IsType(ActivityTypes.ConversationUpdate)
-                && _channelEvents.Count > 0 ? _channelEvents.Contains(teamChannelData?.EventType) : AnyChannelEvent().IsMatch(teamChannelData?.EventType ?? string.Empty)
+                && (_channelEvents.Count > 0 ? _channelEvents.Contains(teamChannelData?.EventType) : AnyChannelEvent().IsMatch(teamChannelData?.EventType ?? string.Empty))
                 && teamChannelData?.Channel != null
             );
         };

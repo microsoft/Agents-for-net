@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 
 /// <summary>
-/// Represents a delegate that handles channel update events in Microsoft Teams, processing the provided context and
-/// channel data asynchronously.
+/// Represents a delegate that handles channel update events in Microsoft Teams.
 /// </summary>
 /// <remarks>Use this delegate to implement custom logic in response to channel update events, such as when a
 /// channel is created, renamed, or deleted in Microsoft Teams.</remarks>

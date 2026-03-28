@@ -15,7 +15,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 /// RouteBuilder for routing Teams ConversationUpdate activities in an AgentApplication.
 /// </summary>
 /// <remarks>Use <see cref="TeamUpdateRouteBuilder"/> to create and configure routes that respond to conversation
-/// update activities. This builder allows matching update activities by name, and supports agentic routing scenarios.</remarks>
+/// update events. This builder allows matching update events, ordering, oauth, and agentic routing scenarios.  This
+/// builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
+/// <code>
+/// var route = TeamUpdateRouteBuilder.Create()
+///    .ForTeamArchived()
+///    .ForTeamUnarchived()
+///    .WithHandler(async (context, state, team, cancellationToken) => { /* handler logic */ })
+///    .Build();
+///    
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBuilder>
 {
     private readonly IList<string> _teamEvents = [];
@@ -94,14 +105,14 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     protected override void PreBuild()
     {
         _route.ChannelId ??= Channels.Msteams;
-        _route.Selector = (context, _) =>
+        _route.Selector ??= (context, _) =>
         {
             var teamChannelData = context.Activity.GetChannelData<ChannelData>();
             return Task.FromResult
             (
-                _route.IsChannelIdMatch(context.Activity.ChannelId)
+                IsContextMatch(context, _route)
                 && context.Activity.IsType(ActivityTypes.ConversationUpdate)
-                && _teamEvents.Count > 0 ? _teamEvents.Contains(teamChannelData?.EventType) : AnyTeamEvent().IsMatch(teamChannelData?.EventType ?? string.Empty)
+                && (_teamEvents.Count > 0 ? _teamEvents.Contains(teamChannelData?.EventType) : AnyTeamEvent().IsMatch(teamChannelData?.EventType ?? string.Empty))
                 && teamChannelData?.Team != null
             );
         };
