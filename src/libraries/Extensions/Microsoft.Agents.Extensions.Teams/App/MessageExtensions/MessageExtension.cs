@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -12,7 +11,6 @@ using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Activities.Invokes;
 using Microsoft.Teams.Api.MessageExtensions;
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -231,7 +229,7 @@ public class MessageExtension
         async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             Microsoft.Teams.Api.MessageExtensions.Action? messagingExtensionAction;
-            if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+            if (!turnContext.Activity.IsType(ActivityTypes.Invoke)
                 || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.SubmitAction)
                 || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(turnContext.Activity.Value)) == null
                 || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "send"))
@@ -352,14 +350,7 @@ public class MessageExtension
                 throw new InvalidOperationException($"Unexpected MessageExtensions.OnQuery() triggered for activity type: {turnContext.Activity.Type}");
             }
 
-            Dictionary<string, object> parameters = [];
-            foreach (Microsoft.Teams.Api.MessageExtensions.Parameter parameter in messagingExtensionQuery.Parameters)
-            {
-                parameters.Add(parameter.Name, parameter.Value);
-            }
-            Query<IDictionary<string, object>> query = new(messagingExtensionQuery.QueryOptions.Count ?? 25, messagingExtensionQuery.QueryOptions.Skip ?? 0, parameters);
-
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, query, cancellationToken);
+            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, messagingExtensionQuery, cancellationToken);
             await TeamsAgentExtension.SetResponse(turnContext, new Response()
             {
                 ComposeExtension = result
@@ -509,27 +500,13 @@ public class MessageExtension
         return this;
     }
 
-    [Obsolete("OnConfigureSettings(ConfigureSettingsHandlerAsync) will be deprecated in future versions. Please use OnConfigureSettings<TData>(ConfigureSettingsHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler)
-    {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        return OnConfigureSettings<object>((turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
-    }
-
     /// <summary>
     /// Registers a handler that implements the logic to invoke configuring Message Extension settings.
     /// </summary>
-    /// <remarks>
-    /// The <see cref="Name.MessageExtensions.Setting"/> INVOKE activity does not contain a command ID, so only a single select item handler can be registered.
-    /// </remarks>
-    /// <typeparam name="TData">The type of the settings data expected from the message extension settings event.</typeparam>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
-    /// settings data of type TData, and a cancellation token. Cannot be null.</param>
+    /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
-    public MessageExtension OnConfigureSettings<TData>(ConfigureSettingsHandler<TData> handler)
+    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -541,7 +518,7 @@ public class MessageExtension
 
         async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<TData>(turnContext.Activity.Value), cancellationToken);
+            await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(turnContext.Activity.Value), cancellationToken);
             await TeamsAgentExtension.SetResponse(turnContext, null);
         }
 

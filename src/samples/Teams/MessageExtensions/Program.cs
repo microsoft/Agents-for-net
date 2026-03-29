@@ -1,16 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using MessageExtensions;
-using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System.Collections.Generic;
-using System.Net.Http;
+using MessageExtensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -19,21 +12,9 @@ builder.Services.AddHttpClient();
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add File downloaders
-builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
-{
-    return 
-    [
-        new Microsoft.Agents.Builder.App.M365AttachmentDownloader(
-            sp.GetService<IConnections>()!,
-            sp.GetService<IHttpClientFactory>()!),
-        // new AttachmentDownloader(sp.GetService<IHttpClientFactory>()!)
-    ];
-});
-
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
-builder.AddAgent<TeamsMessageExtensionAgent>();
+builder.AddAgent<MessageExtensionsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -60,6 +41,9 @@ app.MapAgentRootEndpoint();
 // Map the endpoints for all agents using the [AgentInterface] attribute.
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+
+// Map GET "/settings" to return the HTML for the settings page, which is defined in MessageExtensionsAgent.GetSettingsHtml().
+app.MapGet("/settings", () => Results.Content(MessageExtensionsAgent.GetSettingsHtml(), "text/html"));
 
 if (app.Environment.IsDevelopment())
 {

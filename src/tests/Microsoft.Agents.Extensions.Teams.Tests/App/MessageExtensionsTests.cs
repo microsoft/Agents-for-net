@@ -13,6 +13,7 @@ using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -802,9 +803,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             QueryHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Single(query.Parameters);
-                Assert.Equal("test-value", query.Parameters["test-name"].ToString());
-                Assert.Equal(10, query.Count);
-                Assert.Equal(0, query.Skip);
+                Assert.Equal("test-value", query.Parameters.FirstOrDefault(p => p.Name == "test-name")?.Value?.ToString());
+                Assert.Equal(10, query.QueryOptions.Count);
+                Assert.Equal(0, query.QueryOptions.Skip);
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
             app.RegisterExtension(extension, (ext) =>
@@ -865,9 +866,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             QueryHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Single(query.Parameters);
-                Assert.Equal("test-value", query.Parameters["test-name"]);
-                Assert.Equal(10, query.Count);
-                Assert.Equal(0, query.Skip);
+                Assert.Equal("test-value", query.Parameters.FirstOrDefault(p => p.Name == "test-name")?.Value?.ToString());
+                Assert.Equal(10, query.QueryOptions.Count);
+                Assert.Equal(0, query.QueryOptions.Skip);
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
 
@@ -1495,9 +1496,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            ConfigureSettingsHandler<IDictionary<string,string>> handler = (turnContext, turnState, settings, cancellationToken) =>
+            ConfigureSettingsHandler handler = (turnContext, turnState, settings, cancellationToken) =>
             {
-                Assert.Equal("test-state", settings["state"]);
+                Assert.Equal("test-state", settings.State);
                 return Task.CompletedTask;
             };
 
