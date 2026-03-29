@@ -126,11 +126,11 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Result> QueryUrlSetti
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
-/// <param name="settings">The configuration settings that was submitted.</param>
+/// <param name="query">The query that was submitted.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task ConfigureSettingsHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query settings, CancellationToken cancellationToken);
+public delegate Task ConfigureSettingsHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension clicking card button events.

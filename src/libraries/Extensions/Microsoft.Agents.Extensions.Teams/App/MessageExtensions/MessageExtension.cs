@@ -7,11 +7,8 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.Activities.Invokes;
-using Microsoft.Teams.Api.MessageExtensions;
 using System;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,11 +51,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction<TData>(string commandId, SubmitActionHandlerAsync<TData> handler)
     {
-        AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction);
-        return OnSubmitAction(routeSelector, handler);
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
     }
 
     [Obsolete("OnSubmitAction(Regex, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(Regex, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
@@ -80,10 +74,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandlerAsync<TData> handler)
     {
-        AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction);
-        return OnSubmitAction(routeSelector, handler);
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
     }
 
     [Obsolete("OnSubmitAction(RouteSelector, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(RouteSelector, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
@@ -107,22 +99,7 @@ public class MessageExtension
     /// deserialized.</exception>
     public MessageExtension OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandlerAsync<TData> handler)
     {
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Action? messagingExtensionAction;
-            if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.SubmitAction)
-                || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(turnContext.Activity.Value)) == null)
-            {
-                throw new InvalidOperationException($"Unexpected MessageExtensions.OnSubmitAction() triggered for activity type: {turnContext.Activity.Type}");
-            }
-
-            Microsoft.Teams.Api.MessageExtensions.Response result = await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<TData>(messagingExtensionAction.Data), cancellationToken);
-
-            await TeamsAgentExtension.SetResponse(turnContext, result);
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -135,10 +112,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "edit");
-        return OnAgentMessagePreviewEdit(routeSelector, handler);
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -150,10 +125,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "edit");
-        return OnAgentMessagePreviewEdit(routeSelector, handler);
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -165,22 +138,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
     {
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Action? messagingExtensionAction;
-            if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.SubmitAction)
-                || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(turnContext.Activity.Value)) == null
-                || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "edit"))
-            {
-                throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewEdit() triggered for activity type: {turnContext.Activity.Type}");
-            }
-
-            Microsoft.Teams.Api.MessageExtensions.Response result = await handler(turnContext, turnState, messagingExtensionAction.BotActivityPreview[0].ToCoreActivity(), cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, result);
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -193,10 +151,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.SubmitAction, "send");
-        return OnAgentMessagePreviewSend(routeSelector, handler);
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -208,10 +164,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.SubmitAction, "send");
-        return OnAgentMessagePreviewSend(routeSelector, handler);
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -223,26 +177,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAgentMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Action? messagingExtensionAction;
-            if (!turnContext.Activity.IsType(ActivityTypes.Invoke)
-                || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.SubmitAction)
-                || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(turnContext.Activity.Value)) == null
-                || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "send"))
-            {
-                throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewSend() triggered for activity type: {turnContext.Activity.Type}");
-            }
-
-            IActivity activityPreview = messagingExtensionAction.BotActivityPreview.Count > 0 ? messagingExtensionAction.BotActivityPreview[0].ToCoreActivity() : new Activity();
-            await handler(turnContext, turnState, activityPreview, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response());
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -254,10 +189,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.FetchTask);
-        return OnFetchTask(routeSelector, handler);
+        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -268,10 +201,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.FetchTask);
-        return OnFetchTask(routeSelector, handler);
+        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -282,22 +213,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchTask(RouteSelector routeSelector, FetchTaskHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.FetchTask))
-            {
-                throw new InvalidOperationException($"Unexpected MessageExtensions.OnFetchTask() triggered for activity type: {turnContext.Activity.Type}");
-            }
-
-            Microsoft.Teams.Api.TaskModules.Response result = await handler(turnContext, turnState, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, result);
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -309,10 +225,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(string commandId, QueryHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandId, nameof(commandId));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => string.Equals(commandId, input), Name.MessageExtensions.Query);
-        return OnQuery(routeSelector, handler);
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -323,10 +237,8 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(commandIdPattern, nameof(commandIdPattern)); 
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        RouteSelector routeSelector = CreateSelector((string input) => commandIdPattern.IsMatch(input), Name.MessageExtensions.Query);
-        return OnQuery(routeSelector, handler);
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
     }
 
     /// <summary>
@@ -337,27 +249,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(RouteSelector routeSelector, QueryHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Query? messagingExtensionQuery = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(turnContext.Activity.Value);
-            if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(turnContext.Activity.Name, Name.MessageExtensions.Query)
-                || (messagingExtensionQuery == null))
-            {
-                throw new InvalidOperationException($"Unexpected MessageExtensions.OnQuery() triggered for activity type: {turnContext.Activity.Type}");
-            }
-
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, messagingExtensionQuery, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response()
-            {
-                ComposeExtension = result
-            });
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -385,24 +277,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSelectItem<TData>(SelectItemHandlerAsync<TData> handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(turnContext.Activity.IsType(ActivityTypes.Invoke)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.SelectItem));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<TData>(turnContext.Activity.Value), cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response()
-            {
-                ComposeExtension = result
-            });
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
     }
 
@@ -413,25 +288,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryLink(QueryLinkHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.QueryLink));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            AppBasedQueryLink? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(turnContext.Activity.Value);
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response()
-            {
-                ComposeExtension = result
-            }); 
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
     }
 
@@ -447,25 +304,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.AnonQueryLink));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            AppBasedQueryLink? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(turnContext.Activity.Value);
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response()
-            {
-                ComposeExtension = result
-            }); 
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
     }
 
@@ -479,24 +318,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.QuerySettingUrl));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            Microsoft.Teams.Api.MessageExtensions.Result result = await handler(turnContext, turnState, cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, new Response()
-            {
-                ComposeExtension = result
-            });
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
     }
 
@@ -508,21 +330,7 @@ public class MessageExtension
     /// <returns>The current MessageExtension instance for method chaining.</returns>
     public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.Setting));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(turnContext.Activity.Value), cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, null);
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
     }
 
@@ -550,54 +358,7 @@ public class MessageExtension
     /// <returns>The current AgentApplication instance for method chaining.</returns>
     public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, Name.MessageExtensions.CardButtonClicked));
-        }
-
-        async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            await handler(turnContext, turnState, ProtocolJsonSerializer.ToObject<TData>(turnContext.Activity.Value), cancellationToken);
-            await TeamsAgentExtension.SetResponse(turnContext, null);
-        }
-
-        _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+        _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithHandler<TData>(handler).Build());
         return this;
-    }
-
-    private RouteSelector CreateSelector(Func<string, bool> isMatch, string invokeName, string? botMessagePreviewAction = default)
-    {
-        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            if (turnContext.Activity.ChannelId != _channelId)
-            {
-                return Task.FromResult(false);
-            }
-
-            bool isInvoke = turnContext.Activity.IsType(ActivityTypes.Invoke) && string.Equals(turnContext.Activity.Name, invokeName);
-            if (!isInvoke)
-            {
-                return Task.FromResult(false);
-            }
-
-            if (turnContext.Activity.Value == null)
-            {
-                return Task.FromResult(false);
-            }
-
-            var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
-
-            bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
-
-            bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken)
-                || string.IsNullOrEmpty(previewActionToken.ToString())
-                || string.Equals(botMessagePreviewAction, previewActionToken.ToString());
-
-            return Task.FromResult(isCommandMatch && isPreviewActionMatch);
-        }
-        return routeSelector;
     }
 }
