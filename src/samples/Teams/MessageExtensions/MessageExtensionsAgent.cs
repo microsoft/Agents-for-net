@@ -5,32 +5,20 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Teams.Cards;
+using System.Text.Json;
 
 namespace MessageExtensions;
 
-public class MessageExtensionsAgent : AgentApplication
+public class MessageExtensionsAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public MessageExtensionsAgent(AgentApplicationOptions options) : base(options)
-    {
-        RegisterExtension(new TeamsAgentExtension(this), teams =>
-        {
-            teams.MessageExtensions.OnQuery("searchQuery", OnSearchQueryAsync);
-            teams.MessageExtensions.OnSubmitAction<IDictionary<string, string>>("createCard", OnCreateCardAsync);
-            teams.MessageExtensions.OnSubmitAction<IDictionary<string, string>>("getMessageDetails", OnGetMessageDetailsAsync);
-            teams.MessageExtensions.OnSelectItem<string>(OnSelectItemAsync);
-            teams.MessageExtensions.OnQueryLink(OnQueryLinkAsync);
-            teams.MessageExtensions.OnQueryUrlSetting(OnQuerySettingsUrlAsync);
-            teams.MessageExtensions.OnConfigureSettings(OnMessageExtensionSettingAsync);
-        });
-
-        OnActivity(ActivityTypes.Message, OnMessageAsync);
-    }
-
+    [Route(Type=ActivityTypes.Message, Rank = RouteRank.Last)]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         => turnContext.SendActivityAsync($"Echo: {turnContext.Activity.Text}\n\nThis is a message extension bot. Use the message extension commands in Teams to test functionality.", cancellationToken: cancellationToken);
 
+    [QueryRoute("searchQuery")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSearchQueryAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
     {
         string? searchQuery = query.Parameters?.FirstOrDefault(p => p.Name == "searchQuery")?.Value?.ToString() ?? "";
@@ -83,6 +71,7 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
+    [SubmitActionRoute("createCard")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITurnContext turnContext, ITurnState turnState, IDictionary<string, string> data, CancellationToken cancellationToken)
     {
         var title = data.TryGetValue("title", out string? titleValue) ? titleValue : "Default Title";
@@ -129,6 +118,7 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
+    [SubmitActionRoute("getMessageDetails")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnGetMessageDetailsAsync(ITurnContext turnContext, ITurnState turnState, IDictionary<string, string> data, CancellationToken cancellationToken)
     {
         var messageText = data.TryGetValue("messageText", out string? messageTextValue) ? messageTextValue : "No message content";
@@ -173,6 +163,7 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
+    [QueryLinkRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Link query received: {Url}", url);
@@ -230,7 +221,8 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
-    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, string item, CancellationToken cancellationToken)
+    [SelectItemRoute]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Item selected: {Item}", item);
 
@@ -245,7 +237,7 @@ public class MessageExtensionsAgent : AgentApplication
             {
                 Wrap = true
             },
-            new TextBlock(item)
+            new TextBlock(ProtocolJsonSerializer.ToJson(item))
             {
                 Wrap = true,
                 FontType = FontType.Monospace,
@@ -270,6 +262,7 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
+    [QueryUrlSettingRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQuerySettingsUrlAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
@@ -308,6 +301,7 @@ public class MessageExtensionsAgent : AgentApplication
         });
     }
 
+    [ConfigureSettingsRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnMessageExtensionSettingAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query settings, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Message extension settings submitted with state: {State}", settings.State);
