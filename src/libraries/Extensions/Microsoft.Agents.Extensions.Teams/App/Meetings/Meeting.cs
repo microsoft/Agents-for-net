@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.App.Meetings;
 
@@ -31,19 +29,13 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnStart(MeetingStartHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
-        (
-            context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == _channelId
-            && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingStart)
-        );
-        async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-        {
-            var meeting = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(turnContext.Activity.Value);
-            await handler(turnContext, turnState, meeting, cancellationToken);
-        }
-        _app.AddRoute(routeSelector, routeHandler);
+        _app.AddRoute(EventRouteBuilder.Create().WithChannelId(_channelId).WithName(Microsoft.Teams.Api.Activities.Events.Name.MeetingStart)
+            .WithHandler((ctx, ts, ct) =>
+            {
+                var meeting = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
+                return handler(ctx, ts, meeting, ct);
+            })
+            .Build());
         return this;
     }
 
@@ -54,19 +46,13 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnEnd(MeetingEndHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
-        (
-            context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == _channelId
-            && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingEnd)
-        );
-        async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-        {
-            var meeting = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(turnContext.Activity.Value);
-            await handler(turnContext, turnState, meeting, cancellationToken);
-        }
-        _app.AddRoute(routeSelector, routeHandler);
+        _app.AddRoute(EventRouteBuilder.Create().WithChannelId(_channelId).WithName(Microsoft.Teams.Api.Activities.Events.Name.MeetingEnd)
+            .WithHandler((ctx, ts, ct) =>
+            {
+                var meeting = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
+                return handler(ctx, ts, meeting, ct);
+            })
+            .Build());
         return this;
     }
 
@@ -77,20 +63,13 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
-        (
-            context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == _channelId
-            && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantJoin)
-        );
-        async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-        {
-            MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
-            await handler(turnContext, turnState, meeting, cancellationToken);
-        }
-        _app.AddRoute(routeSelector, routeHandler);
+        _app.AddRoute(EventRouteBuilder.Create().WithChannelId(_channelId).WithName(Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantJoin)
+            .WithHandler((ctx, ts, ct) =>
+            {
+                var eventDetails = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ctx.Activity.Value);
+                return handler(ctx, ts, eventDetails, ct);
+            })
+            .Build());
         return this;
     }
 
@@ -101,20 +80,13 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler)
     {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-        Task<bool> routeSelector(Builder.ITurnContext context, System.Threading.CancellationToken _) => Task.FromResult
-        (
-            context.Activity.IsType(ActivityTypes.Event)
-            && context.Activity?.ChannelId == _channelId
-            && string.Equals(context.Activity?.Name, Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantLeave)
-        );
-        async Task routeHandler(Builder.ITurnContext turnContext, Builder.State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-        {
-            MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
-            await handler(turnContext, turnState, meeting, cancellationToken);
-        }
-        _app.AddRoute(routeSelector, routeHandler);
+        _app.AddRoute(EventRouteBuilder.Create().WithChannelId(_channelId).WithName(Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantLeave)
+            .WithHandler((ctx, ts, ct) =>
+            {
+                var eventDetails = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ctx.Activity.Value);
+                return handler(ctx, ts, eventDetails, ct);
+            })
+            .Build());
         return this;
     }
 }
