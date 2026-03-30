@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected TaskModules.OnFetch() triggered for activity type: invoke", exception.Message);
+            Assert.Equal("Unexpected FetchRouteBuilder triggered for activity type: invoke, name: task/fetch", exception.Message);
         }
 
         [Fact]
@@ -277,7 +277,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelId = "channelId",
+                ChannelId = Channels.Msteams,
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -347,7 +347,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected TaskModules.OnSubmit() triggered for activity type: invoke", exception.Message);
+            Assert.Equal("Unexpected SubmitRouteBuilder triggered for activity type: invoke, name: task/submit", exception.Message);
         }
     }
 }
