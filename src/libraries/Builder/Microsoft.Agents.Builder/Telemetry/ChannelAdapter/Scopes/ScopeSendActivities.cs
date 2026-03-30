@@ -1,19 +1,39 @@
-﻿using Microsoft.Agents.Core.Models;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Linq;
 
 namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
 {
+    /// <summary>
+    /// A <see cref="TelemetryScope"/> that traces the sending of one or more outgoing
+    /// activities through the channel adapter.
+    /// </summary>
+    /// <remarks>
+    /// Records the batch count, conversation identifier, and increments the
+    /// <see cref="Metrics.ActivitiesSent"/> counter for each activity in the batch.
+    /// </remarks>
     internal class ScopeSendActivities : TelemetryScope
     {
         private IActivity[] _activities;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeSendActivities"/> class.
+        /// </summary>
+        /// <param name="activities">The outgoing activities being sent.</param>
         public ScopeSendActivities(IActivity[] activities) : base(Constants.ScopeSendActivities)
         {
             _activities = activities;
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// Tags the span with the activity count and conversation identifier, and
+        /// increments <see cref="Metrics.ActivitiesSent"/> once per activity.
+        /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
         {
             int count = _activities.Length;
@@ -21,7 +41,8 @@ namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
             if (count > 0)
             {
                 telemetryActivity.SetTag(TagNames.ConversationId, _activities.First().Conversation.Id);
-            } else
+            }
+            else
             {
                 telemetryActivity.SetTag(TagNames.ConversationId, TelemetryUtils.Unknown);
             }
