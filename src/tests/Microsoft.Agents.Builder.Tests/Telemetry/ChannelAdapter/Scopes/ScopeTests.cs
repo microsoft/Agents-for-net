@@ -80,11 +80,10 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal("message", tags[TagNames.ActivityType]);
-            Assert.Equal("msteams", tags[TagNames.ActivityChannelId]);
-            Assert.Equal("expectReplies", tags[TagNames.ActivityDeliveryMode]);
-            Assert.Equal("conv-123", tags[TagNames.ConversationId]);
+            Assert.Equal("message", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal("expectReplies", stopped.GetTagItem(TagNames.ActivityDeliveryMode));
+            Assert.Equal("conv-123", stopped.GetTagItem(TagNames.ConversationId));
         }
 
         [Fact]
@@ -97,8 +96,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var isAgentic = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.IsAgentic).Value;
-            Assert.Equal("False", isAgentic);
+            Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         [Fact]
@@ -111,8 +109,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var isAgentic = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.IsAgentic).Value;
-            Assert.Equal("True", isAgentic);
+            Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         [Fact]
@@ -151,8 +148,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var count = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.ActivityCount).Value;
-            Assert.Equal("3", count);
+            var count = stopped.GetTagItem(TagNames.ActivityCount);
+            Assert.Equal(3, count);
         }
 
         [Fact]
@@ -160,16 +157,16 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
         {
             var activities = new IActivity[]
             {
-                CreateTestActivity(channelId: "webchat"),
-                CreateTestActivity(channelId: "msteams")
+                CreateTestActivity(channelId: "webchat", conversationId: "conv-123"),
+                CreateTestActivity(channelId: "msteams", conversationId: "conv-456")
             };
 
             var scope = new ScopeSendActivities(activities);
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var conversationId = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.ConversationId).Value;
-            Assert.Equal("webchat", conversationId);
+            var convId = stopped.GetTagItem(TagNames.ConversationId);
+            Assert.Equal("conv-123", convId);
         }
 
         [Fact]
@@ -181,11 +178,11 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var conversationId = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.ConversationId).Value;
+            var conversationId = stopped.GetTagItem(TagNames.ConversationId);
             Assert.Equal(TelemetryUtils.Unknown, conversationId);
 
-            var count = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.ActivityCount).Value;
-            Assert.Equal("0", count);
+            var count = stopped.GetTagItem(TagNames.ActivityCount);
+            Assert.Equal(0, count);
         }
 
         #endregion
@@ -211,9 +208,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal("act-42", tags[TagNames.ActivityId]);
-            Assert.Equal("conv-99", tags[TagNames.ConversationId]);
+            Assert.Equal("act-42", stopped.GetTagItem(TagNames.ActivityId));
+            Assert.Equal("conv-99", stopped.GetTagItem(TagNames.ConversationId));
         }
 
         #endregion
@@ -239,9 +235,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal("event", tags[TagNames.ActivityType]);
-            Assert.Equal("conv-del", tags[TagNames.ConversationId]);
+            Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("conv-del", stopped.GetTagItem(TagNames.ConversationId));
         }
 
         #endregion
@@ -271,9 +266,9 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
 
             var stopped = Assert.Single(_stoppedActivities);
             var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal("app-123", tags[TagNames.AppId]);
-            Assert.Equal("conv-456", tags[TagNames.ConversationId]);
-            Assert.Equal("False", tags[TagNames.IsAgentic]);
+            Assert.Equal("app-123", stopped.GetTagItem(TagNames.AppId));
+            Assert.Equal("conv-456", stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         [Fact]
@@ -285,8 +280,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var isAgentic = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.IsAgentic).Value;
-            Assert.Equal("True", isAgentic);
+            Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         #endregion
@@ -310,10 +304,9 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal("https://service.url/", tags[TagNames.ServiceUrl]);
-            Assert.Equal("https://api.botframework.com/.default,openid", tags[TagNames.AuthScopes]);
-            Assert.Equal("True", tags[TagNames.IsAgentic]);
+            Assert.Equal("https://service.url/", stopped.GetTagItem(TagNames.ServiceUrl));
+            Assert.Equal("https://api.botframework.com/.default,openid", stopped.GetTagItem(TagNames.AuthScopes));
+            Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         [Fact]
@@ -323,9 +316,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
-            Assert.Equal(TelemetryUtils.Unknown, tags[TagNames.AuthScopes]);
-            Assert.Equal("False", tags[TagNames.IsAgentic]);
+            Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
+            Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
         #endregion
@@ -347,8 +339,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.ChannelAdapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var endpoint = stopped.Tags.FirstOrDefault(t => t.Key == TagNames.TokenServiceEndpoint).Value;
-            Assert.Equal("https://token.botframework.com/", endpoint);
+            Assert.Equal("https://token.botframework.com/", stopped.GetTagItem(TagNames.TokenServiceEndpoint));
         }
 
         #endregion

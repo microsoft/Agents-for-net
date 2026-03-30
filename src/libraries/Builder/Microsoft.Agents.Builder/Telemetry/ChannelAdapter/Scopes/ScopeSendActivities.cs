@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
             telemetryActivity.SetTag(TagNames.ActivityCount, count);
             if (count > 0)
             {
-                telemetryActivity.SetTag(TagNames.ConversationId, _activities.First().ChannelId);
+                telemetryActivity.SetTag(TagNames.ConversationId, _activities.First().Conversation.Id);
             } else
             {
                 telemetryActivity.SetTag(TagNames.ConversationId, TelemetryUtils.Unknown);

@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Telemetry.ChannelAdapter.Scopes
             if (_activity != null)
             {
                 telemetryActivity.SetTag(TagNames.ActivityType, _activity.Type);
-                telemetryActivity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId);
+                telemetryActivity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId.ToString());
                 telemetryActivity.SetTag(TagNames.ActivityDeliveryMode, _activity.DeliveryMode);
                 telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation.Id);
                 telemetryActivity.SetTag(TagNames.IsAgentic, _activity.IsAgenticRequest());
