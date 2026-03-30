@@ -125,10 +125,11 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-            
-            using var telemetryScope = new ScopeContinueConversation(reference.GetContinuationActivity());
 
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), reference.GetContinuationActivity(), null, callback, cancellationToken);
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+
+            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), continuationActivity, null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -137,9 +138,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
 
-            using var telemetryScope = new ScopeContinueConversation(reference.GetContinuationActivity());
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -162,8 +164,9 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            using var telemetryScope = new ScopeContinueConversation(reference.GetContinuationActivity());
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
