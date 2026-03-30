@@ -33,7 +33,7 @@ public class MessageExtension
     }
 
     [Obsolete("OnSubmitAction(string, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(string, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(commandId, (turnContext, turnState, data, cancellationToken) =>
@@ -49,14 +49,14 @@ public class MessageExtension
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction<TData>(string commandId, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(string commandId, SubmitActionHandler<TData> handler)
     {
         _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
     }
 
     [Obsolete("OnSubmitAction(Regex, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(Regex, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(commandIdPattern, (turnContext, turnState, data, cancellationToken) =>
@@ -72,14 +72,14 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandler<TData> handler)
     {
         _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
     }
 
     [Obsolete("OnSubmitAction(RouteSelector, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(RouteSelector, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(RouteSelector routeSelector, SubmitActionHandlerAsync handler)
+    public MessageExtension OnSubmitAction(RouteSelector routeSelector, SubmitActionHandler handler)
     {
         AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         return OnSubmitAction<object>(routeSelector, (turnContext, turnState, data, cancellationToken) =>
@@ -97,7 +97,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the incoming activity is not a valid Message Extension SubmitAction invoke or if the payload cannot be
     /// deserialized.</exception>
-    public MessageExtension OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandlerAsync<TData> handler)
+    public MessageExtension OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandler<TData> handler)
     {
         _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
@@ -110,7 +110,7 @@ public class MessageExtension
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
@@ -123,7 +123,7 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
@@ -136,7 +136,7 @@ public class MessageExtension
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandlerAsync handler)
+    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
@@ -187,7 +187,7 @@ public class MessageExtension
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(string commandId, FetchTaskHandler handler)
     {
         _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
@@ -199,7 +199,7 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(Regex commandIdPattern, FetchTaskHandler handler)
     {
         _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
@@ -211,7 +211,7 @@ public class MessageExtension
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(RouteSelector routeSelector, FetchTaskHandlerAsync handler)
+    public MessageExtension OnFetchTask(RouteSelector routeSelector, FetchTaskHandler handler)
     {
         _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
@@ -223,7 +223,7 @@ public class MessageExtension
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(string commandId, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(string commandId, QueryHandler handler)
     {
         _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
@@ -235,7 +235,7 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler)
     {
         _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
@@ -247,14 +247,14 @@ public class MessageExtension
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(RouteSelector routeSelector, QueryHandlerAsync handler)
+    public MessageExtension OnQuery(RouteSelector routeSelector, QueryHandler handler)
     {
         _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
     [Obsolete("OnSelectItem(SelectItemHandlerAsync) will be deprecated in future versions. Please use OnSelectItem<TData>(SelectItemHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSelectItem(SelectItemHandlerAsync handler)
+    public MessageExtension OnSelectItem(SelectItemHandler handler)
     {
         return OnSelectItem<object>((turnContext, turnState, data, cancellationToken) =>
         {
@@ -275,7 +275,7 @@ public class MessageExtension
     /// <typeparam name="TData">The type of the data object expected from the SelectItem event payload.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSelectItem<TData>(SelectItemHandlerAsync<TData> handler)
+    public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler)
     {
         _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
@@ -286,7 +286,7 @@ public class MessageExtension
     /// </summary>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryLink(QueryLinkHandlerAsync handler)
+    public MessageExtension OnQueryLink(QueryLinkHandler handler)
     {
         _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
@@ -302,7 +302,7 @@ public class MessageExtension
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
+    public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler)
     {
         _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;
@@ -316,7 +316,7 @@ public class MessageExtension
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
+    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandler handler)
     {
         _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
         return this;

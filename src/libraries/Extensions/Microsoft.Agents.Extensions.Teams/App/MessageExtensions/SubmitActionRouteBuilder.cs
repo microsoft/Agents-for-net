@@ -25,7 +25,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     /// <param name="handler">An asynchronous delegate that processes the submit action, receiving the context, timestamp, deserialized data
     /// of type TData, and a cancellation token.</param>
     /// <returns>The current instance of SubmitActionRouteBuilder, enabling method chaining.</returns>
-    public SubmitActionRouteBuilder WithHandler<TData>(SubmitActionHandlerAsync<TData> handler)
+    public SubmitActionRouteBuilder WithHandler<TData>(SubmitActionHandler<TData> handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

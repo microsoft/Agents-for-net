@@ -39,7 +39,7 @@ public class TaskModule
     /// <param name="verb">Name of the verb to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(string verb, FetchHandlerAsync handler)
+    public TaskModule OnFetch(string verb, FetchHandler handler)
     {
         _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
@@ -51,7 +51,7 @@ public class TaskModule
     /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(Regex verbPattern, FetchHandlerAsync handler)
+    public TaskModule OnFetch(Regex verbPattern, FetchHandler handler)
     {
         _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
@@ -63,7 +63,7 @@ public class TaskModule
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(RouteSelector routeSelector, FetchHandlerAsync handler)
+    public TaskModule OnFetch(RouteSelector routeSelector, FetchHandler handler)
     {
         _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
@@ -75,7 +75,7 @@ public class TaskModule
     /// <param name="verb">Name of the verb to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(string verb, SubmitHandlerAsync handler)
+    public TaskModule OnSubmit(string verb, SubmitHandler handler)
     {
         _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
@@ -88,7 +88,7 @@ public class TaskModule
     /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(Regex verbPattern, SubmitHandlerAsync handler)
+    public TaskModule OnSubmit(Regex verbPattern, SubmitHandler handler)
     {
         _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
@@ -100,7 +100,7 @@ public class TaskModule
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(RouteSelector routeSelector, SubmitHandlerAsync handler)
+    public TaskModule OnSubmit(RouteSelector routeSelector, SubmitHandler handler)
     {
         _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;

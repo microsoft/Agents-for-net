@@ -22,7 +22,7 @@ public class FetchRouteBuilder : VerbRouteBuilderBase<FetchRouteBuilder>
     /// processing of the fetch request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch request.</param>
     /// <returns>The current instance of FetchRouteBuilder, enabling method chaining.</returns>
-    public FetchRouteBuilder WithHandler(FetchHandlerAsync handler)
+    public FetchRouteBuilder WithHandler(FetchHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

@@ -21,7 +21,7 @@ public class FetchTaskRouteBuilder : CommandRouteBuilderBase<FetchTaskRouteBuild
     /// processing of the action's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch task</param>
     /// <returns>The current instance of FetchTaskRouteBuilder, enabling method chaining.</returns>
-    public FetchTaskRouteBuilder WithHandler(FetchTaskHandlerAsync handler)
+    public FetchTaskRouteBuilder WithHandler(FetchTaskHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

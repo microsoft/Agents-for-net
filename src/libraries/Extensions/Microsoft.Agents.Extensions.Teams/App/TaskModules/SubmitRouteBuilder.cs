@@ -22,7 +22,7 @@ public class SubmitRouteBuilder : VerbRouteBuilderBase<SubmitRouteBuilder>
     /// processing of the submit request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the submit request.</param>
     /// <returns>The current instance of SubmitRouteBuilder, enabling method chaining.</returns>
-    public SubmitRouteBuilder WithHandler(SubmitHandlerAsync handler)
+    public SubmitRouteBuilder WithHandler(SubmitHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

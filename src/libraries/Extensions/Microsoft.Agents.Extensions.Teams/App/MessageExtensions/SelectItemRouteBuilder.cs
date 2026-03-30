@@ -30,7 +30,7 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     /// <param name="handler">An asynchronous delegate that processes the select item, receiving the context, timestamp, deserialized data
     /// of type TData, and a cancellation token.</param>
     /// <returns>The current instance of SelectItemRouteBuilder, enabling method chaining.</returns>
-    public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandlerAsync<TData> handler)
+    public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandler<TData> handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

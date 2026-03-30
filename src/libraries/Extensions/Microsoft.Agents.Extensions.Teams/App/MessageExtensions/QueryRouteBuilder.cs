@@ -24,7 +24,7 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     /// <param name="handler">An asynchronous delegate that processes the query, receiving the context, timestamp, deserialized data
     /// of type Microsoft.Teams.Api.MessageExtensions.Query, and a cancellation token.</param>
     /// <returns>The current instance of QueryRouteBuilder, enabling method chaining.</returns>
-    public QueryRouteBuilder WithHandler(QueryHandlerAsync handler)
+    public QueryRouteBuilder WithHandler(QueryHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

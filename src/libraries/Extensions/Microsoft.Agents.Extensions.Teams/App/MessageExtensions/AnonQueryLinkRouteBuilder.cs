@@ -26,7 +26,7 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>
     /// <returns>The current instance of AnonQueryLinkRouteBuilder, enabling method chaining.</returns>
-    public AnonQueryLinkRouteBuilder WithHandler(QueryLinkHandlerAsync handler)
+    public AnonQueryLinkRouteBuilder WithHandler(QueryLinkHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

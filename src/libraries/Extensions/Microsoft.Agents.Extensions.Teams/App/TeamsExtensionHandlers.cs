@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.App;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>An instance of ConfigResponseBase.</returns>
-public delegate Task<ConfigResponse> ConfigHandlerAsync(ITurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
+public delegate Task<ConfigResponse> ConfigHandler(ITurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling file consent card activities.

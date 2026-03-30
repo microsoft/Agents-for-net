@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// <param name="data">The data associated with the fetch.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>An instance of TaskModuleResponse.</returns>
-public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchHandlerAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken);
+public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Task Module submit events.
@@ -26,4 +26,4 @@ public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchHandlerAsync
 /// <param name="data">The data associated with the fetch.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>An instance of TaskModuleResponse.</returns>
-public delegate Task<Microsoft.Teams.Api.TaskModules.Response> SubmitHandlerAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken);
+public delegate Task<Microsoft.Teams.Api.TaskModules.Response> SubmitHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken);

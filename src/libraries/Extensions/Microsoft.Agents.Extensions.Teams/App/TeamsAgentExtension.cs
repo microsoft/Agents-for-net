@@ -239,7 +239,7 @@ public class TeamsAgentExtension : AgentExtension
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public TeamsAgentExtension OnConfigFetch(ConfigHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
         AgentApplication.AddRoute(InvokeRouteBuilder.Create()
             .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch)
@@ -263,7 +263,7 @@ public class TeamsAgentExtension : AgentExtension
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public TeamsAgentExtension OnConfigSubmit(ConfigHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
         AgentApplication.AddRoute(InvokeRouteBuilder.Create()
             .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit)

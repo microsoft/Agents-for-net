@@ -26,7 +26,7 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>
     /// <returns>The current instance of QueryLinkRouteBuilder, enabling method chaining.</returns>
-    public QueryLinkRouteBuilder WithHandler(QueryLinkHandlerAsync handler)
+    public QueryLinkRouteBuilder WithHandler(QueryLinkHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

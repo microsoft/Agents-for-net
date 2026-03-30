@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitActionHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 MessageExtensionActionData actionData = Cast<MessageExtensionActionData>(data);
                 Assert.Equal("test-title", actionData.Title);
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitActionHandlerAsync<MessageExtensionActionData> handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler<MessageExtensionActionData> handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 Assert.Equal("test-title", data.Title);
                 Assert.Equal("test-content", data.Content);
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitActionHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 MessageExtensionActionData actionData = Cast<MessageExtensionActionData>(data);
                 Assert.Equal("test-title", actionData.Title);
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            SubmitActionHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(actionResponseMock.Object);
             };
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
 
-            BotMessagePreviewEditHandlerAsync handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            BotMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.FromResult(actionResponseMock.Object);
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            BotMessagePreviewEditHandlerAsync handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            BotMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.FromResult(actionResponseMock.Object);
@@ -418,7 +418,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 // Return true even though the Activity is wrong to test that the handler properly validates the activity type and name.
                 return Task.FromResult(true);
             };
-            BotMessagePreviewEditHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            BotMessagePreviewEditHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(actionResponseMock.Object);
             };
@@ -642,7 +642,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchTaskHandlerAsync handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -694,7 +694,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchTaskHandlerAsync handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -736,7 +736,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            FetchTaskHandlerAsync handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -801,7 +801,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
+            QueryHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Single(query.Parameters);
                 Assert.Equal("test-value", query.Parameters.FirstOrDefault(p => p.Name == "test-name")?.Value?.ToString());
@@ -864,7 +864,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryHandlerAsync handler = (turnContext, turnState, query, cancellationToken) =>
+            QueryHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
                 Assert.Single(query.Parameters);
                 Assert.Equal("test-value", query.Parameters.FirstOrDefault(p => p.Name == "test-name")?.Value?.ToString());
@@ -910,7 +910,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            QueryHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            QueryHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -964,7 +964,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SelectItemHandlerAsync handler = (turnContext, turnState, item, cancellationToken) =>
+            SelectItemHandler handler = (turnContext, turnState, item, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1022,7 +1022,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SelectItemHandlerAsync<MessageExtensionActionData> handler = (turnContext, turnState, item, cancellationToken) =>
+            SelectItemHandler<MessageExtensionActionData> handler = (turnContext, turnState, item, cancellationToken) =>
             {
                 Assert.IsType<MessageExtensionActionData>(item);
                 return Task.FromResult(messagingExtensionResultMock.Object);
@@ -1079,7 +1079,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SelectItemHandlerAsync handler = (turnContext, turnState, item, cancellationToken) =>
+            SelectItemHandler handler = (turnContext, turnState, item, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1137,7 +1137,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryLinkHandlerAsync handler = (turnContext, turnState, url, cancellationToken) =>
+            QueryLinkHandler handler = (turnContext, turnState, url, cancellationToken) =>
             {
                 Assert.Equal("test-url", url);
                 return Task.FromResult(messagingExtensionResultMock.Object);
@@ -1185,7 +1185,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryLinkHandlerAsync handler = (turnContext, turnState, url, cancellationToken) =>
+            QueryLinkHandler handler = (turnContext, turnState, url, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1242,7 +1242,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryLinkHandlerAsync handler = (turnContext, turnState, url, cancellationToken) =>
+            QueryLinkHandler handler = (turnContext, turnState, url, cancellationToken) =>
             {
                 Assert.Equal("test-url", url);
                 return Task.FromResult(messagingExtensionResultMock.Object);
@@ -1290,7 +1290,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryLinkHandlerAsync handler = (turnContext, turnState, url, cancellationToken) =>
+            QueryLinkHandler handler = (turnContext, turnState, url, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1341,7 +1341,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryUrlSettingHandlerAsync handler = (turnContext, turnState, cancellationToken) =>
+            QueryUrlSettingHandler handler = (turnContext, turnState, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1387,7 +1387,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            QueryLinkHandlerAsync handler = (turnContext, turnState, url, cancellationToken) =>
+            QueryLinkHandler handler = (turnContext, turnState, url, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };

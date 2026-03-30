@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            FetchHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -289,7 +289,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
 
-            SubmitHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            SubmitHandlerAsync handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };

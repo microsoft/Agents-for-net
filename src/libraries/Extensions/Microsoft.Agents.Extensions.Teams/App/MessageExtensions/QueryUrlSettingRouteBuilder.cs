@@ -24,7 +24,7 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>
     /// <returns>The current instance of QueryUrlSettingRouteBuilder, enabling method chaining.</returns>
-    public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandlerAsync handler)
+    public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
