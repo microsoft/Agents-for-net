@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                     System.Diagnostics.Activity newTelemetryActivity = activityWithClaims.TelemetryActivity?.Source.StartActivity(
-                        "HostedActivityService.GetTaskFromWorkItem",
+                        "agents.hosted_activity_service.get_task_from_work_item",
                         ActivityKind.Internal,
                         activityWithClaims.TelemetryActivity.Context
                     );

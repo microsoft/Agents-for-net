@@ -81,32 +81,23 @@ namespace TelemetryAgent
 
                         };
                     })
-                    .AddConsoleExporter()
+                    //.AddConsoleExporter()
                     .AddOtlpExporter())
                 .WithMetrics(metrics => metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddMeter(AgentsTelemetry.SourceName)
-                    .AddConsoleExporter((exporterOptions, metricReaderOptions) =>
-                    {
-                        metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 5000;
-                    })
+                    //.AddConsoleExporter()
                     .AddOtlpExporter());
 
             builder.Logging.AddOpenTelemetry(logging =>
             {
-                //.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(
-                //    serviceName: AgentsTelemetry.SourceName,
-                //    serviceVersion: AgentsTelemetry.SourceVersion))
                 logging.IncludeFormattedMessage = true;
                 logging.IncludeScopes = true;
-                logging.AddConsoleExporter();
+                //logging.AddConsoleExporter();
                 logging.AddOtlpExporter();
             });
-            //}
-            //     .AddConsoleExporter()
-            //     .AddOtlpExporter());
 
             // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)
             //if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
