@@ -28,11 +28,8 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var result = await handler(ctx, ts, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()
-            {
-                ComposeExtension = result
-            }).ConfigureAwait(false);
+            var response = await handler(ctx, ts, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;
     }

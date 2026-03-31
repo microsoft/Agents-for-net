@@ -31,11 +31,8 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
         _route.Handler = async (ctx, ts, ct) =>
         {
             AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ctx.Activity.Value);
-            var result = await handler(ctx, ts, value?.Url, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()
-            {
-                ComposeExtension = result
-            }).ConfigureAwait(false);
+            var response = await handler(ctx, ts, value?.Url, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;
     }

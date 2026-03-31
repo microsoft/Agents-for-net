@@ -518,15 +518,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [QueryRoute("queryCommand")]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query query,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            var result = new Microsoft.Teams.Api.MessageExtensions.Result();
-            return Task.FromResult(result);
+            var response = new Microsoft.Teams.Api.MessageExtensions.Response();
+            return Task.FromResult(response);
         }
     }
 
@@ -542,7 +542,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [QueryLinkRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryLinkAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             string url,
@@ -550,8 +550,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             HandlerCalled = true;
             Assert.Equal("https://example.com", url);
-            var result = new Microsoft.Teams.Api.MessageExtensions.Result();
-            return Task.FromResult(result);
+            var response = new Microsoft.Teams.Api.MessageExtensions.Response();
+            return Task.FromResult(response);
         }
     }
 
@@ -567,14 +567,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [QueryUrlSettingRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryUrlSettingAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryUrlSettingAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            var result = new Microsoft.Teams.Api.MessageExtensions.Result();
-            return Task.FromResult(result);
+            var response = new Microsoft.Teams.Api.MessageExtensions.Response();
+            return Task.FromResult(response);
         }
     }
 
@@ -716,7 +716,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [SelectItemRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             JsonElement item,
@@ -724,8 +724,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             HandlerCalled = true;
             Assert.Equal("item1", item.GetProperty("id").GetString());
-            var result = new Microsoft.Teams.Api.MessageExtensions.Result();
-            return Task.FromResult(result);
+            var response = new Microsoft.Teams.Api.MessageExtensions.Response();
+            return Task.FromResult(response);
         }
     }
 }

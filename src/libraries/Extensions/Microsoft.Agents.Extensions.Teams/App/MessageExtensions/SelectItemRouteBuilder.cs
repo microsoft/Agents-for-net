@@ -35,11 +35,8 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
         _route.Handler = async (ctx, ts, ct) =>
         {
             var value = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-            var result = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()
-            {
-                ComposeExtension = result
-            }).ConfigureAwait(false);
+            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;
     }

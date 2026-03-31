@@ -784,14 +784,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -855,7 +852,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -897,7 +894,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -947,14 +944,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1005,14 +999,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1062,14 +1053,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1120,14 +1108,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1176,7 +1161,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -1225,14 +1210,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1281,7 +1263,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -1325,14 +1307,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
-                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
-                {
-                    ComposeExtension = messagingExtensionResultMock.Object
-                }
+                Body = messagingExtensionResultMock.Object
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1379,7 +1358,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Result>();
+            var messagingExtensionResultMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {

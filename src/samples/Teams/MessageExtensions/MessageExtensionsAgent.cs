@@ -21,7 +21,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         => turnContext.SendActivityAsync($"Echo: {turnContext.Activity.Text}\n\nThis is a message extension bot. Use the message extension commands in Teams to test functionality.", cancellationToken: cancellationToken);
 
     [QueryRoute("searchQuery")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSearchQueryAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchQueryAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
     {
         string? searchQuery = query.Parameters?.FirstOrDefault(p => p.Name == "searchQuery")?.Value?.ToString() ?? "";
 
@@ -65,11 +65,14 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             attachments.Add(attachment);
         }
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
         {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = attachments
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = attachments
+            }
         });
     }
 
@@ -166,16 +169,19 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     }
 
     [QueryLinkRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Link query received: {Url}", url);
 
         if (string.IsNullOrEmpty(url))
         {
-            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
+            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
             {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
-                Text = "No URL provided"
+                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+                {
+                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
+                    Text = "No URL provided"
+                }
             });
         }
 
@@ -215,16 +221,19 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
         {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
         });
     }
 
     [SelectItemRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Item selected: {Item}", item);
 
@@ -249,30 +258,36 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         {
             Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
         };
-        
+
         var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
         {
             ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
             Content = card
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
         {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
         });
     }
 
     [QueryUrlSettingRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Result> OnQuerySettingsUrlAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingsUrlAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Result
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
         {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
-            Text = "Settings configuration would be handled here"
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
+                Text = "Settings configuration would be handled here"
+            }
         });
     }
 
