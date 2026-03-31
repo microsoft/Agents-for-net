@@ -6,13 +6,15 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Teams.Cards;
 using System.Text.Json;
 
 namespace MessageExtensions;
 
-public class MessageExtensionsAgent(AgentApplicationOptions options) : AgentApplication(options)
+[TeamsExtension]
+public partial class MessageExtensionsAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [MessageRoute]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

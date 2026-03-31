@@ -13,18 +13,10 @@ using System.Threading.Tasks;
 
 namespace AgenticAI;
 
-public class MyAgent : AgentApplication
+public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
-    {
-        // Register a route for Agentic-only Messages.
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly: true, autoSignInHandlers: ["agentic"]);
-
-        // Non-agentic messages go here
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [MessageRoute(isAgenticOnly:true, signInHandlers: "agentic")]
+    public async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
 
@@ -52,9 +44,9 @@ public class MyAgent : AgentApplication
 
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [MessageRoute]
+    public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
-
 }
