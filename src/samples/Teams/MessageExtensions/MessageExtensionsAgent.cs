@@ -14,7 +14,7 @@ namespace MessageExtensions;
 
 public class MessageExtensionsAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    [Route(Type=ActivityTypes.Message, Rank = RouteRank.Last)]
+    [MessageRoute]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         => turnContext.SendActivityAsync($"Echo: {turnContext.Activity.Text}\n\nThis is a message extension bot. Use the message extension commands in Teams to test functionality.", cancellationToken: cancellationToken);
 

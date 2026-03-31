@@ -21,8 +21,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// }
 /// </code>
 /// </remarks>
+/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryRouteAttribute(string commandId) : Attribute, IRouteAttribute
+public class QueryRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -31,8 +35,9 @@ public class QueryRouteAttribute(string commandId) : Attribute, IRouteAttribute
 #else
         var handler = (QueryHandler)method.CreateDelegate(typeof(QueryHandler), app);
 #endif
-
-        app.AddRoute(QueryRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).Build());
+        var builder = QueryRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -50,18 +55,22 @@ public class QueryRouteAttribute(string commandId) : Attribute, IRouteAttribute
 /// }
 /// </code>
 /// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryLinkRouteAttribute() : Attribute, IRouteAttribute
+public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<QueryLinkHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(QueryLinkHandler), app);
+        var handler = (QueryLinkHandler)method.CreateDelegate(typeof(QueryLinkHandler), app);
 #endif
-
-        app.AddRoute(QueryLinkRouteBuilder.Create().WithHandler(handler).Build());
+        var builder = QueryLinkRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -79,18 +88,22 @@ public class QueryLinkRouteAttribute() : Attribute, IRouteAttribute
 /// }
 /// </code>
 /// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryUrlSettingRouteAttribute() : Attribute, IRouteAttribute
+public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<QueryUrlSettingHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(QueryUrlSettingHandler), app);
+        var handler = (QueryUrlSettingHandler)method.CreateDelegate(typeof(QueryUrlSettingHandler), app);
 #endif
-
-        app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithHandler(handler).Build());
+        var builder = QueryUrlSettingRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -108,18 +121,23 @@ public class QueryUrlSettingRouteAttribute() : Attribute, IRouteAttribute
 /// }
 /// </code>
 /// </remarks>
+/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchTaskRouteAttribute(string commandId) : Attribute, IRouteAttribute
+public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<FetchTaskHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(FetchTaskHandler), app);
+        var handler = (FetchTaskHandler)method.CreateDelegate(typeof(FetchTaskHandler), app);
 #endif
-
-        app.AddRoute(FetchTaskRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).Build());
+        var builder = FetchTaskRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -137,18 +155,23 @@ public class FetchTaskRouteAttribute(string commandId) : Attribute, IRouteAttrib
 /// }
 /// </code>
 /// </remarks>
+/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewEditRouteAttribute(string commandId) : Attribute, IRouteAttribute
+public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<BotMessagePreviewEditHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(BotMessagePreviewEditHandler), app);
+        var handler = (BotMessagePreviewEditHandler)method.CreateDelegate(typeof(BotMessagePreviewEditHandler), app);
 #endif
-
-        app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).Build());
+        var builder = MessagePreviewEditRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -166,18 +189,23 @@ public class MessagePreviewEditRouteAttribute(string commandId) : Attribute, IRo
 /// }
 /// </code>
 /// </remarks>
+/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewSendRouteAttribute(string commandId) : Attribute, IRouteAttribute
+public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<BotMessagePreviewSendHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(BotMessagePreviewSendHandler), app);
+        var handler = (BotMessagePreviewSendHandler)method.CreateDelegate(typeof(BotMessagePreviewSendHandler), app);
 #endif
-
-        app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).Build());
+        var builder = MessagePreviewSendRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -195,18 +223,22 @@ public class MessagePreviewSendRouteAttribute(string commandId) : Attribute, IRo
 /// }
 /// </code>
 /// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigureSettingsRouteAttribute() : Attribute, IRouteAttribute
+public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
         var handler = method.CreateDelegate<ConfigureSettingsHandler>(app);
 #else
-        var handler = (QueryHandler)method.CreateDelegate(typeof(ConfigureSettingsHandler), app);
+        var handler = (ConfigureSettingsHandler)method.CreateDelegate(typeof(ConfigureSettingsHandler), app);
 #endif
-
-        app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithHandler(handler).Build());
+        var builder = ConfigureSettingsRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
     }
 }
 
@@ -225,22 +257,25 @@ public class ConfigureSettingsRouteAttribute() : Attribute, IRouteAttribute
 /// }
 /// </code>
 /// </remarks>
+/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitActionRouteAttribute(string commandId) : Attribute, IRouteAttribute
+public class SubmitActionRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        // Get handler delegate
         var genericParam = method.GetParameters()[2].ParameterType;
         var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
         var handler = method.CreateDelegate(handlerType, app);
 
-        var builder = SubmitActionRouteBuilder.Create().WithCommand(commandId);
+        var builder = SubmitActionRouteBuilder.Create().WithCommand(commandId).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        // Invoke WithHandler
         var withHandler = typeof(SubmitActionRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
         withHandler.Invoke(builder, [handler]);
 
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
 }
@@ -260,22 +295,24 @@ public class SubmitActionRouteAttribute(string commandId) : Attribute, IRouteAtt
 /// }
 /// </code>
 /// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SelectItemRouteAttribute() : Attribute, IRouteAttribute
+public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        // Get handler delegate
         var genericParam = method.GetParameters()[2].ParameterType;
         var handlerType = typeof(SelectItemHandler<>).MakeGenericType(genericParam);
         var handler = method.CreateDelegate(handlerType, app);
 
-        var builder = SelectItemRouteBuilder.Create();
+        var builder = SelectItemRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        // Invoke WithHandler
         var withHandler = typeof(SelectItemRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
         withHandler.Invoke(builder, [handler]);
 
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
 }
@@ -295,22 +332,24 @@ public class SelectItemRouteAttribute() : Attribute, IRouteAttribute
 /// }
 /// </code>
 /// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class CardButtonClickedRouteAttribute() : Attribute, IRouteAttribute
+public class CardButtonClickedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        // Get handler delegate
         var genericParam = method.GetParameters()[2].ParameterType;
         var handlerType = typeof(CardButtonClickedHandler<>).MakeGenericType(genericParam);
         var handler = method.CreateDelegate(handlerType, app);
 
-        var builder = CardButtonClickedRouteBuilder.Create();
+        var builder = CardButtonClickedRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        // Invoke WithHandler
         var withHandler = typeof(CardButtonClickedRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
         withHandler.Invoke(builder, [handler]);
 
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
 }

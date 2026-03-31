@@ -23,8 +23,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamArchivedRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -33,8 +36,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamArchived().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamArchived().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -52,8 +56,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamUnarchivedRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -62,8 +69,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamUnarchived().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamUnarchived().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -81,8 +89,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamDeletedRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -91,8 +102,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamDeleted().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -110,8 +122,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamHardDeletedRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -120,8 +135,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamHardDeleted().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamHardDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -139,8 +155,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamRenamedRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -149,8 +168,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamRenamed().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamRenamed().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -168,8 +188,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamRestoredRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -178,8 +201,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().ForTeamRestored().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().ForTeamRestored().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -199,8 +223,11 @@ public static class TeamsTeamAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class TeamUpdateRouteAttribute() : Attribute, IRouteAttribute
+    public class TeamUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -209,8 +236,9 @@ public static class TeamsTeamAttributes
 #else
             var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
 #endif
-
-            app.AddRoute(TeamUpdateRouteBuilder.Create().WithHandler(handler).Build());
+            var builder = TeamUpdateRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 }

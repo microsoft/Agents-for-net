@@ -23,8 +23,12 @@ public static class TaskModuleAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="verb">The task module verb to match.</param>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class FetchRouteAttribute(string verb) : Attribute, IRouteAttribute
+    public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -33,8 +37,9 @@ public static class TaskModuleAttributes
 #else
             var handler = (FetchHandler)method.CreateDelegate(typeof(FetchHandler), app);
 #endif
-
-            app.AddRoute(FetchRouteBuilder.Create().WithVerb(verb).WithHandler(handler).Build());
+            var builder = FetchRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 
@@ -52,8 +57,12 @@ public static class TaskModuleAttributes
     /// }
     /// </code>
     /// </remarks>
+    /// <param name="verb">The task module verb to match.</param>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class SubmitRouteAttribute(string verb) : Attribute, IRouteAttribute
+    public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -62,8 +71,9 @@ public static class TaskModuleAttributes
 #else
             var handler = (SubmitHandler)method.CreateDelegate(typeof(SubmitHandler), app);
 #endif
-
-            app.AddRoute(SubmitRouteBuilder.Create().WithVerb(verb).WithHandler(handler).Build());
+            var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
         }
     }
 }
