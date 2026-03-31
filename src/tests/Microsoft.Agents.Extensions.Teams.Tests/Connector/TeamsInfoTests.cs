@@ -6,7 +6,6 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
-using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Teams.Api;

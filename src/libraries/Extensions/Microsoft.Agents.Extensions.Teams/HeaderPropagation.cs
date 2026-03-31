@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Core.HeaderPropagation;
 
-namespace Microsoft.Agents.Extensions.Teams.Connector;
+namespace Microsoft.Agents.Extensions.Teams;
 
 [HeaderPropagation]
 

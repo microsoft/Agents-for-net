@@ -6,10 +6,7 @@ using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
-using Microsoft.Teams.Api;
-using Microsoft.Teams.Api.Activities.Events;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.Json;
@@ -50,17 +47,17 @@ public class TeamsActivityHandler : ActivityHandler
                 switch (turnContext.Activity.Name)
                 {
                     case "fileConsent/invoke":
-                        return await OnTeamsFileConsentAsync(turnContext, SafeCast<FileConsentCardResponse>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false);
+                        return await OnTeamsFileConsentAsync(turnContext, SafeCast<Microsoft.Teams.Api.FileConsentCardResponse>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false);
 
                     case "actionableMessage/executeAction":
                         await OnTeamsO365ConnectorCardActionAsync(turnContext, SafeCast<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false);
                         return CreateInvokeResponse();
 
                     case "composeExtension/queryLink":
-                        return CreateInvokeResponse(await OnTeamsAppBasedLinkQueryAsync(turnContext, SafeCast<AppBasedQueryLink>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
+                        return CreateInvokeResponse(await OnTeamsAppBasedLinkQueryAsync(turnContext, SafeCast<Microsoft.Teams.Api.AppBasedQueryLink>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
 
                     case "composeExtension/anonymousQueryLink":
-                        return CreateInvokeResponse(await OnTeamsAnonymousAppBasedLinkQueryAsync(turnContext, SafeCast<AppBasedQueryLink>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
+                        return CreateInvokeResponse(await OnTeamsAnonymousAppBasedLinkQueryAsync(turnContext, SafeCast<Microsoft.Teams.Api.AppBasedQueryLink>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
 
                     case "composeExtension/query":
                         return CreateInvokeResponse(await OnTeamsMessagingExtensionQueryAsync(turnContext, SafeCast<Microsoft.Teams.Api.MessageExtensions.Query>(turnContext.Activity.Value), cancellationToken).ConfigureAwait(false));
@@ -159,7 +156,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An InvokeResponse depending on the action of the file consent card.</returns>
-    protected virtual async Task<InvokeResponse> OnTeamsFileConsentAsync(ITurnContext<IInvokeActivity> turnContext, FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
+    protected virtual async Task<InvokeResponse> OnTeamsFileConsentAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
     {
         switch (fileConsentCardResponse.Action)
         {
@@ -185,7 +182,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsFileConsentAcceptAsync(ITurnContext<IInvokeActivity> turnContext, FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsFileConsentAcceptAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
     {
         throw new InvokeResponseException(HttpStatusCode.NotImplemented);
     }
@@ -199,7 +196,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsFileConsentDeclineAsync(ITurnContext<IInvokeActivity> turnContext, FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsFileConsentDeclineAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken)
     {
         throw new InvokeResponseException(HttpStatusCode.NotImplemented);
     }
@@ -238,7 +235,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>The Messaging Extension Response for the query.</returns>
-    protected virtual Task<Microsoft.Teams.Api.MessageExtensions.Response> OnTeamsAppBasedLinkQueryAsync(ITurnContext<IInvokeActivity> turnContext, AppBasedQueryLink query, CancellationToken cancellationToken)
+    protected virtual Task<Microsoft.Teams.Api.MessageExtensions.Response> OnTeamsAppBasedLinkQueryAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.AppBasedQueryLink query, CancellationToken cancellationToken)
     {
         throw new InvokeResponseException(HttpStatusCode.NotImplemented);
     }
@@ -251,7 +248,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>The Messaging Extension Response for the query.</returns>
-    protected virtual Task<Microsoft.Teams.Api.MessageExtensions.Response> OnTeamsAnonymousAppBasedLinkQueryAsync(ITurnContext<IInvokeActivity> turnContext, AppBasedQueryLink query, CancellationToken cancellationToken)
+    protected virtual Task<Microsoft.Teams.Api.MessageExtensions.Response> OnTeamsAnonymousAppBasedLinkQueryAsync(ITurnContext<IInvokeActivity> turnContext, Microsoft.Teams.Api.AppBasedQueryLink query, CancellationToken cancellationToken)
     {
         throw new InvokeResponseException(HttpStatusCode.NotImplemented);
     }
@@ -484,7 +481,7 @@ public class TeamsActivityHandler : ActivityHandler
     {
         if (turnContext.Activity.ChannelId == Channels.Msteams)
         {
-            var channelData = turnContext.Activity.GetChannelData<ChannelData>();
+            var channelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
 
             if (turnContext.Activity.MembersAdded != null && turnContext.Activity.MembersAdded.Count > 0)
             {
@@ -551,19 +548,19 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual async Task OnTeamsMembersAddedDispatchAsync(IList<ChannelAccount> membersAdded, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual async Task OnTeamsMembersAddedDispatchAsync(IList<ChannelAccount> membersAdded, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        var teamsMembersAdded = new List<Account>();
+        var teamsMembersAdded = new List<Microsoft.Teams.Api.Account>();
         foreach (var memberAdded in membersAdded)
         {
             if (memberAdded.Properties.Count > 0 || memberAdded.Id == turnContext.Activity?.Recipient?.Id)
             {
                 // when the ChannelAccount object is fully a Teams.Api.Account
-                teamsMembersAdded.Add(ProtocolJsonSerializer.ToObject<Account>(memberAdded));
+                teamsMembersAdded.Add(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(memberAdded));
             }
             else
             {
-                Account newMemberInfo = null;
+                Microsoft.Teams.Api.Account newMemberInfo = null;
                 try
                 {
                     newMemberInfo = await TeamsInfo.GetMemberAsync(turnContext, memberAdded.Id, cancellationToken).ConfigureAwait(false);
@@ -576,12 +573,12 @@ public class TeamsActivityHandler : ActivityHandler
                     }
 
                     // unable to find the member added in ConversationUpdate Activity in the response from the GetMemberAsync call
-                    newMemberInfo = new Account
+                    newMemberInfo = new Microsoft.Teams.Api.Account
                     {
                         Id = memberAdded.Id,
                         Name = memberAdded.Name,
                         AadObjectId = memberAdded.AadObjectId,
-                        Role = new Role(memberAdded.Role),
+                        Role = new Microsoft.Teams.Api.Role(memberAdded.Role),
                     };
                 }
 
@@ -604,12 +601,12 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMembersRemovedDispatchAsync(IList<ChannelAccount> membersRemoved, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMembersRemovedDispatchAsync(IList<ChannelAccount> membersRemoved, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        var teamsMembersRemoved = new List<Account>();
+        var teamsMembersRemoved = new List<Microsoft.Teams.Api.Account>();
         foreach (var memberRemoved in membersRemoved)
         {
-            teamsMembersRemoved.Add(ProtocolJsonSerializer.ToObject<Account>(memberRemoved));
+            teamsMembersRemoved.Add(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(memberRemoved));
         }
 
         return OnTeamsMembersRemovedAsync(teamsMembersRemoved, Team, turnContext, cancellationToken);
@@ -626,7 +623,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMembersAddedAsync(IList<Account> teamsMembersAdded, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMembersAddedAsync(IList<Microsoft.Teams.Api.Account> teamsMembersAdded, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return OnMembersAddedAsync(ProtocolJsonSerializer.ToObject<IList<ChannelAccount>>(teamsMembersAdded), turnContext, cancellationToken);
     }
@@ -642,7 +639,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMembersRemovedAsync(IList<Account> teamsMembersRemoved, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMembersRemovedAsync(IList<Microsoft.Teams.Api.Account> teamsMembersRemoved, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return OnMembersRemovedAsync(ProtocolJsonSerializer.ToObject<IList<ChannelAccount>>(teamsMembersRemoved), turnContext, cancellationToken);
     }
@@ -657,7 +654,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsChannelCreatedAsync(Channel Channel, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsChannelCreatedAsync(Microsoft.Teams.Api.Channel Channel, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -672,7 +669,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsChannelDeletedAsync(Channel Channel, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsChannelDeletedAsync(Microsoft.Teams.Api.Channel Channel, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -687,7 +684,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsChannelRenamedAsync(Channel Channel, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsChannelRenamedAsync(Microsoft.Teams.Api.Channel Channel, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -702,7 +699,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsChannelRestoredAsync(Channel Channel, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsChannelRestoredAsync(Microsoft.Teams.Api.Channel Channel, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -716,7 +713,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamArchivedAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamArchivedAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -730,7 +727,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamDeletedAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamDeletedAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -744,7 +741,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamHardDeletedAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamHardDeletedAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -758,7 +755,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamRenamedAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamRenamedAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -772,7 +769,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamRestoredAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamRestoredAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -786,7 +783,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsTeamUnarchivedAsync(Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsTeamUnarchivedAsync(Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -815,9 +812,9 @@ public class TeamsActivityHandler : ActivityHandler
                 case "application/vnd.microsoft.meetingEnd":
                     return OnTeamsMeetingEndAsync(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(turnContext.Activity.Value), turnContext, cancellationToken);
                 case "application/vnd.microsoft.meetingParticipantJoin":
-                    return OnTeamsMeetingParticipantsJoinAsync(ProtocolJsonSerializer.ToObject<MeetingParticipantJoinActivityValue>(turnContext.Activity.Value), turnContext, cancellationToken);
+                    return OnTeamsMeetingParticipantsJoinAsync(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Activities.Events.MeetingParticipantJoinActivityValue>(turnContext.Activity.Value), turnContext, cancellationToken);
                 case "application/vnd.microsoft.meetingParticipantLeave":
-                    return OnTeamsMeetingParticipantsLeaveAsync(ProtocolJsonSerializer.ToObject<MeetingParticipantLeaveActivityValue>(turnContext.Activity.Value), turnContext, cancellationToken);
+                    return OnTeamsMeetingParticipantsLeaveAsync(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Activities.Events.MeetingParticipantLeaveActivityValue>(turnContext.Activity.Value), turnContext, cancellationToken);
             }
         }
 
@@ -875,7 +872,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMeetingParticipantsJoinAsync(MeetingParticipantJoinActivityValue meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMeetingParticipantsJoinAsync(Microsoft.Teams.Api.Activities.Events.MeetingParticipantJoinActivityValue meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -889,7 +886,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMeetingParticipantsLeaveAsync(MeetingParticipantLeaveActivityValue meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMeetingParticipantsLeaveAsync(Microsoft.Teams.Api.Activities.Events.MeetingParticipantLeaveActivityValue meeting, ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
@@ -909,7 +906,7 @@ public class TeamsActivityHandler : ActivityHandler
     {
         if (turnContext.Activity.ChannelId == Channels.Msteams)
         {
-            var channelData = turnContext.Activity.GetChannelData<ChannelData>();
+            var channelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
 
             if (channelData != null)
             {
@@ -945,7 +942,7 @@ public class TeamsActivityHandler : ActivityHandler
     {
         if (turnContext.Activity.ChannelId == Channels.Msteams)
         {
-            var channelData = turnContext.Activity.GetChannelData<ChannelData>();
+            var channelData = turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
 
             if (channelData != null)
             {

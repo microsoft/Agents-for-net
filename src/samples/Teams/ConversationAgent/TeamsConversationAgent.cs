@@ -12,7 +12,6 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
-using Microsoft.Agents.Extensions.Teams.Connector;
 using System;
 using System.IO;
 using System.Threading;

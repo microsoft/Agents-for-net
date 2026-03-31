@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.App
     /// }
     /// </code>
     /// </remarks>
-    /// <param name="type">The exact activity type to match, e.g. <see cref="ActivityTypes.Event"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
+    /// <param name="type">The exact activity <see cref="IActivity.Type"/> to match, e.g. <see cref="ActivityTypes"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
     /// <param name="typeRegex">A regular expression pattern matched against <see cref="IActivity.Type"/>. Mutually exclusive with <paramref name="type"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

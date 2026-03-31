@@ -16,7 +16,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.Connector;
+namespace Microsoft.Agents.Extensions.Teams;
 
 /// <summary>
 /// The TeamsInfo Test If Build Remote Successful

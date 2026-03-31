@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
 /// [QueryRoute("myCommand")]
-/// public async Task&lt;Result&gt; OnQueryAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnQueryAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
 /// {
 ///     // Handle query event
 /// }
@@ -49,7 +49,7 @@ public class QueryRouteAttribute(string commandId, bool isAgenticOnly = false, u
 /// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
 /// <code>
 /// [QueryLinkRoute]
-/// public async Task&lt;Result&gt; OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
 ///     // Handle query link event
 /// }
@@ -82,7 +82,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// The method must match the <see cref="QueryUrlSettingHandler"/> delegate signature.
 /// <code>
 /// [QueryUrlSettingRoute]
-/// public async Task&lt;Result&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle query URL setting event
 /// }
@@ -115,7 +115,7 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="FetchTaskHandler"/> delegate signature.
 /// <code>
 /// [FetchTaskRoute("myCommand")]
-/// public async Task&lt;TaskModules.Response&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public async Task&lt;MessageExtensions.ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle fetch task event
 /// }
@@ -142,10 +142,10 @@ public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = fals
 }
 
 /// <summary>
-/// Attribute to define a route that handles Teams message extension bot message preview edit events for a specific command.
+/// Attribute to define a route that handles Teams message extension agent message preview edit events for a specific command.
 /// </summary>
 /// <remarks>
-/// Decorate a method with this attribute to register it as a handler for message extension bot message preview edit events in Teams.
+/// Decorate a method with this attribute to register it as a handler for message extension agent message preview edit events in Teams.
 /// The method must match the <see cref="AgentMessagePreviewEditHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewEditRoute("myCommand")]
@@ -167,7 +167,7 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
 #if !NETSTANDARD
         var handler = method.CreateDelegate<AgentMessagePreviewEditHandler>(app);
 #else
-        var handler = (BotMessagePreviewEditHandler)method.CreateDelegate(typeof(BotMessagePreviewEditHandler), app);
+        var handler = (AgentMessagePreviewEditHandler)method.CreateDelegate(typeof(AgentMessagePreviewEditHandler), app);
 #endif
         var builder = MessagePreviewEditRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -176,10 +176,10 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
 }
 
 /// <summary>
-/// Attribute to define a route that handles Teams message extension bot message preview send events for a specific command.
+/// Attribute to define a route that handles Teams message extension agent message preview send events for a specific command.
 /// </summary>
 /// <remarks>
-/// Decorate a method with this attribute to register it as a handler for message extension bot message preview send events in Teams.
+/// Decorate a method with this attribute to register it as a handler for message extension agent message preview send events in Teams.
 /// The method must match the <see cref="AgentMessagePreviewSendHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewSendRoute("myCommand")]
@@ -201,7 +201,7 @@ public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOn
 #if !NETSTANDARD
         var handler = method.CreateDelegate<AgentMessagePreviewSendHandler>(app);
 #else
-        var handler = (BotMessagePreviewSendHandler)method.CreateDelegate(typeof(BotMessagePreviewSendHandler), app);
+        var handler = (AgentMessagePreviewSendHandler)method.CreateDelegate(typeof(AgentMessagePreviewSendHandler), app);
 #endif
         var builder = MessagePreviewSendRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -289,7 +289,7 @@ public class SubmitActionRouteAttribute(string commandId, bool isAgenticOnly = f
 /// from the method's third parameter type.
 /// <code>
 /// [SelectItemRoute]
-/// public async Task&lt;MessageExtensions.Result&gt; OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, MyItem item, CancellationToken cancellationToken)
+/// public async Task&lt;MessageExtensions.Response&gt; OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, MyItem item, CancellationToken cancellationToken)
 /// {
 ///     // Handle select item event
 /// }

@@ -260,7 +260,7 @@ public class MessageExtension
     /// so only a single select item handler can be registered. Developers will need to include a
     /// type name of some sort in the preview item they return if they need to support multiple
     /// select item handlers.
-    /// </remarks>>
+    /// </remarks>
     /// </summary>
     /// <typeparam name="TData">The type of the data object expected from the SelectItem event payload.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
@@ -287,7 +287,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// The `composeExtension/anonymousQueryLink` INVOKE activity does not contain any sort of command ID,
-    /// so only a single select item handler can be registered.
+    /// so only a single anonymous query link handler can be registered.
     /// For more information visit https://learn.microsoft.com/microsoftteams/platform/messaging-extensions/how-to/link-unfurling?#enable-zero-install-link-unfurling
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
@@ -302,7 +302,7 @@ public class MessageExtension
     /// Registers a handler that invokes the fetch of the configuration settings for a Message Extension.
     /// </summary>
     /// <remarks>
-    /// The `composeExtension/querySettingUrl` INVOKE activity does not contain a command ID, so only a single select item handler can be registered.
+    /// The `composeExtension/querySettingUrl` INVOKE activity does not contain a command ID, so only a single query URL setting handler can be registered.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -339,8 +339,8 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// The <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked"/> INVOKE activity does not contain any sort of command ID,
-    /// so only a single select item handler can be registered. Developers will need to include a
-    /// type name of some sort in the preview item they return if they need to support multiple select item handlers.
+    /// so only a single card button clicked handler can be registered. Developers will need to include a
+    /// type name of some sort in the card data they return if they need to support multiple card button clicked handlers.
     /// </remarks>
     /// <typeparam name="TData">The type of the value payload expected from the card button click event.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
