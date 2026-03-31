@@ -130,12 +130,18 @@ namespace Microsoft.Agents.Core.Models
         public static bool IsTargetedActivity(this IActivity activity)
         {
             if (activity.Entities == null || activity.Entities.Count == 0)
+            {
                 return false;
+            }
+
             foreach (var entity in activity.Entities)
             {
                 if (entity.Type == EntityTypes.ActivityTreatment && entity is ActivityTreatment treatment && treatment.Treatment == ActivityTreatmentTypes.Targeted)
+                {
                     return true;
+                }
             }
+
             return false;
         }
 
@@ -148,6 +154,10 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="activity">The activity to be marked as targeted. Cannot be null.</param>
         public static IActivity MakeTargetedActivity(this IActivity activity)
         {
+            if (activity.IsTargetedActivity())
+            {
+                return activity;
+            }
             activity.Entities ??= [];
             activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
             return activity;

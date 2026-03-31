@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Net.Http;
 using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,35 +15,20 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
     internal class UserTokenRestClient : IUserToken
     {
         private readonly IRestTransport _transport;
-        private readonly static MemoryCache _cache = new MemoryCache(nameof(UserTokenRestClient));
+        private readonly ILogger _logger;
+        private static readonly MemoryCache _cache = new MemoryCache(nameof(UserTokenRestClient));
 
-        public UserTokenRestClient(IRestTransport transport)
+        public UserTokenRestClient(IRestTransport transport, ILogger logger = null)
         {
             _transport = transport ?? throw new ArgumentNullException(nameof(transport));
-        }
-
-        internal HttpRequestMessage CreateExchangeRequest(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest body)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Post;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel);
-
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
+            _logger = logger;
         }
 
         /// <inheritdoc/>
@@ -56,22 +39,17 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
             AssertionHelpers.ThrowIfNull(exchangeRequest, nameof(exchangeRequest));
 
-            using var message = CreateExchangeRequest(userId, connectionName, channelId, exchangeRequest);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Post(RestApiPaths.UserTokenExchange)
+                .WithQuery("userId", userId)
+                .WithQuery("connectionName", connectionName)
+                .WithQuery("channelId", channelId?.Channel)
+                .WithBody(exchangeRequest);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-#if !NETSTANDARD
-                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                    var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    if (string.IsNullOrEmpty(json))
-                    {
-                        return null;
-                    }
-                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
-#endif
+                    var tokenResponse = await RestPipeline.ReadContentAsync<TokenResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                     if (tokenResponse?.Token != null)
                     {
                         AddTokenResponseToCache(CacheKey(userId, connectionName, channelId.Channel), tokenResponse);
@@ -80,31 +58,18 @@ namespace Microsoft.Agents.Connector.RestClients
 
                 // Consent Required
                 case 400:
-#if !NETSTANDARD
-                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
+                    ErrorResponse errorBody = await RestPipeline.ReadContentAsync<ErrorResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                     errorBody.Error.Code = Error.ConsentRequiredCode;
                     throw new ErrorResponseException($"({errorBody.Error.Code}) {errorBody.Error.Message}") { Body = errorBody };
 
                 // Unclear what this means
                 case 404:
-#if !NETSTANDARD
-                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    if (string.IsNullOrEmpty(json))
+                    var json404 = await RestPipeline.ReadAsStringAsync(httpResponse, cancellationToken).ConfigureAwait(false);
+                    if (string.IsNullOrEmpty(json404))
                     {
                         return null;
                     }
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                    var json1 = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    if (string.IsNullOrEmpty(json1))
-                    {
-                        return null;
-                    }
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(json1);
-#endif
+                    return ProtocolJsonSerializer.ToObject<TokenResponse>(json404);
 
                 // Normal when OAuth Connection config is wrong
                 case 500:
@@ -115,25 +80,10 @@ namespace Microsoft.Agents.Connector.RestClients
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
-        
+
         private static string CacheKey(string userId, string connectionName, ChannelId channelId)
         {
             return $"{userId}-{connectionName}-{channelId?.Channel}";
-        }
-
-        internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, ChannelId channelId, string code)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetToken")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel)
-                .AppendQuery("code", code);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -152,53 +102,32 @@ namespace Microsoft.Agents.Connector.RestClients
                 }
             }
 
-            using var message = CreateGetTokenRequest(userId, connectionName, channelId, code);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(RestApiPaths.UserToken)
+                .WithQuery("userId", userId)
+                .WithQuery("connectionName", connectionName)
+                .WithQuery("channelId", channelId?.Channel)
+                .WithQuery("code", code);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-#if !NETSTANDARD
-                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-#else
-                    var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif                    
+                    var json = await RestPipeline.ReadAsStringAsync(httpResponse, cancellationToken).ConfigureAwait(false);
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-                    
                     var response = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
-
                     AddTokenResponseToCache(cacheKey, response);
-
                     return response;
 
                 case 404:
-                    // there isn't a body provided in this case.  This can happen when the code is invalid.
+                    // there isn't a body provided in this case. This can happen when the code is invalid.
                     return null;
 
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateGetAadTokensRequest(string userId, string connectionName, ChannelId channelId, AadResourceUrls body)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Post;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetAadTokens")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel);
-
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         /// <inheritdoc/>
@@ -207,41 +136,20 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
-            using var message = CreateGetAadTokensRequest(userId, connectionName, channelId, aadResourceUrls);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Post(RestApiPaths.UserTokenAad)
+                .WithQuery("userId", userId)
+                .WithQuery("connectionName", connectionName)
+                .WithQuery("channelId", channelId?.Channel)
+                .WithBody(aadResourceUrls);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyDictionary<string, TokenResponse>>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        if (string.IsNullOrEmpty(json))
-                        {
-                            return null;
-                        }
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyDictionary<string, TokenResponse>>(json);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<IReadOnlyDictionary<string, TokenResponse>>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetAadTokenUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateSignOutRequest(string userId, string connectionName, ChannelId channelId)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Delete;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/SignOut")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -251,24 +159,16 @@ namespace Microsoft.Agents.Connector.RestClients
 
             _cache.Remove(CacheKey(userId, connectionName, channelId));
 
-            using var message = CreateSignOutRequest(userId, connectionName, channelId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Delete(RestApiPaths.UserTokenSignOut)
+                .WithQuery("userId", userId)
+                .WithQuery("connectionName", connectionName)
+                .WithQuery("channelId", channelId?.Channel);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<object>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        if (string.IsNullOrEmpty(json))
-                        {
-                            return null;
-                        }
-                        return ProtocolJsonSerializer.ToObject<object>(json);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<object>(httpResponse, cancellationToken).ConfigureAwait(false);
                 case 204:
                     return null;
                 default:
@@ -276,82 +176,24 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        internal HttpRequestMessage CreateGetTokenStatusRequest(string userId, ChannelId channelId, string include)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenStatus")
-                .AppendQuery("userId", userId)
-                .AppendQuery("channelId", channelId?.Channel)
-                .AppendQuery("include", include);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
-        }
-
         /// <inheritdoc/>
         public async Task<IReadOnlyList<TokenStatus>> GetTokenStatusAsync(string userId, ChannelId channelId = null, string include = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
-            using var message = CreateGetTokenStatusRequest(userId, channelId, include);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(RestApiPaths.UserTokenStatus)
+                .WithQuery("userId", userId)
+                .WithQuery("channelId", channelId?.Channel)
+                .WithQuery("include", include);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<TokenStatus>>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        if (string.IsNullOrEmpty(json))
-                        {
-                            return null;
-                        }
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<TokenStatus>>(json);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<IReadOnlyList<TokenStatus>>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenStatusUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateExchangeTokenRequest(string userId, string connectionName, ChannelId channelId, TokenExchangeRequest body)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Post;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel);
-
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
-        }
-
-        internal HttpRequestMessage CreateGetTokenOrSignInResourceRequest(string userId, string connectionName, ChannelId channelId, string code, string state, string finalRedirect, string fwdUrl)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenOrSignInResource")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId?.Channel)
-                .AppendQuery("code", code)
-                .AppendQuery("state", state)
-                .AppendQuery("finalRedirect", finalRedirect)
-                .AppendQuery("fwdUrl", fwdUrl);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -372,27 +214,27 @@ namespace Microsoft.Agents.Connector.RestClients
                 }
             }
 
-            using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(RestApiPaths.UserTokenOrSignInResource)
+                .WithQuery("userId", userId)
+                .WithQuery("connectionName", connectionName)
+                .WithQuery("channelId", channelId?.Channel)
+                .WithQuery("code", code)
+                .WithQuery("state", state)
+                .WithQuery("finalRedirect", finalRedirect)
+                .WithQuery("fwdUrl", fwdUrl);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-#if !NETSTANDARD
-                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-#else
-                    var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif                    
+                    var json = await RestPipeline.ReadAsStringAsync(httpResponse, cancellationToken).ConfigureAwait(false);
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-
-                    var response = ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
-
-                    AddTokenResponseToCache(cacheKey, response.TokenResponse);
-
-                    return response;
+                    var tokenOrSignIn = ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
+                    AddTokenResponseToCache(cacheKey, tokenOrSignIn.TokenResponse);
+                    return tokenOrSignIn;
 
                 case 404:
                     return null;
@@ -407,9 +249,10 @@ namespace Microsoft.Agents.Connector.RestClients
             var value = _cache.Get(cacheKey);
             if (value != null)
             {
-                // Token Service will renew within 5 minutes of expiration.  Return the cached token
-                // if there is more than that. Otherwise, remove it from the cache and return null.  This
-                // will result in a call to the Token Service to get a new token.
+                // Token Service will renew within 5 minutes of expiration. Return the cached token
+                // if there is more than that. Otherwise, remove it from the cache and return null;
+                // this will result in a call to the Token Service to get a new token.
+
                 var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
                 if (toExpiration?.TotalMinutes >= 5)
                 {
@@ -422,7 +265,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return null;
         }
 
-        private static void AddTokenResponseToCache(string cacheKey, TokenResponse tokenResponse)
+        private void AddTokenResponseToCache(string cacheKey, TokenResponse tokenResponse)
         {
             if (tokenResponse != null && tokenResponse.Token != null)
             {
@@ -437,8 +280,9 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                     tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger?.LogWarning(ex, "Failed to parse JWT token for cache; IsExchangeable set to false.");
                     tokenResponse.IsExchangeable = false;
                 }
 

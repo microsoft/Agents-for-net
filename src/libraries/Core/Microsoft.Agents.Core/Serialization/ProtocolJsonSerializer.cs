@@ -223,7 +223,12 @@ namespace Microsoft.Agents.Core.Serialization
             {
                 if (string.IsNullOrWhiteSpace(json))
                 {
-                    throw new ArgumentNullException(nameof(value));
+                    if (defaultFactory != null)
+                    {
+                        return defaultFactory();
+                    }
+
+                    return default;
                 }
 
                 return JsonSerializer.Deserialize<T>(json, SerializationOptions);
