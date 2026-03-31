@@ -711,8 +711,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/fetchTask",
-                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action 
-                { 
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
                     CommandId = "testCommand",
                     CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
                 }),

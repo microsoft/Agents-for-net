@@ -41,7 +41,7 @@ public class TaskModuleAction : CardAction
             }
             else if (value is JsonElement)
             {
-                data = JsonNode.Parse(((JsonElement) value).ToString());
+                data = JsonNode.Parse(((JsonElement)value).ToString());
             }
             else
             {

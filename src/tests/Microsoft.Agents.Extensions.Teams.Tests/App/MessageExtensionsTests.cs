@@ -593,7 +593,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.CompletedTask;
             };
-            
+
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnAgentMessagePreviewSend(routeSelector, handler);
@@ -1189,7 +1189,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            
+
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQueryLink(handler);
@@ -1345,7 +1345,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
-            
+
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.MessageExtensions.OnQueryUrlSetting(handler);

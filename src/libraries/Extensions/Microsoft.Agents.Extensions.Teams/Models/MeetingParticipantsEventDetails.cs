@@ -25,10 +25,10 @@ public class MeetingParticipantsEventDetails
     /// <param name="members">The members involved in the meeting event.</param>
     public MeetingParticipantsEventDetails(
         IList<TeamsMeetingMember> members = default)
-    { 
+    {
         Members = members;
     }
- 
+
     /// <summary>
     /// Gets the meeting participants info.
     /// </summary>

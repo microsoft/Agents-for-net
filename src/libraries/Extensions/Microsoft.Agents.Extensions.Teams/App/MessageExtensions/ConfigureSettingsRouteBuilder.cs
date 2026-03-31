@@ -65,7 +65,7 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
             {
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
-                    && ctx.Activity.IsType(ActivityTypes.Invoke) 
+                    && ctx.Activity.IsType(ActivityTypes.Invoke)
                     && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Setting)
                 );
             };

@@ -111,7 +111,7 @@ public class TeamsAgentExtension : AgentExtension
     public TeamsTeam Teams { get; }
 
 #if !NETSTANDARD
-    internal AgentApplication AgentApplication { get; init;}
+    internal AgentApplication AgentApplication { get; init; }
 #else
     internal AgentApplication AgentApplication { get; set;}
 #endif

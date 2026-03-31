@@ -1,26 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Teams.Api.Activities.Invokes;
 using System;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
 /// <summary>
 /// MessageExtensions class to enable fluent style registration of handlers related to Message Extensions.
 /// </summary>
-/// <remarks>
-/// Creates a new instance of the MessageExtensions class.
-/// </remarks> The top level application class to register handlers with.
 public class MessageExtension
 {
     private readonly AgentApplication _app;

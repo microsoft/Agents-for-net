@@ -49,7 +49,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     {
         _teamEvents.Add(EventType.TeamUnarchived);
         return this;
-    }   
+    }
 
     /// <summary>
     /// Match on team deleted events.

@@ -31,7 +31,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
     private string _verbDataFilter = DEFAULT_TASK_DATA_FILTER;
 
     protected string InvokeName { get; set; }
-    
+
     public VerbRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
@@ -147,7 +147,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
         Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (!IsContextMatch(turnContext, _route)
-                || !turnContext.Activity.IsType(ActivityTypes.Invoke) 
+                || !turnContext.Activity.IsType(ActivityTypes.Invoke)
                 || !string.Equals(turnContext.Activity.Name, invokeName)
                 || turnContext.Activity.Value == null)
             {

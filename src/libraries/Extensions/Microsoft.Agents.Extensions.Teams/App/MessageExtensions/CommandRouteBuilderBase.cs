@@ -29,7 +29,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
 
     protected string InvokeName { get; set; }
     protected string? PreviewAction { get; set; }
-    
+
     public CommandRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
@@ -139,7 +139,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
         Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (!IsContextMatch(turnContext, _route)
-                || !turnContext.Activity.IsType(ActivityTypes.Invoke) 
+                || !turnContext.Activity.IsType(ActivityTypes.Invoke)
                 || !string.Equals(turnContext.Activity.Name, invokeName)
                 || turnContext.Activity.Value == null)
             {

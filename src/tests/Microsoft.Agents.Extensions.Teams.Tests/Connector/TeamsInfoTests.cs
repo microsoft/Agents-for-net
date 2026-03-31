@@ -1474,7 +1474,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         private class TestConnector(Uri endpoint) : IConnectorClient, IRestTransport
         {
             private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-            
+
             public Uri BaseUri => throw new NotImplementedException();
 
             public IAttachments Attachments => throw new NotImplementedException();
@@ -1526,10 +1526,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 };
 
                 var conversations = new Mock<IConversations>();
-                
+
                 conversations.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ChannelAccount { Id = "id-1" });
-                
+
                 conversations.Setup(x => x.GetConversationPagedMembersAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(result);
 
