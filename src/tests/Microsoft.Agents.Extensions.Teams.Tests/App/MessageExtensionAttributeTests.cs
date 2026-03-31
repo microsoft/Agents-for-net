@@ -613,13 +613,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [FetchTaskRoute("fetchCommand")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchTaskAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTaskAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            var response = new Microsoft.Teams.Api.TaskModules.Response();
+            var response = new Microsoft.Teams.Api.MessageExtensions.ActionResponse();
             return Task.FromResult(response);
         }
     }

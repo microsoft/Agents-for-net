@@ -9,7 +9,6 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Moq;
 using System.Net.Http;
@@ -17,6 +16,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.App
 {
@@ -115,14 +115,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [TaskModuleAttributes.FetchRoute("test-verb")]
+        [FetchRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
         {
             FetchHandlerCalled = true;
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [TaskModuleAttributes.SubmitRoute("test-verb")]
+        [SubmitRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
         {
             SubmitHandlerCalled = true;

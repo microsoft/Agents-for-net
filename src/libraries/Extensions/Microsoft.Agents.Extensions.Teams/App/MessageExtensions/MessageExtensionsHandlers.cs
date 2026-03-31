@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// <param name="data">The data that was submitted.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionActionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SubmitActionHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
 /// <summary>
@@ -35,18 +35,18 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SubmitActio
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SubmitActionHandler<TData>(ITurnContext turnContext, ITurnState turnState, TData data, CancellationToken cancellationToken);
 
 /// <summary>
-/// Function for handling Message Extension botMessagePreview edit events.
+/// Function for handling Message Extension message preview edit events.
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
 /// <param name="activityPreview">The activity that's being previewed by the user.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionActionResponse.</returns>
-public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> BotMessagePreviewEditHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
+/// <returns>An instance of MessageExtensions.Response.</returns>
+public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> AgentMessagePreviewEditHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
 
 /// <summary>
-/// Function for handling Message Extension botMessagePreview send events.
+/// Function for handling Message Extension message preview send events.
 /// </summary>
 /// <param name="turnContext">A strongly-typed context object for this turn.</param>
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
@@ -54,7 +54,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> BotMessageP
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task BotMessagePreviewSendHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
+public delegate Task AgentMessagePreviewSendHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension fetchTask events.
@@ -63,8 +63,8 @@ public delegate Task BotMessagePreviewSendHandler(ITurnContext turnContext, ITur
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of TaskModuleResponse.</returns>
-public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchTaskHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
+/// <returns>An instance of MessageExtensions.ActionResponse.</returns>
+public delegate Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> FetchTaskHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension query events.
@@ -74,7 +74,7 @@ public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchTaskHandler(
 /// <param name="query">The query parameters that were sent by the client.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken);
 
 /// <summary>
@@ -85,7 +85,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryHandle
 /// <param name="item">The item that was selected.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SelectItemHandler(ITurnContext turnContext, ITurnState turnState, object item, CancellationToken cancellationToken);
 
 /// <summary>
@@ -97,7 +97,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SelectItemH
 /// <param name="item">The item that was selected.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SelectItemHandler<TData>(ITurnContext turnContext, ITurnState turnState, TData item, CancellationToken cancellationToken);
 
 /// <summary>
@@ -108,7 +108,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SelectItemH
 /// <param name="url">The URL that should be unfurled.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryLinkHandler(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken);
 
 /// <summary>
@@ -118,7 +118,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryLinkHa
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessagingExtensionResponse.</returns>
+/// <returns>An instance of MessageExtensions.Response.</returns>
 public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryUrlSettingHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
 /// <summary>

@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
 
-            BotMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            AgentMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.FromResult(actionResponseMock.Object);
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            BotMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            AgentMessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.FromResult(actionResponseMock.Object);
@@ -418,7 +418,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 // Return true even though the Activity is wrong to test that the handler properly validates the activity type and name.
                 return Task.FromResult(true);
             };
-            BotMessagePreviewEditHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            AgentMessagePreviewEditHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(actionResponseMock.Object);
             };
@@ -482,7 +482,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            BotMessagePreviewSendHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            AgentMessagePreviewSendHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.CompletedTask;
@@ -546,7 +546,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var extension = new TeamsAgentExtension(app);
-            BotMessagePreviewSendHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
+            AgentMessagePreviewSendHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
                 Assert.Equivalent(activity, activityPreview);
                 return Task.CompletedTask;
@@ -589,7 +589,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            BotMessagePreviewSendHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            AgentMessagePreviewSendHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.CompletedTask;
             };
@@ -628,7 +628,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.ActionResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
@@ -685,7 +685,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.ActionResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -723,7 +723,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.ActionResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {

@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [TeamsTeamAttributes.TeamArchivedRoute]
+        [TeamArchivedRoute]
         public Task OnTeamArchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamArchived;
@@ -238,7 +238,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsTeamAttributes.TeamUnarchivedRoute]
+        [TeamUnarchivedRoute]
         public Task OnTeamUnarchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamUnarchived;
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsTeamAttributes.TeamDeletedRoute]
+        [TeamDeletedRoute]
         public Task OnTeamDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamDeleted;
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsTeamAttributes.TeamHardDeletedRoute]
+        [TeamHardDeletedRoute]
         public Task OnTeamHardDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamHardDeleted;
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsTeamAttributes.TeamRenamedRoute]
+        [TeamRenamedRoute]
         public Task OnTeamRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamRenamed;
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsTeamAttributes.TeamRestoredRoute]
+        [TeamRestoredRoute]
         public Task OnTeamRestoredAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.TeamRestored;
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [TeamsTeamAttributes.TeamUpdateRoute]
+        [TeamUpdateRoute]
         public Task OnAnyTeamEventAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
         {
             HandlerCalled = true;

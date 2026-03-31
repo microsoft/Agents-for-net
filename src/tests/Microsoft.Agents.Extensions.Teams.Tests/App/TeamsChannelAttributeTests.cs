@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [TeamsChannelAttributes.ChannelCreatedRoute]
+        [ChannelCreatedRoute]
         public Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelCreated;
@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelDeletedRoute]
+        [ChannelDeletedRoute]
         public Task OnChannelDeletedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelDeleted;
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelMemberAddedRoute]
+        [ChannelMemberAddedRoute]
         public Task OnChannelMemberAddedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelMemberAdded;
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelMemberRemovedRoute]
+        [ChannelMemberRemovedRoute]
         public Task OnChannelMemberRemovedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelMemberRemoved;
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelRenamedRoute]
+        [ChannelRenamedRoute]
         public Task OnChannelRenamedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelRenamed;
@@ -298,7 +298,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelRestoredRoute]
+        [ChannelRestoredRoute]
         public Task OnChannelRestoredAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelRestored;
@@ -306,7 +306,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelSharedRoute]
+        [ChannelSharedRoute]
         public Task OnChannelSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelShared;
@@ -314,7 +314,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [TeamsChannelAttributes.ChannelUnSharedRoute]
+        [ChannelUnSharedRoute]
         public Task OnChannelUnSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelUnShared;
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [TeamsChannelAttributes.ChannelUpdateRoute]
+        [ChannelUpdateRoute]
         public Task OnAnyChannelEventAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             HandlerCalled = true;

@@ -10,14 +10,14 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
+using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 using Microsoft.Agents.Extensions.Teams.Connector;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using static Microsoft.Agents.Extensions.Teams.App.TeamsChannels.TeamsChannelAttributes;
-using static Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamsTeamAttributes;
 
 namespace ConversationAgent;
 

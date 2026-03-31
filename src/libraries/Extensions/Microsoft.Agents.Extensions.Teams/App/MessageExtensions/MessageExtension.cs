@@ -100,7 +100,7 @@ public class MessageExtension
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(string commandId, BotMessagePreviewEditHandler handler)
+    public MessageExtension OnAgentMessagePreviewEdit(string commandId, AgentMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
@@ -113,7 +113,7 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandler handler)
+    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, AgentMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
@@ -126,7 +126,7 @@ public class MessageExtension
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, BotMessagePreviewEditHandler handler)
+    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, AgentMessagePreviewEditHandler handler)
     {
         _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
@@ -139,7 +139,7 @@ public class MessageExtension
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(string commandId, AgentMessagePreviewSendHandler handler)
     {
         _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
@@ -152,7 +152,7 @@ public class MessageExtension
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(Regex commandIdPattern, AgentMessagePreviewSendHandler handler)
     {
         _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
@@ -165,7 +165,7 @@ public class MessageExtension
     /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(RouteSelector routeSelector, BotMessagePreviewSendHandler handler)
+    public MessageExtension OnAgentMessagePreviewSend(RouteSelector routeSelector, AgentMessagePreviewSendHandler handler)
     {
         _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;

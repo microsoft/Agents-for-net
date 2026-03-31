@@ -65,14 +65,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             attachments.Add(attachment);
         }
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = attachments
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+            Attachments = attachments
         });
     }
 
@@ -112,14 +109,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+            Attachments = [attachment]
         });
     }
 
@@ -157,14 +151,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+            Attachments = [attachment]
         });
     }
 
@@ -172,17 +163,9 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Link query received: {Url}", url);
-
         if (string.IsNullOrEmpty(url))
         {
-            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-            {
-                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-                {
-                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
-                    Text = "No URL provided"
-                }
-            });
+            return ResponseTask.WithResultMessage("No URL provided");
         }
 
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
@@ -221,14 +204,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+            Attachments = [attachment]
         });
     }
 
@@ -265,14 +245,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+            Attachments = [attachment]
         });
     }
 
@@ -281,13 +258,10 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     {
         Logger.LogInformation("Query settings URL requested");
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
-                Text = "Settings configuration would be handled here"
-            }
+            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
+            Text = "Settings configuration would be handled here"
         });
     }
 

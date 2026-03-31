@@ -146,7 +146,7 @@ public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = fals
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension bot message preview edit events in Teams.
-/// The method must match the <see cref="BotMessagePreviewEditHandler"/> delegate signature.
+/// The method must match the <see cref="AgentMessagePreviewEditHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewEditRoute("myCommand")]
 /// public async Task&lt;MessageExtensions.Response&gt; OnMessagePreviewEditAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -165,7 +165,7 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
-        var handler = method.CreateDelegate<BotMessagePreviewEditHandler>(app);
+        var handler = method.CreateDelegate<AgentMessagePreviewEditHandler>(app);
 #else
         var handler = (BotMessagePreviewEditHandler)method.CreateDelegate(typeof(BotMessagePreviewEditHandler), app);
 #endif
@@ -180,7 +180,7 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension bot message preview send events in Teams.
-/// The method must match the <see cref="BotMessagePreviewSendHandler"/> delegate signature.
+/// The method must match the <see cref="AgentMessagePreviewSendHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewSendRoute("myCommand")]
 /// public async Task OnMessagePreviewSendAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -199,7 +199,7 @@ public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOn
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
 #if !NETSTANDARD
-        var handler = method.CreateDelegate<BotMessagePreviewSendHandler>(app);
+        var handler = method.CreateDelegate<AgentMessagePreviewSendHandler>(app);
 #else
         var handler = (BotMessagePreviewSendHandler)method.CreateDelegate(typeof(BotMessagePreviewSendHandler), app);
 #endif
