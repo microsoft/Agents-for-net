@@ -5,16 +5,29 @@ using System;
 
 namespace Microsoft.Agents.Authentication.Telemetry.Scopes
 {
+    /// <summary>
+    /// A <see cref="ScopeTokenRequest"/> that traces the acquisition of an agentic instance
+    /// token and records the agentic instance identifier.
+    /// </summary>
     internal class ScopeGetAgenticInstanceToken : ScopeTokenRequest
     {
         private readonly string _agenticInstanceId;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeGetAgenticInstanceToken"/> class.
+        /// </summary>
+        /// <param name="agenticInstanceId">The identifier of the agentic application instance.</param>
         public ScopeGetAgenticInstanceToken(string agenticInstanceId)
             : base(Constants.ScopeGetAgenticInstanceToken, Constants.AuthMethodAgenticInstance)
         {
             _agenticInstanceId = agenticInstanceId;
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// Calls <c>base.Callback</c> to record the auth method, then tags the activity with
+        /// <see cref="TagNames.AgenticInstanceId"/>.
+        /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             base.Callback(telemetryActivity, duration, error);

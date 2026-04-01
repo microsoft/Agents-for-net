@@ -7,12 +7,12 @@ using System.Diagnostics.Metrics;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter
 {
     /// <summary>
-    /// Exposes the OpenTelemetry metric instruments used by the channel-adapter
+    /// Exposes the metric instruments used by the channel-adapter
     /// telemetry scopes to record activity processing statistics.
     /// </summary>
     /// <remarks>
     /// All instruments are created from <see cref="AgentsTelemetry.Meter"/> so they share
-    /// the same source name and version as the rest of the SDK telemetry.
+    /// the same source name and version as the rest of the Agents SDK telemetry.
     /// </remarks>
     internal static class Metrics
     {

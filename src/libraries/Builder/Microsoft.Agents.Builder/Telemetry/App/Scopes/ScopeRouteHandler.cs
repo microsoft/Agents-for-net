@@ -4,6 +4,14 @@ using System.Diagnostics;
 
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
+    /// <summary>
+    /// A <see cref="TelemetryScope"/> that traces the execution of a matched route handler
+    /// during a turn.
+    /// </summary>
+    /// <remarks>
+    /// Tags the <see cref="System.Diagnostics.Activity"/> with whether the route is an invoke
+    /// activity and whether it is an agentic route.
+    /// </remarks>
     internal class ScopeRouteHandler : TelemetryScope
     {
         private readonly bool _isInvoke;

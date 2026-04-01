@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
     /// through the channel adapter.
     /// </summary>
     /// <remarks>
-    /// Records the activity identifier and conversation identifier as span tags and
+    /// Records the activity identifier and conversation identifier as <see cref="System.Diagnostics.Activity"/> tags and
     /// increments the <see cref="Metrics.ActivitiesUpdated"/> counter.
     /// </remarks>
     internal class ScopeUpdateActivity : TelemetryScope

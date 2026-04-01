@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
     /// <remarks>
     /// Call <see cref="Share"/> to associate the incoming <see cref="IActivity"/> with this
     /// scope so that its metadata (type, channel, conversation, delivery mode) is recorded
-    /// as span tags and metric dimensions when the scope is disposed.
+    /// as <see cref="System.Diagnostics.Activity"/> tags and metric dimensions when the scope is disposed.
     /// </remarks>
     internal class ScopeProcess : TelemetryScope
     {

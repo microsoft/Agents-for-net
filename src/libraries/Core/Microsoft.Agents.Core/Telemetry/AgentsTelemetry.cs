@@ -8,12 +8,12 @@ namespace Microsoft.Agents.Core.Telemetry
 {
     /// <summary>
     /// Provides the shared <see cref="ActivitySource"/> and <see cref="Meter"/> used by the
-    /// Microsoft Agents SDK to emit OpenTelemetry traces and metrics.
+    /// Microsoft Agents SDK to emit distributed traces and metrics.
     /// </summary>
     /// <remarks>
     /// All SDK telemetry is published under a single source name so that consumers can
-    /// subscribe to <c>"Microsoft.Agents.Core"</c> in their OpenTelemetry configuration to
-    /// capture every span and metric produced by the Agents SDK.
+    /// subscribe to <c>"Microsoft.Agents.Core"</c> to capture every <see cref="Activity"/>
+    /// and metric produced by the Agents SDK.
     /// </remarks>
     public static class AgentsTelemetry
     {

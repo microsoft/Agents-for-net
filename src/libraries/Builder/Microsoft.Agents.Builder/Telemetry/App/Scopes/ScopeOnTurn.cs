@@ -4,6 +4,16 @@ using System.Diagnostics;
 
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
+    /// <summary>
+    /// A <see cref="TelemetryScope"/> that traces the full execution of a single agent turn.
+    /// </summary>
+    /// <remarks>
+    /// Tags the <see cref="System.Diagnostics.Activity"/> with activity metadata (type, channel,
+    /// conversation, activity ID) and authorization outcome. On successful completion, increments
+    /// <see cref="Metrics.TurnCount"/> and records <see cref="Metrics.TurnDuration"/>; on error,
+    /// increments <see cref="Metrics.TurnErrorCount"/> instead. Call <see cref="Share"/> to supply
+    /// the route-authorization and route-match results after they are known.
+    /// </remarks>
     internal class ScopeOnTurn : TelemetryScope
     {
 
@@ -45,6 +55,12 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
             }
         }
 
+        /// <summary>
+        /// Associates route-authorization and route-match results with this scope so they
+        /// can be recorded as span tags when the scope is disposed.
+        /// </summary>
+        /// <param name="routeAuthorized">Whether the incoming route was authorized.</param>
+        /// <param name="routeMatched">Whether a route handler was matched for the incoming request.</param>
         public void Share(bool routeAuthorized, bool routeMatched)
         {
             _routeAuthorized = routeAuthorized;

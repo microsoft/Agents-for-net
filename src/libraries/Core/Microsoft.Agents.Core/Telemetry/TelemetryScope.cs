@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Core.Telemetry
 {
     /// <summary>
-    /// Provides a disposable scope that wraps an OpenTelemetry <see cref="Activity"/> for
+    /// Provides a disposable scope that wraps a <see cref="Activity"/> for
     /// tracing operations within the Microsoft Agents SDK.
     /// </summary>
     /// <remarks>
@@ -17,7 +17,8 @@ namespace Microsoft.Agents.Core.Telemetry
     /// <see cref="AgentsTelemetry.ActivitySource"/> when constructed, and stops it when
     /// disposed. Errors can be recorded via <see cref="SetError"/>, which sets the
     /// activity status to <see cref="ActivityStatusCode.Error"/> and attaches an
-    /// <c>exception</c> event following OpenTelemetry semantic conventions.
+    /// <c>exception</c> event with <c>exception.type</c>, <c>exception.message</c>,
+    /// and <c>exception.stacktrace</c> tags.
     /// </para>
     /// <para>
     /// Derived classes can override <see cref="Callback"/> to enrich the activity with
@@ -66,7 +67,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <remarks>
         /// Sets the activity status to <see cref="ActivityStatusCode.Error"/> and adds an
         /// <c>exception</c> event with <c>exception.type</c>, <c>exception.message</c>,
-        /// and <c>exception.stacktrace</c> tags, following OpenTelemetry semantic conventions.
+        /// and <c>exception.stacktrace</c> tags.
         /// If no activity was created (e.g., no listener is registered), this method is a no-op.
         /// </remarks>
         public void SetError(Exception ex)

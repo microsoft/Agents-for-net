@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 
         /// <inheritdoc />
         /// <remarks>
-        /// Tags the span with the activity count and conversation identifier, and
+        /// Tags the activity with the activity count and conversation identifier, and
         /// increments <see cref="Metrics.ActivitiesSent"/> once per activity.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
