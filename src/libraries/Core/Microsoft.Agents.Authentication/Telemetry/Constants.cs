@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Microsoft.Agents.Authentication.Telemetry
+﻿namespace Microsoft.Agents.Authentication.Telemetry
 {
     internal static class Constants
     {

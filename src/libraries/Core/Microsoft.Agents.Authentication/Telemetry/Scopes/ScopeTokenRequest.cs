@@ -1,6 +1,5 @@
 ﻿using Microsoft.Agents.Core.Telemetry;
 using System;
-using System.Diagnostics;
 
 #nullable enable
 

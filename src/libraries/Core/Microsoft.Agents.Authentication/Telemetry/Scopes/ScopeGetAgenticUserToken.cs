@@ -1,4 +1,5 @@
 ﻿using Microsoft.Agents.Core.Telemetry;
+using System;
 using System.Collections.Generic;
 
 #nullable enable
@@ -19,7 +20,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
             _scopes = scopes;
         }
 
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, System.Exception? error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             base.Callback(telemetryActivity, duration, error);
             telemetryActivity.SetTag(TagNames.AgenticInstanceId, _agenticInstanceId);

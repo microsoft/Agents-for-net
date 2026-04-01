@@ -1,4 +1,7 @@
 ﻿using Microsoft.Agents.Core.Telemetry;
+using System;
+
+#nullable enable
 
 namespace Microsoft.Agents.Authentication.Telemetry.Scopes
 {
@@ -12,7 +15,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
             _agenticInstanceId = agenticInstanceId;
         }
 
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, System.Exception? error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             base.Callback(telemetryActivity, duration, error);
             telemetryActivity.SetTag(TagNames.AgenticInstanceId, _agenticInstanceId);

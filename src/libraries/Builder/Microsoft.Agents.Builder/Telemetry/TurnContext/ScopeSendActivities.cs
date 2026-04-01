@@ -14,4 +14,5 @@ namespace Microsoft.Agents.Builder.Telemetry.TurnContext
         {
             telemetryActivity.SetTag(TagNames.ConversationId, _turnContext.Activity.Conversation?.Id);
         }
+    }
 }

@@ -27,8 +27,4 @@
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Telemetry\Scopes\" />
-	</ItemGroup>
-
 </Project>
