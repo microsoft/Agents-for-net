@@ -39,52 +39,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         }
 
         [Fact]
-        public async Task SendMessageToTeamsChannelAsync_ShouldReturnConversationReferenceUsingAdapter()
-        {
-            var expectedConversationId = "conversation-id";
-            var activity = CreateTestActivity("SendMessageToTeamsChannelAsync");
-            var adapter = new TestCreateConversationAdapter(ExpectedActivityId, expectedConversationId);
-            var turnContext = new TurnContext(adapter, activity);
-            turnContext.Services.Set<IConnectorClient>(_connectorClient);
-            turnContext.Activity.ServiceUrl = "https://test.coffee";
-            var handler = new TestTeamsActivityHandler();
-
-            await handler.OnTurnAsync(turnContext);
-        }
-
-        [Fact]
-        public async Task SendMessageToTeamsChannelAsync_ShouldReturnConversationReference()
-        {
-            var expectedAppId = "app-id";
-            var expectedServiceUrl = "service-url";
-            var expectedConversationId = "conversation-id";
-            var requestActivity = new Activity { ServiceUrl = expectedServiceUrl };
-            var adapter = new TestCreateConversationAdapter(ExpectedActivityId, expectedConversationId);
-
-            var turnContextMock = new Mock<ITurnContext>();
-            turnContextMock.Setup(tc => tc.Activity).Returns(requestActivity);
-            turnContextMock.Setup(tc => tc.Adapter).Returns(adapter);
-
-            var activity = CreateTestActivity("SendMessageToTeamsChannelAsync");
-
-            var reference = await TeamsInfo.SendMessageToTeamsChannelAsync(turnContextMock.Object, activity, ExpectedTeamsChannelId, expectedAppId, CancellationToken.None);
-
-            Assert.Equal(expectedConversationId, reference.Item1.Conversation.Id);
-            Assert.Equal(ExpectedActivityId, reference.Item2);
-            Assert.Equal(expectedAppId, adapter.AppId);
-            Assert.Equal(Channels.Msteams, adapter.ChannelId);
-            Assert.Equal(expectedServiceUrl, adapter.ServiceUrl);
-            Assert.Null(adapter.Audience);
-
-            var adapterChannelData = adapter.ConversationParameters.ChannelData;
-            var channel = adapterChannelData.GetType().GetProperty("Channel").GetValue(adapterChannelData, null);
-            var id = channel.GetType().GetProperty("Id").GetValue(channel, null);
-
-            Assert.Equal(ExpectedTeamsChannelId, id);
-            Assert.Equal(adapter.ConversationParameters.Activity, activity);
-        }
-
-        [Fact]
         public async Task GetMeetingInfoAsync_ShouldReturnMeetingInfo()
         {
             var channelData = new ChannelData
@@ -488,6 +442,191 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
         }
         */
 
+        [Fact]
+        public async Task GetTeamMemberAsync_ShouldReturnAccountInfo()
+        {
+            var channelData = new ChannelData
+            {
+                Team = new Team { Id = "team-id" },
+            };
+            var activity = CreateTestActivity("GetTeamMemberAsync", channelData);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<IConnectorClient>(_connectorClient);
+
+            var member = await TeamsInfo.GetTeamMemberAsync(turnContext, "id-1");
+
+            Assert.Equal("id-1", member.Id);
+            Assert.Equal("name-1", member.Name);
+            Assert.Equal("aad-id-1", member.AadObjectId);
+        }
+
+        [Fact]
+        public async Task GetTeamDetailsAsync_ShouldThrow_WhenTeamIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetTeamDetailsAsync", new ChannelData());
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetTeamDetailsAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetTeamChannelsAsync_ShouldThrow_WhenTeamIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetTeamChannelsAsync", new ChannelData());
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetTeamChannelsAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetPagedTeamMembersAsync_ShouldThrow_WhenTeamIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetPagedTeamMembersAsync", new ChannelData());
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<IConnectorClient>(_connectorClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetPagedTeamMembersAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetTeamMemberAsync_ShouldThrow_WhenTeamIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetTeamMemberAsync", new ChannelData());
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<IConnectorClient>(_connectorClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetTeamMemberAsync(turnContext, "id-1"));
+        }
+
+        [Fact]
+        public async Task GetMeetingInfoAsync_ShouldThrow_WhenMeetingIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetMeetingInfoAsync", new ChannelData { Tenant = new Tenant { Id = "tenantId-1" } });
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingInfoAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMeetingParticipantAsync_ShouldThrow_WhenMeetingIdNotInActivity()
+        {
+            var activity = CreateTestActivity("GetMeetingParticipantAsync", new ChannelData { Tenant = new Tenant { Id = "tenantId-1" } });
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingParticipantAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMeetingParticipantAsync_ShouldThrow_WhenParticipantIdMissing()
+        {
+            var channelData = new ChannelData { Tenant = new Tenant { Id = "tenantId-1" } };
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+            var activity = new Activity
+            {
+                Type = "message",
+                ChannelId = Channels.Msteams,
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                From = new ChannelAccount { Id = "id-1" }, // no AadObjectId
+                ServiceUrl = "https://test.coffee",
+                ChannelData = channelData,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingParticipantAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMeetingParticipantAsync_ShouldThrow_WhenTenantIdNotInActivity()
+        {
+            var channelData = new ChannelData(); // no Tenant
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+            var activity = new Activity
+            {
+                Type = "message",
+                ChannelId = Channels.Msteams,
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                From = new ChannelAccount { Id = "id-1", AadObjectId = "participantId-1" },
+                ServiceUrl = "https://test.coffee",
+                ChannelData = channelData,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set<ApiClient>(_apiClient);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingParticipantAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetTeamDetailsAsync_ShouldThrow_WhenApiClientNotRegistered()
+        {
+            var activity = CreateTestActivity("GetTeamDetailsAsync");
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // ApiClient not registered
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetTeamDetailsAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMeetingInfoAsync_ShouldThrow_WhenApiClientNotRegistered()
+        {
+            var channelData = new ChannelData { Tenant = new Tenant { Id = "tenantId-1" } };
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+            var activity = CreateTestActivity("GetMeetingInfoAsync", channelData);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // ApiClient not registered
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingInfoAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMeetingParticipantAsync_ShouldThrow_WhenApiClientNotRegistered()
+        {
+            var channelData = new ChannelData { Tenant = new Tenant { Id = "tenantId-1" } };
+            channelData.Properties.Add("meeting", new Meeting { Id = "meetingId-1" });
+            var activity = CreateTestActivity("GetMeetingParticipantAsync", channelData);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // ApiClient not registered
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMeetingParticipantAsync(turnContext));
+        }
+
+        [Fact]
+        public async Task GetMemberAsync_ShouldThrow_WhenConnectorClientNotRegistered()
+        {
+            var activity = CreateTestActivity("GetMemberAsync");
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // IConnectorClient not registered — non-team conversation path requires it
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetMemberAsync(turnContext, "id-1"));
+        }
+
+        [Fact]
+        public async Task GetPagedMembersAsync_ShouldThrow_WhenConnectorClientNotRegistered()
+        {
+            var activity = CreateTestActivity("GetPagedMembersAsync", new ChannelData());
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            // IConnectorClient not registered — non-team conversation path requires it
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                TeamsInfo.GetPagedMembersAsync(turnContext));
+        }
+
         private static Activity CreateTestActivity(string text, object channelData = null)
         {
             var activityChannelData = channelData;
@@ -529,9 +668,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                     case "GetChannelsAsync":
                         await CallGetTeamChannelsAsync(turnContext);
                         break;
-                    case "SendMessageToTeamsChannelAsync":
-                        await CallSendMessageToTeamsChannelAsync(turnContext);
-                        break;
                     case "GetMemberAsync":
                         await CallGetMemberAsync(turnContext);
                         break;
@@ -571,21 +707,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                         Assert.True(false);
                         break;
                 }
-            }
-
-            private static async Task CallSendMessageToTeamsChannelAsync(ITurnContext turnContext)
-            {
-                var message = MessageFactory.Text("hi");
-                var channelId = Channels.Msteams;
-                var appId = "app-id";
-                var cancelToken = new CancellationToken();
-
-                var reference = await TeamsInfo.SendMessageToTeamsChannelAsync(turnContext, message, channelId, appId, cancelToken);
-
-                Assert.Equal(ExpectedActivityId, reference.Item1.ActivityId);
-                Assert.Equal(channelId, reference.Item1.ChannelId);
-                Assert.Equal(turnContext.Activity.ServiceUrl, reference.Item1.ServiceUrl);
-                Assert.Equal(ExpectedActivityId, reference.Item2);
             }
 
             private static async Task CallGetTeamDetailsAsync(ITurnContext turnContext)

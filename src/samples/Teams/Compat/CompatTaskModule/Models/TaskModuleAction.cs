@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Extensions.Teams.Models;
+namespace CompatTaskModule.Models;
 
 /// <summary>
 /// Adapter class to represent BotBuilder card action as adaptive card action (in type of Action.Submit).
