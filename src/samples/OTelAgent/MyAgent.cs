@@ -36,7 +36,7 @@ public class MyAgent : AgentApplication
             activity?.SetTag("channel.id", turnContext.Activity.ChannelId?.ToString());
             activity?.SetTag("members.added.count", turnContext.Activity.MembersAdded?.Count ?? 0);
 
-            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+            foreach (ChannelAccount member in turnContext.Activity.MembersAdded!)
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {

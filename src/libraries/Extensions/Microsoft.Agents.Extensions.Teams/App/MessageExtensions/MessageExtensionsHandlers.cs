@@ -129,8 +129,8 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryUrlSet
 /// <param name="query">The query that was submitted.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task ConfigureSettingsHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken);
+/// <returns>An instance of MessageExtensions.Response.</returns>
+public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> ConfigureSettingsHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension clicking card button events.

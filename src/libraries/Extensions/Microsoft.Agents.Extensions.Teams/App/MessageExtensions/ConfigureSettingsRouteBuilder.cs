@@ -32,8 +32,8 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
         _route.Handler = async (ctx, ts, ct) =>
         {
             var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
-            await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, null).ConfigureAwait(false);
+            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;
     }

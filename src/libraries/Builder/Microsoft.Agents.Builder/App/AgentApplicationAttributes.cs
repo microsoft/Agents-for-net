@@ -58,6 +58,36 @@ namespace Microsoft.Agents.Builder.App
     }
 
     /// <summary>
+    /// Attribute to define a route that handles activities matching installation updates.
+    /// <code>
+    /// // Match by exact type
+    /// [InstallationUpdateRoute]
+    /// public async Task OnInstallationUpdateAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    /// {
+    ///     // Handle any installation update activity
+    /// }
+    /// </code>
+    /// </summary>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
+    [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    public class InstallationUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+    {
+        public void AddRoute(AgentApplication app, MethodInfo method)
+        {
+#if !NETSTANDARD
+            var handler = method.CreateDelegate<RouteHandler>(app);
+#else
+            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
+#endif
+            var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.InstallationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
+        }
+    }
+
+    /// <summary>
     /// Attribute to define a route that handles message activities, optionally matching specific text or a text pattern.
     /// </summary>
     /// <remarks>
@@ -438,6 +468,39 @@ namespace Microsoft.Agents.Builder.App
             var handler = (FeedbackLoopHandler)method.CreateDelegate(typeof(FeedbackLoopHandler), app);
 #endif
             var builder = FeedbackRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+            app.AddRoute(builder.Build());
+        }
+    }
+
+    /// <summary>
+    /// Attribute to define a route that handles end of conversation activities.
+    /// </summary>
+    /// <remarks>
+    /// Decorate a method with this attribute to register it as a handler for <c>endOfConversation</c> activities.
+    /// The method must match the <see cref="EndOfConversationHandler"/> delegate signature.
+    /// <code>
+    /// [EndOfConversationRoute]
+    /// public async Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, EndOfConversationData endOfConversationData, CancellationToken cancellationToken)
+    /// {
+    ///     // Handle end of conversation activity
+    /// }
+    /// </code>
+    /// </remarks>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
+    [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    public class EndOfConversationRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+    {
+        public void AddRoute(AgentApplication app, MethodInfo method)
+        {
+#if !NETSTANDARD
+            var handler = method.CreateDelegate<RouteHandler>(app);
+#else
+            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
+#endif
+            var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.EndOfConversation).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
         }

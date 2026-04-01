@@ -1422,7 +1422,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 var obj = ProtocolJsonSerializer.ToJsonElements(settings);
                 Assert.NotNull(obj);
                 Assert.Equal("test-state", obj["state"].ToString());
-                return Task.CompletedTask;
+                return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
             };
 
             app.RegisterExtension(extension, (ext) =>
@@ -1479,7 +1479,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             ConfigureSettingsHandler handler = (turnContext, turnState, settings, cancellationToken) =>
             {
                 Assert.Equal("test-state", settings.State);
-                return Task.CompletedTask;
+                return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
             };
 
             app.RegisterExtension(extension, (ext) =>
@@ -1525,7 +1525,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             ConfigureSettingsHandler handler = (turnContext, turnState, settings, cancellationToken) =>
             {
-                return Task.CompletedTask;
+                return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
             };
 
             app.RegisterExtension(extension, (ext) =>
