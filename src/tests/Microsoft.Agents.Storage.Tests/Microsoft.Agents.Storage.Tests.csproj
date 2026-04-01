@@ -25,6 +25,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
+      <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage\Microsoft.Agents.Storage.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Blobs\Microsoft.Agents.Storage.Blobs.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.CosmosDb\Microsoft.Agents.Storage.CosmosDb.csproj" />
       <ProjectReference Include="..\..\libraries\Storage\Microsoft.Agents.Storage.Transcript\Microsoft.Agents.Storage.Transcript.csproj" />

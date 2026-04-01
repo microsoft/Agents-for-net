@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Agents.Storage.Telemetry.Scopes;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -77,6 +78,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
             await InitializeAsync().ConfigureAwait(false);
 
             var storeItems = new Dictionary<string, object>(keys.Length);
+            
+            using var telemetryScope = new ScopeRead(keys.Length);
 
             foreach (var key in keys)
             {
@@ -165,6 +168,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 return;
             }
 
+            using var telemetryScope = new ScopeWrite(changes.Count);
+
             // Ensure Initialization has been run
             await InitializeAsync().ConfigureAwait(false);
 
@@ -240,6 +245,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 // Nothing to delete is a no-op.
                 return;
             }
+
+            using var telemetryScope = new ScopeDelete(keys.Length);
 
             await InitializeAsync().ConfigureAwait(false);
 

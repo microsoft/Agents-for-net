@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -128,6 +129,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentNullException.ThrowIfNull(httpResponse);
             ArgumentNullException.ThrowIfNull(agent);
 
+            using var telemetryScope = new ScopeProcess();
+
             if (httpRequest.Method != HttpMethods.Post)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
@@ -141,6 +144,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     return;
                 }
                 activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
+                telemetryScope.Share(activity);
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
@@ -227,6 +231,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
                     httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                    telemetryScope.SetError(ex);
                 }
             }
         }

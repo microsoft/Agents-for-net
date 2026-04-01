@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -78,26 +79,32 @@ namespace Microsoft.Agents.Builder
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.IsConnectorUser())
+            using var telemetryScope = new ScopeCreateConnectorClient(turnContext.Activity.ServiceUrl, scopes, turnContext.IsAgenticRequest());
+            return telemetryScope.Wrap(() =>
             {
-                // MCS Connector 
-                return CreateConnectorUserClientAsync(turnContext, cancellationToken);
-            }
+                if (turnContext.Activity.IsConnectorUser())
+                {
+                    // MCS Connector 
+                    return CreateConnectorUserClientAsync(turnContext, cancellationToken);
+                }
 
-            if (!turnContext.Activity.IsAgenticRequest())
-            {
-                // Non agentic, so use legacy tokens
-                return CreateLegacyClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience, scopes, useAnonymous, cancellationToken);
-            }
+                if (!turnContext.Activity.IsAgenticRequest())
+                {
+                    // Non agentic, so use legacy tokens
+                    return CreateLegacyClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience, scopes, useAnonymous, cancellationToken);
+                }
 
-            // Use an Agentic token for the ConnectorClient
-            return CreateAgenticClientAsync(turnContext, cancellationToken);
+                // Use an Agentic token for the ConnectorClient
+                return CreateAgenticClientAsync(turnContext, cancellationToken);
+            });
         }
 
         /// <inheritdoc />
         public Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, bool? useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
+
+            using var telemetryScope = new ScopeCreateUserTokenClient(_tokenServiceEndpoint);
 
             var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 

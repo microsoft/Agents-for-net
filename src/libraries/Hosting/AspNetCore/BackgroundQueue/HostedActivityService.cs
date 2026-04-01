@@ -5,12 +5,14 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -162,7 +164,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 finally
                 {
-                    // make sure to close down any current activity once the turn is complete. 
                     activityWithClaims.TelemetryActivity?.Stop();
                 }
             }

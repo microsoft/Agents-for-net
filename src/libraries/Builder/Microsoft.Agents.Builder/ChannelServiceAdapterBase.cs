@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -44,6 +45,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryScope = new ScopeSendActivities(activities);
 
             var responses = new ResourceResponse[activities.Length];
 
@@ -99,6 +102,8 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
+            using var telemetryScope = new ScopeUpdateActivity(activity);
+
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
@@ -108,6 +113,8 @@ namespace Microsoft.Agents.Builder
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
+
+            using var telemetryScope = new ScopeDeleteActivity(reference.GetContinuationActivity());
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
@@ -119,7 +126,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
 
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), reference.GetContinuationActivity(), null, callback, cancellationToken);
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+
+            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), continuationActivity, null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -128,7 +138,10 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -136,24 +149,30 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
 
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+
             return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), continuationActivity, null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
         public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
             return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
         public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
+            Activity continuationActivity = reference.GetContinuationActivity();
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
         public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeContinueConversation(continuationActivity);
             return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
         }
 
