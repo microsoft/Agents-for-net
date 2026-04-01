@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -72,6 +73,8 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             {
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NotAnAgenticRequest, null, "GetAgenticUserToken");
             }
+
+            using var telemetryScope = new ScopeAgenticToken(Name, exchangeConnection, exchangeScopes);
 
             IAccessTokenProvider connection;
             if (!string.IsNullOrEmpty(_a365AuthSettings.AlternateBlueprintConnectionName))

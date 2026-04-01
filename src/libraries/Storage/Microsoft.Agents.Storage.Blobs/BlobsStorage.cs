@@ -17,6 +17,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.Telemetry.Scopes;
 
 namespace Microsoft.Agents.Storage.Blobs
 {
@@ -106,18 +107,25 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
-            foreach (var key in keys)
+            using var telemetryScope = new ScopeDelete(keys.Length);
+
+            await telemetryScope.Wrap(async () =>
             {
-                var blobName = GetBlobName(key);
-                var blobClient = _containerClient.GetBlobClient(blobName);
-                await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
+                foreach (var key in keys)
+                {
+                    var blobName = GetBlobName(key);
+                    var blobClient = _containerClient.GetBlobClient(blobName);
+                    await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+            });
         }
 
         /// <inheritdoc/>
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            using var telemetryScope = new ScopeRead(keys.Length);
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
@@ -176,6 +184,8 @@ namespace Microsoft.Agents.Storage.Blobs
                 // No-op for no changes.
                 return;
             }
+
+            using var telemetryScope = new ScopeWrite(changes.Count);
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)

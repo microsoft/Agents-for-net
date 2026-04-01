@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace Microsoft.Agents.Storage.Telemetry.Scopes
 {
-    internal class ScopeStorageOperation : TelemetryScope
+    public class ScopeStorageOperation : TelemetryScope
     {
         private readonly string _operationName;
         private readonly int _keyCount;

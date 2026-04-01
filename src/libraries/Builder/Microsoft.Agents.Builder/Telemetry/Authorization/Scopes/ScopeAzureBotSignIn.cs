@@ -4,7 +4,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 {
     internal class ScopeAzureBotSignIn : ScopeAuthorizationRequest
     {
-        public ScopeAzureBotSignIn(string authHandlerId, string connectionName, IEnumerable<string>? scopes) : base(Constants.ScopeAzureBotSignIn, authHandlerId, connectionName, scopes)
+        public ScopeAzureBotSignIn(string authHandlerId, string? exchangeConnection, IEnumerable<string>? scopes) : base(Constants.ScopeAzureBotSignIn, authHandlerId, exchangeConnection, scopes)
         {
         }
     }
