@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Teams.OnTeamUnarchived((ctx, _, data, ct) =>
+                ext.Teams.OnUnarchived((ctx, _, data, ct) =>
                 {
                     capturedIds.Add(data.Id);
                     return Task.CompletedTask;

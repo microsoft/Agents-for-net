@@ -103,15 +103,20 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(TBuilder).Name, "Handler");
         }
 
+        RouteSelector selector;
+
         if (_verbMatch == null && _route.Selector == null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(TBuilder).Name, "Verb or Selector");
+            // match on any verb if the user didn't specify a verb match or custom selector
+            selector = CreateSelector((_) => true, _verbDataFilter, InvokeName);
+        }
+        else
+        {
+            selector = CreateSelector(_verbMatch, _verbDataFilter, InvokeName);
         }
 
         _route.ChannelId ??= Channels.Msteams;
         _verbDataFilter ??= DEFAULT_TASK_DATA_FILTER;
-
-        var selector = CreateSelector(_verbMatch, _verbDataFilter, InvokeName);
 
         if (_route.Selector != null)
         {

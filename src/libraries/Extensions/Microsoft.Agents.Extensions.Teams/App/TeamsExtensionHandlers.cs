@@ -52,5 +52,5 @@ public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, IT
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
 /// <param name="data">The read receipt data.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-/// <returns></returns>
+/// <returns>A task that represents the work queued to execute.</returns>
 public delegate Task ReadReceiptHandler(ITurnContext turnContext, ITurnState turnState, JsonElement data, CancellationToken cancellationToken);

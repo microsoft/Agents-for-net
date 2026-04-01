@@ -35,6 +35,18 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// public record CreateTaskData(string Title, string AssignedTo);
+    ///
+    /// Teams.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;("createTask", async (ctx, state, data, ct) =>
+    /// {
+    ///     var task = await _service.CreateAsync(data.Title, data.AssignedTo, ct);
+    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [task.ToCard()] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
+    /// </remarks>
     /// <typeparam name="TData">The type of the data object that will be deserialized from the submit action payload.</typeparam>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -58,7 +70,18 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
-    /// <typeparam name="TData">The type of the data object that will be deserialized from the submit action payload.</typeparam>
+    /// <remarks>
+    /// <code>
+    /// public record CreateTaskData(string Title, string AssignedTo);
+    ///
+    /// Teams.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;(new Regex("create.*"), async (ctx, state, data, ct) =>
+    /// {
+    ///     var task = await _service.CreateAsync(data.Title, data.AssignedTo, ct);
+    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [task.ToCard()] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -68,35 +91,20 @@ public class MessageExtension
         return this;
     }
 
-    [Obsolete("OnSubmitAction(RouteSelector, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(RouteSelector, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(RouteSelector routeSelector, SubmitActionHandler handler)
-    {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        return OnSubmitAction<object>(routeSelector, (turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
-    }
-
-    /// <summary>
-    /// Registers a handler that implements the submit action for an Action based Message Extension.
-    /// </summary>
-    /// <typeparam name="TData">The type of the strongly-typed data object expected from the submit action payload.</typeparam>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the incoming activity is not a valid Message Extension SubmitAction invoke or if the payload cannot be
-    /// deserialized.</exception>
-    public MessageExtension OnSubmitAction<TData>(RouteSelector routeSelector, SubmitActionHandler<TData> handler)
-    {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
-        return this;
-    }
-
     /// <summary>
     /// Registers a handler to process the 'edit' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnAgentMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
+    /// {
+    ///     var draft = preview.Attachments?.FirstOrDefault()?.Content;
+    ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewEditHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -110,6 +118,7 @@ public class MessageExtension
     /// Registers a handler to process the 'edit' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewEditHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -120,22 +129,19 @@ public class MessageExtension
     }
 
     /// <summary>
-    /// Registers a handler to process the 'edit' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(RouteSelector routeSelector, AgentMessagePreviewEditHandler handler)
-    {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
     /// Registers a handler to process the 'send' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnAgentMessagePreviewSend("composeCmd", async (ctx, state, preview, ct) =>
+    /// {
+    ///     var content = preview.Attachments?.FirstOrDefault()?.Content;
+    ///     await _channel.PostAsync(content, ct);
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewSendHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -149,6 +155,7 @@ public class MessageExtension
     /// Registers a handler to process the 'send' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewSendHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -159,21 +166,22 @@ public class MessageExtension
     }
 
     /// <summary>
-    /// Registers a handler to process the 'send' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(RouteSelector routeSelector, AgentMessagePreviewSendHandler handler)
-    {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
     /// Registers a handler to process the initial fetch task for an Action based message extension.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnFetchTask("myCommand", (ctx, state, ct) =>
+    ///     Task.FromResult(new ActionResponse
+    ///     {
+    ///         Task = new TaskInfo
+    ///         {
+    ///             Type = TaskInfoType.Continue,
+    ///             Value = new TaskModuleTaskInfo { Title = "My Form", Height = 300, Width = 400, Url = "https://example.com/form" }
+    ///         }
+    ///     }));
+    /// </code>
+    /// Alternatively, the <see cref="FetchTaskRouteAttribute"/> can be used to decorate a <see cref="FetchTaskHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -186,6 +194,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler to process the initial fetch task for an Action based message extension.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchTaskRouteAttribute"/> can be used to decorate a <see cref="FetchTaskHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -196,20 +205,20 @@ public class MessageExtension
     }
 
     /// <summary>
-    /// Registers a handler to process the initial fetch task for an Action based message extension.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(RouteSelector routeSelector, FetchTaskHandler handler)
-    {
-        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
     /// Registers a handler that implements a Search based Message Extension.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnQuery("searchProducts", async (ctx, state, query, ct) =>
+    /// {
+    ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
+    ///     var items = await _catalog.SearchAsync(keyword, ct);
+    ///     var attachments = items.Select(i => i.ToHeroCard().ToMessagingExtensionAttachment()).ToList();
+    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -222,24 +231,13 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements a Search based Message Extension.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler)
     {
         _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler that implements a Search based Message Extension.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(RouteSelector routeSelector, QueryHandler handler)
-    {
-        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 
@@ -255,13 +253,17 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the logic to handle the tap actions for items returned
     /// by a Search based message extension.
-    /// <remarks>
-    /// The `composeExtension/selectItem` INVOKE activity does not contain any sort of command ID,
-    /// so only a single select item handler can be registered. Developers will need to include a
-    /// type name of some sort in the preview item they return if they need to support multiple
-    /// select item handlers.
-    /// </remarks>
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnSelectItem&lt;ProductSummary&gt;(async (ctx, state, item, ct) =>
+    /// {
+    ///     var details = await _catalog.GetDetailsAsync(item.Id, ct);
+    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="SelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
+    /// </remarks>
     /// <typeparam name="TData">The type of the data object expected from the SelectItem event payload.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -274,6 +276,16 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements a Link Unfurling based Message Extension.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnQueryLink(async (ctx, state, url, ct) =>
+    /// {
+    ///     var preview = await _service.FetchPreviewAsync(url, ct);
+    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="QueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryLink(QueryLinkHandler handler)
@@ -285,11 +297,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the logic to handle anonymous link unfurling.
     /// </summary>
-    /// <remarks>
-    /// The `composeExtension/anonymousQueryLink` INVOKE activity does not contain any sort of command ID,
-    /// so only a single anonymous query link handler can be registered.
-    /// For more information visit https://learn.microsoft.com/microsoftteams/platform/messaging-extensions/how-to/link-unfurling?#enable-zero-install-link-unfurling
-    /// </remarks>
+    /// <remarks>Alternatively, the <see cref="AnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler)
@@ -302,7 +310,18 @@ public class MessageExtension
     /// Registers a handler that invokes the fetch of the configuration settings for a Message Extension.
     /// </summary>
     /// <remarks>
-    /// The `composeExtension/querySettingUrl` INVOKE activity does not contain a command ID, so only a single query URL setting handler can be registered.
+    /// <code>
+    /// Teams.MessageExtensions.OnQueryUrlSetting((ctx, state, ct) =>
+    ///     ResponseTask.WithResult(new Result
+    ///     {
+    ///         Type = ResultType.Config,
+    ///         SuggestedActions = new SuggestedActions
+    ///         {
+    ///             Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+    ///         }
+    ///     }));
+    /// </code>
+    /// Alternatively, the <see cref="QueryUrlSettingRouteAttribute"/> can be used to decorate a <see cref="QueryUrlSettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -315,6 +334,17 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the logic to invoke configuring Message Extension settings.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnConfigureSettings((ctx, state, query, ct) =>
+    /// {
+    ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
+    ///     _settingsStore.Save(ctx.Activity.From.Id, setting);
+    ///     return ResponseTask.WithResult(new Result { Type = ResultType.Config });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="ConfigureSettingsRouteAttribute"/> can be used to decorate a <see cref="ConfigureSettingsHandler"/> method for the same purpose.
+    /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
@@ -338,9 +368,14 @@ public class MessageExtension
     /// Registers a handler that implements the logic when a user has clicked on a button in a Message Extension card.
     /// </summary>
     /// <remarks>
-    /// The <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked"/> INVOKE activity does not contain any sort of command ID,
-    /// so only a single card button clicked handler can be registered. Developers will need to include a
-    /// type name of some sort in the card data they return if they need to support multiple card button clicked handlers.
+    /// <code>
+    /// Teams.MessageExtensions.OnCardButtonClicked&lt;ApprovalAction&gt;(async (ctx, state, cardData, ct) =>
+    /// {
+    ///     await _approvalService.RecordAsync(cardData.ItemId, cardData.Decision, ct);
+    ///     await ctx.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: ct);
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="CardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="CardButtonClickedHandler"/> method for the same purpose.
     /// </remarks>
     /// <typeparam name="TData">The type of the value payload expected from the card button click event.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,

@@ -96,14 +96,19 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(TBuilder).Name, "Handler");
         }
 
+        RouteSelector selector;
+
         if (_commandMatch == null && _route.Selector == null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(TBuilder).Name, "Command or Selector");
+            // Matching any command if no command match or selector is defined
+            selector = CreateSelector((_) => true, InvokeName, PreviewAction);
+        }
+        else
+        {
+            selector = CreateSelector(_commandMatch, InvokeName, PreviewAction);
         }
 
         _route.ChannelId ??= Channels.Msteams;
-
-        var selector = CreateSelector(_commandMatch, InvokeName, PreviewAction);
 
         if (_route.Selector != null)
         {

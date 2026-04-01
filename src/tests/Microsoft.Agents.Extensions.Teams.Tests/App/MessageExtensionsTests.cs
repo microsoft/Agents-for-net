@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler<object> handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(actionResponseMock.Object);
             };
@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             app.RegisterExtension(extension, (ext) =>
             {
 #pragma warning disable CS0618 // Type or member is obsolete
-                ext.MessageExtensions.OnSubmitAction(routeSelector, handler);
+                ext.AddRoute(app, SubmitActionRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
 #pragma warning restore CS0618 // Type or member is obsolete
             });
             // Act
@@ -425,7 +425,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnAgentMessagePreviewEdit(routeSelector, handler);
+                ext.AddRoute(app, MessagePreviewEditRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
@@ -596,7 +596,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnAgentMessagePreviewSend(routeSelector, handler);
+                ext.AddRoute(app, MessagePreviewSendRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
@@ -743,7 +743,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnFetchTask(routeSelector, handler);
+                ext.AddRoute(app, FetchTaskRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
@@ -914,7 +914,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.MessageExtensions.OnQuery(routeSelector, handler);
+                ext.AddRoute(app, QueryRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
 
             // Act

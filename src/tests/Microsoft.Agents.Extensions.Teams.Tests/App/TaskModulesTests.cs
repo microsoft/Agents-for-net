@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnFetch(routeSelector, handler);
+                ext.AddRoute(app, FetchRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
 
             // Act
@@ -340,7 +340,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnSubmit(routeSelector, handler);
+                ext.AddRoute(app, SubmitRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
 
             // Act

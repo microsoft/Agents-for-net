@@ -23,6 +23,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting start events.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MeetingStartRouteAttribute"/> can be used to decorate a <see cref="MeetingStartHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting start event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnStart(MeetingStartHandler handler)
@@ -34,6 +35,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting end events.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MeetingEndRouteAttribute"/> can be used to decorate a <see cref="MeetingEndHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting end event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnEnd(MeetingEndHandler handler)
@@ -45,6 +47,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting participants join events.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MeetingParticipantsJoinRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants join event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler)
@@ -56,6 +59,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting participants leave events.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="MeetingParticipantsLeaveRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants leave event activity is received from the connector.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler)

@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using System;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
@@ -14,19 +15,23 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 /// Decorate a method with this attribute to register it as a handler for message extension query events in Teams.
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
-/// [QueryRoute("myCommand")]
-/// public async Task&lt;Response&gt; OnQueryAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
+/// [QueryRoute("searchProducts")]
+/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
 /// {
-///     // Handle query event
+///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
+///     var items = await _catalog.SearchAsync(keyword, cancellationToken);
+///     var attachments = items.Select(i => i.ToHeroCard().ToMessagingExtensionAttachment()).ToList();
+///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
 /// }
 /// </code>
 /// </remarks>
-/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
+/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID.  Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class QueryRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -35,7 +40,17 @@ public class QueryRouteAttribute(string commandId, bool isAgenticOnly = false, u
 #else
         var handler = (QueryHandler)method.CreateDelegate(typeof(QueryHandler), app);
 #endif
-        var builder = QueryRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = QueryRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (!string.IsNullOrEmpty(commandId))
+        {
+            builder.WithCommand(commandId);
+        }
+        else
+        {
+            builder.WithCommand(new Regex(commandIdPattern));
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -51,7 +66,9 @@ public class QueryRouteAttribute(string commandId, bool isAgenticOnly = false, u
 /// [QueryLinkRoute]
 /// public async Task&lt;Response&gt; OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
-///     // Handle query link event
+///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
+///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
+///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [attachment] });
 /// }
 /// </code>
 /// </remarks>
@@ -82,9 +99,16 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// The method must match the <see cref="QueryUrlSettingHandler"/> delegate signature.
 /// <code>
 /// [QueryUrlSettingRoute]
-/// public async Task&lt;Response&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public Task&lt;Response&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
-///     // Handle query URL setting event
+///     return ResponseTask.WithResult(new Result
+///     {
+///         Type = ResultType.Config,
+///         SuggestedActions = new SuggestedActions
+///         {
+///             Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+///         }
+///     });
 /// }
 /// </code>
 /// </remarks>
@@ -115,18 +139,26 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="FetchTaskHandler"/> delegate signature.
 /// <code>
 /// [FetchTaskRoute("myCommand")]
-/// public async Task&lt;MessageExtensions.ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
-///     // Handle fetch task event
+///     return Task.FromResult(new ActionResponse
+///     {
+///         Task = new TaskInfo
+///         {
+///             Type = TaskInfoType.Continue,
+///             Value = new TaskModuleTaskInfo { Title = "My Form", Height = 300, Width = 400, Url = "https://example.com/form" }
+///         }
+///     });
 /// }
 /// </code>
 /// </remarks>
-/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
+/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class FetchTaskRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -135,7 +167,17 @@ public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = fals
 #else
         var handler = (FetchTaskHandler)method.CreateDelegate(typeof(FetchTaskHandler), app);
 #endif
-        var builder = FetchTaskRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = FetchTaskRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (!string.IsNullOrEmpty(commandId))
+        {
+            builder.WithCommand(commandId);
+        }
+        else
+        {
+            builder.WithCommand(new Regex(commandIdPattern));
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -148,19 +190,22 @@ public class FetchTaskRouteAttribute(string commandId, bool isAgenticOnly = fals
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview edit events in Teams.
 /// The method must match the <see cref="AgentMessagePreviewEditHandler"/> delegate signature.
 /// <code>
-/// [MessagePreviewEditRoute("myCommand")]
-/// public async Task&lt;MessageExtensions.Response&gt; OnMessagePreviewEditAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
+/// [MessagePreviewEditRoute("composeCmd")]
+/// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
-///     // Handle message preview edit event
+///     // Re-open the compose form populated with the draft content
+///     var draft = activityPreview.Attachments?.FirstOrDefault()?.Content;
+///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
 /// }
 /// </code>
 /// </remarks>
-/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
+/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class MessagePreviewEditRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -169,7 +214,17 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
 #else
         var handler = (AgentMessagePreviewEditHandler)method.CreateDelegate(typeof(AgentMessagePreviewEditHandler), app);
 #endif
-        var builder = MessagePreviewEditRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MessagePreviewEditRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (!string.IsNullOrEmpty(commandId))
+        {
+            builder.WithCommand(commandId);
+        }
+        else
+        {
+            builder.WithCommand(new Regex(commandIdPattern));
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -182,19 +237,22 @@ public class MessagePreviewEditRouteAttribute(string commandId, bool isAgenticOn
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview send events in Teams.
 /// The method must match the <see cref="AgentMessagePreviewSendHandler"/> delegate signature.
 /// <code>
-/// [MessagePreviewSendRoute("myCommand")]
+/// [MessagePreviewSendRoute("composeCmd")]
 /// public async Task OnMessagePreviewSendAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
-///     // Handle message preview send event
+///     // Post the confirmed message to a channel or external system
+///     var content = activityPreview.Attachments?.FirstOrDefault()?.Content;
+///     await _channel.PostAsync(content, cancellationToken);
 /// }
 /// </code>
 /// </remarks>
-/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="commandId">The message extension command ID to match.  Mutually exclusive with commandIdPattern.</param>
+/// <param name="commandIdPattern">The message extension command ID pattern to match using regular expressions.  Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class MessagePreviewSendRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -203,7 +261,17 @@ public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOn
 #else
         var handler = (AgentMessagePreviewSendHandler)method.CreateDelegate(typeof(AgentMessagePreviewSendHandler), app);
 #endif
-        var builder = MessagePreviewSendRouteBuilder.Create().WithCommand(commandId).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MessagePreviewSendRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (!string.IsNullOrEmpty(commandId))
+        {
+            builder.WithCommand(commandId);
+        }
+        else
+        {
+            builder.WithCommand(new Regex(commandIdPattern));
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -217,9 +285,12 @@ public class MessagePreviewSendRouteAttribute(string commandId, bool isAgenticOn
 /// The method must match the <see cref="ConfigureSettingsHandler"/> delegate signature.
 /// <code>
 /// [ConfigureSettingsRoute]
-/// public async Task OnConfigureSettingsAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
+/// public Task&lt;Response&gt; OnConfigureSettingsAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
 /// {
-///     // Handle configure settings event
+///     // Persist user settings and return an updated result
+///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
+///     _settingsStore.Save(turnContext.Activity.From.Id, setting);
+///     return ResponseTask.WithResult(new Result { Type = ResultType.Config });
 /// }
 /// </code>
 /// </remarks>
@@ -234,7 +305,7 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 #if !NETSTANDARD
         var handler = method.CreateDelegate<ConfigureSettingsHandler>(app);
 #else
-        var handler = (ConfigureSettingsHandler)method.CreateDelegate(typeof(ConfigureSettingsHandler), app);
+    var handler = (ConfigureSettingsHandler)method.CreateDelegate(typeof(ConfigureSettingsHandler), app);
 #endif
         var builder = ConfigureSettingsRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -250,19 +321,24 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 /// The method must match the <see cref="SubmitActionHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
 /// from the method's third parameter type.
 /// <code>
-/// [SubmitActionRoute("myCommand")]
-/// public async Task&lt;MessageExtensions.Response&gt; OnSubmitActionAsync(ITurnContext turnContext, ITurnState turnState, MyData data, CancellationToken cancellationToken)
+/// public record CreateTaskData(string Title, string AssignedTo);
+///
+/// [SubmitActionRoute("createTask")]
+/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, CreateTaskData data, CancellationToken cancellationToken)
 /// {
-///     // Handle submit action event
+///     var task = await _taskService.CreateAsync(data.Title, data.AssignedTo, cancellationToken);
+///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();
+///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
 /// </code>
 /// </remarks>
-/// <param name="commandId">The message extension command ID to match.</param>
+/// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
+/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitActionRouteAttribute(string commandId, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class SubmitActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -270,7 +346,16 @@ public class SubmitActionRouteAttribute(string commandId, bool isAgenticOnly = f
         var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
         var handler = method.CreateDelegate(handlerType, app);
 
-        var builder = SubmitActionRouteBuilder.Create().WithCommand(commandId).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = SubmitActionRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (!string.IsNullOrEmpty(commandId))
+        {
+            builder.WithCommand(commandId);
+        }
+        else
+        {
+            builder.WithCommand(new Regex(commandIdPattern));
+        }
 
         var withHandler = typeof(SubmitActionRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
         withHandler.Invoke(builder, [handler]);
@@ -288,10 +373,14 @@ public class SubmitActionRouteAttribute(string commandId, bool isAgenticOnly = f
 /// The method must match the <see cref="SelectItemHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
 /// from the method's third parameter type.
 /// <code>
+/// public record ProductSummary(string Id, string Name);
+///
 /// [SelectItemRoute]
-/// public async Task&lt;MessageExtensions.Response&gt; OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, MyItem item, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnSelectProductAsync(ITurnContext turnContext, ITurnState turnState, ProductSummary item, CancellationToken cancellationToken)
 /// {
-///     // Handle select item event
+///     var details = await _catalog.GetDetailsAsync(item.Id, cancellationToken);
+///     var card = details.ToHeroCard().ToMessagingExtensionAttachment();
+///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
 /// </code>
 /// </remarks>
@@ -325,10 +414,13 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// The method must match the <see cref="CardButtonClickedHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
 /// from the method's third parameter type.
 /// <code>
+/// public record ApprovalAction(string ItemId, string Decision);
+///
 /// [CardButtonClickedRoute]
-/// public async Task OnCardButtonClickedAsync(ITurnContext turnContext, ITurnState turnState, MyCardData cardData, CancellationToken cancellationToken)
+/// public async Task OnApprovalClickedAsync(ITurnContext turnContext, ITurnState turnState, ApprovalAction cardData, CancellationToken cancellationToken)
 /// {
-///     // Handle card button clicked event
+///     await _approvalService.RecordAsync(cardData.ItemId, cardData.Decision, cancellationToken);
+///     await turnContext.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: cancellationToken);
 /// }
 /// </code>
 /// </remarks>

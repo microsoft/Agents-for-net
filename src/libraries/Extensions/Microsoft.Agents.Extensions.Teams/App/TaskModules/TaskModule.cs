@@ -25,8 +25,9 @@ public class TaskModule
     }
 
     /// <summary>
-    ///  Registers a handler to process the initial fetch of the task module.
+    ///  Registers a handler to process the fetch of the task module.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler"/> method for the same purpose.</remarks>
     /// <param name="verb">Name of the verb to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -37,8 +38,9 @@ public class TaskModule
     }
 
     /// <summary>
-    ///  Registers a handler to process the initial fetch of the task module.
+    ///  Registers a handler to process the fetch of the task module.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler"/> method for the same purpose.</remarks>
     /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -49,20 +51,9 @@ public class TaskModule
     }
 
     /// <summary>
-    ///  Registers a handler to process the initial fetch of the task module.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(RouteSelector routeSelector, FetchHandler handler)
-    {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithSelector(routeSelector).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
     /// Registers a handler to process the submission of a task module.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler"/> method for the same purpose.</remarks>
     /// <param name="verb">Name of the verb to register the handler for.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
@@ -72,28 +63,16 @@ public class TaskModule
         return this;
     }
 
-
     /// <summary>
     /// Registers a handler to process the submission of a task module.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler"/> method for the same purpose.</remarks>
     /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(Regex verbPattern, SubmitHandler handler)
     {
         _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the submission of a task module.
-    /// </summary>
-    /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-    /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(RouteSelector routeSelector, SubmitHandler handler)
-    {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithSelector(routeSelector).WithHandler(handler).Build());
         return this;
     }
 }

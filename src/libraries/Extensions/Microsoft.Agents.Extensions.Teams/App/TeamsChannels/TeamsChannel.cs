@@ -45,6 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         /// <summary>
         /// Registers a handler to be invoked when a new Teams channel is created.
         /// </summary>
+        /// <remarks>Alternatively, the <see cref="ChannelCreatedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
         /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
@@ -63,11 +64,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel is deleted.
+        /// Registers a handler to be invoked when a Teams channel is deleted.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelDeletedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel deletion event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel deletion process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -83,11 +85,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel is renamed.
+        /// Registers a handler to be invoked when a Teams channel is renamed.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelRenamedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel renamed event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel renamed process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -103,11 +106,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel is shared.
+        /// Registers a handler to be invoked when a Teams channel is shared.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelSharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel shared event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel shared process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -123,11 +127,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel is unshared.
+        /// Registers a handler to be invoked when a Teams channel is unshared.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelUnSharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel unshared event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel unshared process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -143,11 +148,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel is restored.
+        /// Registers a handler to be invoked when a Teams channel is restored.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelRestoredRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel restored event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel restored process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -163,11 +169,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel member is added.
+        /// Registers a handler to be invoked when a Teams channel member is added.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelMemberAddedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel member added event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel member added process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
@@ -183,11 +190,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TeamsChannels
         }
 
         /// <summary>
-        /// Registers a handler to be invoked when a new Teams channel member is removed.
+        /// Registers a handler to be invoked when a Teams channel member is removed.
         /// </summary>
-        /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about channel.</param>
+        /// <remarks>Alternatively, the <see cref="ChannelMemberRemovedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles the channel member removed event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel creation process.
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel member removed process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
