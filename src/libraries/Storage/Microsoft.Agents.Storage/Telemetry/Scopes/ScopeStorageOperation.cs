@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Storage.Telemetry.Scopes
             TagList metricTags = new();
             metricTags.Add(TagNames.StorageOperation, _operationName);
 
-            Metrics.OperationDuration.Record(1, metricTags);
+            Metrics.OperationDuration.Record(duration, metricTags);
             Metrics.OperationTotal.Add(1, metricTags);
         }
     }

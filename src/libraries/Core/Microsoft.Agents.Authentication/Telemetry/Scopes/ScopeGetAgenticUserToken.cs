@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         /// <param name="agenticUserId">The identifier of the agentic user.</param>
         /// <param name="scopes">The OAuth/OIDC scopes requested for the token, or <c>null</c>.</param>
         public ScopeGetAgenticUserToken(string agenticInstanceId, string agenticUserId, IEnumerable<string>? scopes)
-            : base(Constants.ScopeGetAgenticInstanceToken, Constants.AuthMethodAgenticInstance)
+            : base(Constants.ScopeGetAgenticUserToken, Constants.AuthMethodAgenticUser)
         {
             _agenticInstanceId = agenticInstanceId;
             _agenticUserId = agenticUserId;

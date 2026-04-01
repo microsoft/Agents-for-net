@@ -1,5 +1,6 @@
 ﻿using Microsoft.Agents.Core.Telemetry;
 using System;
+using System.Diagnostics;
 
 #nullable enable
 
@@ -36,6 +37,12 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? exception)
         {
             telemetryActivity.AddTag(TagNames.AuthMethod, _authMethod);
+
+            TagList metricTags = new();
+            metricTags.Add(TagNames.AuthMethod, _authMethod);
+
+            Metrics.TokenRequestDuration.Record(duration, metricTags);
+            Metrics.TokenRequestCount.Add(1, metricTags);
         }
     }
 }

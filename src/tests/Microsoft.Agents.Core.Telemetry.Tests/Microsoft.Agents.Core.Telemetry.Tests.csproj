@@ -24,4 +24,8 @@
 		<ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Storage\" />
+	</ItemGroup>
+
 </Project>

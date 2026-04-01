@@ -21,5 +21,6 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             Assert.Equal(AgentsTelemetry.SourceName, AgentsTelemetry.Meter.Name);
             Assert.Equal(AgentsTelemetry.SourceVersion, AgentsTelemetry.Meter.Version);
         }
+
     }
 }
