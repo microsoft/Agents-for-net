@@ -498,11 +498,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.ConfigureSettingsRoute]
-                    public Task OnConfigureSettings(
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettings(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.MessageExtensions.Query settings,
                         CancellationToken ct)
-                        => Task.CompletedTask;
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);

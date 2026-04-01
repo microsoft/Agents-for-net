@@ -590,14 +590,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [ConfigureSettingsRoute]
-        public Task OnConfigureSettingsAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettingsAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query settings,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            return Task.CompletedTask;
+            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
         }
     }
 

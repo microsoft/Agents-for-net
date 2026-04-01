@@ -1408,7 +1408,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var expectedInvokeResponse = new InvokeResponse()
             {
-                Status = 200
+                Status = 200,
+                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
@@ -1467,7 +1468,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var expectedInvokeResponse = new InvokeResponse()
             {
-                Status = 200
+                Status = 200,
+                Body = new Microsoft.Teams.Api.MessageExtensions.Response()
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
