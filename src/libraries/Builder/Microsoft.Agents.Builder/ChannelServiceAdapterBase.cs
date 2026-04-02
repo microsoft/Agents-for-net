@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Builder
             _ = continuationActivity.Conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidConversationAccount, null);
         }
 
-        private static InvokeResponse ProcessTurnResults(TurnContext turnContext)
+        private InvokeResponse ProcessTurnResults(TurnContext turnContext)
         {
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
@@ -331,6 +331,7 @@ namespace Microsoft.Agents.Builder
                 var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
+                    Logger.LogWarning("InvokeResponse was not set during the turn. Either a Route was not added, or the Agent is not handling the Invoke correctly. Returning 501 Not Implemented. Name = '{Name}', Value = '{Value}'", turnContext.Activity.Name, ProtocolJsonSerializer.ToJson(turnContext.Activity.Value));
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };
                 }
 
