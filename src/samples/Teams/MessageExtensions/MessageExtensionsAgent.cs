@@ -269,7 +269,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
                         new Microsoft.Teams.Api.Cards.Action(Microsoft.Teams.Api.Cards.ActionType.OpenUrl)
                         {
                             Title = "Settings",
-                            Value = "https://trboehrer-relay-asdkt2.servicebus.windows.net:443/DESKTOP-K8NV08M/settings",
+                            Value = "https://bot-devtunnel-url/settings}}",
                         },
                     ],
             },
