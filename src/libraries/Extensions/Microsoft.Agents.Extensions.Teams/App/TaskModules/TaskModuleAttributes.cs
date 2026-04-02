@@ -30,11 +30,7 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<FetchHandler>(app);
-#else
-        var handler = (FetchHandler)method.CreateDelegate(typeof(FetchHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchHandler>(app, method);
         var builder = FetchRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -64,11 +60,7 @@ public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushor
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<SubmitHandler>(app);
-#else
-        var handler = (SubmitHandler)method.CreateDelegate(typeof(SubmitHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitHandler>(app, method);
         var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

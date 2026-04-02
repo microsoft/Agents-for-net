@@ -29,11 +29,7 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamArchived().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -62,11 +58,7 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamUnarchived().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -95,11 +87,7 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -128,11 +116,7 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamHardDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -161,11 +145,7 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamRenamed().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -194,11 +174,7 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().ForTeamRestored().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -229,11 +205,7 @@ public class TeamUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-#if !NETSTANDARD
-        var handler = method.CreateDelegate<TeamUpdateHandler>(app);
-#else
-        var handler = (TeamUpdateHandler)method.CreateDelegate(typeof(TeamUpdateHandler), app);
-#endif
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
         var builder = TeamUpdateRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

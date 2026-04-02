@@ -63,9 +63,11 @@ namespace Microsoft.Agents.Builder.App.Proactive
             try
             {
 #if !NETSTANDARD
-                return attributedMethod.CreateDelegate<T>(agent);
+                return attributedMethod.IsStatic ? attributedMethod.CreateDelegate<T>() : attributedMethod.CreateDelegate<T>(agent);
 #else
-                return (T)attributedMethod.CreateDelegate(typeof(T), agent);
+                return attributedMethod.IsStatic
+                    ? (T)attributedMethod.CreateDelegate(typeof(T))
+                    : (T)attributedMethod.CreateDelegate(typeof(T), agent);
 #endif
             }
             catch (ArgumentException ex)

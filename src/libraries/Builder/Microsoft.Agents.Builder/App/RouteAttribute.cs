@@ -307,9 +307,11 @@ namespace Microsoft.Agents.Builder.App
             try
             {
 #if !NETSTANDARD
-                delegateHandler = attributedMethod.CreateDelegate<T>(app);
+                delegateHandler = attributedMethod.IsStatic ? attributedMethod.CreateDelegate<T>() : attributedMethod.CreateDelegate<T>(app);
 #else
-                delegateHandler = (T)attributedMethod.CreateDelegate(typeof(T), app);
+                delegateHandler = attributedMethod.IsStatic
+                    ? (T)attributedMethod.CreateDelegate(typeof(T))
+                    : (T)attributedMethod.CreateDelegate(typeof(T), app);
 #endif
             }
             catch (ArgumentException ex)

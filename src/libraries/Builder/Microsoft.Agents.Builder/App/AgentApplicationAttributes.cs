@@ -41,11 +41,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = TypeRouteBuilder.Create();
             if (typeRegex != null)
                 builder.WithType(new Regex(typeRegex));
@@ -76,11 +72,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.InstallationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -128,11 +120,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             if (textRegex != null)
             {
                 var b = MessageRouteBuilder.Create().WithText(new Regex(textRegex)).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
@@ -195,11 +183,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             if (nameRegex != null)
             {
                 var b = EventRouteBuilder.Create().WithName(new Regex(nameRegex)).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
@@ -248,11 +232,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             if (eventName != null)
             {
                 var b = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(eventName).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
@@ -296,11 +276,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersAdded).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -329,11 +305,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersRemoved).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -362,11 +334,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = MessageReactionsAddedRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -395,11 +363,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = MessageReactionsRemovedRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -495,11 +459,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<RouteHandler>(app);
-#else
-            var handler = (RouteHandler)method.CreateDelegate(typeof(RouteHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
             var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.EndOfConversation).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -511,6 +471,33 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public static class RouteAttributeHelper
     {
+        /// <summary>
+        /// Creates a bound delegate from <paramref name="method"/>, handling both instance and static methods.
+        /// For instance methods the delegate is bound to <paramref name="app"/>; for static methods no target is bound.
+        /// </summary>
+        public static T CreateHandlerDelegate<T>(AgentApplication app, MethodInfo method) where T : class, Delegate
+        {
+#if !NETSTANDARD
+            return method.IsStatic ? method.CreateDelegate<T>() : method.CreateDelegate<T>(app);
+#else
+            return method.IsStatic
+                ? (T)method.CreateDelegate(typeof(T))
+                : (T)method.CreateDelegate(typeof(T), app);
+#endif
+        }
+
+        /// <summary>
+        /// Creates a bound delegate of the given <paramref name="delegateType"/> from <paramref name="method"/>,
+        /// handling both instance and static methods.
+        /// For instance methods the delegate is bound to <paramref name="app"/>; for static methods no target is bound.
+        /// </summary>
+        public static Delegate CreateHandlerDelegate(AgentApplication app, MethodInfo method, Type delegateType)
+        {
+            return method.IsStatic
+                ? method.CreateDelegate(delegateType)
+                : method.CreateDelegate(delegateType, app);
+        }
+
         /// <summary>
         /// Applies sign-in handlers to a route builder by invoking <paramref name="withDelegate"/> if
         /// <paramref name="signInHandlers"/> names a method on <paramref name="app"/> matching

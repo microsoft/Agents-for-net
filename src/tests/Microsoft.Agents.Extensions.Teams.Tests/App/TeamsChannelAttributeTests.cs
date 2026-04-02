@@ -202,6 +202,39 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.False(app.HandlerCalled);
         }
 
+        [Fact]
+        public async Task ChannelCreatedAttribute_StaticHandler_DoesNotThrowAndFiresRoute()
+        {
+            TestStaticChannelAttributeApp.HandlerCalled = false;
+            var (app, turnContext) = CreateStaticAppAndContext(EventType.ChannelCreated, "static-channel");
+
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            Assert.True(TestStaticChannelAttributeApp.HandlerCalled);
+        }
+
+        private static (TestStaticChannelAttributeApp app, ITurnContext turnContext) CreateStaticAppAndContext(string eventType, string channelId)
+        {
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelId = Channels.Msteams,
+                ChannelData = new ChannelData { EventType = eventType, Channel = new Channel { Id = channelId } },
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new TestStaticChannelAttributeApp(new AgentApplicationOptions(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+            });
+            return (app, turnContext);
+        }
+
         private static (TestChannelAttributeApp app, ITurnContext turnContext) CreateAppAndContext(string eventType, string channelId)
         {
             var adapter = new NotImplementedAdapter();
@@ -339,6 +372,25 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             HandlerCalled = true;
             LastChannelId = channel.Id;
+            return Task.CompletedTask;
+        }
+    }
+
+    // Regression: static route handlers must not throw ArgumentException from CreateDelegate.
+    class TestStaticChannelAttributeApp : AgentApplication
+    {
+        public static bool HandlerCalled;
+
+        public TestStaticChannelAttributeApp(AgentApplicationOptions options) : base(options)
+        {
+            var extension = new TeamsAgentExtension(this);
+            this.RegisterExtension(extension, (ext) => { });
+        }
+
+        [ChannelCreatedRoute]
+        public static Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+        {
+            HandlerCalled = true;
             return Task.CompletedTask;
         }
     }

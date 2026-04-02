@@ -223,6 +223,34 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             Assert.True(app.HandlerCalled);
         }
+
+        [Fact]
+        public async Task MessageRouteAttribute_StaticHandler_DoesNotThrowAndFiresRoute()
+        {
+            TestStaticMessageRouteApp.HandlerCalled = false;
+            var adapter = new TestAdapter();
+            var app = new TestStaticMessageRouteApp(new TestApplicationOptions(new MemoryStorage()));
+
+            await new TestFlow(adapter, (ctx, ct) => app.OnTurnAsync(ctx, ct))
+                .Send("any message")
+                .StartTestAsync();
+
+            Assert.True(TestStaticMessageRouteApp.HandlerCalled);
+        }
+
+        [Fact]
+        public async Task ActivityRouteAttribute_StaticHandler_DoesNotThrowAndFiresRoute()
+        {
+            TestStaticActivityRouteApp.HandlerCalled = false;
+            var adapter = new TestAdapter();
+            var app = new TestStaticActivityRouteApp(new TestApplicationOptions(new MemoryStorage()));
+
+            await new TestFlow(adapter, (ctx, ct) => app.OnTurnAsync(ctx, ct))
+                .Send(new Activity { Type = ActivityTypes.Event })
+                .StartTestAsync();
+
+            Assert.True(TestStaticActivityRouteApp.HandlerCalled);
+        }
     }
 
     class TestActivityRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -363,6 +391,31 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         [FeedbackLoopRoute]
         public Task OnFeedbackAsync(ITurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
+        {
+            HandlerCalled = true;
+            return Task.CompletedTask;
+        }
+    }
+
+    // Regression: static route handlers must not throw ArgumentException from CreateDelegate.
+    class TestStaticMessageRouteApp(AgentApplicationOptions options) : AgentApplication(options)
+    {
+        public static bool HandlerCalled;
+
+        [MessageRoute]
+        public static Task OnAnyMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            HandlerCalled = true;
+            return Task.CompletedTask;
+        }
+    }
+
+    class TestStaticActivityRouteApp(AgentApplicationOptions options) : AgentApplication(options)
+    {
+        public static bool HandlerCalled;
+
+        [ActivityRoute(ActivityTypes.Event)]
+        public static Task OnEventActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             HandlerCalled = true;
             return Task.CompletedTask;
