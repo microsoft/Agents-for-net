@@ -12,6 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
+// Add AgentApplicationOptions from appsettings section "AgentApplication".
+builder.AddAgentApplicationOptions();
+
 // Add basic bot functionality
 builder.AddAgent<TeamsConversationAgent>();
 

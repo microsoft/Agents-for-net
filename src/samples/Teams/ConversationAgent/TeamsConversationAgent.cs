@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 using System;
@@ -20,7 +21,8 @@ using System.Xml;
 
 namespace ConversationAgent;
 
-public class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
+[TeamsExtension]
+public partial class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     private readonly string _adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
 
@@ -175,10 +177,10 @@ public class TeamsConversationAgent(AgentApplicationOptions options) : AgentAppl
     [MessageRoute("messageall")]
     public async Task MessageAllMembersAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        string continuationToken = null;
+        string? continuationToken = null;
         do
         {
-            var currentPage = await TeamsInfo.GetPagedMembersAsync(turnContext, 100, continuationToken, cancellationToken);
+            var currentPage = await TeamsInfo.GetPagedMembersAsync(turnContext, 100, continuationToken!, cancellationToken);
             continuationToken = currentPage.ContinuationToken;
 
             foreach (var teamMember in currentPage.Members)

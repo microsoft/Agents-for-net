@@ -19,8 +19,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-#nullable enable
-
 public static class AspNetExtensions
 {
     private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _openIdMetadataCache = new();
