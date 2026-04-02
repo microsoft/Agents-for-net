@@ -1,8 +1,8 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
   "manifestVersion": "1.22",
-  "version": "1.0.0",
-  "id": "${{AAD_APP_CLIENT_ID}}",
+  "version": "1.0.4",
+  "id": "<<AAD_APP_CLIENT_ID>>",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -38,7 +38,7 @@
   ],
   "bots": [
     {
-      "botId": "${{AAD_APP_CLIENT_ID}}",
+      "botId": "<<AAD_APP_CLIENT_ID>>",
       "scopes": [
         "personal",
         "team",
@@ -52,13 +52,13 @@
   ],
   "composeExtensions": [
     {
-      "botId": "${{AAD_APP_CLIENT_ID}}",
+      "botId": "<<AAD_APP_CLIENT_ID>>",
       "commands": [
         {
-          "id": "findNuGetPackage",
+          "id": "searchQuery",
           "type": "query",
-          "title": "findNuGetPackage",
-          "description": "findNuGetPackage",
+          "title": "searchQuery",
+          "description": "searchQuery",
           "initialRun": true,
           "fetchTask": false,
           "context": [
@@ -67,12 +67,75 @@
           ],
           "parameters": [
             {
-              "name": "NuGetPackageName",
-              "title": "NuGetPackageName",
-              "description": "NuGetPackageName",
+              "name": "searchQuery",
+              "title": "Search Query",
+              "description": "Search Query",
               "inputType": "text"
             }
           ]
+        },
+        {
+          "id": "createCard",
+          "type": "action",
+          "title": "Create Card",
+          "description": "Create Card",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "compose",
+            "message"
+          ],
+          "parameters": [
+            {
+              "name": "title",
+              "title": "Title",
+              "description": "Title of the card",
+              "inputType": "text"
+            },
+            {
+              "name": "description",
+              "title": "Description",
+              "description": "Description of the card",
+              "inputType": "text"
+            }
+          ]
+        },
+        {
+          "id": "getMessageDetails",
+          "type": "action",
+          "title": "Details",
+          "description": "Details",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "compose"
+          ],
+          "parameters": [
+            {
+              "name": "messageText",
+              "title": "Text",
+              "description": "Text",
+              "inputType": "text"
+            },
+            {
+              "name": "messageId",
+              "title": "Id",
+              "description": "Id",
+              "inputType": "text"
+            }
+          ]
+        }
+      ],
+      "messageHandlers": [
+        {
+          "type": "link",
+          "value": {
+            "domains": [
+              "github.com"
+            ]
+          }
         }
       ],
       "canUpdateConfiguration": true
@@ -86,7 +149,7 @@
     "<<BOT_DOMAIN>>"
   ],
   "webApplicationInfo": {
-    "id": "${{AAD_APP_CLIENT_ID}}",
-    "resource": "api://botid-${{AAD_APP_CLIENT_ID}}"
+    "id": "<<AAD_APP_CLIENT_ID>>",
+    "resource": "api://botid-<<AAD_APP_CLIENT_ID>>"
   }
 }

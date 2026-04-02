@@ -261,7 +261,18 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
         {
             Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
-            Text = "Settings configuration would be handled here"
+            Text = "Settings configuration would be handled here",
+            SuggestedActions = new Microsoft.Teams.Api.MessageExtensions.SuggestedActions
+            {
+                Actions =
+                    [
+                        new Microsoft.Teams.Api.Cards.Action(Microsoft.Teams.Api.Cards.ActionType.OpenUrl)
+                        {
+                            Title = "Settings",
+                            Value = "https://trboehrer-relay-asdkt2.servicebus.windows.net:443/DESKTOP-K8NV08M/settings",
+                        },
+                    ],
+            },
         });
     }
 
@@ -297,7 +308,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     {
         Logger.LogInformation("Message extension settings submitted with state: {State}", settings.State);
 
-        if (settings.State == "cancel")
+        if (settings.State == "CancelledByUser")
         {
             return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
         }
@@ -316,7 +327,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     <title>Message Extension Settings</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://statics.teams.cdn.office.net/sdk/v1.12.0/js/MicrosoftTeams.min.js"></script>
+    <link
+       rel="stylesheet"
+       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    />
+    <script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -393,8 +408,12 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     </div>
 
     <script>
-        microsoftTeams.initialize();
-        
+        microsoftTeams.app.initialize().then(() => {
+            console.log("Teams SDK initialized");
+        }).catch(err => {
+            console.error("Teams SDK initialization failed:", err);
+        });        
+
         function saveSettings() {
             const formData = new FormData(document.getElementById('settingsForm'));
             const settings = {};
@@ -402,11 +421,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
                 settings[key] = value;
             }
             
-            microsoftTeams.tasks.submitTask(settings);
+            microsoftTeams.dialog.url.submit(settings);
         }
         
         function cancelSettings() {
-            microsoftTeams.tasks.submitTask();
+            microsoftTeams.dialog.url.submit();
         }
     </script>
 </body>
