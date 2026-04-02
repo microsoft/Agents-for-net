@@ -14,7 +14,6 @@ using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.App.TeamsTeams;
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -24,8 +23,6 @@ namespace ConversationAgent;
 [TeamsExtension]
 public partial class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    private readonly string _adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
-
     [ActivityRoute(ActivityTypes.InstallationUpdate)]
     public async Task OnInstallationUpdateActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -214,16 +211,43 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         {
             var member = await TeamsInfo.GetMemberAsync(turnContext, turnContext.Activity.From.Id, cancellationToken);
 
-            var templateJSON = File.ReadAllText(_adaptiveCardTemplate)
-                .Replace("${userName}", member.Name)
-                .Replace("${userUPN}", member.Id)
-                .Replace("${userAAD}", member.AadObjectId);
+            var card = new Microsoft.Teams.Cards.AdaptiveCard([
+                new Microsoft.Teams.Cards.TextBlock($"Mention a user by User Principle Name: Hello <at>${member.Name} UPN</at>"),
+                new Microsoft.Teams.Cards.TextBlock($"Mention a user by AAD Object Id: Hello <at>${member.Name} AAD</at>"),
+            ])
+            {
+                Msteams = new Microsoft.Teams.Cards.TeamsCardProperties()
+                {
+                    Entities =
+                    [
+                        new Microsoft.Teams.Cards.Mention
+                        {
+                            Mentioned = new Microsoft.Teams.Cards.MentionedEntity()
+                            {
+                                Id = member.Id,
+                                Name = member.Name
+                            },
+                            Text = $"<at>{XmlConvert.EncodeName(member.Name)} UPN</at>"
+                        },
+                        new Microsoft.Teams.Cards.Mention
+                        {
+                            Mentioned = new Microsoft.Teams.Cards.MentionedEntity()
+                            {
+                                Id = member.AadObjectId,
+                                Name = member.Name
+                            },
+                            Text = $"<at>{XmlConvert.EncodeName(member.Name)} AAD</at>"
+                        }
+                    ]
+                }
+            };
 
             var adaptiveCardAttachment = new Attachment
             {
-                ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = templateJSON
+                ContentType = ContentTypes.AdaptiveCard,
+                Content = card
             };
+
             await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
         catch (ErrorResponseException e)
