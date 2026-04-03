@@ -167,6 +167,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.Teams.Analyzers.Tests", "tests\Microsoft.Agents.Extensions.Teams.Analyzers.Tests\Microsoft.Agents.Extensions.Teams.Analyzers.Tests.csproj", "{972EF8C8-DFD3-4C64-B793-C9AEAC1BFB18}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskModules", "samples\Teams\TaskModules\TaskModules.csproj", "{27F60C81-99C2-F206-23BF-4B74AB79503B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -945,6 +947,18 @@ Global
 		{972EF8C8-DFD3-4C64-B793-C9AEAC1BFB18}.Release|x64.Build.0 = Release|Any CPU
 		{972EF8C8-DFD3-4C64-B793-C9AEAC1BFB18}.Release|x86.ActiveCfg = Release|Any CPU
 		{972EF8C8-DFD3-4C64-B793-C9AEAC1BFB18}.Release|x86.Build.0 = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|x64.Build.0 = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Debug|x86.Build.0 = Debug|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|x64.ActiveCfg = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|x64.Build.0 = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|x86.ActiveCfg = Release|Any CPU
+		{27F60C81-99C2-F206-23BF-4B74AB79503B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1029,6 +1043,7 @@ Global
 		{E276C0E5-9B75-4449-73D9-F7EF28029CB1} = {6348023E-F632-458A-9114-1CAD1D9A017C}
 		{6B9FC1B5-CA00-4C76-AA6D-6F2B45CD42CA} = {927E4F54-6FBC-4390-BF64-BF3C1874C1AB}
 		{972EF8C8-DFD3-4C64-B793-C9AEAC1BFB18} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+		{27F60C81-99C2-F206-23BF-4B74AB79503B} = {6348023E-F632-458A-9114-1CAD1D9A017C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
