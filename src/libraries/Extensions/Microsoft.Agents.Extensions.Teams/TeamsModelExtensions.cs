@@ -110,7 +110,9 @@ public static class TeamsModelExtensions
     /// </summary>
     /// <param name="teamsReaction">The Teams message reaction to convert.</param>
     /// <returns>A <c>Microsoft.Agents.Core.Models.MessageReaction</c> model that represents the specified Teams <c>Reaction</c>.</returns>
+#pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     public static Core.Models.MessageReaction ToCoreMessageReaction(this Microsoft.Teams.Api.Messages.Reaction teamsReaction)
+#pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     {
         return ProtocolJsonSerializer.ToObject<Core.Models.MessageReaction>(teamsReaction);
     }
@@ -120,9 +122,11 @@ public static class TeamsModelExtensions
     /// </summary>
     /// <param name="messageReaction">The message reaction to convert.</param>
     /// <returns>A Microsoft Teams <c>Reaction</c> object that represents the specified <c>Microsoft.Agents.Core.Models.MessageReaction</c>.</returns>
+#pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     public static Microsoft.Teams.Api.Messages.Reaction ToTeamsReaction(this Core.Models.MessageReaction messageReaction)
     {
         return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Messages.Reaction>(messageReaction);
     }
+#pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     #endregion
 }

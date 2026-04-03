@@ -193,7 +193,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     }
 
     [SelectItemRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, string item, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Item selected: {Item}", item);
 
@@ -208,7 +208,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             {
                 Wrap = true
             },
-            new TextBlock(ProtocolJsonSerializer.ToJson(item))
+            new TextBlock(item)
             {
                 Wrap = true,
                 FontType = FontType.Monospace,

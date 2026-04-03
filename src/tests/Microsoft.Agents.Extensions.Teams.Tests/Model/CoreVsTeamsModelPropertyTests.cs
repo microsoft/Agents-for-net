@@ -45,7 +45,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                 [typeof(Microsoft.Teams.Api.Conversation)] = typeof(Core.Models.ConversationAccount),
 
                 // MessageReaction
+#pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 [typeof(Microsoft.Teams.Api.Messages.Reaction)] = typeof(Core.Models.MessageReaction),
+#pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
                 // Token types — Teams.Api.Token.Response maps to Core TokenResponse;
                 // Teams.Api.Auth.TokenResponse is an OAuth bearer token (different shape)

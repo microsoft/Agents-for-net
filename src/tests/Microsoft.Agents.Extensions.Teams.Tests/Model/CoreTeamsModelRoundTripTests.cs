@@ -120,6 +120,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
         }
 
         [Fact]
+#pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         public void MessageReaction_And_TeamsReaction_RoundTrip()
         {
             // Teams.Messages.Reaction has Teams-only: createdDateTime, user.
@@ -162,6 +163,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
             Assert.Contains("createdDateTime",               roundTrippedJson);
             Assert.Contains(@"""id"":""u1""",               roundTrippedJson);
         }
+#pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         [Fact]
         public void TokenResponse_And_TeamsTokenResponse_RoundTrip()

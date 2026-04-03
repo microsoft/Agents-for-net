@@ -744,8 +744,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             {
                 var participant = await TeamsInfo.GetMeetingParticipantAsync(turnContext);
 
-                Assert.Equal("Organizer", participant.Role);
-                Assert.Equal("id-1", participant.User.Id);
+                Assert.Equal("Organizer", participant.Meeting.Role);
+                Assert.Equal("participantId-1", participant.User.Id);
             }
 
             private static async Task CallGetMeetingInfoAsync(ITurnContext turnContext)
@@ -1259,9 +1259,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 {
                     var content = new Microsoft.Teams.Api.Clients.MeetingParticipant
                     {
-                        Id = "participantId-1",
-                        User = new Account { Id = "id-1" },
-                        Role = "Organizer",
+                        User = new Account { Id = "participantId-1", Role = new Role("role-1") },
+                        Meeting = new MeetingInfo { Role = "Organizer" }
                     };
                     response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
