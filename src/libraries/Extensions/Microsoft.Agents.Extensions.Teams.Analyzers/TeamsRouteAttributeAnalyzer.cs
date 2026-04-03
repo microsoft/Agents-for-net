@@ -214,14 +214,14 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeDisplayName  = "Task",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, ParticipantsDetails, CancelToken },
             },
-            // TaskModules
+            // TaskModules — 3rd param is either Request or a generic TData; accept any type
             new SignatureRule
             {
                 AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRouteAttribute",
                 AttributeDisplayName   = "FetchRoute",
                 ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, "Microsoft.Teams.Api.TaskModules.Request", CancelToken },
+                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
             },
             new SignatureRule
             {
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 AttributeDisplayName   = "SubmitRoute",
                 ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, "Microsoft.Teams.Api.TaskModules.Request", CancelToken },
+                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
             },
             // TeamsChannels — all return plain Task with (ITurnContext, ITurnState, Channel, CancellationToken)
             new SignatureRule

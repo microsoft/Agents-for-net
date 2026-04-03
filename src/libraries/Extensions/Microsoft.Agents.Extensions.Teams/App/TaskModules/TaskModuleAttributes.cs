@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
@@ -12,12 +13,22 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for task module fetch events in Teams.
-/// The method must match the <see cref="FetchHandler"/> delegate signature.
+/// The method must match the <see cref="FetchHandler"/> or <see cref="FetchHandler{TData}"/> delegate signature.
+/// When the third parameter is <see cref="Microsoft.Teams.Api.TaskModules.Request"/>, the full request is passed.
+/// When the third parameter is any other type, <c>Request.Data</c> is deserialized to that type and passed instead.
 /// <code>
+/// // Untyped — receives the full Request
 /// [FetchRoute("myVerb")]
-/// public async Task&lt;TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request data, CancellationToken cancellationToken)
+/// public async Task&lt;TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event
+/// }
+///
+/// // Typed — Request.Data is deserialized to MyFetchData
+/// [FetchRoute("myVerb")]
+/// public async Task&lt;TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, MyFetchData data, CancellationToken cancellationToken)
+/// {
+///     // Handle task module fetch event with typed data
 /// }
 /// </code>
 /// </remarks>
@@ -30,8 +41,23 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchHandler>(app, method);
-        var builder = FetchRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = FetchRouteBuilder.Create().WithVerb(verb).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.TaskModules.Request))
+        {
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchHandler>(app, method);
+            builder.WithHandler(handler);
+        }
+        else
+        {
+            var genericParam = method.GetParameters()[2].ParameterType;
+            var handlerType = typeof(FetchHandler<>).MakeGenericType(genericParam);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
+
+            var withHandler = typeof(FetchRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
+            withHandler.Invoke(builder, [handler]);
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -42,12 +68,22 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for task module submit events in Teams.
-/// The method must match the <see cref="SubmitHandler"/> delegate signature.
+/// The method must match the <see cref="SubmitHandler"/> or <see cref="SubmitHandler{TData}"/> delegate signature.
+/// When the third parameter is <see cref="Microsoft.Teams.Api.TaskModules.Request"/>, the full request is passed.
+/// When the third parameter is any other type, <c>Request.Data</c> is deserialized to that type and passed instead.
 /// <code>
+/// // Untyped — receives the full Request
 /// [SubmitRoute("myVerb")]
-/// public async Task&lt;TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request data, CancellationToken cancellationToken)
+/// public async Task&lt;TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event
+/// }
+///
+/// // Typed — Request.Data is deserialized to MySubmitData
+/// [SubmitRoute("myVerb")]
+/// public async Task&lt;TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, MySubmitData data, CancellationToken cancellationToken)
+/// {
+///     // Handle task module submit event with typed data
 /// }
 /// </code>
 /// </remarks>
@@ -60,8 +96,23 @@ public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushor
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitHandler>(app, method);
-        var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = SubmitRouteBuilder.Create().WithVerb(verb).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+
+        if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.TaskModules.Request))
+        {
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitHandler>(app, method);
+            builder.WithHandler(handler);
+        }
+        else
+        {
+            var genericParam = method.GetParameters()[2].ParameterType;
+            var handlerType = typeof(SubmitHandler<>).MakeGenericType(genericParam);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
+
+            var withHandler = typeof(SubmitRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
+            withHandler.Invoke(builder, [handler]);
+        }
+
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

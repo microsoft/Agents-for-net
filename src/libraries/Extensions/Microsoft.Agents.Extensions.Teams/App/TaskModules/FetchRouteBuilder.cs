@@ -32,4 +32,22 @@ public class FetchRouteBuilder : VerbRouteBuilderBase<FetchRouteBuilder>
         };
         return this;
     }
+
+    /// <summary>
+    /// Configures the route to use the specified asynchronous handler for processing fetch requests,
+    /// with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// </summary>
+    /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
+    /// <param name="handler">An asynchronous delegate that processes the fetch request, receiving the deserialized data payload.</param>
+    /// <returns>The current instance of FetchRouteBuilder, enabling method chaining.</returns>
+    public FetchRouteBuilder WithHandler<TData>(FetchHandler<TData> handler)
+    {
+        _route.Handler = async (ctx, ts, ct) =>
+        {
+            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.TaskModules.Request>(ctx.Activity.Value);
+            var response = await handler(ctx, ts, ProtocolJsonSerializer.ToObject<TData>(value.Data), ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+        };
+        return this;
+    }
 }

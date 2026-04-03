@@ -590,30 +590,29 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         [Fact]
-        public async Task TaskModules_FetchRoute_WrongParameterType_EmitsMTEAMS003()
+        public async Task TaskModules_FetchRoute_TypedData_NoDiagnostic()
         {
+            // Any type is accepted for the 3rd parameter — typed TData is valid
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                public record MyFetchData(string Name);
+
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
-                        string badParam,
+                        MyFetchData data,
                         CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
-            var d = Assert.Single(diagnostics);
-            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
-            Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("FetchRoute", d.GetMessage());
-            Assert.Contains("Microsoft.Teams.Api.TaskModules.Request", d.GetMessage());
+            Assert.Empty(diagnostics);
         }
 
         // ---------------------------------------------------------------------------
@@ -635,6 +634,32 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task TaskModules_SubmitRoute_TypedData_NoDiagnostic()
+        {
+            // Any type is accepted for the 3rd parameter — typed TData is valid
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public record MySubmitData(string Name, string Email);
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        MySubmitData data,
                         CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
                 }

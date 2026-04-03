@@ -38,6 +38,20 @@ public class TaskModule
     }
 
     /// <summary>
+    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler{TData}"/> method for the same purpose.</remarks>
+    /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
+    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public TaskModule OnFetch<TData>(string verb, FetchHandler<TData> handler)
+    {
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
     ///  Registers a handler to process the fetch of the task module.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler"/> method for the same purpose.</remarks>
@@ -45,6 +59,20 @@ public class TaskModule
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(Regex verbPattern, FetchHandler handler)
+    {
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler{TData}"/> method for the same purpose.</remarks>
+    /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
+    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public TaskModule OnFetch<TData>(Regex verbPattern, FetchHandler<TData> handler)
     {
         _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
@@ -64,6 +92,20 @@ public class TaskModule
     }
 
     /// <summary>
+    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler{TData}"/> method for the same purpose.</remarks>
+    /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
+    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public TaskModule OnSubmit<TData>(string verb, SubmitHandler<TData> handler)
+    {
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
     /// Registers a handler to process the submission of a task module.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler"/> method for the same purpose.</remarks>
@@ -71,6 +113,20 @@ public class TaskModule
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(Regex verbPattern, SubmitHandler handler)
+    {
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler{TData}"/> method for the same purpose.</remarks>
+    /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
+    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for</param>
+    /// <param name="handler">Function to call when the route is triggered.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public TaskModule OnSubmit<TData>(Regex verbPattern, SubmitHandler<TData> handler)
     {
         _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
