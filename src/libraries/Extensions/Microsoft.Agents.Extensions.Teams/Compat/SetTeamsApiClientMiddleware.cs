@@ -51,7 +51,7 @@ public class SetTeamsApiClientMiddleware : IMiddleware
     /// Handles an incoming turn by configuring the Teams API client and invoking the next middleware or handler in
     /// the pipeline.
     /// </summary>
-    /// <param name="turnContext">The context object for the current turn of the conversation. Cannot be null.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="next">A delegate representing the next middleware or handler to be executed in the pipeline. Cannot be null.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>

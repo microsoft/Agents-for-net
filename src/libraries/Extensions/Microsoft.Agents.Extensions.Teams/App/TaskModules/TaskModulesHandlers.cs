@@ -11,8 +11,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// <summary>
 /// Function for handling Task Module fetch events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="data">The data associated with the fetch.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>An instance of TaskModuleResponse.</returns>
@@ -21,8 +21,8 @@ public delegate Task<Microsoft.Teams.Api.TaskModules.Response> FetchHandler(ITur
 /// <summary>
 /// Function for handling Task Module submit events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="data">The data associated with the fetch.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>An instance of TaskModuleResponse.</returns>

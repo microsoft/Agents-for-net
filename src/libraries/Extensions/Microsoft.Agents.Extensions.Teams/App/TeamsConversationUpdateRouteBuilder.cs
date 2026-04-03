@@ -125,7 +125,7 @@ public class TeamsConversationUpdateRouteBuilder : RouteBuilderBase<TeamsConvers
     /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
     /// <param name="isInvoke">Ignored</param>
     /// <returns>The current instance of <see cref="TeamsConversationUpdateRouteBuilder"/>.</returns>
-    public new TeamsConversationUpdateRouteBuilder AsInvoke(bool isInvoke = true)
+    public override TeamsConversationUpdateRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;
     }

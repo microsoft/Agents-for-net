@@ -300,11 +300,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask,
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { commandId }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandId = commandId,
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    Data = new
+                    {
+                        title = "test-title",
+                        content = "test-content"
+                    }
+                }),
             });
 
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -616,6 +625,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTaskAsync(
             ITurnContext turnContext,
             ITurnState turnState,
+            Microsoft.Teams.Api.MessageExtensions.Action action,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;

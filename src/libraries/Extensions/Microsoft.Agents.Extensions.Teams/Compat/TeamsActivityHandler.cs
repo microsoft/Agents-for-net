@@ -25,7 +25,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Invoked when an invoke activity is received from the connector.
     /// Invoke activities can be used to communicate many different things.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -114,7 +114,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when an card action invoke activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -126,7 +126,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a signIn invoke activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -138,7 +138,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a signIn verify state activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -150,7 +150,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a file consent card activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="fileConsentCardResponse">The response representing the value of the invoke activity sent when the user acts on
     /// a file consent card.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -176,7 +176,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a file consent card is accepted by the user.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="fileConsentCardResponse">The response representing the value of the invoke activity sent when the user accepts
     /// a file consent card.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -190,7 +190,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a file consent card is declined by the user.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="fileConsentCardResponse">The response representing the value of the invoke activity sent when the user declines
     /// a file consent card.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -204,7 +204,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a Messaging Extension Query activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The query for the search command.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -217,7 +217,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a O365 Connector Card Action activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The O365 connector card HttpPOST invoke query.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -230,7 +230,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when an app based link query activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The invoke request body type for app-based link query.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -243,7 +243,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when an anonymous app based link query activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The invoke request body type for app-based link query.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -256,7 +256,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension select item activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The object representing the query.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -269,7 +269,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a Messaging Extension Fetch activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="action">The messaging extension action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -282,7 +282,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension submit action dispatch activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="action">The messaging extension action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -312,7 +312,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension submit action activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="action">The messaging extension action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -325,7 +325,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension agent message preview edit activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="action">The messaging extension action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -338,7 +338,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension agent message preview send activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="action">The messaging extension action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -351,7 +351,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a messaging extension configuration query setting url activity is received from the connector.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="query">The Messaging extension query.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -364,7 +364,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a configuration is set for a messaging extension.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="settings">Object representing the configuration settings.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -377,7 +377,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a card button is clicked in a messaging extension.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cardData">Object representing the card data.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -390,7 +390,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a task module is fetched.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="taskModuleRequest">The task module invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -403,7 +403,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a task module is submited.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="taskModuleRequest">The task module invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -416,7 +416,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a tab is fetched.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="tabRequest">The tab invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -429,7 +429,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a tab is submitted.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="tabSubmit">The tab submit invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -442,7 +442,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a config is fetched.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="configData">The config fetch invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -455,7 +455,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Override this in a derived class to provide logic for when a config is submitted.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="configData">The config fetch invoke request value payload.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -470,7 +470,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Conversation update activities are useful when it comes to responding to users being added to or removed from the channel.
     /// For example, an Agent could respond to a user being added by greeting the user.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -544,7 +544,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="membersAdded">A list of all the accounts added to the channel, as
     /// described by the conversation update activity.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -597,7 +597,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="membersRemoved">A list of all the accounts removed from the channel, as
     /// described by the conversation update activity.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -619,7 +619,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="teamsMembersAdded">A list of all the members added to the channel, as
     /// described by the conversation update activity.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -635,7 +635,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="teamsMembersRemoved">A list of all the members removed from the channel, as
     /// described by the conversation update activity.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -650,7 +650,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// </summary>
     /// <param name="Channel">The channel info object which describes the channel.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -665,7 +665,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// </summary>
     /// <param name="Channel">The channel info object which describes the channel.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -680,7 +680,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// </summary>
     /// <param name="Channel">The channel info object which describes the channel.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -695,7 +695,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// </summary>
     /// <param name="Channel">The channel info object which describes the channel.</param>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -709,7 +709,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Archived correspond to the user archiving a team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -723,7 +723,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Deleted corresponds to the user deleting a team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -737,7 +737,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Hard Deleted corresponds to the user hard deleting a team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -751,7 +751,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Renamed correspond to the user renaming an existing team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -765,7 +765,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Restored corresponds to the user restoring a team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -779,7 +779,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Team Unarchived correspond to the user unarchiving a team.
     /// </summary>
     /// <param name="Team">The team info object representing the team.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -792,7 +792,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Invoked when an event activity is received from the channel.
     /// Event activities can be used to communicate many different things.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -826,7 +826,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Override this in a derived class to provide logic for when a meeting is started.
     /// </summary>
     /// <param name="meeting">The details of the meeting.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -840,7 +840,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Override this in a derived class to provide logic for when a meeting is ended.
     /// </summary>
     /// <param name="meeting">The details of the meeting.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -854,7 +854,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Override this in a derived class to provide logic for when the Agent receives a read receipt event.
     /// </summary>
     /// <param name="readReceiptInfo">Information regarding the read receipt. i.e. Id of the message last read by the user.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -868,7 +868,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Override this in a derived class to provide logic for when meeting participants are added.
     /// </summary>
     /// <param name="meeting">The details of the meeting.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -882,7 +882,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Override this in a derived class to provide logic for when meeting participants are removed.
     /// </summary>
     /// <param name="meeting">The details of the meeting.</param>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -895,7 +895,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Invoked when an message update activity is received.
     /// <see cref="ActivityTypes.MessageUpdate"/> activities, such as the conversational logic.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -931,7 +931,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// Invoked when an message delete activity is received.
     /// <see cref="ActivityTypes.MessageDelete"/> activities, such as the conversational logic.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -963,7 +963,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a edit message event activity is received.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -975,7 +975,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a undo soft delete message event activity is received.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
@@ -987,7 +987,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <summary>
     /// Invoked when a soft delete message event activity is received.
     /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>

@@ -239,7 +239,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         return Task.FromResult(Response.WithResultConfig("https://bot-devtunnel-url/settings"));
     }
 
-    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Fetch task module requested");
 

@@ -19,8 +19,7 @@ public static class TeamsTurnContextExtensions
     /// Use this method when you need to direct an activity to a specific recipient or subset of participants in a
     /// conversation. The activity's Entities collection will be updated to include the targeted
     /// treatment.</remarks>
-    /// <param name="turnContext">The turn context for the current conversation. Provides access to the agents's context and methods for sending
-    /// activities.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="activity">The activity to send. Must represent the message or event to be delivered and cannot be null.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
     /// <returns>A task that represents the asynchronous send operation. The task result contains a ResourceResponse with
@@ -36,7 +35,7 @@ public static class TeamsTurnContextExtensions
     /// <remarks>Each activity is cloned and marked as targeted before being sent. Use this method
     /// when you need to deliver activities to specific recipients rather than broadcasting to all
     /// participants.</remarks>
-    /// <param name="turnContext">The turn context used to send the activities. Cannot be null.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="activities">An array of activities to send. Each activity will be treated as targeted. Cannot be null and must not
     /// contain null elements.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>

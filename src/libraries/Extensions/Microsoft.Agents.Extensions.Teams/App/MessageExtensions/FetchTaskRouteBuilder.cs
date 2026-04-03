@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization;
+
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
 /// <summary>
@@ -25,7 +27,8 @@ public class FetchTaskRouteBuilder : CommandRouteBuilderBase<FetchTaskRouteBuild
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var response = await handler(ctx, ts, ct).ConfigureAwait(false);
+            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
+            var response = await handler(ctx, ts, action, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;

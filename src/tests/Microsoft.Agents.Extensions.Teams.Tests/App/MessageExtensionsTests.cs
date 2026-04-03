@@ -260,6 +260,120 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task Test_SubmitActionHandler_NonGeneric_ReceivesFullAction()
+        {
+            // Arrange - non-generic SubmitActionHandler receives the full Action object
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg) { activitiesToSend = arg; }
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandId = "test-command",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    Data = new { title = "test-title", content = "test-content" }
+                }),
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = Channels.Msteams,
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var actionResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
+            var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = actionResponseMock.Object };
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+            });
+            var extension = new TeamsAgentExtension(app);
+
+            // Non-generic handler receives the full Action, not just Action.Data
+            SubmitActionHandler handler = (ctx, ts, action, ct) =>
+            {
+                Assert.NotNull(action);
+                Assert.Equal("test-command", action.CommandId);
+                Assert.NotNull(action.CommandContext);
+                Assert.NotNull(action.Data);
+                return Task.FromResult(actionResponseMock.Object);
+            };
+            app.RegisterExtension(extension, (ext) =>
+            {
+                app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(Channels.Msteams).WithCommand("test-command").WithHandler(handler).Build());
+            });
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(activitiesToSend);
+            Assert.Single(activitiesToSend);
+            Assert.Equal("invokeResponse", activitiesToSend[0].Type);
+            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+        }
+
+        [Fact]
+        public async Task Test_SubmitActionHandler_Generic_ReceivesDeserializedData_NotFullAction()
+        {
+            // Arrange - generic SubmitActionHandler<TData> receives only Action.Data deserialized, not the full Action
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg) { activitiesToSend = arg; }
+            var adapter = new SimpleAdapter(CaptureSend);
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandId = "test-command",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    Data = new MessageExtensionActionData { Title = "test-title", Content = "test-content" }
+                }),
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = Channels.Msteams,
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var actionResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.Response>();
+            var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = actionResponseMock.Object };
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+            });
+            var extension = new TeamsAgentExtension(app);
+
+            // Generic handler receives only the deserialized Data portion - no access to CommandId etc.
+            SubmitActionHandler<MessageExtensionActionData> handler = (ctx, ts, data, ct) =>
+            {
+                Assert.NotNull(data);
+                Assert.IsType<MessageExtensionActionData>(data);
+                Assert.Equal("test-title", data.Title);
+                Assert.Equal("test-content", data.Content);
+                return Task.FromResult(actionResponseMock.Object);
+            };
+            app.RegisterExtension(extension, (ext) =>
+            {
+                ext.MessageExtensions.OnSubmitAction("test-command", handler);
+            });
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(activitiesToSend);
+            Assert.Single(activitiesToSend);
+            Assert.Equal("invokeResponse", activitiesToSend[0].Type);
+            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+        }
+
+        [Fact]
         public async Task Test_OnAgentMessagePreviewEdit_CommandId()
         {
             // Arrange
@@ -619,14 +733,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask,
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
-                {
-                    commandId = "test-command",
-                }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandId = "test-command",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    Data = new
+                    {
+                        title = "test-title",
+                        content = "test-content"
+                    }
+                }),
             });
             var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.MessageExtensions.ActionResponse>();
             var expectedInvokeResponse = new InvokeResponse()
@@ -642,7 +762,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, action, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -694,7 +814,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, action, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -736,7 +856,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            FetchTaskHandler handler = (turnContext, turnState, cancellationToken) =>
+            FetchTaskHandler handler = (turnContext, turnState, action, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };

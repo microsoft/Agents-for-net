@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -325,13 +326,21 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
             builder.WithCommand(new Regex(commandIdPattern));
         }
 
-        // Infer the generic type parameter for SubmitActionHandler<T> from the method's parameters
-        var genericParam = method.GetParameters()[2].ParameterType;
-        var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
-        var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
+        if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.MessageExtensions.Action))
+        {
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitActionHandler>(app, method);
+            builder.WithHandler(handler);
+        }
+        else
+        {
+            // Infer the generic type parameter for SubmitActionHandler<T> from the method's parameters
+            var genericParam = method.GetParameters()[2].ParameterType;
+            var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
 
-        var withHandler = typeof(SubmitActionRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
-        withHandler.Invoke(builder, [handler]);
+            var withHandler = typeof(SubmitActionRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
+            withHandler.Invoke(builder, [handler]);
+        }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

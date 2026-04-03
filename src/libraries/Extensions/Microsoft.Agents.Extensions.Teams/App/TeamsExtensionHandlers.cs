@@ -15,8 +15,8 @@ namespace Microsoft.Agents.Extensions.Teams.App;
 /// <summary>
 /// Function for handling config events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="configData">The config data.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
@@ -26,8 +26,8 @@ public delegate Task<ConfigResponse> ConfigHandler(ITurnContext turnContext, ITu
 /// <summary>
 /// Function for handling file consent card activities.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="fileConsentCardResponse">The response representing the value of the invoke activity sent when the user acts on a file consent card.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
@@ -37,8 +37,8 @@ public delegate Task FileConsentHandler(ITurnContext turnContext, ITurnState tur
 /// <summary>
 /// Function for handling O365 Connector Card Action activities.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="query">The O365 connector card HttpPOST invoke query.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
@@ -48,8 +48,8 @@ public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, IT
 /// <summary>
 /// Function for handling read receipt events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="data">The read receipt data.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>

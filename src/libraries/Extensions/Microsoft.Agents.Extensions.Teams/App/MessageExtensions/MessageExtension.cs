@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core;
-using System;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;

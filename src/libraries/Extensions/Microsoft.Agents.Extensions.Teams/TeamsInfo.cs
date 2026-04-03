@@ -24,7 +24,7 @@ public static class TeamsInfo
     /// <summary>
     /// Gets the details for the given meeting participant. This only works in teams meeting scoped conversations. 
     /// </summary>
-    /// <param name="turnContext">Turn context.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="meetingId">The id of the Teams meeting. ChannelData.Meeting.Id will be used if none provided.</param>
     /// <param name="participantId">The id of the Teams meeting participant. From.AadObjectId will be used if none provided.</param>
     /// <param name="tenantId">The id of the Teams meeting Tenant. ChannelData.Tenant.Id will be used if none provided.</param>
@@ -46,7 +46,7 @@ public static class TeamsInfo
     /// <summary>
     /// Gets the information for the given meeting id.
     /// </summary>
-    /// <param name="turnContext"> Turn context.</param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="meetingId"> The id of the Teams meeting. If null and the turnContext is within the scope of a Teams meeting, the meetingId will be inferred from the ChannelData.</param>
     /// <param name="cancellationToken"> Cancellation token.</param>
     /// <returns>Team Details.</returns>
@@ -61,7 +61,7 @@ public static class TeamsInfo
     /// <summary>
     /// Gets the details for the given team id. This only works in teams scoped conversations. 
     /// </summary>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams covnersation, the teamId will be inferred from the ChannelData.</param>
     /// <param name="cancellationToken"> Cancellation token. </param>
     /// <returns>Team Details.</returns>
@@ -77,7 +77,7 @@ public static class TeamsInfo
     /// Returns a list of channels in a Team. 
     /// This only works in teams scoped conversations.
     /// </summary>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams covnersation, the teamId will be inferred from the ChannelData.</param>
     /// <param name="cancellationToken"> cancellation token. </param>
     /// <returns>Team Details.</returns>
@@ -94,7 +94,7 @@ public static class TeamsInfo
     /// </summary>
     /// <remarks>For Activities containing the Teams ChannelData with Team information, the ChannelData.Team.Id is used to determine the team context.  Otherwise
     /// the Activity.Conversation.Id is used.</remarks>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="pageSize"> Suggested number of entries on a page. </param>
     /// <param name="continuationToken"> ContinuationToken token. </param>
     /// /// <param name="cancellationToken"> Cancellation token. </param>
@@ -118,7 +118,7 @@ public static class TeamsInfo
     /// Gets a paginated list of members of a team. 
     /// This only works in teams scoped conversations.
     /// </summary>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="teamId"> ID of the Teams team. </param>
     /// <param name="continuationToken"> continuationToken token. </param>
     /// <param name="pageSize"> number of entries on the page. </param>
@@ -134,7 +134,7 @@ public static class TeamsInfo
     /// <summary>
     /// Gets the member of a teams scoped conversation.
     /// </summary>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="userId"> user id. </param>
     /// <param name="teamId">ID of the Teams team. If null, then for Teams scoped conversations, the Activity.ChannelData.Team.Id is used.</param>
     /// <param name="cancellationToken"> cancellation token. </param>
@@ -154,7 +154,7 @@ public static class TeamsInfo
     /// and <see cref="GetTeamMemberAsync"/> will be called.  For other channels, the Conversation.Id will be used and the ConnectorClient 
     /// Conversation.GetConversationMemberAsync will be called directly."/>
     /// </remarks>
-    /// <param name="turnContext"> Turn context. </param>
+    /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="userId"> ID of the user in question. </param>
     /// <param name="cancellationToken"> cancellation token. </param>
     /// <returns>The member <c>Account</c></returns>

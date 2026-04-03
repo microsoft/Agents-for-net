@@ -146,7 +146,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
     /// <param name="isInvoke">Ignored</param>
     /// <returns>The current instance of <see cref="ChannelUpdateRouteBuilder"/>.</returns>
-    public new ChannelUpdateRouteBuilder AsInvoke(bool isInvoke = true)
+    public override ChannelUpdateRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;
     }

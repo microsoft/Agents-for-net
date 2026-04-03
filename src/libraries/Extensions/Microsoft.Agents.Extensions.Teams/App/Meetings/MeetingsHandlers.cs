@@ -12,8 +12,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings;
 /// <summary>
 /// Function for handling Microsoft Teams meeting start events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="meeting">The details of the meeting.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
@@ -23,8 +23,8 @@ public delegate Task MeetingStartHandler(ITurnContext turnContext, ITurnState tu
 /// <summary>
 /// Function for handling Microsoft Teams meeting end events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="meeting">The details of the meeting.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
@@ -34,8 +34,8 @@ public delegate Task MeetingEndHandler(ITurnContext turnContext, ITurnState turn
 /// <summary>
 /// Function for handling Microsoft Teams meeting participants join or leave events.
 /// </summary>
-/// <param name="turnContext">A strongly-typed context object for this turn.</param>
-/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="turnContext">The context for the current conversation turn.</param>
+/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="meeting">The details of the meeting.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
