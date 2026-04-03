@@ -106,6 +106,11 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         ]
     };
 
+    class CardValue
+    {
+        public int Count { get; set; }
+    }
+
     [MessageRoute]
     public static async Task SendWelcomeCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -115,7 +120,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             Type = ActionTypes.MessageBack,
             Title = "Update Card",
             Text = "update",
-            Value = 0
+            Value = new CardValue { Count = 0 }
         });
 
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
@@ -126,15 +131,16 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     {
         var card = NewCard("I've been updated");
 
-        var count = ProtocolJsonSerializer.ToObject(turnContext.Activity.Value, () => 0) + 1;
-        card.Text = $"Update count - {count}";
+        var cardValue = ProtocolJsonSerializer.ToObject<CardValue>(turnContext.Activity.Value, () => new CardValue { Count = 0 });
+        cardValue.Count++;
+        card.Text = $"Update count - {cardValue.Count}";
 
         card.Buttons.Add(new CardAction
         {
             Type = ActionTypes.MessageBack,
             Title = "Update Card",
             Text = "update",
-            Value = count
+            Value = cardValue
         });
 
         var activity = card.ToMessage();
