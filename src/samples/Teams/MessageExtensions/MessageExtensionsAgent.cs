@@ -21,6 +21,12 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     [QueryRoute("searchQuery")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchQueryAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
     {
+        bool initialRun = query.Parameters?.FirstOrDefault(p => p.Name == "initialRun")?.Value?.ToString() == "true";
+        if (initialRun)
+        {
+            return Task.FromResult(Response.WithResultMessage("Enter search query"));
+        }
+
         string? searchQuery = query.Parameters?.FirstOrDefault(p => p.Name == "searchQuery")?.Value?.ToString() ?? "";
 
         Logger.LogInformation("Search query received: {Query}", searchQuery);
