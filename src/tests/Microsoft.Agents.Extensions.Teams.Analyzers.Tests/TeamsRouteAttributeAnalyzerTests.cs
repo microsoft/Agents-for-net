@@ -508,5 +508,410 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.Empty(diagnostics);
         }
+
+        // ---------------------------------------------------------------------------
+        // TaskModules — FetchRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task TaskModules_FetchRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task TaskModules_FetchRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("Task<Microsoft.Teams.Api.TaskModules.Response>", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task TaskModules_FetchRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task TaskModules_FetchRoute_WrongParameterType_EmitsMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        string badParam,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.TaskModules.Request", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // TaskModules — SubmitRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task TaskModules_SubmitRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task TaskModules_SubmitRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    public Task OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnSubmit", d.GetMessage());
+            Assert.Contains("SubmitRoute", d.GetMessage());
+            Assert.Contains("Task<Microsoft.Teams.Api.TaskModules.Response>", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // TeamsChannels — ChannelCreatedRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task ChannelCreatedRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
+                    public Task OnChannelCreated(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Channel channel,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task ChannelCreatedRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnChannelCreated(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Channel channel,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnChannelCreated", d.GetMessage());
+            Assert.Contains("ChannelCreatedRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task ChannelCreatedRoute_WrongParameterType_EmitsMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
+                    public Task OnChannelCreated(
+                        ITurnContext ctx, ITurnState state,
+                        string badParam,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnChannelCreated", d.GetMessage());
+            Assert.Contains("ChannelCreatedRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.Channel", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // TeamsTeams — TeamArchivedRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task TeamArchivedRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
+                    public Task OnTeamArchived(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Team team,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task TeamArchivedRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnTeamArchived(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Team team,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnTeamArchived", d.GetMessage());
+            Assert.Contains("TeamArchivedRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task TeamArchivedRoute_WrongParameterType_EmitsMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
+                    public Task OnTeamArchived(
+                        ITurnContext ctx, ITurnState state,
+                        string badParam,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnTeamArchived", d.GetMessage());
+            Assert.Contains("TeamArchivedRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.Team", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS004 — mutual exclusivity (commandId + commandIdPattern)
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task QueryRoute_BothCommandIdAndPattern_EmitsMTEAMS004()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("cmd", "cmd*")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.MutualExclusivityDiagnosticId, d.Id);
+            Assert.Contains("OnQuery", d.GetMessage());
+            Assert.Contains("QueryRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task FetchTaskRoute_BothCommandIdAndPattern_EmitsMTEAMS004()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd", "cmd*")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(
+                        ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.MutualExclusivityDiagnosticId, d.Id);
+            Assert.Contains("OnFetchTask", d.GetMessage());
+            Assert.Contains("FetchTaskRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task QueryRoute_OnlyCommandId_NoDiagnostic()
+        {
+            var diagnostics = await GetDiagnosticsAsync(QueryRouteCorrect); // commandId only
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task QueryRoute_OnlyCommandIdPattern_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "cmd*")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
     }
 }

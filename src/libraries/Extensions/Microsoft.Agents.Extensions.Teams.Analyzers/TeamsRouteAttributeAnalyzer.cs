@@ -39,8 +39,18 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        public const string MutualExclusivityDiagnosticId = "MTEAMS004";
+
+        internal static readonly DiagnosticDescriptor MutualExclusivityDescriptor = new(
+            id: MutualExclusivityDiagnosticId,
+            title: "Mutually exclusive attribute arguments",
+            messageFormat: "Method '{0}' decorated with '[{1}]' cannot specify both 'commandId' and 'commandIdPattern' — they are mutually exclusive",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor);
+            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor);
 
         // -----------------------------------------------------------------------------------------
         // Metadata names for shared parameter types
@@ -56,6 +66,28 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private const string Query          = "Microsoft.Teams.Api.MessageExtensions.Query";
         private const string MeetingDetails = "Microsoft.Teams.Api.Meetings.MeetingDetails";
         private const string ParticipantsDetails = "Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantsEventDetails";
+        private const string Channel = "Microsoft.Teams.Api.Channel";
+        private const string Team    = "Microsoft.Teams.Api.Team";
+
+        // -----------------------------------------------------------------------------------------
+        // Mutual exclusivity — attributes where commandId and commandIdPattern are exclusive
+        // -----------------------------------------------------------------------------------------
+
+        private static readonly ImmutableHashSet<string> MutualExclusivityAttributeNames =
+            ImmutableHashSet.Create(
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute");
+
+        private static readonly ImmutableDictionary<string, string> MutualExclusivityDisplayNames =
+            ImmutableDictionary<string, string>.Empty
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",              "QueryRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRouteAttribute",          "FetchTaskRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute", "MessagePreviewEditRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute", "MessagePreviewSendRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",       "SubmitActionRoute");
 
         // -----------------------------------------------------------------------------------------
         // Rule table — one entry per attribute, describes the required method signature.
@@ -181,6 +213,153 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, ParticipantsDetails, CancelToken },
+            },
+            // TaskModules
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRouteAttribute",
+                AttributeDisplayName   = "FetchRoute",
+                ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
+                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, "Microsoft.Teams.Api.TaskModules.Request", CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRouteAttribute",
+                AttributeDisplayName   = "SubmitRoute",
+                ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
+                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, "Microsoft.Teams.Api.TaskModules.Request", CancelToken },
+            },
+            // TeamsChannels — all return plain Task with (ITurnContext, ITurnState, Channel, CancellationToken)
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRouteAttribute",
+                AttributeDisplayName   = "ChannelCreatedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelDeletedRouteAttribute",
+                AttributeDisplayName   = "ChannelDeletedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelMemberAddedRouteAttribute",
+                AttributeDisplayName   = "ChannelMemberAddedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelMemberRemovedRouteAttribute",
+                AttributeDisplayName   = "ChannelMemberRemovedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelRenamedRouteAttribute",
+                AttributeDisplayName   = "ChannelRenamedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelRestoredRouteAttribute",
+                AttributeDisplayName   = "ChannelRestoredRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelSharedRouteAttribute",
+                AttributeDisplayName   = "ChannelSharedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelUnSharedRouteAttribute",
+                AttributeDisplayName   = "ChannelUnSharedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelUpdateRouteAttribute",
+                AttributeDisplayName   = "ChannelUpdateRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },
+            },
+            // TeamsTeams — all return plain Task with (ITurnContext, ITurnState, Team, CancellationToken)
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRouteAttribute",
+                AttributeDisplayName   = "TeamArchivedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamUnarchivedRouteAttribute",
+                AttributeDisplayName   = "TeamUnarchivedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamDeletedRouteAttribute",
+                AttributeDisplayName   = "TeamDeletedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamHardDeletedRouteAttribute",
+                AttributeDisplayName   = "TeamHardDeletedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamRenamedRouteAttribute",
+                AttributeDisplayName   = "TeamRenamedRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamRestoredRouteAttribute",
+                AttributeDisplayName   = "TeamRestoredRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamUpdateRouteAttribute",
+                AttributeDisplayName   = "TeamUpdateRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Team, CancelToken },
             }
         );
 
@@ -205,18 +384,27 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                         attrToRule[sym] = rule;
                 }
 
-                if (attrToRule.Count == 0)
+                var attrToDisplayName = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
+                foreach (var name in MutualExclusivityAttributeNames)
+                {
+                    var sym = compilationCtx.Compilation.GetTypeByMetadataName(name);
+                    if (sym != null)
+                        attrToDisplayName[sym] = MutualExclusivityDisplayNames[name];
+                }
+
+                if (attrToRule.Count == 0 && attrToDisplayName.Count == 0)
                     return;
 
                 compilationCtx.RegisterSymbolAction(
-                    ctx => AnalyzeMethod(ctx, attrToRule),
+                    ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName),
                     SymbolKind.Method);
             });
         }
 
         private static void AnalyzeMethod(
             SymbolAnalysisContext ctx,
-            Dictionary<INamedTypeSymbol, SignatureRule> attrToRule)
+            Dictionary<INamedTypeSymbol, SignatureRule> attrToRule,
+            Dictionary<INamedTypeSymbol, string> attrToDisplayName)
         {
             var method = (IMethodSymbol)ctx.Symbol;
 
@@ -266,6 +454,28 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                             location,
                             i + 1, method.Name, rule.AttributeDisplayName, rule.ParameterTypes[i]!));
                     }
+                }
+            }
+
+            // MTEAMS004 — mutual exclusivity check for commandId / commandIdPattern
+            var meLocation = method.Locations.Length > 0 ? method.Locations[0] : Location.None;
+            foreach (var attribute in method.GetAttributes())
+            {
+                if (attribute.AttributeClass is null)
+                    continue;
+                if (!attrToDisplayName.TryGetValue(attribute.AttributeClass, out var displayName))
+                    continue;
+                var args = attribute.ConstructorArguments;
+                if (args.Length < 2)
+                    continue;
+                var commandId        = args[0].Value as string;
+                var commandIdPattern = args[1].Value as string;
+                if (!string.IsNullOrWhiteSpace(commandId) && !string.IsNullOrWhiteSpace(commandIdPattern))
+                {
+                    ctx.ReportDiagnostic(Diagnostic.Create(
+                        MutualExclusivityDescriptor,
+                        meLocation,
+                        method.Name, displayName));
                 }
             }
         }
