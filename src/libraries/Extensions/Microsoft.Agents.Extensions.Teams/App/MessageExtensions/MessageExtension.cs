@@ -22,16 +22,6 @@ public class MessageExtension
         _channelId = channelId;
     }
 
-    [Obsolete("OnSubmitAction(string, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(string, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler)
-    {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        return OnSubmitAction<object>(commandId, (turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
-    }
-
     /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
@@ -55,16 +45,6 @@ public class MessageExtension
     {
         _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
-    }
-
-    [Obsolete("OnSubmitAction(Regex, SubmitActionHandlerAsync) will be deprecated in future versions. Please use OnSubmitAction<TData>(Regex, SubmitActionHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler)
-    {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        return OnSubmitAction<object>(commandIdPattern, (turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
     }
 
     /// <summary>
@@ -241,15 +221,6 @@ public class MessageExtension
         return this;
     }
 
-    [Obsolete("OnSelectItem(SelectItemHandlerAsync) will be deprecated in future versions. Please use OnSelectItem<TData>(SelectItemHandlerAsync<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnSelectItem(SelectItemHandler handler)
-    {
-        return OnSelectItem<object>((turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
-    }
-
     /// <summary>
     /// Registers a handler that implements the logic to handle the tap actions for items returned
     /// by a Search based message extension.
@@ -264,7 +235,7 @@ public class MessageExtension
     /// </code>
     /// Alternatively, the <see cref="SelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
     /// </remarks>
-    /// <typeparam name="TData">The type of the data object expected from the SelectItem event payload.</typeparam>
+    /// <typeparam name="TData">The type of the <c>data</c> argument on the handler.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler)
@@ -354,16 +325,6 @@ public class MessageExtension
         return this;
     }
 
-    [Obsolete("OnCardButtonClicked(CardButtonClickedHandler) will be deprecated in future versions. Please use OnCardButtonClicked<TData>(CardButtonClickedHandler<TData>) instead for strongly-typed data handling.")]
-    public MessageExtension OnCardButtonClicked(CardButtonClickedHandler handler)
-    {
-        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-        return OnCardButtonClicked<object>((turnContext, turnState, data, cancellationToken) =>
-        {
-            return handler(turnContext, turnState, data, cancellationToken);
-        });
-    }
-
     /// <summary>
     /// Registers a handler that implements the logic when a user has clicked on a button in a Message Extension card.
     /// </summary>
@@ -377,7 +338,7 @@ public class MessageExtension
     /// </code>
     /// Alternatively, the <see cref="CardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="CardButtonClickedHandler"/> method for the same purpose.
     /// </remarks>
-    /// <typeparam name="TData">The type of the value payload expected from the card button click event.</typeparam>
+    /// <typeparam name="TData">The type of the <c>cardData</c> argument on the handler.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
     /// deserialized value payload of type TData, and a cancellation token. Cannot be null.</param>
     /// <returns>The current AgentApplication instance for method chaining.</returns>

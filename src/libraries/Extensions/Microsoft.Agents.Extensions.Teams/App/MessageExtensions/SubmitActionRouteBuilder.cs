@@ -21,7 +21,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     /// <remarks>Use this method to specify custom logic for handling submit actions in Teams message
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
-    /// <typeparam name="TData">The type of data extracted from the submit action payload and passed to the handler.</typeparam>
+    /// <typeparam name="TData">The type of the <c>data</c> argument extracted from the submit action payload and passed to the handler.</typeparam>
     /// <param name="handler">An asynchronous delegate that processes the submit action, receiving the context, timestamp, deserialized data
     /// of type TData, and a cancellation token.</param>
     /// <returns>The current instance of SubmitActionRouteBuilder, enabling method chaining.</returns>

@@ -38,11 +38,11 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
         var handler = RouteAttributeHelper.CreateHandlerDelegate<QueryHandler>(app, method);
         var builder = QueryRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        if (!string.IsNullOrEmpty(commandId))
+        if (!string.IsNullOrWhiteSpace(commandId))
         {
             builder.WithCommand(commandId);
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(commandIdPattern))
         {
             builder.WithCommand(new Regex(commandIdPattern));
         }
@@ -153,11 +153,11 @@ public class FetchTaskRouteAttribute(string commandId = null, string commandIdPa
         var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchTaskHandler>(app, method);
         var builder = FetchTaskRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        if (!string.IsNullOrEmpty(commandId))
+        if (!string.IsNullOrWhiteSpace(commandId))
         {
             builder.WithCommand(commandId);
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(commandIdPattern))
         {
             builder.WithCommand(new Regex(commandIdPattern));
         }
@@ -196,11 +196,11 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
         var handler = RouteAttributeHelper.CreateHandlerDelegate<AgentMessagePreviewEditHandler>(app, method);
         var builder = MessagePreviewEditRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        if (!string.IsNullOrEmpty(commandId))
+        if (!string.IsNullOrWhiteSpace(commandId))
         {
             builder.WithCommand(commandId);
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(commandIdPattern))
         {
             builder.WithCommand(new Regex(commandIdPattern));
         }
@@ -239,11 +239,11 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
         var handler = RouteAttributeHelper.CreateHandlerDelegate<AgentMessagePreviewSendHandler>(app, method);
         var builder = MessagePreviewSendRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        if (!string.IsNullOrEmpty(commandId))
+        if (!string.IsNullOrWhiteSpace(commandId))
         {
             builder.WithCommand(commandId);
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(commandIdPattern))
         {
             builder.WithCommand(new Regex(commandIdPattern));
         }
@@ -314,20 +314,21 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var genericParam = method.GetParameters()[2].ParameterType;
-        var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
-        var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
         var builder = SubmitActionRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        if (!string.IsNullOrEmpty(commandId))
+        if (!string.IsNullOrWhiteSpace(commandId))
         {
             builder.WithCommand(commandId);
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(commandIdPattern))
         {
             builder.WithCommand(new Regex(commandIdPattern));
         }
+
+        // Infer the generic type parameter for SubmitActionHandler<T> from the method's parameters
+        var genericParam = method.GetParameters()[2].ParameterType;
+        var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
 
         var withHandler = typeof(SubmitActionRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
         withHandler.Invoke(builder, [handler]);
