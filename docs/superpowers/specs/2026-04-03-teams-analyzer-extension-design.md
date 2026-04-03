@@ -71,7 +71,7 @@ Reported using `method.Locations[0]` (same as MTEAMS001–003) — the method's 
 
 `SupportedDiagnostics` updated to include `MutualExclusivityDescriptor`.
 
-`AnalyzerReleases.Unshipped.md` gets this row appended to the existing table:
+`AnalyzerReleases.Unshipped.md` gets this row appended, matching the format of the existing MTEAMS001–003 rows (four pipe-separated columns, no leading/trailing spaces in cells):
 
 ```
 MTEAMS004 | Usage | Error | TeamsRouteAttributeAnalyzer
@@ -171,26 +171,76 @@ Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteA
 Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute
 ```
 
-In `Initialize`, build a second `Dictionary<INamedTypeSymbol, string>` called `attrToDisplayName` (symbol → `AttributeDisplayName` string) for the five attributes, resolved from `MutualExclusivityAttributeNames` against the compilation. The early-exit guard changes from `if (attrToRule.Count == 0) return` to `if (attrToRule.Count == 0 && attrToDisplayName.Count == 0) return`.
+In `Initialize`, declare both `attrToRule` and `attrToDisplayName` as local variables before the lambda, so the lambda captures both in its closure:
 
-Update `AnalyzeMethod` to accept both dictionaries: change the method signature to `AnalyzeMethod(SymbolAnalysisContext ctx, Dictionary<INamedTypeSymbol, SignatureRule> attrToRule, Dictionary<INamedTypeSymbol, string> attrToDisplayName)` and update the `RegisterSymbolAction` lambda accordingly: `ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName)`.
+```csharp
+var attrToRule = new Dictionary<INamedTypeSymbol, SignatureRule>(SymbolEqualityComparer.Default);
+// ... populate attrToRule from Rules ...
 
-In `AnalyzeMethod`, after the existing signature check loop, add a second loop over `method.GetAttributes()`:
+var attrToDisplayName = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
+foreach (var name in MutualExclusivityAttributeNames)
+{
+    var sym = compilationCtx.Compilation.GetTypeByMetadataName(name);
+    if (sym != null)
+        attrToDisplayName[sym] = MutualExclusivityDisplayNames[name];
+}
 
+if (attrToRule.Count == 0 && attrToDisplayName.Count == 0)
+    return;
+
+compilationCtx.RegisterSymbolAction(
+    ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName),
+    SymbolKind.Method);
 ```
-for each attribute on the method:
-  if attrToDisplayName.TryGetValue(attribute.AttributeClass, out displayName):
-    args = attribute.ConstructorArguments
-    if args.Length >= 2:
-      commandId        = args[0].Value as string
-      commandIdPattern = args[1].Value as string
-      if !string.IsNullOrWhiteSpace(commandId) && !string.IsNullOrWhiteSpace(commandIdPattern):
-        ReportDiagnostic(MutualExclusivityDescriptor, location, method.Name, displayName)
-```
 
-Default `null` values appear in `ConstructorArguments` as `TypedConstant` with `Value == null`, so `as string` returns `null` and the `IsNullOrWhiteSpace` guard safely passes over them.
+The existing early-exit guard `if (attrToRule.Count == 0) return` changes to `if (attrToRule.Count == 0 && attrToDisplayName.Count == 0) return`.
+
+Add a companion `ImmutableDictionary<string, string> MutualExclusivityDisplayNames` that maps each metadata name to its display name:
+
+| Metadata name | Display name |
+|---|---|
+| `...QueryRouteAttribute` | `QueryRoute` |
+| `...FetchTaskRouteAttribute` | `FetchTaskRoute` |
+| `...MessagePreviewEditRouteAttribute` | `MessagePreviewEditRoute` |
+| `...MessagePreviewSendRouteAttribute` | `MessagePreviewSendRoute` |
+| `...SubmitActionRouteAttribute` | `SubmitActionRoute` |
+
+These match the `AttributeDisplayName` values already used in the existing `Rules` entries for those same attributes.
+
+Update `AnalyzeMethod` signature to: `AnalyzeMethod(SymbolAnalysisContext ctx, Dictionary<INamedTypeSymbol, SignatureRule> attrToRule, Dictionary<INamedTypeSymbol, string> attrToDisplayName)`.
+
+In `AnalyzeMethod`, after the existing signature check loop, add a second loop:
+
+```csharp
+var location = method.Locations.Length > 0 ? method.Locations[0] : Location.None;
+
+foreach (var attribute in method.GetAttributes())
+{
+    if (attribute.AttributeClass is null) continue;  // null guard, same as signature loop
+    if (!attrToDisplayName.TryGetValue(attribute.AttributeClass, out var displayName)) continue;
+
+    var args = attribute.ConstructorArguments;
+    // Roslyn expands all optional params to defaults, so args.Length >= 5 for these attributes.
+    // The Length >= 2 guard is defensive only (handles hypothetical compilation edge cases).
+    if (args.Length < 2) continue;
+
+    var commandId        = args[0].Value as string;
+    var commandIdPattern = args[1].Value as string;
+
+    // Use IsNullOrWhiteSpace to match the runtime's own check in the attribute AddRoute methods,
+    // which use (!string.IsNullOrWhiteSpace(commandId)) to decide whether a value was "provided".
+    // A whitespace-only string is treated as absent by both the runtime and this diagnostic.
+    if (!string.IsNullOrWhiteSpace(commandId) && !string.IsNullOrWhiteSpace(commandIdPattern))
+    {
+        ctx.ReportDiagnostic(Diagnostic.Create(
+            MutualExclusivityDescriptor, location, method.Name, displayName));
+    }
+}
+```
 
 MTEAMS004 is reported independently of MTEAMS001/002/003. If a method has both a wrong signature and a mutual-exclusivity violation, both diagnostics fire. There is no suppression relationship between them.
+
+Note: the 18 new `SignatureRule` entries are in `TaskModules`, `TeamsChannels`, and `TeamsTeams` namespaces, which are entirely distinct from the 14 existing entries in `MessageExtensions` and `Meetings` namespaces. There is no overlap.
 
 ---
 
@@ -227,7 +277,7 @@ All tests follow the inline-source-string pattern. Correct-signature tests asser
 All nine `Channel*RouteAttribute` attributes resolve to the same `SignatureRule` entry (identical `ParameterTypes` and `ReturnTypeGenericArgument`). Testing one representative is sufficient; the other eight are covered by the rule-table entries themselves. Test the rule with `ChannelCreatedRouteAttribute`.
 
 - `ChannelCreatedRoute_CorrectSignature_NoDiagnostic` — `Task` with `(ITurnContext, ITurnState, Microsoft.Teams.Api.Channel, CancellationToken)`
-- `ChannelCreatedRoute_WrongReturnType_EmitsMTEAMS001` — return `Task<int>`; assert MTEAMS001, message contains `"ChannelCreatedRoute"`; assert message contains `"Task"` and does NOT contain `"Task<"` (the expected return type is plain `Task`, not `Task<T>`)
+- `ChannelCreatedRoute_WrongReturnType_EmitsMTEAMS001` — return `Task<int>`; assert MTEAMS001, message contains `"ChannelCreatedRoute"` and `"Task"`. Note: the MTEAMS001 message format is `"Method '{0}' ... must return '{2}'"` where `{2}` is the **expected** type `"Task"` — the actual wrong type `Task<int>` does not appear in the message, so `Assert.Contains("Task", message)` unambiguously matches the expected-type portion only.
 - `ChannelCreatedRoute_WrongParameterType_EmitsMTEAMS003` — replace `Channel` with `string`; assert MTEAMS003, message contains `"Microsoft.Teams.Api.Channel"`
 
 ### TeamArchivedRoute — representative for all 7 team variants (3 tests)
@@ -235,7 +285,7 @@ All nine `Channel*RouteAttribute` attributes resolve to the same `SignatureRule`
 Same reasoning as channel variants.
 
 - `TeamArchivedRoute_CorrectSignature_NoDiagnostic` — `Task` with `(ITurnContext, ITurnState, Microsoft.Teams.Api.Team, CancellationToken)`
-- `TeamArchivedRoute_WrongReturnType_EmitsMTEAMS001` — return `Task<int>`; assert MTEAMS001, message contains `"TeamArchivedRoute"`; assert message contains `"Task"` and does NOT contain `"Task<"` (the expected return type is plain `Task`, not `Task<T>`)
+- `TeamArchivedRoute_WrongReturnType_EmitsMTEAMS001` — return `Task<int>`; assert MTEAMS001, message contains `"TeamArchivedRoute"` and `"Task"`. Same rationale as ChannelCreatedRoute: the message contains only the expected type `"Task"`, not the actual wrong type.
 - `TeamArchivedRoute_WrongParameterType_EmitsMTEAMS003` — replace `Team` with `string`; assert MTEAMS003, message contains `"Microsoft.Teams.Api.Team"`
 
 ### Mutual exclusivity (4 tests)
