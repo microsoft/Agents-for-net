@@ -5,11 +5,9 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Teams.Cards;
-using System.Text.Json;
 
 namespace MessageExtensions;
 
