@@ -44,6 +44,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(Microsoft_Extentions_PkgVer)" />
 	<PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
+	<PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(Microsoft_Extentions_PkgVer)" />
 	  
 	<PackageVersion Include="System.Text.Json" Version="10.0.2" />
     <PackageVersion Include="System.Memory.Data" Version="10.0.2" />

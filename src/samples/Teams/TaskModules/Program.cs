@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.FileProviders;
+using System.Reflection;
 using TaskModules;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -42,9 +44,7 @@ app.MapAgentRootEndpoint();
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/messages").
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-// Map GET "/tabs/dialog-form" to return the HTML for the webpage dialog,
-// which is defined in TaskModulesAgent.GetDialogFormHtml().
-app.MapGet("/tabs/dialog-form", () => Results.Content(TaskModulesAgent.GetDialogFormHtml(), "text/html"));
+app.AddTab("dialog-form", new ManifestEmbeddedFileProvider(Assembly.GetCallingAssembly(), "wwwroot/dialog-form"));
 
 if (app.Environment.IsDevelopment())
 {
