@@ -151,10 +151,16 @@ namespace Microsoft.Agents.Builder.App
 
             if (_invokeName == null && _invokeRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(InvokeRouteBuilder), "Name or Selector");
+                // match on any invoke activity if no name or name pattern specified and no existing selector
+                _route.Selector = (context, ct) => Task.FromResult
+                    (
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Invoke)
+                    );
+                return;
             }
 
-            // Just match on Activity.Name value
+            // Activity.Name
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)

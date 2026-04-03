@@ -158,7 +158,13 @@ namespace Microsoft.Agents.Builder.App
 
             if (_eventName == null && _eventRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(EventRouteBuilder), "Name or Selector");
+                // If no name or regex specified, just match on any event
+                _route.Selector = (context, ct) => Task.FromResult
+                    (
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Event)
+                    );
+                return
             }
 
             // Just match on Activity.Name value
