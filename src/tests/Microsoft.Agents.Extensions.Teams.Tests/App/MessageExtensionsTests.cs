@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler<object> handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 MessageExtensionActionData actionData = Cast<MessageExtensionActionData>(data);
                 Assert.Equal("test-title", actionData.Title);
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitActionHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            SubmitActionHandler<object> handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 MessageExtensionActionData actionData = Cast<MessageExtensionActionData>(data);
                 Assert.Equal("test-title", actionData.Title);
@@ -958,7 +958,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SelectItemHandler handler = (turnContext, turnState, item, cancellationToken) =>
+            SelectItemHandler<object> handler = (turnContext, turnState, item, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1067,7 +1067,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SelectItemHandler handler = (turnContext, turnState, item, cancellationToken) =>
+            SelectItemHandler<object> handler = (turnContext, turnState, item, cancellationToken) =>
             {
                 return Task.FromResult(messagingExtensionResultMock.Object);
             };
@@ -1574,7 +1574,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            CardButtonClickedHandler handler = (turnContext, turnState, cardData, cancellationToken) =>
+            CardButtonClickedHandler<object> handler = (turnContext, turnState, cardData, cancellationToken) =>
             {
                 return Task.CompletedTask;
             };
@@ -1622,7 +1622,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            CardButtonClickedHandler handler = (turnContext, turnState, cardData, cancellationToken) =>
+            CardButtonClickedHandler<object> handler = (turnContext, turnState, cardData, cancellationToken) =>
             {
                 return Task.CompletedTask;
             };
