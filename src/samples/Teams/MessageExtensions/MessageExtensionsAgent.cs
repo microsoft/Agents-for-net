@@ -65,12 +65,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             attachments.Add(attachment);
         }
 
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = attachments
-        });
+        return Task.FromResult(Response.WithResultAttachments(attachments));
     }
 
     [SubmitActionRoute("createCard")]
@@ -109,12 +104,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
-        });
+        return Task.FromResult(Response.WithResultAttachment(attachment));
     }
 
     [SubmitActionRoute("getMessageDetails")]
@@ -151,12 +141,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
-        });
+        return Task.FromResult(Response.WithResultAttachment(attachment));
     }
 
     [QueryLinkRoute]
@@ -165,7 +150,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         Logger.LogInformation("Link query received: {Url}", url);
         if (string.IsNullOrEmpty(url))
         {
-            return ResponseTask.WithResultMessage("No URL provided");
+            return Task.FromResult(Response.WithResultMessage("No URL provided"));
         }
 
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
@@ -204,12 +189,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         };
 
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
-        });
+        return Task.FromResult(Response.WithResultAttachments([attachment]));
     }
 
     [SelectItemRoute]
@@ -245,35 +225,14 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-            AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-            Attachments = [attachment]
-        });
+        return Task.FromResult(Response.WithResultAttachments([attachment]));
     }
 
     [QueryUrlSettingRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingsUrlAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
-
-        return ResponseTask.WithResult(new Microsoft.Teams.Api.MessageExtensions.Result
-        {
-            Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
-            Text = "Settings configuration would be handled here",
-            SuggestedActions = new Microsoft.Teams.Api.MessageExtensions.SuggestedActions
-            {
-                Actions =
-                    [
-                        new Microsoft.Teams.Api.Cards.Action(Microsoft.Teams.Api.Cards.ActionType.OpenUrl)
-                        {
-                            Title = "Settings",
-                            Value = "https://bot-devtunnel-url/settings}}",
-                        },
-                    ],
-            },
-        });
+        return Task.FromResult(Response.WithResultConfig("https://bot-devtunnel-url/settings"));
     }
 
     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -291,16 +250,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         ]);
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse
-        {
-            Task = new Microsoft.Teams.Api.TaskModules.ContinueTask(new Microsoft.Teams.Api.TaskModules.TaskInfo
-            {
-                Title = "Fetch Task Dialog",
-                Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
-                Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
-                Card = new Microsoft.Teams.Api.Attachment(card)
-            })
-        });
+        return Task.FromResult(Response.WithTaskCard(
+            new Microsoft.Teams.Api.Attachment(card),
+            "Fetch Task Dialog",
+            Microsoft.Teams.Api.TaskModules.Size.Small,
+            Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
     [ConfigureSettingsRoute]
