@@ -100,13 +100,33 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 ### Extensions
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
-- Microsoft Teams-specific functionality
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, read receipts, config pages
+- Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
+- Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
+- Feature areas exposed as properties on `TeamsAgentExtension`:
+  - `Teams.MessageExtensions` — search queries, link unfurling, action commands, compose previews, card button clicks, settings
+  - `Teams.TaskModules` — modal dialogs (fetch + submit), supports string or Regex verb matching
+  - `Teams.Meetings` — start/end, participants join/leave; `TeamsInfo.GetMeetingInfoAsync()` / `GetMeetingParticipantAsync()`
+  - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `Teams.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+- `TeamsInfo` static helper — `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetMemberAsync()`
+- `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
+- `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.
+- All route builders accept `autoSignInHandlers` parameter for OAuth/SSO flows
+- Legacy `TeamsActivityHandler` in `Compat/` namespace for migration from Bot Framework SDK
 
-**Microsoft.Agents.Extensions.Teams.AI** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams.AI/`)
-- Teams AI capabilities integration
-
-**Microsoft.Agents.Extensions.SharePoint** (`src/libraries/Extensions/Microsoft.Agents.Extensions.SharePoint/`)
-- SharePoint integration
+```csharp
+// Minimal Teams agent setup
+[TeamsExtension]
+public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [QueryRoute("searchCmd")]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+        ITurnContext ctx, ITurnState state,
+        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
+        => ResponseTask.WithResult(BuildResults(query));
+}
+```
 
 ### Storage
 
@@ -190,6 +210,12 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 - `CopilotStudioClient`: Client examples for Copilot Studio integration
 - `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
 - `OTelAgent`: OpenTelemetry instrumentation example
+
+**Teams Samples** (`src/samples/Teams/`):
+- `TeamsAgent`: Teams-specific agent with conversation update handling
+- `ConversationAgent`: Proactive messaging and conversation management in Teams
+- `MessageExtensions`: Search and action-based message extension examples
+- `Compat/CompatConversationBot`, `CompatMessageExtensions`, `CompatTaskModule`: Legacy Bot Framework SDK migration examples
 
 ## Important Notes
 
