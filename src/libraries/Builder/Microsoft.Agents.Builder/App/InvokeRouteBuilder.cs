@@ -16,9 +16,9 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Invoke activities in an AgentApplication.
     /// </summary>
     /// <remarks>Use this builder to define routing logic for activities of type 'invoke', such as those
-    /// triggered by adaptive cards or other client-initiated operations. The builder allows specifying matching
-    /// criteria based on the activity's name, enabling precise control over which invoke activities are handled by the
-    /// route.</remarks>
+    /// triggered by adaptive cards or other client-initiated operations. The builder allows optionally specifying
+    /// matching criteria based on the activity's name. If neither <see cref="WithName(string)"/> nor
+    /// <see cref="WithName(Regex)"/> is called, the route will match any invoke activity regardless of name.</remarks>
     public class InvokeRouteBuilder : RouteBuilderBase<InvokeRouteBuilder>
     {
         private string _invokeName;

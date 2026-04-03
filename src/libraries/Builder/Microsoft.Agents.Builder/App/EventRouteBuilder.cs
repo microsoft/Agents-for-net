@@ -17,17 +17,18 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Use <see cref="EventRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithName(string)"/> or <see cref="WithName(Regex)"/> 
-    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// activities. This builder allows matching event activities by name or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method
+    /// and optionally configured using <see cref="WithName(string)"/>, <see cref="WithName(Regex)"/>,
+    /// or <see cref="WithSelector(RouteSelector)"/>. If neither <see cref="WithName(string)"/> nor
+    /// <see cref="WithName(Regex)"/> is called, the route will match any event activity regardless of name.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = EventRouteBuilder.Create()
     ///    .WithName("myEvent")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Event received!", cancellationToken: ct)))
     ///    .Build();
-    ///    
+    ///
     /// app.AddRoute(route);
     /// </code>
     /// </remarks>
@@ -164,7 +165,7 @@ namespace Microsoft.Agents.Builder.App
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Event)
                     );
-                return
+                return;
             }
 
             // Just match on Activity.Name value
