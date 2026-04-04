@@ -97,7 +97,7 @@ public class SubmitRouteAttribute(string verb, string verbProperty = null, bool 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithVerbProperty(verbProperty).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithTaskDataFilter(verbProperty).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
         if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.TaskModules.Request))
         {

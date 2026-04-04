@@ -82,7 +82,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
     /// <param name="verbPropertyName">A filter string that specifies the verb data to include. If the value is null or consists only of white space, a
     /// default filter is applied.</param>
     /// <returns>The current instance of the builder, enabling method chaining.</returns>
-    public TBuilder WithVerbProperty(string verbPropertyName)
+    public TBuilder WithTaskDataFilter(string verbPropertyName)
     {
         _verbPropertyName = string.IsNullOrWhiteSpace(verbPropertyName) ? DEFAULT_TASK_DATA_VERBPROPERTY : verbPropertyName?.Trim();
         return (TBuilder)this;

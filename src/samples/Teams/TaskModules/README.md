@@ -52,7 +52,7 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
 1. For the **Webpage Dialog**, update the URL in `TaskModulesAgent.OnWebpageDialogFetchAsync`:
 
    ```csharp
-   var url = "https://<your-tunnel-id>.devtunnels.ms/tabs/dialog-form";
+   var url = "https://<your-tunnel-id>.devtunnels.ms/dialog-form";
    ```
 
 1. Run the sample:
@@ -73,14 +73,18 @@ Form submissions inside the dialogs trigger `task/submit` invoke activities rout
 
 The multi-step form demonstrates the `ContinueTask` pattern: the step-1 submit handler returns a new `Response.WithCard(step2Card)` instead of closing the dialog, keeping it open with fresh content for step 2.
 
-## Project Structure
+## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
 
-```
-TaskModules/
-├── Program.cs              # ASP.NET Core host setup
-├── AspNetExtensions.cs     # Local JWT token validation extension
-├── TaskModulesAgent.cs     # Agent logic: all route handlers + HTML form content
-├── appsettings.json        # Configuration (auth, connections)
-└── Properties/
-    └── launchSettings.json # Dev launch profile
-```
+## Further reading
+To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

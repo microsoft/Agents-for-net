@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 
 /// <summary>
-/// Options for TaskModules class.
+/// Options for TaskModules.
 /// </summary>
 public class TaskModulesOptions
 {
@@ -15,6 +15,16 @@ public class TaskModulesOptions
     ///  When a task module is triggered, the field name specified here will be used to determine
     /// the name of the verb for the handler to route the request to.
     /// Defaults to a value of "verb".
+    /// <code>
+    /// {
+    ///     "type": "AdaptiveCard",
+    ///     "version": "1.4",
+    ///     "body": [
+    ///         { "type": "TextBlock", "text": "Email", "size": "Large", "weight": "Bolder" },
+    ///     ],
+    ///     "actions": [{ "type": "Action.Submit", "title": "Submit", "data": {"verb": "submitEmail"} }]
+    ///}
+    /// </code>
     /// </remarks>
     public string? TaskDataFilter { get; set; }
 }
