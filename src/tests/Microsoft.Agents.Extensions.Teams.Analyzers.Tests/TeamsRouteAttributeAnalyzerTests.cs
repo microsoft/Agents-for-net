@@ -521,7 +521,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
@@ -544,7 +546,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
@@ -571,7 +575,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
@@ -598,9 +604,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
                 public record MyFetchData(string Name);
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
@@ -627,7 +635,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
@@ -651,9 +661,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
                 public record MySubmitData(string Name, string Email);
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
@@ -676,7 +688,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using System.Threading.Tasks;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams.App;
 
+                [TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
@@ -1255,6 +1269,135 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId);
             Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId);
+        }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS013 — FetchRoute/SubmitRoute without [TeamsExtension]
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task FetchRoute_WithTeamsExtension_NoMTEAMS013()
+        {
+            // Happy path: [TeamsExtension] present — no MTEAMS013
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Builder.App;
+                using Microsoft.Agents.Extensions.Teams.App;
+
+                [TeamsExtension]
+                public partial class MyAgent : AgentApplication
+                {
+                    public MyAgent(AgentApplicationOptions options) : base(options) { }
+
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            // Guard: if source has CS compile errors, DoesNotContain would be vacuously true
+            Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error
+                                                    && d.Id.StartsWith("CS"));
+            Assert.DoesNotContain(diagnostics,
+                d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
+        }
+
+        [Fact]
+        public async Task SubmitRoute_WithTeamsExtension_NoMTEAMS013()
+        {
+            // Happy path: [TeamsExtension] present — no MTEAMS013
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Builder.App;
+                using Microsoft.Agents.Extensions.Teams.App;
+
+                [TeamsExtension]
+                public partial class MyAgent : AgentApplication
+                {
+                    public MyAgent(AgentApplicationOptions options) : base(options) { }
+
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error
+                                                    && d.Id.StartsWith("CS"));
+            Assert.DoesNotContain(diagnostics,
+                d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
+        }
+
+        [Fact]
+        public async Task FetchRoute_WithoutTeamsExtension_EmitsMTEAMS013()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Builder.App;
+
+                public class MyAgent : AgentApplication
+                {
+                    public MyAgent(AgentApplicationOptions options) : base(options) { }
+
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics,
+                d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("MyAgent", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task SubmitRoute_WithoutTeamsExtension_EmitsMTEAMS013()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Builder.App;
+
+                public class MyAgent : AgentApplication
+                {
+                    public MyAgent(AgentApplicationOptions options) : base(options) { }
+
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.TaskModules.Request data,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics,
+                d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
+            Assert.Contains("OnSubmit", d.GetMessage());
+            Assert.Contains("SubmitRoute", d.GetMessage());
+            Assert.Contains("MyAgent", d.GetMessage());
         }
     }
 }
