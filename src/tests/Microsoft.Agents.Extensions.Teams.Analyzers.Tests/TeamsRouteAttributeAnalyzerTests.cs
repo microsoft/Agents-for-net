@@ -1031,5 +1031,78 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.DuplicateCommandIdDiagnosticId);
         }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS010 — invalid regex in commandIdPattern
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task QueryRoute_InvalidCommandIdPattern_EmitsMTEAMS010()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "[(invalid")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var mteams010 = diagnostics.Where(d => d.Id == TeamsRouteAttributeAnalyzer.InvalidRegexDiagnosticId).ToList();
+            Assert.Single(mteams010);
+            Assert.Contains("OnQuery", mteams010[0].GetMessage());
+            Assert.Contains("QueryRoute", mteams010[0].GetMessage());
+            Assert.Contains("[(invalid", mteams010[0].GetMessage());
+        }
+
+        [Fact]
+        public async Task QueryRoute_ValidCommandIdPattern_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "search.*")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.InvalidRegexDiagnosticId);
+        }
+
+        [Fact]
+        public async Task SubmitActionRoute_InvalidCommandIdPattern_EmitsMTEAMS010()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute(null, "[bad")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmit(
+                        ITurnContext ctx, ITurnState state, string data, CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.InvalidRegexDiagnosticId);
+        }
     }
 }

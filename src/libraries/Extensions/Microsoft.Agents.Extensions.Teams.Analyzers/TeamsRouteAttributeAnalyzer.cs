@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Extensions.Teams.Analyzers
 {
@@ -61,8 +62,18 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        public const string InvalidRegexDiagnosticId = "MTEAMS010";
+
+        internal static readonly DiagnosticDescriptor InvalidRegexDescriptor = new(
+            id: InvalidRegexDiagnosticId,
+            title: "Invalid regex in commandIdPattern for Teams route attribute",
+            messageFormat: "Method '{0}' decorated with '[{1}]' has an invalid commandIdPattern '{2}': {3}",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor);
+            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor, InvalidRegexDescriptor);
 
         // -----------------------------------------------------------------------------------------
         // Metadata names for shared parameter types
@@ -473,19 +484,39 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 }
             }
 
-            // MTEAMS004 — mutual exclusivity check for commandId / commandIdPattern
+            // MTEAMS004 / MTEAMS010 / MTEAMS011 checks
             var meLocation = method.Locations.Length > 0 ? method.Locations[0] : Location.None;
             foreach (var attribute in method.GetAttributes())
             {
-                if (attribute.AttributeClass is null)
-                    continue;
-                if (!attrToDisplayName.TryGetValue(attribute.AttributeClass, out var displayName))
-                    continue;
+                if (attribute.AttributeClass is null) continue;
+                if (!attrToDisplayName.TryGetValue(attribute.AttributeClass, out var displayName)) continue;
+
                 var args = attribute.ConstructorArguments;
-                if (args.Length < 2)
-                    continue;
-                var commandId        = args[0].Value as string;
+
+                // ── commandId (args[0]) ──────────────────────────────────────
+                if (args.Length < 1) continue;
+                var commandId = args[0].Value as string;
+
+                // [MTEAMS011 will be inserted here in Task 3]
+
+                // ── commandIdPattern (args[1]) — only present if explicitly written ──
+                if (args.Length < 2) continue;
                 var commandIdPattern = args[1].Value as string;
+
+                // MTEAMS010 — invalid regex in commandIdPattern
+                if (!string.IsNullOrWhiteSpace(commandIdPattern))
+                {
+                    try { _ = new Regex(commandIdPattern); }
+                    catch (ArgumentException ex)
+                    {
+                        ctx.ReportDiagnostic(Diagnostic.Create(
+                            InvalidRegexDescriptor,
+                            meLocation,
+                            method.Name, displayName, commandIdPattern, ex.Message));
+                    }
+                }
+
+                // MTEAMS004 — mutual exclusivity of commandId + commandIdPattern
                 if (!string.IsNullOrWhiteSpace(commandId) && !string.IsNullOrWhiteSpace(commandIdPattern))
                 {
                     ctx.ReportDiagnostic(Diagnostic.Create(
