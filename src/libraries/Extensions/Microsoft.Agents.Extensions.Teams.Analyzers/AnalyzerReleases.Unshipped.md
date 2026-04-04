@@ -9,3 +9,4 @@ MTEAMS001 | Usage | Error | TeamsRouteAttributeAnalyzer
 MTEAMS002 | Usage | Error | TeamsRouteAttributeAnalyzer
 MTEAMS003 | Usage | Error | TeamsRouteAttributeAnalyzer
 MTEAMS004 | Usage | Error | TeamsRouteAttributeAnalyzer
+MTEAMS009 | Usage | Warning | TeamsRouteAttributeAnalyzer

@@ -3,8 +3,10 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Microsoft.Agents.Extensions.Teams.Analyzers
 {
@@ -49,8 +51,18 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        public const string DuplicateCommandIdDiagnosticId = "MTEAMS009";
+
+        internal static readonly DiagnosticDescriptor DuplicateCommandIdDescriptor = new(
+            id: DuplicateCommandIdDiagnosticId,
+            title: "Duplicate commandId for Teams route attribute in same class",
+            messageFormat: "Method '{0}' decorated with '[{1}]' uses commandId '{2}' which is already handled by method '{3}' in the same class",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor);
+            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor);
 
         // -----------------------------------------------------------------------------------------
         // Metadata names for shared parameter types
@@ -398,6 +410,10 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 compilationCtx.RegisterSymbolAction(
                     ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName),
                     SymbolKind.Method);
+
+                compilationCtx.RegisterSymbolAction(
+                    ctx => AnalyzeClass(ctx, attrToDisplayName),
+                    SymbolKind.NamedType);
             });
         }
 
@@ -476,6 +492,50 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                         MutualExclusivityDescriptor,
                         meLocation,
                         method.Name, displayName));
+                }
+            }
+        }
+
+        private static void AnalyzeClass(
+            SymbolAnalysisContext ctx,
+            Dictionary<INamedTypeSymbol, string> attrToDisplayName)
+        {
+            var type = (INamedTypeSymbol)ctx.Symbol;
+
+            // attr symbol → commandId → first method that claimed it
+            var seen = new Dictionary<INamedTypeSymbol, Dictionary<string, IMethodSymbol>>(
+                SymbolEqualityComparer.Default);
+
+            foreach (var member in type.GetMembers().OfType<IMethodSymbol>())
+            {
+                foreach (var attribute in member.GetAttributes())
+                {
+                    if (attribute.AttributeClass is null) continue;
+                    if (!attrToDisplayName.TryGetValue(attribute.AttributeClass, out var displayName)) continue;
+
+                    var args = attribute.ConstructorArguments;
+                    if (args.Length < 1) continue;
+                    var commandId = args[0].Value as string;
+                    if (string.IsNullOrWhiteSpace(commandId)) continue;
+
+                    if (!seen.TryGetValue(attribute.AttributeClass, out var cmdMap))
+                    {
+                        cmdMap = new Dictionary<string, IMethodSymbol>(StringComparer.Ordinal);
+                        seen[attribute.AttributeClass] = cmdMap;
+                    }
+
+                    if (cmdMap.TryGetValue(commandId!, out var firstMethod))
+                    {
+                        var location = member.Locations.Length > 0 ? member.Locations[0] : Location.None;
+                        ctx.ReportDiagnostic(Diagnostic.Create(
+                            DuplicateCommandIdDescriptor,
+                            location,
+                            member.Name, displayName, commandId!, firstMethod.Name));
+                    }
+                    else
+                    {
+                        cmdMap[commandId!] = member;
+                    }
                 }
             }
         }

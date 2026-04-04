@@ -938,5 +938,98 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.Empty(diagnostics);
         }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS009 — duplicate commandId in same class
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task QueryRoute_DuplicateCommandId_EmitsMTEAMS009()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("search")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery1(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("search")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery2(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var mteams009 = diagnostics.Where(d => d.Id == TeamsRouteAttributeAnalyzer.DuplicateCommandIdDiagnosticId).ToList();
+            Assert.Single(mteams009);
+            Assert.Contains("OnQuery2", mteams009[0].GetMessage());
+            Assert.Contains("QueryRoute", mteams009[0].GetMessage());
+            Assert.Contains("search", mteams009[0].GetMessage());
+            Assert.Contains("OnQuery1", mteams009[0].GetMessage());
+        }
+
+        [Fact]
+        public async Task QueryRoute_DifferentCommandIds_NoDuplicateDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("search")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery1(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("lookup")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery2(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.DuplicateCommandIdDiagnosticId);
+        }
+
+        [Fact]
+        public async Task DifferentAttributeTypes_SameCommandId_NoDuplicateDiagnostic()
+        {
+            // QueryRoute("x") + FetchTaskRoute("x") should NOT trigger MTEAMS009
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.DuplicateCommandIdDiagnosticId);
+        }
     }
 }
