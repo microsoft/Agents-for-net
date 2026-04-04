@@ -178,7 +178,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
             }
 
             bool isVerbMatch = data.TryGetPropertyValue(filter, out JsonNode filterField) && filterField.GetValueKind() == JsonValueKind.String
-                && isMatch(filterField.ToString());
+                && isMatch(filterField.GetValue<string>());
 
             return Task.FromResult(isVerbMatch);
         }

@@ -51,7 +51,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithCommand({command})");
         }
 
-        _commandMatch = (input) => string.Equals(command, input);
+        _commandMatch = (input) => string.Equals(command, input, StringComparison.Ordinal);
         return (TBuilder)this;
     }
 
@@ -145,7 +145,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
         {
             if (!IsContextMatch(turnContext, _route)
                 || !turnContext.Activity.IsType(ActivityTypes.Invoke)
-                || !string.Equals(turnContext.Activity.Name, invokeName)
+                || !string.Equals(turnContext.Activity.Name, invokeName, StringComparison.OrdinalIgnoreCase)
                 || turnContext.Activity.Value == null)
             {
                 return Task.FromResult(false);
@@ -153,11 +153,21 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
 
             var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
 
-            bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
+            bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId)
+                && commandId.ValueKind == JsonValueKind.String
+                && isMatch(commandId.GetString());
 
-            bool isPreviewActionMatch = previewAction == null || !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken)
-                || string.IsNullOrEmpty(previewActionToken.ToString())
-                || string.Equals(previewAction, previewActionToken.ToString());
+            bool isPreviewActionMatch;
+            if (previewAction == null || !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken))
+            {
+                isPreviewActionMatch = true;
+            }
+            else
+            {
+                var previewActionStr = previewActionToken.ValueKind == JsonValueKind.String ? previewActionToken.GetString() : null;
+                isPreviewActionMatch = string.IsNullOrEmpty(previewActionStr)
+                    || string.Equals(previewAction, previewActionStr, StringComparison.OrdinalIgnoreCase);
+            }
 
             return Task.FromResult(isCommandMatch && isPreviewActionMatch);
         }

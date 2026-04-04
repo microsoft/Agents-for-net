@@ -44,8 +44,11 @@ public class SubmitRouteBuilder : VerbRouteBuilderBase<SubmitRouteBuilder>
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.TaskModules.Request>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, ProtocolJsonSerializer.ToObject<TData>(value.Data), ct).ConfigureAwait(false);
+            var elements = ProtocolJsonSerializer.ToJsonElements(ctx.Activity.Value);
+            var data = elements.TryGetValue("data", out var dataElement)
+                ? ProtocolJsonSerializer.ToObject<TData>(dataElement)
+                : default;
+            var response = await handler(ctx, ts, data, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;
