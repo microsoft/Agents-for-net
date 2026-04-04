@@ -104,26 +104,33 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
     }
 
-    class TestTaskModuleAttributeApp : AgentApplication
+    [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
+    partial class TestTaskModuleAttributeApp : AgentApplication
     {
         public bool FetchHandlerCalled { get; private set; }
         public bool SubmitHandlerCalled { get; private set; }
 
         public TestTaskModuleAttributeApp(AgentApplicationOptions options) : base(options)
         {
-            var extension = new TeamsAgentExtension(this);
-            this.RegisterExtension(extension, (ext) => { });
+            // TeamsAgentExtension is now lazily initialized via the source-generated Teams property.
+            // No manual RegisterExtension call needed.
         }
 
         [FetchRoute("test-verb")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(
+            ITurnContext turnContext, ITurnState turnState,
+            Microsoft.Teams.Api.TaskModules.Request data,
+            CancellationToken cancellationToken)
         {
             FetchHandlerCalled = true;
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
         [SubmitRoute("test-verb")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+        public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(
+            ITurnContext turnContext, ITurnState turnState,
+            Microsoft.Teams.Api.TaskModules.Request data,
+            CancellationToken cancellationToken)
         {
             SubmitHandlerCalled = true;
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
