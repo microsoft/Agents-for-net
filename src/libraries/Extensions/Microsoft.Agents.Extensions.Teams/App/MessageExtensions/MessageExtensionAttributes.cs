@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder.App;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -333,13 +332,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
         }
         else
         {
-            // Infer the generic type parameter for SubmitActionHandler<T> from the method's parameters
-            var genericParam = method.GetParameters()[2].ParameterType;
-            var handlerType = typeof(SubmitActionHandler<>).MakeGenericType(genericParam);
-            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
-            var withHandler = typeof(SubmitActionRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
-            withHandler.Invoke(builder, [handler]);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitActionHandler<>), builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -374,14 +367,9 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var genericParam = method.GetParameters()[2].ParameterType;
-        var handlerType = typeof(SelectItemHandler<>).MakeGenericType(genericParam);
-        var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
         var builder = SelectItemRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        var withHandler = typeof(SelectItemRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
-        withHandler.Invoke(builder, [handler]);
+        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SelectItemHandler<>), builder);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -414,14 +402,9 @@ public class CardButtonClickedRouteAttribute(bool isAgenticOnly = false, ushort 
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var genericParam = method.GetParameters()[2].ParameterType;
-        var handlerType = typeof(CardButtonClickedHandler<>).MakeGenericType(genericParam);
-        var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
         var builder = CardButtonClickedRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        var withHandler = typeof(CardButtonClickedRouteBuilder).GetMethod("WithHandler").MakeGenericMethod(genericParam);
-        withHandler.Invoke(builder, [handler]);
+        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(CardButtonClickedHandler<>), builder);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

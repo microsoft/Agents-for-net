@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -502,6 +503,26 @@ namespace Microsoft.Agents.Builder.App
             return method.IsStatic
                 ? method.CreateDelegate(delegateType)
                 : method.CreateDelegate(delegateType, app);
+        }
+
+        /// <summary>
+        /// Infers the generic type parameter from the method's third parameter, creates a delegate of
+        /// <c>openHandlerType&lt;T&gt;</c>, then finds and invokes the generic <c>WithHandler&lt;T&gt;</c>
+        /// method on <paramref name="builder"/>.
+        /// </summary>
+        /// <param name="app">The agent application to bind the delegate to for instance methods.</param>
+        /// <param name="method">The method to wrap as a delegate.</param>
+        /// <param name="openHandlerType">The open generic delegate type, e.g. <c>typeof(FetchHandler&lt;&gt;)</c>.</param>
+        /// <param name="builder">The route builder on which to invoke <c>WithHandler&lt;T&gt;</c>.</param>
+        public static void InvokeGenericWithHandler(AgentApplication app, MethodInfo method, Type openHandlerType, object builder)
+        {
+            var genericParam = method.GetParameters()[2].ParameterType;
+            var handlerType = openHandlerType.MakeGenericType(genericParam);
+            var handler = CreateHandlerDelegate(app, method, handlerType);
+            var withHandler = builder.GetType().GetMethods()
+                .First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition)
+                .MakeGenericMethod(genericParam);
+            withHandler.Invoke(builder, new object[] { handler });
         }
 
         /// <summary>

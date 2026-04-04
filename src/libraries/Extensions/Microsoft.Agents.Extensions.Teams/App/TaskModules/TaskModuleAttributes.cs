@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder.App;
 using System;
-using System.Linq;
 using System.Reflection;
 
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
@@ -50,12 +49,7 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
         }
         else
         {
-            var genericParam = method.GetParameters()[2].ParameterType;
-            var handlerType = typeof(FetchHandler<>).MakeGenericType(genericParam);
-            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
-            var withHandler = typeof(FetchRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
-            withHandler.Invoke(builder, [handler]);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(FetchHandler<>), builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -106,12 +100,7 @@ public class SubmitRouteAttribute(string verb, string verbProperty = null, bool 
         }
         else
         {
-            var genericParam = method.GetParameters()[2].ParameterType;
-            var handlerType = typeof(SubmitHandler<>).MakeGenericType(genericParam);
-            var handler = RouteAttributeHelper.CreateHandlerDelegate(app, method, handlerType);
-
-            var withHandler = typeof(SubmitRouteBuilder).GetMethods().First(m => m.Name == "WithHandler" && m.IsGenericMethodDefinition).MakeGenericMethod(genericParam);
-            withHandler.Invoke(builder, [handler]);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitHandler<>), builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));

@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         internal static readonly DiagnosticDescriptor TeamsActivityNamespaceDescriptor = new(
             id: TeamsActivityNamespaceDiagnosticId,
             title: "Wrong Activity namespace for Teams message preview route handler",
-            messageFormat: "Parameter {0} of method '{1}' decorated with '[{2}]' uses a 'Microsoft.Teams.Api.Activities' type but must be 'Microsoft.Agents.Core.Models.IActivity' — the framework converts the Teams activity to Core before invoking this handler",
+            messageFormat: "Parameter {0} of method '{1}' decorated with '[{2}]' uses a 'Microsoft.Teams.Api.Activities' type but must be 'Microsoft.Agents.Core.Models.IActivity'",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
