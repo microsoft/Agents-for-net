@@ -72,6 +72,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             using Microsoft.Agents.Builder;
             using Microsoft.Agents.Builder.State;
 
+            [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
             public class Agent
             {
                 [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("test")]
@@ -98,6 +99,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("test")]
@@ -124,6 +126,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("test")]
@@ -150,6 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("test")]
@@ -181,6 +185,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryLinkRoute]
@@ -202,6 +207,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryLinkRoute]
@@ -231,6 +237,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
@@ -252,6 +259,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
@@ -282,6 +290,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder.State;
                 using Microsoft.Agents.Core.Models;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRoute("cmd")]
@@ -304,6 +313,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder.State;
                 using Microsoft.Agents.Core.Models;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRoute("cmd")]
@@ -333,6 +343,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute("cmd")]
@@ -357,6 +368,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute("cmd")]
@@ -387,6 +399,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingStartRoute]
@@ -410,6 +423,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingStartRoute]
@@ -436,6 +450,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingStartRoute]
@@ -468,6 +483,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder.State;
                 using Microsoft.Agents.Extensions.Teams.Models;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingParticipantsJoinRoute]
@@ -495,6 +511,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.ConfigureSettingsRoute]
@@ -722,6 +739,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
@@ -745,6 +763,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
@@ -771,6 +790,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRoute]
@@ -802,6 +822,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
@@ -825,6 +846,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
@@ -851,6 +873,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRoute]
@@ -882,6 +905,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("cmd", "cmd*")]
@@ -908,6 +932,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd", "cmd*")]
@@ -939,6 +964,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "cmd*")]
@@ -966,6 +992,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("search")]
@@ -999,6 +1026,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("search")]
@@ -1028,6 +1056,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("cmd")]
@@ -1059,6 +1088,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "[(invalid")]
@@ -1085,6 +1115,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "search.*")]
@@ -1107,6 +1138,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute(null, "[bad")]
@@ -1132,6 +1164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("")]
@@ -1157,6 +1190,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "search.*")]
@@ -1183,6 +1217,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
@@ -1206,6 +1241,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRoute("cmd")]
@@ -1230,6 +1266,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder.State;
                 using Microsoft.Agents.Core.Models;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
@@ -1257,6 +1294,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
+                [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
@@ -1397,6 +1435,36 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
             Assert.Contains("OnSubmit", d.GetMessage());
             Assert.Contains("SubmitRoute", d.GetMessage());
+            Assert.Contains("MyAgent", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task QueryRoute_WithoutTeamsExtension_EmitsMTEAMS013()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Builder.App;
+
+                public class MyAgent : AgentApplication
+                {
+                    public MyAgent(AgentApplicationOptions options) : base(options) { }
+
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics,
+                d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
+            Assert.Contains("OnQuery", d.GetMessage());
+            Assert.Contains("QueryRoute", d.GetMessage());
             Assert.Contains("MyAgent", d.GetMessage());
         }
     }

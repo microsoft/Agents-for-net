@@ -96,8 +96,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
 
         internal static readonly DiagnosticDescriptor MissingTeamsExtensionDescriptor = new(
             id: MissingTeamsExtensionDiagnosticId,
-            title: "FetchRoute/SubmitRoute used without [TeamsExtension]",
-            messageFormat: "Method '{0}' decorated with '[{1}]' is in class '{2}' which does not have '[TeamsExtension]' applied — TaskModulesOptions.TaskDataFilter will not be available",
+            title: "Teams route attribute used without [TeamsExtension]",
+            messageFormat: "Method '{0}' decorated with '[{1}]' is in class '{2}' which does not have '[TeamsExtension]' applied",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -145,11 +145,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute", "MessagePreviewEditRoute")
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute", "MessagePreviewSendRoute")
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",       "SubmitActionRoute");
-
-        private static readonly ImmutableDictionary<string, string> TaskModuleAttributeDisplayNames =
-            ImmutableDictionary<string, string>.Empty
-                .Add("Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRouteAttribute",  "FetchRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRouteAttribute", "SubmitRoute");
 
         // -----------------------------------------------------------------------------------------
         // Rule table — one entry per attribute, describes the required method signature.
@@ -460,21 +455,12 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 var teamsActivityBaseType = compilationCtx.Compilation
                     .GetTypeByMetadataName("Microsoft.Teams.Api.Activities.Activity");
 
-                // Resolve MTEAMS013 symbols
-                var taskModuleAttrToDisplayName = new Dictionary<INamedTypeSymbol, string>(SymbolEqualityComparer.Default);
-                foreach (var kvp in TaskModuleAttributeDisplayNames)
-                {
-                    var sym = compilationCtx.Compilation.GetTypeByMetadataName(kvp.Key);
-                    if (sym != null)
-                        taskModuleAttrToDisplayName[sym] = kvp.Value;
-                }
-
                 var teamsExtensionAttrType = compilationCtx.Compilation
                     .GetTypeByMetadataName("Microsoft.Agents.Extensions.Teams.App.TeamsExtensionAttribute");
 
                 compilationCtx.RegisterSymbolAction(
                     ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName, teamsActivityBaseType,
-                                         taskModuleAttrToDisplayName, teamsExtensionAttrType),
+                                         teamsExtensionAttrType),
                     SymbolKind.Method);
 
                 compilationCtx.RegisterSymbolAction(
@@ -488,7 +474,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             Dictionary<INamedTypeSymbol, SignatureRule> attrToRule,
             Dictionary<INamedTypeSymbol, string> attrToDisplayName,
             INamedTypeSymbol? teamsActivityBaseType,
-            Dictionary<INamedTypeSymbol, string> taskModuleAttrToDisplayName,
             INamedTypeSymbol? teamsExtensionAttrType)
         {
             var method = (IMethodSymbol)ctx.Symbol;
@@ -605,32 +590,28 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 }
             }
 
-            // MTEAMS013 — FetchRoute/SubmitRoute on class without [TeamsExtension]
+            // MTEAMS013 — Teams route attribute used on class without [TeamsExtension]
             if (teamsExtensionAttrType is null) return;
+
+            // [TeamsExtensionAttribute] has Inherited = false — check only the immediate containing type.
+            // Lazily computed: same answer for every attribute on this method.
+            bool? hasTeamsExtension = null;
 
             foreach (var attribute in method.GetAttributes())
             {
                 if (attribute.AttributeClass is null) continue;
-                if (!taskModuleAttrToDisplayName.TryGetValue(attribute.AttributeClass, out var tmDisplayName)) continue;
+                if (!attrToRule.TryGetValue(attribute.AttributeClass, out var teamsRule)) continue;
 
-                // [TeamsExtensionAttribute] has Inherited = false — check only the immediate containing type
-                bool hasTeamsExtension = false;
-                foreach (var attr in method.ContainingType.GetAttributes())
-                {
-                    if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, teamsExtensionAttrType))
-                    {
-                        hasTeamsExtension = true;
-                        break;
-                    }
-                }
+                hasTeamsExtension ??= method.ContainingType.GetAttributes()
+                    .Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, teamsExtensionAttrType));
 
-                if (!hasTeamsExtension)
+                if (!hasTeamsExtension.Value)
                 {
                     var location = method.Locations.Length > 0 ? method.Locations[0] : Location.None;
                     ctx.ReportDiagnostic(Diagnostic.Create(
                         MissingTeamsExtensionDescriptor,
                         location,
-                        method.Name, tmDisplayName, method.ContainingType.Name));
+                        method.Name, teamsRule.AttributeDisplayName, method.ContainingType.Name));
                 }
             }
         }

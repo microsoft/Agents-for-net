@@ -32,17 +32,18 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// </code>
 /// </remarks>
 /// <param name="verb">The task module verb to match.</param>
+/// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class FetchRouteAttribute(string verb, string taskDataFilter = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var builder = FetchRouteBuilder.Create()
             .WithVerb(verb)
-            .WithTaskDataFilter(TaskModuleAttributeHelper.GetTaskDataFilter(app))
+            .WithTaskDataFilter(taskDataFilter)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
 
@@ -86,17 +87,18 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
 /// </code>
 /// </remarks>
 /// <param name="verb">The task module verb to match.</param>
+/// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class SubmitRouteAttribute(string verb, string taskDataFilter = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var builder = SubmitRouteBuilder.Create()
             .WithVerb(verb)
-            .WithTaskDataFilter(TaskModuleAttributeHelper.GetTaskDataFilter(app))
+            .WithTaskDataFilter(taskDataFilter)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
 
@@ -112,24 +114,5 @@ public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushor
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
-    }
-}
-
-file static class TaskModuleAttributeHelper
-{
-    internal static string? GetTaskDataFilter(AgentApplication app)
-    {
-        // Returns the TaskDataFilter from the registered TeamsAgentExtension, or null
-        // (which causes VerbRouteBuilderBase.WithTaskDataFilter to use the default "verb").
-        //
-        // NOTE: Due to C# constructor ordering, ApplyRouteAttributes() runs in the
-        // AgentApplication base constructor before derived code can register an extension
-        // with custom options, so this currently always returns null. The helper is here
-        // for correctness and future-proofing when the extension is pre-registered.
-        foreach (var ext in app.RegisteredExtensions)
-            if (ext is Microsoft.Agents.Extensions.Teams.App.TeamsAgentExtension teamsExt)
-                return teamsExt.TaskModules?.Options?.TaskDataFilter;
-
-        return null;
     }
 }

@@ -59,15 +59,14 @@ public class TeamsAgentExtension : AgentExtension
     /// </code>
     /// </summary>
     /// <param name="agentApplication">The AgentApplication for this extension.</param>
-    /// <param name="options">Options for configuring TaskModules.</param>
-    public TeamsAgentExtension(AgentApplication agentApplication, TaskModulesOptions? options = null)
+    public TeamsAgentExtension(AgentApplication agentApplication)
     {
         ChannelId = Core.Models.Channels.Msteams;
         AgentApplication = agentApplication;
 
         Meetings = new Meeting(agentApplication, ChannelId);
         MessageExtensions = new MessageExtension(agentApplication, ChannelId);
-        TaskModules = new TaskModule(agentApplication, ChannelId, options);
+        TaskModules = new TaskModule(agentApplication, ChannelId);
         Channels = new TeamsChannel(agentApplication, ChannelId);
         Teams = new TeamsTeam(agentApplication, ChannelId);
 
