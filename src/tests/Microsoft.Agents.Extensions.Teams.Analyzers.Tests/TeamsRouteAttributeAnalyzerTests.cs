@@ -1203,6 +1203,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId);
         }
 
         [Fact]
