@@ -210,44 +210,6 @@ public static class AspNetExtensions
         });
     }
 
-    /// <summary>
-    /// Serves an embedded-resource tab at <c>/tabs/{name}</c> and <c>/tabs/{name}/{*path}</c>.
-    /// </summary>
-    /// <param name="app">The web application.</param>
-    /// <param name="name">Tab name — becomes the URL segment after <c>/tabs/</c>.</param>
-    /// <param name="provider">File provider containing the tab's static assets.</param>
-    public static WebApplication AddTab(this WebApplication app, string name, IFileProvider provider)
-    {
-        var contentTypeProvider = new FileExtensionContentTypeProvider();
-
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = provider,
-            ServeUnknownFileTypes = true,
-            RequestPath = $"/tabs/{name}"
-        });
-
-        app.MapGet($"/tabs/{name}", async context =>
-        {
-            var file = provider.GetFileInfo("index.html");
-            if (!file.Exists) { await Results.NotFound().ExecuteAsync(context); return; }
-            await Results.File(file.CreateReadStream(), "text/html").ExecuteAsync(context);
-        });
-
-        app.MapGet($"/tabs/{name}/{{*path}}", async context =>
-        {
-            var path = context.GetRouteValue("path")?.ToString();
-            if (path is null) { await Results.NotFound().ExecuteAsync(context); return; }
-            var file = provider.GetFileInfo(path);
-            if (!file.Exists) { await Results.NotFound().ExecuteAsync(context); return; }
-            if (!contentTypeProvider.TryGetContentType(file.Name, out string? contentType))
-                contentType = "text/html";
-            await Results.File(file.CreateReadStream(), contentType).ExecuteAsync(context);
-        });
-
-        return app;
-    }
-
     public class TokenValidationOptions
     {
         public IList<string>? Audiences { get; set; }

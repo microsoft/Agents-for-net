@@ -44,7 +44,22 @@ app.MapAgentRootEndpoint();
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/messages").
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-app.AddTab("dialog-form", new ManifestEmbeddedFileProvider(Assembly.GetCallingAssembly(), "wwwroot/dialog-form"));
+app.UseStaticFiles();
+
+app.MapGet("/dialog-form", async context =>
+{
+    var filePath = Path.Combine(app.Environment.WebRootPath, "dialog-form/index.html");
+
+    if (!File.Exists(filePath))
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("Page not found.");
+        return;
+    }
+
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(filePath);
+});
 
 if (app.Environment.IsDevelopment())
 {
