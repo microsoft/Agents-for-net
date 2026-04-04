@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// <summary>
 /// Provides a builder for configuring fetch routes in an AgentApplication.
 /// </summary>
-public class FetchRouteBuilder : VerbRouteBuilderBase<FetchRouteBuilder>
+public class FetchRouteBuilder : KeyValueRouteBuilderBase<FetchRouteBuilder>
 {
     public FetchRouteBuilder() : base()
     {
@@ -18,8 +18,9 @@ public class FetchRouteBuilder : VerbRouteBuilderBase<FetchRouteBuilder>
     /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing fetch requests.
     /// </summary>
-    /// <remarks>Use this method to specify custom logic for handling fetch requests in Teams task modules. The handler receives the deserialized data from the incoming activity, allowing for type-safe
-    /// processing of the fetch request's payload.</remarks>
+    /// <remarks>Use this method to specify custom logic for handling fetch requests in Teams task modules. The 
+    /// handler receives the deserialized data from the incoming activity, allowing for type-safe processing of 
+    /// the fetch request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch request.</param>
     /// <returns>The current instance of FetchRouteBuilder, enabling method chaining.</returns>
     public FetchRouteBuilder WithHandler(FetchHandler handler)

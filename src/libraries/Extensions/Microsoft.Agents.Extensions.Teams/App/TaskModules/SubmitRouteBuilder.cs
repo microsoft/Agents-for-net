@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// <summary>
 /// Provides a builder for configuring submit routes in an AgentApplication.
 /// </summary>
-public class SubmitRouteBuilder : VerbRouteBuilderBase<SubmitRouteBuilder>
+public class SubmitRouteBuilder : KeyValueRouteBuilderBase<SubmitRouteBuilder>
 {
     public SubmitRouteBuilder() : base()
     {

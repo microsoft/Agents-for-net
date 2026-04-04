@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
@@ -17,74 +16,73 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 
 /// <summary>
-/// Provides a base builder for configuring message extension routes for TaskModules that handle verb-based Invoke activities 
-/// in an AgentApplication. This builder allows for defining command matching logic using either exact string matches or regular expression 
-/// patterns, enabling flexible routing based on the command specified in the incoming activity. The builder ensures that the route is 
+/// Provides a base builder for configuring message extension routes for TaskModules that handle key-based Invoke activities
+/// in an AgentApplication. This builder allows for defining command matching logic using either exact string matches or regular expression
+/// patterns, enabling flexible routing based on the command specified in the incoming activity. The builder ensures that the route is
 /// properly configured for Invoke routing and validates required properties before building the route.
 /// </summary>
-/// <typeparam name="TBuilder">The type of the builder that extends the functionality of the VerbRouteBuilderBase, enabling fluent
+/// <typeparam name="TBuilder">The type of the builder that extends the functionality of the KeyValueRouteBuilderBase, enabling fluent
 /// configuration.</typeparam>
-public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : VerbRouteBuilderBase<TBuilder>
+public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : KeyValueRouteBuilderBase<TBuilder>
 {
-    private static readonly string DEFAULT_TASK_DATA_VERBPROPERTY = "verb";
-    private Func<string, bool> _verbMatch;
-    private string _verbPropertyName = DEFAULT_TASK_DATA_VERBPROPERTY;
+    private static readonly string DEFAULT_TASK_DATA_KEY = "verb";
+    private Func<string, bool> _keyMatch;
+    private string _keyPropertyName = DEFAULT_TASK_DATA_KEY;
 
     protected string InvokeName { get; set; }
 
-    public VerbRouteBuilderBase() : base()
+    public KeyValueRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }
 
     /// <summary>
-    /// Match a specific verb value.
+    /// Match a specific task data value.
     /// </summary>
-    /// <param name="verb">The verb value to be matched. This parameter cannot be null or whitespace.</param>
+    /// <remarks>The default key name is "verb" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <param name="value">The key value to be matched.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Command has already been defined for this builder
     /// instance.</exception>
-    public TBuilder WithVerb(string verb)
+    public TBuilder WithKeyValue(string value)
     {
-        AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
-
-        if (_verbMatch != null)
+        if (_keyMatch != null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithVerb({verb})");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithKeyValue({value})");
         }
 
-        _verbMatch = (input) => string.Equals(verb, input);
+        _keyMatch = !string.IsNullOrWhiteSpace(value) ? (input) => string.Equals(value, input) : null;
         return (TBuilder)this;
     }
 
     /// <summary>
-    /// Match a specific verb value pattern.
+    /// Match a specific task data value pattern.
     /// </summary>
-    /// <param name="verbPattern">The verb value matching the Regex pattern. This parameter cannot be null.</param>
+    /// <remarks>The default key name is "verb" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <param name="valuePattern">The key value matching the Regex pattern.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
-    /// <exception cref="InvalidOperationException">Verb has already been defined for this builder
+    /// <exception cref="InvalidOperationException">Key has already been defined for this builder
     /// instance.</exception>
-    public TBuilder WithVerb(Regex verbPattern)
+    public TBuilder WithKeyValue(Regex valuePattern)
     {
-        AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
-        if (_verbMatch != null)
+        if (_keyMatch != null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithVerb(Regex({verbPattern}))");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithKeyValue(Regex({valuePattern}))");
         }
 
-        _verbMatch = (string input) => verbPattern.IsMatch(input);
+        _keyMatch = valuePattern != null ? (string input) => valuePattern.IsMatch(input) : null;
         return (TBuilder)this;
     }
 
     /// <summary>
-    /// Sets the name of the verb property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "verb" in the submitted data.
+    /// Sets the name of the key property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "verb" in the submitted data.
     /// </summary>
-    /// <param name="verbPropertyName">A filter string that specifies the verb data to include. If the value is null or consists only of white space, a
+    /// <param name="keyName">A filter string that specifies the key data to include. If the value is null or consists only of white space, a
     /// default filter is applied.</param>
     /// <returns>The current instance of the builder, enabling method chaining.</returns>
-    public TBuilder WithTaskDataFilter(string verbPropertyName)
+    public TBuilder WithKey(string keyName)
     {
-        _verbPropertyName = string.IsNullOrWhiteSpace(verbPropertyName) ? DEFAULT_TASK_DATA_VERBPROPERTY : verbPropertyName?.Trim();
+        _keyPropertyName = string.IsNullOrWhiteSpace(keyName) ? DEFAULT_TASK_DATA_KEY : keyName?.Trim();
         return (TBuilder)this;
     }
 
@@ -96,7 +94,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="VerbRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
     public override TBuilder AsInvoke(bool isInvoke = true)
     {
         return (TBuilder)this;
@@ -111,18 +109,18 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
 
         RouteSelector selector;
 
-        if (_verbMatch == null && _route.Selector == null)
+        if (_keyMatch == null && _route.Selector == null)
         {
-            // match on any verb if the user didn't specify a verb match or custom selector
-            selector = CreateSelector((_) => true, _verbPropertyName, InvokeName);
+            // no key value specified — match any valid invoke activity of the right name
+            selector = CreateAnyInvokeSelector(InvokeName);
         }
         else
         {
-            selector = CreateSelector(_verbMatch, _verbPropertyName, InvokeName);
+            selector = CreateSelector(_keyMatch, _keyPropertyName, InvokeName);
         }
 
         _route.ChannelId ??= Channels.Msteams;
-        _verbPropertyName ??= DEFAULT_TASK_DATA_VERBPROPERTY;
+        _keyPropertyName ??= DEFAULT_TASK_DATA_KEY;
 
         if (_route.Selector != null)
         {
@@ -140,7 +138,7 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
                 return existingHandler(ctx, ts, ct);
             };
 
-            if (_verbMatch != null)
+            if (_keyMatch != null)
             {
                 var existingSelector = _route.Selector;
                 _route.Selector = async (context, ct) =>
@@ -151,6 +149,19 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
         }
 
         _route.Selector = selector;
+    }
+
+    private RouteSelector CreateAnyInvokeSelector(string invokeName)
+    {
+        Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(
+                IsContextMatch(turnContext, _route)
+                && turnContext.Activity.IsType(ActivityTypes.Invoke)
+                && string.Equals(turnContext.Activity.Name, invokeName)
+                && turnContext.Activity.Value != null);
+        }
+        return routeSelector;
     }
 
     private RouteSelector CreateSelector(Func<string, bool> isMatch, string filter, string invokeName)
@@ -177,10 +188,10 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
                 return Task.FromResult(false);
             }
 
-            bool isVerbMatch = data.TryGetPropertyValue(filter, out JsonNode filterField) && filterField.GetValueKind() == JsonValueKind.String
+            bool isKeyMatch = data.TryGetPropertyValue(filter, out JsonNode filterField) && filterField.GetValueKind() == JsonValueKind.String
                 && isMatch(filterField.GetValue<string>());
 
-            return Task.FromResult(isVerbMatch);
+            return Task.FromResult(isKeyMatch);
         }
         return routeSelector;
     }

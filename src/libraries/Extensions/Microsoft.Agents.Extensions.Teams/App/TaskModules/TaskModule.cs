@@ -22,118 +22,126 @@ public class TaskModule
     }
 
     /// <summary>
-    ///  Registers a handler to process the fetch of the task module.
+    ///  Registers a handler to process the fetch of the task module.  This will match the value of the indicated key in the task 
+    ///  data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler"/> method for the same purpose.</remarks>
-    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="keyValue">The value of the key to match on.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(string verb, FetchHandler handler, string taskDataFilter = null)
+    public TaskModule OnFetch(string keyValue, FetchHandler handler, string keyName = null)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValue).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>. This 
+    ///  will match the value of the indicated key in the task data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler{TData}"/> method for the same purpose.</remarks>
     /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
-    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="keyValue">The value of the key to match on. If null, this will match for any fetch request.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch<TData>(string verb, FetchHandler<TData> handler, string taskDataFilter = null)
+    public TaskModule OnFetch<TData>(string keyValue, FetchHandler<TData> handler, string keyName = null)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValue).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    ///  Registers a handler to process the fetch of the task module.
+    ///  Registers a handler to process the fetch of the task module. This will match the value of the indicated key in the task 
+    ///  data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler"/> method for the same purpose.</remarks>
-    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
+    /// <param name="keyValuePattern">Regular expression to match against the key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(Regex verbPattern, FetchHandler handler, string taskDataFilter = null)
+    public TaskModule OnFetch(Regex keyValuePattern, FetchHandler handler, string keyName = null)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValuePattern).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    ///  Registers a handler to process the fetch of the task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>. This 
+    ///  will match the value of the indicated key in the task data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FetchRouteAttribute"/> can be used to decorate a <see cref="FetchHandler{TData}"/> method for the same purpose.</remarks>
     /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
-    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
+    /// <param name="keyValuePattern">Regular expression to match against the key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch<TData>(Regex verbPattern, FetchHandler<TData> handler, string taskDataFilter = null)
+    public TaskModule OnFetch<TData>(Regex keyValuePattern, FetchHandler<TData> handler, string keyName = null)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValuePattern).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    /// Registers a handler to process the submission of a task module.
+    /// Registers a handler to process the submission of a task module. This will match the value of the indicated key in the task 
+    /// data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler"/> method for the same purpose.</remarks>
-    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="keyValue">The value of the key to match on. If null, this will match for any submit request.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(string verb, SubmitHandler handler, string taskDataFilter = null)
+    public TaskModule OnSubmit(string keyValue, SubmitHandler handler, string keyName = null)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValue).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>. This 
+    /// will match the value of the indicated key in the task data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler{TData}"/> method for the same purpose.</remarks>
     /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
-    /// <param name="verb">Name of the verb to register the handler for.</param>
+    /// <param name="keyValue">The value of the key to match on. If null, this will match for any submit request.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit<TData>(string verb, SubmitHandler<TData> handler, string taskDataFilter = null)
+    public TaskModule OnSubmit<TData>(string keyValue, SubmitHandler<TData> handler, string keyName = null)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValue).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    /// Registers a handler to process the submission of a task module.
+    /// Registers a handler to process the submission of a task module. This will match the value of the indicated key in the task data dictionary to 
+    /// determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler"/> method for the same purpose.</remarks>
-    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
+    /// <param name="keyValuePattern">Regular expression to match against the task data key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(Regex verbPattern, SubmitHandler handler, string taskDataFilter = null)
+    public TaskModule OnSubmit(Regex keyValuePattern, SubmitHandler handler, string keyName = null)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValuePattern).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>.
+    /// Registers a handler to process the submission of a task module, with <c>Request.Data</c> deserialized to <typeparamref name="TData"/>. This 
+    /// will match the value of the indicated key in the task data dictionary to determine if the handler should be triggered for a given fetch request.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitRouteAttribute"/> can be used to decorate a <see cref="SubmitHandler{TData}"/> method for the same purpose.</remarks>
     /// <typeparam name="TData">The type to deserialize <c>Request.Data</c> into and pass to the handler.</typeparam>
-    /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
+    /// <param name="keyValuePattern">Regular expression to match against the task data key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+    /// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit<TData>(Regex verbPattern, SubmitHandler<TData> handler, string taskDataFilter = null)
+    public TaskModule OnSubmit<TData>(Regex keyValuePattern, SubmitHandler<TData> handler, string keyName = null)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithTaskDataFilter(taskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(keyName).WithKeyValue(keyValuePattern).WithHandler(handler).Build());
         return this;
     }
 }

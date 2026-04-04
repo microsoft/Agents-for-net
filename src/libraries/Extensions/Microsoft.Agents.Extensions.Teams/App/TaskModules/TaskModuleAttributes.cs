@@ -8,7 +8,7 @@ using System.Reflection;
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 
 /// <summary>
-/// Attribute to define a route that handles Teams task module fetch events for a specific verb.
+/// Attribute to define a route that handles Teams task module fetch events for a specific key.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for task module fetch events in Teams.
@@ -17,33 +17,33 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// When the third parameter is any other type, <c>Request.Data</c> is deserialized to that type and passed instead.
 /// <code>
 /// // Untyped — receives the full Request
-/// [FetchRoute("myVerb")]
+/// [FetchRoute("myKey")]
 /// public async Task&lt;TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event
 /// }
 ///
 /// // Typed — Request.Data is deserialized to MyFetchData
-/// [FetchRoute("myVerb")]
+/// [FetchRoute("myKey")]
 /// public async Task&lt;TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, MyFetchData data, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event with typed data
 /// }
 /// </code>
 /// </remarks>
-/// <param name="verb">The task module verb to match.</param>
-/// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+/// <param name="keyValue">The task module key value to match.  If null this will match for any fetch request.</param>
+/// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchRouteAttribute(string verb, string taskDataFilter = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class FetchRouteAttribute(string keyValue = null, string keyName = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var builder = FetchRouteBuilder.Create()
-            .WithVerb(verb)
-            .WithTaskDataFilter(taskDataFilter)
+            .WithKey(keyName)
+            .WithKeyValue(keyValue)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
 
@@ -63,7 +63,7 @@ public class FetchRouteAttribute(string verb, string taskDataFilter = null, bool
 }
 
 /// <summary>
-/// Attribute to define a route that handles Teams task module submit events for a specific verb.
+/// Attribute to define a route that handles Teams task module submit events for a specific key.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for task module submit events in Teams.
@@ -72,33 +72,33 @@ public class FetchRouteAttribute(string verb, string taskDataFilter = null, bool
 /// When the third parameter is any other type, <c>Request.Data</c> is deserialized to that type and passed instead.
 /// <code>
 /// // Untyped — receives the full Request
-/// [SubmitRoute("myVerb")]
+/// [SubmitRoute("myKey")]
 /// public async Task&lt;TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event
 /// }
 ///
 /// // Typed — Request.Data is deserialized to MySubmitData
-/// [SubmitRoute("myVerb")]
+/// [SubmitRoute("myKey")]
 /// public async Task&lt;TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, MySubmitData data, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event with typed data
 /// }
 /// </code>
 /// </remarks>
-/// <param name="verb">The task module verb to match.</param>
-/// <param name="taskDataFilter">The JSON field name used to identify the verb in the task data. Defaults to <c>"verb"</c> if not specified.</param>
+/// <param name="keyValue">The task module key value to match.  If null, this will match for any submit request.</param>
+/// <param name="keyName">The JSON field name used to identify the key in the task data. Defaults to <c>"verb"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitRouteAttribute(string verb, string taskDataFilter = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class SubmitRouteAttribute(string keyValue = null, string keyName = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var builder = SubmitRouteBuilder.Create()
-            .WithVerb(verb)
-            .WithTaskDataFilter(taskDataFilter)
+            .WithKey(keyName)
+            .WithKeyValue(keyValue)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
 
