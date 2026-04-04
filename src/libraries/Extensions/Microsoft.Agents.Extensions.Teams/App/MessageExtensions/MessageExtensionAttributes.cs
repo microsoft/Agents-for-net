@@ -332,7 +332,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
         }
         else
         {
-            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitActionHandler<>), builder);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitActionHandler<>), 2, builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -369,7 +369,7 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
     {
         var builder = SelectItemRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SelectItemHandler<>), builder);
+        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SelectItemHandler<>), 2, builder);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -404,7 +404,7 @@ public class CardButtonClickedRouteAttribute(bool isAgenticOnly = false, ushort 
     {
         var builder = CardButtonClickedRouteBuilder.Create().AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
-        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(CardButtonClickedHandler<>), builder);
+        RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(CardButtonClickedHandler<>), 2, builder);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

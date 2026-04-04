@@ -54,7 +54,7 @@ public class FetchRouteAttribute(string verb, string taskDataFilter = null, bool
         }
         else
         {
-            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(FetchHandler<>), builder);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(FetchHandler<>), 2, builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -109,7 +109,7 @@ public class SubmitRouteAttribute(string verb, string taskDataFilter = null, boo
         }
         else
         {
-            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitHandler<>), builder);
+            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitHandler<>), 2, builder);
         }
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));

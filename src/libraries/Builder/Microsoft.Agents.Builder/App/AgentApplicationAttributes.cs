@@ -513,10 +513,11 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="app">The agent application to bind the delegate to for instance methods.</param>
         /// <param name="method">The method to wrap as a delegate.</param>
         /// <param name="openHandlerType">The open generic delegate type, e.g. <c>typeof(FetchHandler&lt;&gt;)</c>.</param>
+        /// <param name="paramIndex">The index of the parameter to use for inferring the generic type.</param>
         /// <param name="builder">The route builder on which to invoke <c>WithHandler&lt;T&gt;</c>.</param>
-        public static void InvokeGenericWithHandler(AgentApplication app, MethodInfo method, Type openHandlerType, object builder)
+        public static void InvokeGenericWithHandler(AgentApplication app, MethodInfo method, Type openHandlerType, int paramIndex, object builder)
         {
-            var genericParam = method.GetParameters()[2].ParameterType;
+            var genericParam = method.GetParameters()[paramIndex].ParameterType;
             var handlerType = openHandlerType.MakeGenericType(genericParam);
             var handler = CreateHandlerDelegate(app, method, handlerType);
             var withHandler = builder.GetType().GetMethods()
