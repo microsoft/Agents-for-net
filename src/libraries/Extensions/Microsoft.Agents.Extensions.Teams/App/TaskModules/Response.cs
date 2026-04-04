@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Teams.Common;
 
 namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
@@ -30,6 +31,7 @@ public static class Response
         string? fallbackUrl = null,
         Microsoft.Teams.Api.CacheInfo? cacheInfo = null)
     {
+        AssertionHelpers.ThrowIfNull(card, nameof(card));
         var taskInfo = new Microsoft.Teams.Api.TaskModules.TaskInfo
         {
             Card = card,
@@ -67,6 +69,7 @@ public static class Response
         string? fallbackUrl = null,
         Microsoft.Teams.Api.CacheInfo? cacheInfo = null)
     {
+        AssertionHelpers.ThrowIfNull(card, nameof(card));
         var taskInfo = new Microsoft.Teams.Api.TaskModules.TaskInfo
         {
             Card = card,
@@ -104,6 +107,7 @@ public static class Response
         string? completionBotId = null,
         Microsoft.Teams.Api.CacheInfo? cacheInfo = null)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(url, nameof(url));
         var taskInfo = new Microsoft.Teams.Api.TaskModules.TaskInfo
         {
             Url = url,
@@ -144,6 +148,7 @@ public static class Response
         string? completionBotId = null,
         Microsoft.Teams.Api.CacheInfo? cacheInfo = null)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(url, nameof(url));
         var taskInfo = new Microsoft.Teams.Api.TaskModules.TaskInfo
         {
             Url = url,
@@ -172,6 +177,7 @@ public static class Response
         string message,
         Microsoft.Teams.Api.CacheInfo? cacheInfo = null)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(message, nameof(message));
         return new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.MessageTask(message))
         {

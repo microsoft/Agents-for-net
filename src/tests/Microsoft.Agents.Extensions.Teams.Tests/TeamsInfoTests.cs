@@ -21,7 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
+namespace Microsoft.Agents.Extensions.Teams.Tests
 {
     public class TeamsInfoTests
     {
@@ -1257,7 +1257,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1?tenantId=tenantId-1")
                     || request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1"))
                 {
-                    var content = new Microsoft.Teams.Api.Clients.MeetingParticipant
+                    var content = new MeetingParticipant
                     {
                         User = new Account { Id = "participantId-1", Role = new Role("role-1") },
                         Meeting = new MeetingInfo { Role = "Organizer" }
@@ -1269,10 +1269,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 // TeamsInfo.GetMeetingInfoAsync
                 else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1"))
                 {
-                    var content = new Microsoft.Teams.Api.Meetings.Meeting
+                    var content = new Meeting
                     {
                         Id = "meetingId-1",
-                        Details = new Microsoft.Teams.Api.Meetings.MeetingDetails
+                        Details = new MeetingDetails
                         {
                             Id = "meetingId-1",
                             Title = "meeting-title-1",
