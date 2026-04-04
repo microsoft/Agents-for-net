@@ -82,8 +82,18 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        public const string TeamsActivityNamespaceDiagnosticId = "MTEAMS012";
+
+        internal static readonly DiagnosticDescriptor TeamsActivityNamespaceDescriptor = new(
+            id: TeamsActivityNamespaceDiagnosticId,
+            title: "Wrong Activity namespace for Teams message preview route handler",
+            messageFormat: "Parameter {0} of method '{1}' decorated with '[{2}]' uses a 'Microsoft.Teams.Api.Activities' type but must be 'Microsoft.Agents.Core.Models.IActivity' — the framework converts the Teams activity to Core before invoking this handler",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor, InvalidRegexDescriptor, EmptyCommandIdDescriptor);
+            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor, InvalidRegexDescriptor, EmptyCommandIdDescriptor, TeamsActivityNamespaceDescriptor);
 
         // -----------------------------------------------------------------------------------------
         // Metadata names for shared parameter types
@@ -428,8 +438,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 if (attrToRule.Count == 0 && attrToDisplayName.Count == 0)
                     return;
 
+                var teamsActivityBaseType = compilationCtx.Compilation
+                    .GetTypeByMetadataName("Microsoft.Teams.Api.Activities.Activity");
+
                 compilationCtx.RegisterSymbolAction(
-                    ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName),
+                    ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName, teamsActivityBaseType),
                     SymbolKind.Method);
 
                 compilationCtx.RegisterSymbolAction(
@@ -441,7 +454,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private static void AnalyzeMethod(
             SymbolAnalysisContext ctx,
             Dictionary<INamedTypeSymbol, SignatureRule> attrToRule,
-            Dictionary<INamedTypeSymbol, string> attrToDisplayName)
+            Dictionary<INamedTypeSymbol, string> attrToDisplayName,
+            INamedTypeSymbol? teamsActivityBaseType)
         {
             var method = (IMethodSymbol)ctx.Symbol;
 
@@ -486,10 +500,24 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
 
                     if (!IsTypeCompatible(method.Parameters[i].Type, expected))
                     {
-                        ctx.ReportDiagnostic(Diagnostic.Create(
-                            ParameterTypeDescriptor,
-                            location,
-                            i + 1, method.Name, rule.AttributeDisplayName, rule.ParameterTypes[i]!));
+                        // MTEAMS012: emit a more specific error when a Teams.Api.Activities type is used
+                        // where Core.Models.IActivity is expected (message preview routes)
+                        if (rule.ParameterTypes[i] == Activity
+                            && teamsActivityBaseType is not null
+                            && InheritsFromClass(method.Parameters[i].Type, teamsActivityBaseType))
+                        {
+                            ctx.ReportDiagnostic(Diagnostic.Create(
+                                TeamsActivityNamespaceDescriptor,
+                                location,
+                                i + 1, method.Name, rule.AttributeDisplayName));
+                        }
+                        else
+                        {
+                            ctx.ReportDiagnostic(Diagnostic.Create(
+                                ParameterTypeDescriptor,
+                                location,
+                                i + 1, method.Name, rule.AttributeDisplayName, rule.ParameterTypes[i]!));
+                        }
                     }
                 }
             }
@@ -586,6 +614,22 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="type"/> is <paramref name="baseClass"/>
+        /// or inherits from it (walks the base-class chain).
+        /// </summary>
+        private static bool InheritsFromClass(ITypeSymbol type, INamedTypeSymbol baseClass)
+        {
+            var current = type as INamedTypeSymbol;
+            while (current != null)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, baseClass))
+                    return true;
+                current = current.BaseType;
+            }
+            return false;
         }
 
         /// <summary>

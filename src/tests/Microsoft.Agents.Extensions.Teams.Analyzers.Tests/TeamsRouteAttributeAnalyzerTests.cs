@@ -1155,5 +1155,105 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.EmptyCommandIdDiagnosticId);
         }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS012 — wrong Activity namespace (Teams.Api.Activities vs Core.Models.IActivity)
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task MessagePreviewEditRoute_TeamsApiActivity_EmitsMTEAMS012NotMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnEdit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Activities.Activity activityPreview,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId);
+        }
+
+        [Fact]
+        public async Task MessagePreviewSendRoute_TeamsApiActivity_EmitsMTEAMS012()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRoute("cmd")]
+                    public Task OnSend(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Activities.Activity activityPreview,
+                        CancellationToken ct) => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId);
+        }
+
+        [Fact]
+        public async Task MessagePreviewEditRoute_CoreIActivity_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Core.Models;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnEdit(
+                        ITurnContext ctx, ITurnState state,
+                        IActivity activityPreview,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d =>
+                d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId ||
+                d.Id == TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId);
+        }
+
+        [Fact]
+        public async Task MessagePreviewEditRoute_TeamsApiMessageActivity_EmitsMTEAMS012()
+        {
+            // Teams.Api.Activities.MessageActivity inherits from Teams.Api.Activities.Activity —
+            // confirmed via TeamsModelExtensions.cs and CoreVsTeamsModelPropertyTests.cs in this repo.
+            // Should still trigger MTEAMS012
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRoute("cmd")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnEdit(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.Activities.MessageActivity activityPreview,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.TeamsActivityNamespaceDiagnosticId);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId);
+        }
     }
 }
