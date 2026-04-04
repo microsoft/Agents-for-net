@@ -1104,5 +1104,56 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var diagnostics = await GetDiagnosticsAsync(source);
             Assert.Contains(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.InvalidRegexDiagnosticId);
         }
+
+        // ---------------------------------------------------------------------------
+        // MTEAMS011 — empty commandId string
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task QueryRoute_EmptyCommandId_EmitsMTEAMS011()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute("")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var mteams011 = diagnostics.Where(d => d.Id == TeamsRouteAttributeAnalyzer.EmptyCommandIdDiagnosticId).ToList();
+            Assert.Single(mteams011);
+            Assert.Contains("OnQuery", mteams011[0].GetMessage());
+            Assert.Contains("QueryRoute", mteams011[0].GetMessage());
+        }
+
+        [Fact]
+        public async Task QueryRoute_NullCommandId_NoMTEAMS011()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRoute(null, "search.*")]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.DoesNotContain(diagnostics, d => d.Id == TeamsRouteAttributeAnalyzer.EmptyCommandIdDiagnosticId);
+        }
     }
 }

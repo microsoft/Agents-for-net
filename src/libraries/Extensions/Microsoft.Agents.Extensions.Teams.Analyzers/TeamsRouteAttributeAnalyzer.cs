@@ -72,8 +72,18 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        public const string EmptyCommandIdDiagnosticId = "MTEAMS011";
+
+        internal static readonly DiagnosticDescriptor EmptyCommandIdDescriptor = new(
+            id: EmptyCommandIdDiagnosticId,
+            title: "Empty commandId string for Teams route attribute",
+            messageFormat: "Method '{0}' decorated with '[{1}]' has an empty commandId string — did you mean null (match-all) instead?",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor, InvalidRegexDescriptor);
+            ImmutableArray.Create(ReturnTypeDescriptor, ParameterCountDescriptor, ParameterTypeDescriptor, MutualExclusivityDescriptor, DuplicateCommandIdDescriptor, InvalidRegexDescriptor, EmptyCommandIdDescriptor);
 
         // -----------------------------------------------------------------------------------------
         // Metadata names for shared parameter types
@@ -497,7 +507,14 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 if (args.Length < 1) continue;
                 var commandId = args[0].Value as string;
 
-                // [MTEAMS011 will be inserted here in Task 3]
+                // MTEAMS011 — empty commandId (not null, but "")
+                if (commandId != null && commandId.Length == 0)
+                {
+                    ctx.ReportDiagnostic(Diagnostic.Create(
+                        EmptyCommandIdDescriptor,
+                        meLocation,
+                        method.Name, displayName));
+                }
 
                 // ── commandIdPattern (args[1]) — only present if explicitly written ──
                 if (args.Length < 2) continue;
