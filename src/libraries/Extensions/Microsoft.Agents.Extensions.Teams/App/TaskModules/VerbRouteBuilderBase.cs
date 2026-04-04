@@ -26,9 +26,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// configuration.</typeparam>
 public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : VerbRouteBuilderBase<TBuilder>
 {
-    private static readonly string DEFAULT_TASK_DATA_FILTER = "verb";
+    private static readonly string DEFAULT_TASK_DATA_VERBPROPERTY = "verb";
     private Func<string, bool> _verbMatch;
-    private string _verbDataFilter = DEFAULT_TASK_DATA_FILTER;
+    private string _verbPropertyName = DEFAULT_TASK_DATA_VERBPROPERTY;
 
     protected string InvokeName { get; set; }
 
@@ -38,9 +38,9 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
     }
 
     /// <summary>
-    /// Match a specific verb name.
+    /// Match a specific verb value.
     /// </summary>
-    /// <param name="verb">The verb string to be matched. This parameter cannot be null or whitespace.</param>
+    /// <param name="verb">The verb value to be matched. This parameter cannot be null or whitespace.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Command has already been defined for this builder
     /// instance.</exception>
@@ -58,9 +58,9 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
     }
 
     /// <summary>
-    /// Match a specific verb name pattern.
+    /// Match a specific verb value pattern.
     /// </summary>
-    /// <param name="verbPattern">The verb Regex pattern to be matched. This parameter cannot be null.</param>
+    /// <param name="verbPattern">The verb value matching the Regex pattern. This parameter cannot be null.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Verb has already been defined for this builder
     /// instance.</exception>
@@ -76,9 +76,15 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
         return (TBuilder)this;
     }
 
-    public TBuilder WithFilter(string verbDataFilter)
+    /// <summary>
+    /// Sets the name of the verb property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "verb" in the submitted data.
+    /// </summary>
+    /// <param name="verbPropertyName">A filter string that specifies the verb data to include. If the value is null or consists only of white space, a
+    /// default filter is applied.</param>
+    /// <returns>The current instance of the builder, enabling method chaining.</returns>
+    public TBuilder WithVerbProperty(string verbPropertyName)
     {
-        _verbDataFilter = string.IsNullOrWhiteSpace(verbDataFilter) ? DEFAULT_TASK_DATA_FILTER : verbDataFilter?.Trim();
+        _verbPropertyName = string.IsNullOrWhiteSpace(verbPropertyName) ? DEFAULT_TASK_DATA_VERBPROPERTY : verbPropertyName?.Trim();
         return (TBuilder)this;
     }
 
@@ -108,15 +114,15 @@ public class VerbRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where T
         if (_verbMatch == null && _route.Selector == null)
         {
             // match on any verb if the user didn't specify a verb match or custom selector
-            selector = CreateSelector((_) => true, _verbDataFilter, InvokeName);
+            selector = CreateSelector((_) => true, _verbPropertyName, InvokeName);
         }
         else
         {
-            selector = CreateSelector(_verbMatch, _verbDataFilter, InvokeName);
+            selector = CreateSelector(_verbMatch, _verbPropertyName, InvokeName);
         }
 
         _route.ChannelId ??= Channels.Msteams;
-        _verbDataFilter ??= DEFAULT_TASK_DATA_FILTER;
+        _verbPropertyName ??= DEFAULT_TASK_DATA_VERBPROPERTY;
 
         if (_route.Selector != null)
         {

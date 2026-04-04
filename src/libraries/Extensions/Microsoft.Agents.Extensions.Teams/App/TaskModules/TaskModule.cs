@@ -33,7 +33,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(string verb, FetchHandler handler)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
     }
 
@@ -47,7 +47,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch<TData>(string verb, FetchHandler<TData> handler)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
     }
 
@@ -60,7 +60,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(Regex verbPattern, FetchHandler handler)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
     }
 
@@ -74,7 +74,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch<TData>(Regex verbPattern, FetchHandler<TData> handler)
     {
-        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(FetchRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
     }
 
@@ -87,7 +87,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(string verb, SubmitHandler handler)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
     }
 
@@ -101,7 +101,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit<TData>(string verb, SubmitHandler<TData> handler)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verb).WithHandler(handler).Build());
         return this;
     }
 
@@ -114,7 +114,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(Regex verbPattern, SubmitHandler handler)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
     }
 
@@ -128,7 +128,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit<TData>(Regex verbPattern, SubmitHandler<TData> handler)
     {
-        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithFilter(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitRouteBuilder.Create().WithChannelId(_channelId).WithVerbProperty(Options?.TaskDataFilter).WithVerb(verbPattern).WithHandler(handler).Build());
         return this;
     }
 }

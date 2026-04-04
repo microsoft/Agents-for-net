@@ -88,15 +88,16 @@ public class FetchRouteAttribute(string verb, bool isAgenticOnly = false, ushort
 /// </code>
 /// </remarks>
 /// <param name="verb">The task module verb to match.</param>
+/// <param name="verbProperty">The name of the verb property to filter on.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitRouteAttribute(string verb, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class SubmitRouteAttribute(string verb, string verbProperty = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var builder = SubmitRouteBuilder.Create().WithVerb(verb).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = SubmitRouteBuilder.Create().WithVerb(verb).WithVerbProperty(verbProperty).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
         if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.TaskModules.Request))
         {

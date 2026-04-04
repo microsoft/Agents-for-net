@@ -12,9 +12,10 @@ using Microsoft.Teams.Cards;
 namespace TaskModules;
 
 [TeamsExtension]
-public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentApplication(options)
+public partial class TaskModulesAgent(AgentApplicationOptions options, IConfiguration configuration) : AgentApplication(options)
 {
-    #region Message Route
+    private readonly string _appBaseUrl = configuration.GetValue<string>("AppBaseUrl") ?? "http://localhost:3978";
+
     [MessageRoute]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -26,29 +27,25 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
             }
         ])
         {
-            Actions = new List<Microsoft.Teams.Cards.Action>
-            {
-                new Microsoft.Teams.Cards.TaskFetchAction(
-                    Microsoft.Teams.Cards.TaskFetchAction.FromObject(new { opendialogtype = "simple_form" }))
+            Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
+            Actions = [
+                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "simple_form" })
                 {
-                    Title = "Simple form test"
+                    Title = "Simple Form"
                 },
-                new Microsoft.Teams.Cards.TaskFetchAction(
-                    Microsoft.Teams.Cards.TaskFetchAction.FromObject(new { opendialogtype = "webpage_dialog" }))
+                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "webpage_dialog" })
                 {
                     Title = "Webpage Dialog"
                 },
-                new Microsoft.Teams.Cards.TaskFetchAction(
-                    Microsoft.Teams.Cards.TaskFetchAction.FromObject(new { opendialogtype = "multi_step_form" }))
+                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "multi_step_form" })
                 {
-                    Title = "Multi-step Form"
+                    Title = "Multi-Step Form"
                 },
-                new Microsoft.Teams.Cards.TaskFetchAction(
-                    Microsoft.Teams.Cards.TaskFetchAction.FromObject(new { opendialogtype = "mixed_example" }))
+                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "mixed_example" })
                 {
                     Title = "Mixed Example"
                 }
-            }
+            ]
         };
 
         // Launcher card is sent as a regular message — use Core Attachment type.
@@ -60,12 +57,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
 
         return turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
     }
-    #endregion
 
-    #region Fetch Route Handlers
+    #region Simple Form
     [FetchRoute("simple_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(
-        ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         var card = new AdaptiveCard([
             new TextBlock("Simple Form") { Weight = TextWeight.Bolder, Size = TextSize.Large },
@@ -98,12 +93,21 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
+    [SubmitRoute("simple_form")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    {
+        var name = data.GetValueOrDefault("name") ?? "Unknown";
+        await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
+        return Response.WithMessage("Form was submitted");
+    }
+    #endregion
+
+    #region Dialog with Webpage Content
     [FetchRoute("webpage_dialog")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(
-        ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         // For dev: hardcoded to localhost:3978. In production, read from configuration.
-        var url = "http://localhost:3978/tabs/dialog-form";
+        var url = $"{_appBaseUrl}/tabs/dialog-form";
 
         return Task.FromResult(Response.WithUrl(
             url,
@@ -112,17 +116,26 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
             width: 800));
     }
 
+    [SubmitRoute("webpage_dialog")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    {
+        var name = data.GetValueOrDefault("name") ?? "Unknown";
+        var email = data.GetValueOrDefault("email") ?? "No email provided";
+        await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
+        return Response.WithMessage($"Form submitted successfully");
+    }
+    #endregion
+
+    #region Multi-Step Form
     [FetchRoute("multi_step_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFormFetchAsync(
-        ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         var card = new AdaptiveCard([
-            new TextBlock("Step 1 of 2") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextBlock("Enter your name to continue:") { Wrap = true, IsSubtle = true },
+            new TextBlock("This is a multi-step form") { Weight = TextWeight.Bolder, Size = TextSize.Large },
             new TextInput
             {
                 Id = "name",
-                Label = "Your Name",
+                Label = "Name",
                 Placeholder = "Enter your name",
                 IsRequired = true
             }
@@ -132,10 +145,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
             Actions = [
                 new SubmitAction
                 {
-                    Title = "Next →",
+                    Title = "Submit",
                     Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
                     {
-                        NonSchemaProperties = { ["verb"] = "multi_step_form" }
+                        NonSchemaProperties = { ["verb"] = "webpage_dialog_step_1" }
                     })
                 }
             ]
@@ -143,65 +156,18 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
 
         return Task.FromResult(Response.WithCard(
             new Microsoft.Teams.Api.Attachment(card),
-            "Multi-Step Form",
+            "Multi-step Form Dialog",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [FetchRoute("mixed_example")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(
-        ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
-    {
-        var card = new AdaptiveCard([
-            new TextBlock("Mixed Example") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextBlock("This demonstrates a placeholder for combining Adaptive Card " +
-                         "and URL-based dialogs in a workflow.")
-            {
-                Wrap = true,
-                IsSubtle = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
-        };
-
-        return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(card),
-            "Mixed Example",
-            Microsoft.Teams.Api.TaskModules.Size.Small,
-            Microsoft.Teams.Api.TaskModules.Size.Small));
-    }
-    #endregion
-
-    #region Submit Route Handlers
-    [SubmitRoute("simple_form")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(
-        ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
-    {
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
-        await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
-        return Response.WithMessage($"Form submitted by {name}.");
-    }
-
-    [SubmitRoute("webpage_dialog")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(
-        ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
-    {
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
-        var email = data.GetValueOrDefault("email") ?? "No email provided";
-        await turnContext.SendActivityAsync($"Hi {name}! We received your email: {email}", cancellationToken: cancellationToken);
-        return Response.WithMessage($"Thank you, {name}!");
-    }
-
-    [SubmitRoute("multi_step_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFormStep1SubmitAsync(
-        ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [SubmitRoute("webpage_dialog_step_1")]
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
     {
         var name = data.GetValueOrDefault("name") ?? "Unknown";
 
         var card = new AdaptiveCard([
-            new TextBlock($"Step 2 of 2 — Hello, {name}!") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextBlock("Please enter your email address:") { Wrap = true, IsSubtle = true },
+            new TextBlock($"Email, {name}!") { Weight = TextWeight.Bolder, Size = TextSize.Large },
             new TextInput
             {
                 Id = "email",
@@ -221,7 +187,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
                     {
                         NonSchemaProperties =
                         {
-                            ["verb"] = "multi_step_form_2",
+                            ["verb"] = "webpage_dialog_step_2",
                             ["name"] = name
                         }
                     })
@@ -231,19 +197,30 @@ public partial class TaskModulesAgent(AgentApplicationOptions options) : AgentAp
 
         return Task.FromResult(Response.WithCard(
             new Microsoft.Teams.Api.Attachment(card),
-            "Multi-Step Form",
+            $"Thanks {name} - Get Email",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [SubmitRoute("multi_step_form_2")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFormStep2SubmitAsync(
-        ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [SubmitRoute("webpage_dialog_step_2")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
     {
         var name = data.GetValueOrDefault("name") ?? "Unknown";
         var email = data.GetValueOrDefault("email") ?? "No email provided";
-        await turnContext.SendActivityAsync($"Multi-step form complete! Name: {name}, Email: {email}", cancellationToken: cancellationToken);
-        return Response.WithMessage("Form submitted successfully!");
+        await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
+        return Response.WithMessage("Multi-step form completed successfully");
+    }
+    #endregion
+
+    #region Mixed Example with Card and Webpage
+    [FetchRoute("mixed_example")]
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Response.WithUrl(
+            "https://teams.microsoft.com/l/task/example-mixed",
+            "Mixed Example",
+            600,
+            800));
     }
     #endregion
 }
