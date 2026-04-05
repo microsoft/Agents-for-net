@@ -18,7 +18,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [MessageRoute]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment(contentType: ContentTypes.AdaptiveCard, content: JsonResourceHelpers.LoadCardJson("launcher-card.json"))), cancellationToken);
+        return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment(contentType: ContentTypes.AdaptiveCard, content: CardLoader.LoadCardJson("launcher-card.json"))), cancellationToken);
     }
 
     #region Simple Form
@@ -26,7 +26,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("simple-form-card.json")),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("simple-form-card.json")),
             "Simple Form",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
@@ -67,7 +67,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("multi-step-name-card.json")),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-name-card.json")),
             "Multi-step Form Dialog",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
@@ -79,7 +79,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
         var name = request.GetDataString("name", "Unknown");
 
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("multi-step-email-card.json", new Dictionary<string, string> { ["name"] = name })),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-email-card.json", new Dictionary<string, string> { ["name"] = name })),
             $"Thanks {name} - Get Email",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));

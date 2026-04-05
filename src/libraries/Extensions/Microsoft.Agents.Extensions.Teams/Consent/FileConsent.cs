@@ -3,11 +3,99 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.Consent;
 
+/// <summary>
+/// Provides routing for Microsoft Teams file consent card interactions.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Teams requires explicit user consent before a bot can upload a file into a conversation.
+/// The consent flow is:
+/// </para>
+/// <list type="number">
+///   <item>Register accept and decline handlers via <see cref="OnAccept"/> and <see cref="OnDecline"/>.</item>
+///   <item>Send a <see cref="Microsoft.Teams.Api.FileConsentCard"/> attachment to prompt the user.</item>
+///   <item>If the user accepts, the registered accept handler is called with <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/> containing upload details. Perform an HTTP PUT to <see cref="Microsoft.Teams.Api.FileUploadInfo.UploadUrl"/> to complete the upload.</item>
+///   <item>If the user declines, the registered decline handler is called.</item>
+/// </list>
+/// <example>
+/// The following example registers both handlers and demonstrates the full consent-and-upload flow.
+/// <code>
+/// [TeamsExtension]
+/// public partial class MyAgent : AgentApplication
+/// {
+///     private readonly IHttpClientFactory _httpClientFactory;
+///
+///     public MyAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
+///     {
+///         _httpClientFactory = httpClientFactory;
+///
+///         Teams.FileConsent
+///             .OnAccept(OnFileConsentAcceptAsync)
+///             .OnDecline(OnFileConsentDeclineAsync);
+///     }
+///
+///     // Send a file consent card when the user requests a file upload.
+///     [MessageRoute]
+///     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+///     {
+///         var consentCard = new Microsoft.Teams.Api.FileConsentCard
+///         {
+///             Description = "Here is the report you requested.",
+///             SizeInBytes = 42000,
+///             AcceptContext = new { filename = "report.txt" },
+///             DeclineContext = new { filename = "report.txt" }
+///         };
+///
+///         var attachment = new Microsoft.Agents.Core.Models.Attachment
+///         {
+///             ContentType = "application/vnd.microsoft.teams.card.file.consent",
+///             Name = "report.txt",
+///             Content = consentCard
+///         };
+///
+///         return turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
+///     }
+///
+///     private async Task OnFileConsentAcceptAsync(
+///         ITurnContext turnContext,
+///         ITurnState turnState,
+///         Microsoft.Teams.Api.FileConsentCardResponse response,
+///         CancellationToken cancellationToken)
+///     {
+///         var filePath = Path.Combine("wwwroot", "report.txt");
+///         var fileInfo = new FileInfo(filePath);
+///         var client = _httpClientFactory.CreateClient();
+///
+///         using var fileStream = File.OpenRead(filePath);
+///         var fileContent = new StreamContent(fileStream);
+///         fileContent.Headers.ContentLength = fileInfo.Length;
+///         fileContent.Headers.ContentRange =
+///             new System.Net.Http.Headers.ContentRangeHeaderValue(0, fileInfo.Length - 1, fileInfo.Length);
+///
+///         await client.PutAsync(response.UploadInfo.UploadUrl, fileContent, cancellationToken);
+///
+///         await turnContext.SendActivityAsync(
+///             $"File **{response.UploadInfo.Name}** uploaded successfully.",
+///             cancellationToken: cancellationToken);
+///     }
+///
+///     private Task OnFileConsentDeclineAsync(
+///         ITurnContext turnContext,
+///         ITurnState turnState,
+///         Microsoft.Teams.Api.FileConsentCardResponse response,
+///         CancellationToken cancellationToken)
+///     {
+///         return turnContext.SendActivityAsync(
+///             "File upload was declined.",
+///             cancellationToken: cancellationToken);
+///     }
+/// }
+/// </code>
+/// </example>
+/// </remarks>
 public class FileConsent
 {
     private readonly AgentApplication _app;
@@ -27,8 +115,17 @@ public class FileConsent
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public FileConsent OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        => OnFileConsent(handler, "accept", rank, autoSignInHandlers, isAgenticOnly);
+    public FileConsent OnAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    {
+        _app.AddRoute(FileConsentAcceptRouteBuilder.Create()
+            .WithHandler(handler)
+            .WithChannelId(_channelId)
+            .WithOrderRank(rank)
+            .AsAgentic(isAgenticOnly)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
 
     /// <summary>
     /// Handles when a file consent card is declined by the user.
@@ -38,31 +135,15 @@ public class FileConsent
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public FileConsent OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-        => OnFileConsent(handler, "decline", rank, autoSignInHandlers, isAgenticOnly);
-
-    private FileConsent OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public FileConsent OnDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
-        _app.AddRoute(InvokeRouteBuilder.Create()
-            .WithName(Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent)
-            .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
-            .WithSelector((turnContext, cancellationToken) =>
-            {
-                Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(turnContext.Activity.Value);
-                return Task.FromResult(fileConsentCardResponse != null && string.Equals(fileConsentCardResponse.Action, fileConsentAction));
-            })
-            .WithHandler(async (turnContext, turnState, cancellationToken) =>
-            {
-                Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(turnContext.Activity.Value);
-                if (string.Equals(fileConsentCardResponse.Action, fileConsentAction))
-                {
-                    await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken).ConfigureAwait(false);
-                    await TeamsAgentExtension.SetResponse(turnContext).ConfigureAwait(false);
-                }
-            })
+        _app.AddRoute(FileConsentDeclineRouteBuilder.Create()
+            .WithHandler(handler)
+            .WithChannelId(_channelId)
+            .WithOrderRank(rank)
+            .AsAgentic(isAgenticOnly)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
-
         return this;
     }
 }

@@ -488,7 +488,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var ids = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.FileConsent.OnFileConsentAccept((turnContext, _, _, _) =>
+                ext.FileConsent.OnAccept((turnContext, _, _, _) =>
                 {
                     ids.Add(turnContext.Activity.Id);
                     return Task.CompletedTask;
@@ -574,7 +574,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.FileConsent.OnFileConsentDecline((turnContext, _, _, _) =>
+                ext.FileConsent.OnDecline((turnContext, _, _, _) =>
                 {
                     ids.Add(turnContext.Activity.Id);
                     return Task.CompletedTask;
