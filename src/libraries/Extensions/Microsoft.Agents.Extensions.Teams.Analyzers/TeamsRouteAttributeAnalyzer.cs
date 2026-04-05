@@ -130,6 +130,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private const string TaskModulesResponse = "Microsoft.Teams.Api.TaskModules.Response";
         private const string FileConsentCardResponse = "Microsoft.Teams.Api.FileConsentCardResponse";
         private const string ConfigResponse = "Microsoft.Teams.Api.Config.ConfigResponse";
+        private const string JsonElement = "System.Text.Json.JsonElement";
+        private const string ConnectorCardActionQuery = "Microsoft.Teams.Api.O365.ConnectorCardActionQuery";
 
         // -----------------------------------------------------------------------------------------
         // Mutual exclusivity — attributes where commandId and commandIdPattern are exclusive
@@ -455,6 +457,49 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeGenericArgument = ConfigResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.Config.ConfigResponse>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
+            },
+            // Messages — MessageEditRoute / MessageUndeleteRoute / MessageDeleteRoute use plain RouteHandler (3 params)
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Messages.MessageEditRouteAttribute",
+                AttributeDisplayName   = "MessageEditRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Messages.MessageUndeleteRouteAttribute",
+                AttributeDisplayName   = "MessageUndeleteRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Messages.MessageDeleteRouteAttribute",
+                AttributeDisplayName   = "MessageDeleteRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, CancelToken },
+            },
+            // ReadReceiptRoute — 4 params, 3rd is JsonElement
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Messages.ReadReceiptRouteAttribute",
+                AttributeDisplayName   = "ReadReceiptRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, JsonElement, CancelToken },
+            },
+            // O365ConnectorCardActionRoute — 4 params, 3rd is ConnectorCardActionQuery
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Messages.O365ConnectorCardActionRouteAttribute",
+                AttributeDisplayName   = "O365ConnectorCardActionRoute",
+                ReturnTypeGenericArgument = null,
+                ReturnTypeDisplayName  = "Task",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, ConnectorCardActionQuery, CancelToken },
             }
         );
 

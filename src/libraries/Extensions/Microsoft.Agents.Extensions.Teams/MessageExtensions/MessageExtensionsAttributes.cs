@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnQuery"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnQuery(string, QueryHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID.  Mutually exclusive with commandId.</param>
@@ -142,7 +142,7 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 ///     });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnFetchAction"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnFetchAction(string, FetchActionHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
@@ -186,7 +186,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnMessagePreviewEdit"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnMessagePreviewEdit(string, MessagePreviewEditHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
@@ -230,7 +230,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 ///     await _channel.PostAsync(content, cancellationToken);
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnMessagePreviewSend"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnMessagePreviewSend(string, MessagePreviewSendHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match.  Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The message extension command ID pattern to match using regular expressions.  Mutually exclusive with commandId.</param>
@@ -308,7 +308,7 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnSubmitAction"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnSubmitAction(string, SubmitActionHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>

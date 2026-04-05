@@ -1652,5 +1652,442 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             Assert.Contains("ConfigSubmitRoute", d.GetMessage());
             Assert.Contains("4", d.GetMessage());
         }
+
+        // ---------------------------------------------------------------------------
+        // Messages — MessageEditRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Messages_MessageEditRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageEditRoute]
+                    public Task OnMessageEdit(ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Messages_MessageEditRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageEditRoute]
+                    public void OnMessageEdit(ITurnContext ctx, ITurnState state, CancellationToken ct) { }
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnMessageEdit", d.GetMessage());
+            Assert.Contains("MessageEditRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_MessageEditRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageEditRoute]
+                    public Task OnMessageEdit(ITurnContext ctx, CancellationToken ct) => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnMessageEdit", d.GetMessage());
+            Assert.Contains("MessageEditRoute", d.GetMessage());
+            Assert.Contains("3", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // Messages — MessageUndeleteRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Messages_MessageUndeleteRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageUndeleteRoute]
+                    public Task OnMessageUndelete(ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Messages_MessageUndeleteRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageUndeleteRoute]
+                    public void OnMessageUndelete(ITurnContext ctx, ITurnState state, CancellationToken ct) { }
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnMessageUndelete", d.GetMessage());
+            Assert.Contains("MessageUndeleteRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_MessageUndeleteRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageUndeleteRoute]
+                    public Task OnMessageUndelete(ITurnContext ctx, CancellationToken ct) => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnMessageUndelete", d.GetMessage());
+            Assert.Contains("MessageUndeleteRoute", d.GetMessage());
+            Assert.Contains("3", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // Messages — MessageDeleteRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Messages_MessageDeleteRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageDeleteRoute]
+                    public Task OnMessageDelete(ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Messages_MessageDeleteRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageDeleteRoute]
+                    public void OnMessageDelete(ITurnContext ctx, ITurnState state, CancellationToken ct) { }
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnMessageDelete", d.GetMessage());
+            Assert.Contains("MessageDeleteRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_MessageDeleteRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.MessageDeleteRoute]
+                    public Task OnMessageDelete(ITurnContext ctx, CancellationToken ct) => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnMessageDelete", d.GetMessage());
+            Assert.Contains("MessageDeleteRoute", d.GetMessage());
+            Assert.Contains("3", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // Messages — ReadReceiptRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Messages_ReadReceiptRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Text.Json;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.ReadReceiptRoute]
+                    public Task OnReadReceipt(ITurnContext ctx, ITurnState state, JsonElement data, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Messages_ReadReceiptRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Text.Json;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.ReadReceiptRoute]
+                    public void OnReadReceipt(ITurnContext ctx, ITurnState state, JsonElement data, CancellationToken ct) { }
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnReadReceipt", d.GetMessage());
+            Assert.Contains("ReadReceiptRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_ReadReceiptRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.ReadReceiptRoute]
+                    public Task OnReadReceipt(ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnReadReceipt", d.GetMessage());
+            Assert.Contains("ReadReceiptRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_ReadReceiptRoute_WrongParameterType_EmitsMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.ReadReceiptRoute]
+                    public Task OnReadReceipt(ITurnContext ctx, ITurnState state, string data, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnReadReceipt", d.GetMessage());
+            Assert.Contains("ReadReceiptRoute", d.GetMessage());
+            Assert.Contains("System.Text.Json.JsonElement", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // Messages — O365ConnectorCardActionRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Messages_O365ConnectorCardActionRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.O365ConnectorCardActionRoute]
+                    public Task OnO365Action(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.O365.ConnectorCardActionQuery query,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Messages_O365ConnectorCardActionRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.O365ConnectorCardActionRoute]
+                    public void OnO365Action(
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.O365.ConnectorCardActionQuery query,
+                        CancellationToken ct) { }
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnO365Action", d.GetMessage());
+            Assert.Contains("O365ConnectorCardActionRoute", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_O365ConnectorCardActionRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.O365ConnectorCardActionRoute]
+                    public Task OnO365Action(ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnO365Action", d.GetMessage());
+            Assert.Contains("O365ConnectorCardActionRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Messages_O365ConnectorCardActionRoute_WrongParameterType_EmitsMTEAMS003()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Messages.O365ConnectorCardActionRoute]
+                    public Task OnO365Action(ITurnContext ctx, ITurnState state, string query, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnO365Action", d.GetMessage());
+            Assert.Contains("O365ConnectorCardActionRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.O365.ConnectorCardActionQuery", d.GetMessage());
+        }
     }
 }

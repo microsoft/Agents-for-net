@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 ///     // Handle task module fetch event
 /// }
 /// </code>
-/// Alternatively, <see cref="TaskModule.OnFetch"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="TaskModule.OnFetch(string, TaskFetchHandler, string)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="value">The task module key value to match.  If null this will match for any fetch request.</param>
 /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
@@ -59,7 +59,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
 ///     // Handle task module submit event
 /// }
 /// </code>
-/// Alternatively, <see cref="TaskModule.OnSubmit"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="TaskModule.OnSubmit(string, TaskSubmitHandler, string)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="value">The task module key value to match.  If null, this will match for any submit request.</param>
 /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
