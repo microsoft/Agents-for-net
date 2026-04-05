@@ -130,17 +130,17 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is unshared.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelUnSharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="ChannelUnsharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel unshared event. This handler is called with information about channel.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
         /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the channel unshared process.
         /// Specify null if no automatic sign-in is required.</param>
         /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
-        public TeamsChannel OnUnShared(ChannelUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsChannel OnUnshared(ChannelUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
-                .ForChannelUnShared()
+                .ForChannelUnshared()
                 .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)

@@ -179,6 +179,14 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.AnonQueryLinkRouteAttribute",
+                AttributeDisplayName   = "AnonQueryLinkRoute",
+                ReturnTypeGenericArgument = Response,
+                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, StringType, CancelToken },
+            },
+            new SignatureRule
+            {
                 AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryUrlSettingRouteAttribute",
                 AttributeDisplayName   = "QueryUrlSettingRoute",
                 ReturnTypeGenericArgument = Response,
@@ -353,8 +361,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelUnSharedRouteAttribute",
-                AttributeDisplayName   = "ChannelUnSharedRoute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelUnsharedRouteAttribute",
+                AttributeDisplayName   = "ChannelUnsharedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, Channel, CancelToken },

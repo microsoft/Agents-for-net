@@ -121,7 +121,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ChannelUnSharedAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task ChannelUnsharedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext(EventType.ChannelUnShared, "unshared-channel");
@@ -346,8 +346,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelUnSharedRoute]
-        public Task OnChannelUnSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+        [ChannelUnsharedRoute]
+        public Task OnChannelUnsharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelUnShared;
             LastChannelId = channel.Id;

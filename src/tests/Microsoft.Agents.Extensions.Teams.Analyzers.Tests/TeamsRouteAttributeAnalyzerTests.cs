@@ -226,6 +226,84 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
+        // AnonQueryLinkRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task AnonQueryLinkRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                [Microsoft.Agents.Extensions.Teams.TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.MessageExtensions.AnonQueryLinkRoute]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnAnonQueryLink(
+                        ITurnContext ctx, ITurnState state, string url, CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task AnonQueryLinkRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                [Microsoft.Agents.Extensions.Teams.TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.MessageExtensions.AnonQueryLinkRoute]
+                    public Task OnAnonQueryLink(
+                        ITurnContext ctx, ITurnState state, string url, CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnAnonQueryLink", d.GetMessage());
+            Assert.Contains("AnonQueryLinkRoute", d.GetMessage());
+            Assert.Contains("Task<Microsoft.Teams.Api.MessageExtensions.Response>", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task AnonQueryLinkRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+
+                [Microsoft.Agents.Extensions.Teams.TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.MessageExtensions.AnonQueryLinkRoute]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnAnonQueryLink(
+                        ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnAnonQueryLink", d.GetMessage());
+            Assert.Contains("AnonQueryLinkRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
         // FetchActionRoute
         // ---------------------------------------------------------------------------
 

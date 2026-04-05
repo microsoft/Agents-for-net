@@ -224,24 +224,24 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// Decorate a method with this attribute to register it as a handler for channel unshared events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelUnSharedRoute]
-/// public async Task OnChannelUnSharedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// [ChannelUnsharedRoute]
+/// public async Task OnChannelUnsharedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel unshared event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnUnShared"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="TeamsChannel.OnUnshared"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelUnSharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelUnShared().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelUnshared().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

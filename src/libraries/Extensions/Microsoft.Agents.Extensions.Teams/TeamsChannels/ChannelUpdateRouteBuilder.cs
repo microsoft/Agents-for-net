@@ -85,7 +85,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// Match on channel unshared events.
     /// </summary>
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
-    public ChannelUpdateRouteBuilder ForChannelUnShared()
+    public ChannelUpdateRouteBuilder ForChannelUnshared()
     {
         _channelEvents.Add(EventType.ChannelUnShared);
         return this;

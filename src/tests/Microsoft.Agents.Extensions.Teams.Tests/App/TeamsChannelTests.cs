@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnUnShared_MatchesChannelUnShared()
+        public async Task Test_OnUnshared_MatchesChannelUnShared()
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Channels.OnUnShared((ctx, _, data, ct) =>
+                ext.Channels.OnUnshared((ctx, _, data, ct) =>
                 {
                     capturedIds.Add(data.Id);
                     return Task.CompletedTask;

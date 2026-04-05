@@ -86,6 +86,38 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 }
 
 /// <summary>
+/// Attribute to define a route that handles Teams message extension anonymous query link (anonymous link unfurling) events.
+/// </summary>
+/// <remarks>
+/// Decorate a method with this attribute to register it as a handler for message extension anonymous query link events in Teams.
+/// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
+/// <code>
+/// [AnonQueryLinkRoute]
+/// public async Task&lt;Response&gt; OnAnonQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+/// {
+///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
+///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
+///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [attachment] });
+/// }
+/// </code>
+/// Alternatively, <see cref="MessageExtension.OnAnonymousQueryLink"/> can be used to register the handler via the fluent API.
+/// </remarks>
+/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
+[AttributeUsage(AttributeTargets.Method, Inherited = true)]
+public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+{
+    public void AddRoute(AgentApplication app, MethodInfo method)
+    {
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<QueryLinkHandler>(app, method);
+        var builder = AnonQueryLinkRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
+        app.AddRoute(builder.Build());
+    }
+}
+
+/// <summary>
 /// Attribute to define a route that handles Teams message extension query URL setting events.
 /// </summary>
 /// <remarks>
