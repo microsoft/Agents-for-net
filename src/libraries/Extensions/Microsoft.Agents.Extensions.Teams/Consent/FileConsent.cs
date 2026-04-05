@@ -101,6 +101,7 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is accepted by the user.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="FileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
@@ -121,6 +122,7 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is declined by the user.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="FileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>

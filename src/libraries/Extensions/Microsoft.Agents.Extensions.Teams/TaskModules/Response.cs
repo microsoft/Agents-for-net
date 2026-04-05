@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
-using Microsoft.Teams.Common;
 
 namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 
@@ -39,9 +38,9 @@ public static class Response
             FallbackUrl = fallbackUrl
         };
         if (height.HasValue)
-            taskInfo.Height = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(height.Value);
+            taskInfo.Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(height.Value);
         if (width.HasValue)
-            taskInfo.Width = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(width.Value);
+            taskInfo.Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(width.Value);
 
         return new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(taskInfo))
@@ -74,8 +73,8 @@ public static class Response
         {
             Card = card,
             Title = title,
-            Height = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(height),
-            Width = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(width),
+            Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(height),
+            Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(width),
             FallbackUrl = fallbackUrl
         };
 
@@ -116,9 +115,9 @@ public static class Response
             CompletionBotId = completionBotId
         };
         if (height.HasValue)
-            taskInfo.Height = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(height.Value);
+            taskInfo.Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(height.Value);
         if (width.HasValue)
-            taskInfo.Width = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(width.Value);
+            taskInfo.Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(width.Value);
 
         return new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(taskInfo))
@@ -153,8 +152,8 @@ public static class Response
         {
             Url = url,
             Title = title,
-            Height = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(height),
-            Width = new Union<int, Microsoft.Teams.Api.TaskModules.Size>(width),
+            Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(height),
+            Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(width),
             FallbackUrl = fallbackUrl,
             CompletionBotId = completionBotId
         };

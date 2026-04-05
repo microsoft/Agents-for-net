@@ -15,11 +15,12 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// The method must match the <see cref="MeetingStartHandler"/> delegate signature.
 /// <code>
 /// [MeetingStartRoute]
-/// public async Task OnMeetingStartAsync(ITurnContext turnContext, ITurnState turnState, MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingStartAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting start event
 /// }
 /// </code>
+/// Alternatively, <see cref="Meeting.OnStart"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -45,11 +46,12 @@ public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="MeetingEndHandler"/> delegate signature.
 /// <code>
 /// [MeetingEndRoute]
-/// public async Task OnMeetingEndAsync(ITurnContext turnContext, ITurnState turnState, MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingEndAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting end event
 /// }
 /// </code>
+/// Alternatively, <see cref="Meeting.OnEnd"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -80,6 +82,7 @@ public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 ///     // Handle participants join event
 /// }
 /// </code>
+/// Alternatively, <see cref="Meeting.OnParticipantsJoin"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -110,6 +113,7 @@ public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, u
 ///     // Handle participants leave event
 /// }
 /// </code>
+/// Alternatively, <see cref="Meeting.OnParticipantsLeave"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Teams.Api;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.Teams.Models;
@@ -48,7 +47,7 @@ public class TeamsMeetingMember
     /// </summary>
     /// <param name="user">The channel user data.</param>
     /// <param name="meeting">The user meeting details.</param>
-    public TeamsMeetingMember(Account user, UserMeetingDetails meeting)
+    public TeamsMeetingMember(Microsoft.Teams.Api.Account user, UserMeetingDetails meeting)
     {
         User = user;
         Meeting = meeting;
@@ -60,7 +59,7 @@ public class TeamsMeetingMember
     /// <value>
     /// The joined participant account.
     /// </value>
-    public Account User { get; set; }
+    public Microsoft.Teams.Api.Account User { get; set; }
 
     /// <summary>
     /// Gets or sets the user meeting details.

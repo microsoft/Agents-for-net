@@ -15,11 +15,12 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelCreatedRoute]
-/// public async Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel created event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnCreated"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -44,11 +45,12 @@ public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelDeletedRoute]
-/// public async Task OnChannelDeletedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel deleted event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnDeleted"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -73,11 +75,12 @@ public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelMemberAddedRoute]
-/// public async Task OnChannelMemberAddedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelMemberAddedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member added event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnMemberAdded"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -102,11 +105,12 @@ public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelMemberRemovedRoute]
-/// public async Task OnChannelMemberRemovedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelMemberRemovedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member removed event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnMemberRemoved"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -131,11 +135,12 @@ public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, usho
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelRenamedRoute]
-/// public async Task OnChannelRenamedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel renamed event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnRenamed"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -160,11 +165,12 @@ public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelRestoredRoute]
-/// public async Task OnChannelRestoredAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelRestoredAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel restored event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnRestored"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -189,11 +195,12 @@ public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelSharedRoute]
-/// public async Task OnChannelSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelSharedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel shared event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnShared"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -218,11 +225,12 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelUnSharedRoute]
-/// public async Task OnChannelUnSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelUnSharedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel unshared event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnUnShared"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -249,11 +257,12 @@ public class ChannelUnSharedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [ChannelUpdateRoute]
-/// public async Task OnAnyChannelEventAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
+/// public async Task OnAnyChannelEventAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle any channel update event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsChannel.OnChannelEventReceived"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
 /// [QueryRoute("searchProducts")]
-/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
 ///     var items = await _catalog.SearchAsync(keyword, cancellationToken);
@@ -24,6 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnQuery"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID.  Mutually exclusive with commandId.</param>
@@ -67,6 +68,7 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [attachment] });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnQueryLink"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -103,6 +105,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 ///     });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnQueryUrlSetting"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -127,7 +130,7 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="FetchActionHandler"/> delegate signature.
 /// <code>
 /// [FetchActionRoute("myCommand")]
-/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, Action action, CancellationToken cancellationToken)
+/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new ActionResponse
 ///     {
@@ -139,6 +142,7 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 ///     });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnFetchAction"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
@@ -182,6 +186,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnMessagePreviewEdit"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
@@ -225,6 +230,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 ///     await _channel.PostAsync(content, cancellationToken);
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnMessagePreviewSend"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match.  Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The message extension command ID pattern to match using regular expressions.  Mutually exclusive with commandId.</param>
@@ -261,7 +267,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 /// The method must match the <see cref="ConfigureSettingsHandler"/> delegate signature.
 /// <code>
 /// [ConfigureSettingsRoute]
-/// public Task&lt;Response&gt; OnConfigureSettingsAsync(ITurnContext turnContext, ITurnState turnState, Query query, CancellationToken cancellationToken)
+/// public Task&lt;Response&gt; OnConfigureSettingsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     // Persist user settings and return an updated result
 ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
@@ -269,6 +275,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 ///     return ResponseTask.WithResult(new Result { Type = ResultType.Config });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnConfigureSettings"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -294,13 +301,14 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 /// the third parameter must be <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
 /// <code>
 /// [SubmitActionRoute("createTask")]
-/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, Action action, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
 ///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnSubmitAction"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
@@ -349,6 +357,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnSelectItem"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -384,6 +393,7 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 ///     await turnContext.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: cancellationToken);
 /// }
 /// </code>
+/// Alternatively, <see cref="MessageExtension.OnCardButtonClicked"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

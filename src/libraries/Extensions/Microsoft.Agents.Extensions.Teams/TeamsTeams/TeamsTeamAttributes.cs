@@ -15,11 +15,12 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamArchivedRoute]
-/// public async Task OnTeamArchivedAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamArchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team archived event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnArchived"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -44,11 +45,12 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamUnarchivedRoute]
-/// public async Task OnTeamUnarchivedAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamUnarchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team unarchived event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnUnarchived"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -73,11 +75,12 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamDeletedRoute]
-/// public async Task OnTeamDeletedAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team deleted event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnDeleted"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -102,11 +105,12 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamHardDeletedRoute]
-/// public async Task OnTeamHardDeletedAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamHardDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team hard deleted event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnHardDeleted"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -131,11 +135,12 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamRenamedRoute]
-/// public async Task OnTeamRenamedAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team renamed event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnRenamed"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -160,11 +165,12 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamRestoredRoute]
-/// public async Task OnTeamRestoredAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRestoredAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team restored event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnRestored"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -191,11 +197,12 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamUpdateRoute]
-/// public async Task OnAnyTeamEventAsync(ITurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
+/// public async Task OnAnyTeamEventAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle any team update event
 /// }
 /// </code>
+/// Alternatively, <see cref="TeamsTeam.OnTeamEventReceived"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

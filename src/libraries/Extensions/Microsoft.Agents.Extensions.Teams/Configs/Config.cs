@@ -98,6 +98,7 @@ public class Config
     /// <summary>
     /// Handles config fetch events for Microsoft Teams.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="ConfigFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
@@ -118,6 +119,7 @@ public class Config
     /// <summary>
     /// Handles config submit events for Microsoft Teams.
     /// </summary>
+    /// <remarks>Alternatively, the <see cref="ConfigSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>

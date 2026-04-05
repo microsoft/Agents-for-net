@@ -25,6 +25,7 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 ///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
 /// }
 /// </code>
+/// Alternatively, <see cref="Config.OnConfigFetch"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -63,6 +64,7 @@ public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank =
 ///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
 /// }
 /// </code>
+/// Alternatively, <see cref="Config.OnConfigSubmit"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

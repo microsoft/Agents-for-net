@@ -18,12 +18,13 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         }
 
         /// <summary>
-        /// Handle any team update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between 
+        /// Handle any team update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
         /// team update event types (e.g. archived, deleted, etc.) using:
         /// <code>
         /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
         /// </code>
         /// </summary>
+        /// <remarks>Alternatively, the <see cref="TeamUpdateRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team update event. This handler is called with information about the team.</param>
         /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
         /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team update process.

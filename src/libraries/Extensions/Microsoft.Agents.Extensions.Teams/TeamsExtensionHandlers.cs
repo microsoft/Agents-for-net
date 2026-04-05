@@ -3,8 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Teams.Api.Config;
-using Microsoft.Teams.Api.O365;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,8 +17,8 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// <param name="configData">The config data.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of ConfigResponseBase.</returns>
-public delegate Task<ConfigResponse> ConfigHandler(ITurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
+/// <returns>A <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</returns>
+public delegate Task<Microsoft.Teams.Api.Config.ConfigResponse> ConfigHandler(ITurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling O365 Connector Card Action activities.
@@ -31,7 +29,7 @@ public delegate Task<ConfigResponse> ConfigHandler(ITurnContext turnContext, ITu
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, ITurnState turnState, ConnectorCardActionQuery query, CancellationToken cancellationToken);
+public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling read receipt events.

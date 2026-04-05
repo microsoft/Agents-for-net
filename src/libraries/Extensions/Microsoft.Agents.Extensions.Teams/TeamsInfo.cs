@@ -5,9 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Models;
-using Microsoft.Teams.Api;
-using Microsoft.Teams.Api.Clients;
-using Microsoft.Teams.Api.Meetings;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -33,11 +30,11 @@ public static class TeamsInfo
     /// provided, and also cannot be retrieved from turnContext.Activity.</remarks>
     /// <returns>Team participant channel account.</returns>
     /// <exception cref="InvalidOperationException">Thrown when meetingId, participantId or tenantId are not provided and cannot be found on the turnContext.</exception>
-    public static async Task<MeetingParticipant> GetMeetingParticipantAsync(ITurnContext turnContext, string meetingId = null, string participantId = null, string tenantId = null, CancellationToken cancellationToken = default)
+    public static async Task<Microsoft.Teams.Api.Clients.MeetingParticipant> GetMeetingParticipantAsync(ITurnContext turnContext, string meetingId = null, string participantId = null, string tenantId = null, CancellationToken cancellationToken = default)
     {
         meetingId ??= turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of a MS Teams Meeting.");
         participantId ??= turnContext.Activity.From.AadObjectId ?? throw new InvalidOperationException($"{nameof(participantId)} is required.");
-        tenantId ??= turnContext.Activity.GetChannelData<ChannelData>()?.Tenant?.Id ?? throw new InvalidOperationException($"{nameof(tenantId)} is required.");
+        tenantId ??= turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>()?.Tenant?.Id ?? throw new InvalidOperationException($"{nameof(tenantId)} is required.");
 
         var teamsClient = GetTeamsApiClient(turnContext);
         return await teamsClient.Meetings.GetParticipantAsync(meetingId, participantId, tenantId, cancellationToken);
@@ -51,7 +48,7 @@ public static class TeamsInfo
     /// <param name="cancellationToken"> Cancellation token.</param>
     /// <returns>Team Details.</returns>
     /// <exception cref="InvalidOperationException">Thrown when meetingId is not provided and cannot be found on the turnContext.</exception>
-    public static async Task<Meeting> GetMeetingInfoAsync(ITurnContext turnContext, string meetingId = null, CancellationToken cancellationToken = default)
+    public static async Task<Microsoft.Teams.Api.Meetings.Meeting> GetMeetingInfoAsync(ITurnContext turnContext, string meetingId = null, CancellationToken cancellationToken = default)
     {
         meetingId ??= turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("The meetingId can only be null if turnContext is within the scope of a MS Teams Meeting.");
         var teamsClient = GetTeamsApiClient(turnContext);
@@ -66,7 +63,7 @@ public static class TeamsInfo
     /// <param name="cancellationToken"> Cancellation token. </param>
     /// <returns>Team Details.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
-    public static async Task<Team> GetTeamDetailsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
+    public static async Task<Microsoft.Teams.Api.Team> GetTeamDetailsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
         var teamsClient = GetTeamsApiClient(turnContext);
@@ -82,7 +79,7 @@ public static class TeamsInfo
     /// <param name="cancellationToken"> cancellation token. </param>
     /// <returns>Team Details.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
-    public static async Task<IList<Channel>> GetTeamChannelsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
+    public static async Task<IList<Microsoft.Teams.Api.Channel>> GetTeamChannelsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
         var teamsClient = GetTeamsApiClient(turnContext);
@@ -138,9 +135,9 @@ public static class TeamsInfo
     /// <param name="userId"> user id. </param>
     /// <param name="teamId">ID of the Teams team. If null, then for Teams scoped conversations, the Activity.ChannelData.Team.Id is used.</param>
     /// <param name="cancellationToken"> cancellation token. </param>
-    /// <returns>The member <c>Account</c></returns>
+    /// <returns>A <see cref="Microsoft.Teams.Api.Account"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
-    public static Task<Account> GetTeamMemberAsync(ITurnContext turnContext, string userId, string teamId = null, CancellationToken cancellationToken = default)
+    public static Task<Microsoft.Teams.Api.Account> GetTeamMemberAsync(ITurnContext turnContext, string userId, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
         return GetMemberAsync(GetConnectorClient(turnContext), userId, teamId, cancellationToken);
@@ -157,9 +154,9 @@ public static class TeamsInfo
     /// <param name="turnContext">The context for the current conversation turn.</param>
     /// <param name="userId"> ID of the user in question. </param>
     /// <param name="cancellationToken"> cancellation token. </param>
-    /// <returns>The member <c>Account</c></returns>
+    /// <returns>A <see cref="Microsoft.Teams.Api.Account"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
-    public static Task<Account> GetMemberAsync(ITurnContext turnContext, string userId, CancellationToken cancellationToken = default)
+    public static Task<Microsoft.Teams.Api.Account> GetMemberAsync(ITurnContext turnContext, string userId, CancellationToken cancellationToken = default)
     {
         var teamInfo = turnContext.Activity.TeamsGetTeamInfo();
         if (teamInfo?.Id != null)
@@ -173,7 +170,7 @@ public static class TeamsInfo
         }
     }
 
-    private static async Task<Account> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)
+    private static async Task<Microsoft.Teams.Api.Account> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)
     {
         if (conversationId == null)
         {
@@ -206,7 +203,7 @@ public static class TeamsInfo
         return turnContext.Services.Get<IConnectorClient>() ?? throw new InvalidOperationException("IConnectorClient is not available.  Was IChannelServiceClientFactory registered?");
     }
 
-    private static ApiClient GetTeamsApiClient(ITurnContext turnContext)
+    private static Microsoft.Teams.Api.Clients.ApiClient GetTeamsApiClient(ITurnContext turnContext)
     {
         return turnContext.GetTeamsApiClient() ?? throw new InvalidOperationException("Teams ApiClient is not available.");
     }

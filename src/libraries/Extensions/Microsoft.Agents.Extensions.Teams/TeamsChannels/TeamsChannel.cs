@@ -21,17 +21,18 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         }
 
         /// <summary>
-        /// Handle any channel update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between 
+        /// Handle any channel update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
         /// channel update event types (e.g. created, deleted, etc.) using:
         /// <code>
         /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
         /// </code>
         /// </summary>
-        /// <param name="handler"></param>
-        /// <param name="rank"></param>
-        /// <param name="autoSignInHandlers"></param>
-        /// <param name="isAgenticOnly"></param>
-        /// <returns></returns>
+        /// <remarks>Alternatively, the <see cref="ChannelUpdateRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <param name="handler">The delegate that handles any channel update event.</param>
+        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
+        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in. Specify null if no automatic sign-in is required.</param>
+        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnChannelEventReceived(ChannelUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()

@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 /// <remarks>
 /// <code>
 /// [FileConsentAcceptRoute]
-/// public async Task OnFileConsentAcceptAsync(ITurnContext turnContext, ITurnState turnState, FileConsentCardResponse response, CancellationToken cancellationToken)
+/// public async Task OnFileConsentAcceptAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     using var fileStream = File.OpenRead("report.txt");
 ///     var fileContent = new StreamContent(fileStream);
@@ -23,6 +23,7 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 ///     await httpClient.PutAsync(response.UploadInfo.UploadUrl, fileContent, cancellationToken);
 /// }
 /// </code>
+/// Alternatively, <see cref="FileConsent.OnAccept"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -51,11 +52,12 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
 /// <remarks>
 /// <code>
 /// [FileConsentDeclineRoute]
-/// public Task OnFileConsentDeclineAsync(ITurnContext turnContext, ITurnState turnState, FileConsentCardResponse response, CancellationToken cancellationToken)
+/// public Task OnFileConsentDeclineAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     return turnContext.SendActivityAsync("File upload was declined.", cancellationToken: cancellationToken);
 /// }
 /// </code>
+/// Alternatively, <see cref="FileConsent.OnDecline"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
