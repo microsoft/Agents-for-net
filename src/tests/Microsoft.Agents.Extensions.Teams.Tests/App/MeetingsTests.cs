@@ -6,7 +6,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Moq;
 using System.Collections.Generic;

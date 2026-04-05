@@ -5,9 +5,8 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
+using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using Microsoft.Teams.Cards;
 
 namespace MessageExtensions;
@@ -76,9 +75,8 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     [SubmitActionRoute("createCard")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(action.Data!);
-        var title = data.TryGetValue("title", out string? titleValue) ? titleValue : "Default Title";
-        var description = data.TryGetValue("description", out string? descriptionValue) ? descriptionValue : "Default Description";
+        var title = action.GetDataString("title", "Default Title");
+        var description = action.GetDataString("description", "Default Description");
 
         Logger.LogInformation("Creating card with Title: {Title} and Description: {Description}", title, description);
 
@@ -116,9 +114,8 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     [SubmitActionRoute("getMessageDetails")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnGetMessageDetailsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(action.Data!);
-        var messageText = data.TryGetValue("messageText", out string? messageTextValue) ? messageTextValue : "No message content";
-        var messageId = data.TryGetValue("messageId", out string? messageIdValue) ? messageIdValue : "Unknown";
+        var messageText = action.GetDataString("messageText", "No message content");
+        var messageId = action.GetDataString("messageId", "Unknown");
 
         Logger.LogInformation("Getting details for Message ID: {MessageId} with Text: {MessageText}", messageId, messageText);
 

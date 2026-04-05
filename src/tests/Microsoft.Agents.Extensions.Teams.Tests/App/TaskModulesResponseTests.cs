@@ -5,7 +5,7 @@ using Microsoft.Teams.Api;
 using Microsoft.Teams.Api.TaskModules;
 using System;
 using Xunit;
-using Response = Microsoft.Agents.Extensions.Teams.App.TaskModules.Response;
+using Response = Microsoft.Agents.Extensions.Teams.TaskModules.Response;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.App
 {

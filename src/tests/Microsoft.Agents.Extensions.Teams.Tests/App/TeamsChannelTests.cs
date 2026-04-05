@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Teams.Api;
 using Moq;

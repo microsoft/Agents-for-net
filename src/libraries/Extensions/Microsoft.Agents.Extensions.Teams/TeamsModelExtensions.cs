@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Microsoft.Agents.Extensions.Teams;
 
@@ -129,4 +130,25 @@ public static class TeamsModelExtensions
     }
 #pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     #endregion
+
+    public static T GetDataAs<T>(this Microsoft.Teams.Api.TaskModules.Request request)
+    {
+         return request?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(request.Data);
+    }
+
+    public static T GetDataAs<T>(this Microsoft.Teams.Api.MessageExtensions.Action action)
+    {
+        return action?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(action.Data);
+    }
+
+    public static string GetDataString(this Microsoft.Teams.Api.TaskModules.Request request, string key, string? defaultValue = null)
+    {
+        if (request?.Data is System.Text.Json.JsonElement el
+            && el.ValueKind == System.Text.Json.JsonValueKind.Object
+            && el.TryGetProperty(key, out var prop))
+        {
+            return prop.GetString() ?? defaultValue ?? string.Empty;
+        }
+        return defaultValue ?? string.Empty;
+    }
 }

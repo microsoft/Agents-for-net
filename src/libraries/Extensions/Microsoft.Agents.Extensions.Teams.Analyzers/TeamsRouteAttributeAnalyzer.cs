@@ -135,19 +135,19 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
 
         private static readonly ImmutableHashSet<string> MutualExclusivityAttributeNames =
             ImmutableHashSet.Create(
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute",
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute",
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute");
+                "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.MessageExtensions.FetchActionRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewEditRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewSendRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.MessageExtensions.SubmitActionRouteAttribute");
 
         private static readonly ImmutableDictionary<string, string> MutualExclusivityDisplayNames =
             ImmutableDictionary<string, string>.Empty
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",              "QueryRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",        "FetchActionRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute", "MessagePreviewEditRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute", "MessagePreviewSendRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",       "SubmitActionRoute");
+                .Add("Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryRouteAttribute",              "QueryRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.MessageExtensions.FetchActionRouteAttribute",        "FetchActionRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewEditRouteAttribute", "MessagePreviewEditRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewSendRouteAttribute", "MessagePreviewSendRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.MessageExtensions.SubmitActionRouteAttribute",       "SubmitActionRoute");
 
         // -----------------------------------------------------------------------------------------
         // Rule table — one entry per attribute, describes the required method signature.
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // MessageExtensions
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryRouteAttribute",
                 AttributeDisplayName   = "QueryRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryLinkRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryLinkRouteAttribute",
                 AttributeDisplayName   = "QueryLinkRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryUrlSettingRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryUrlSettingRouteAttribute",
                 AttributeDisplayName   = "QueryUrlSettingRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -183,7 +183,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewEditRouteAttribute",
                 AttributeDisplayName   = "MessagePreviewEditRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // MessagePreviewSendRoute returns plain Task (not Task<T>)
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.MessagePreviewSendRouteAttribute",
                 AttributeDisplayName   = "MessagePreviewSendRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.ConfigureSettingsRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.ConfigureSettingsRouteAttribute",
                 AttributeDisplayName   = "ConfigureSettingsRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -208,7 +208,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",
+                AttributeMetadataName = "Microsoft.Agents.Extensions.Teams.MessageExtensions.FetchActionRouteAttribute",
                 AttributeDisplayName = "FetchActionRoute",
                 ReturnTypeGenericArgument = ActionResponse,
                 ReturnTypeDisplayName = "Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse>",
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.SubmitActionRouteAttribute",
                 AttributeDisplayName   = "SubmitActionRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // SelectItemRoute: 3rd param is generic TData — accept any type
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SelectItemRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.SelectItemRouteAttribute",
                 AttributeDisplayName   = "SelectItemRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
@@ -234,7 +234,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // CardButtonClickedRoute returns plain Task, 3rd param is generic TData
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.CardButtonClickedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.CardButtonClickedRouteAttribute",
                 AttributeDisplayName   = "CardButtonClickedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // Meetings
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingStartRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Meetings.MeetingStartRouteAttribute",
                 AttributeDisplayName   = "MeetingStartRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingEndRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Meetings.MeetingEndRouteAttribute",
                 AttributeDisplayName   = "MeetingEndRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -259,7 +259,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingParticipantsJoinRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Meetings.MeetingParticipantsJoinRouteAttribute",
                 AttributeDisplayName   = "MeetingParticipantsJoinRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -267,7 +267,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.Meetings.MeetingParticipantsLeaveRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Meetings.MeetingParticipantsLeaveRouteAttribute",
                 AttributeDisplayName   = "MeetingParticipantsLeaveRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -276,7 +276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // TaskModules — TaskFetchRoute/TaskSubmitRoute require Request as 3rd param
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TaskModules.TaskFetchRouteAttribute",
                 AttributeDisplayName   = "TaskFetchRoute",
                 ReturnTypeGenericArgument = TaskModulesResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TaskModules.TaskSubmitRouteAttribute",
                 AttributeDisplayName = "TaskSubmitRoute",
                 ReturnTypeGenericArgument = TaskModulesResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // TeamsChannels — all return plain Task with (ITurnContext, ITurnState, Channel, CancellationToken)
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelCreatedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelCreatedRouteAttribute",
                 AttributeDisplayName   = "ChannelCreatedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -301,7 +301,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelDeletedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelDeletedRouteAttribute",
                 AttributeDisplayName   = "ChannelDeletedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelMemberAddedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelMemberAddedRouteAttribute",
                 AttributeDisplayName   = "ChannelMemberAddedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelMemberRemovedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelMemberRemovedRouteAttribute",
                 AttributeDisplayName   = "ChannelMemberRemovedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelRenamedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelRenamedRouteAttribute",
                 AttributeDisplayName   = "ChannelRenamedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelRestoredRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelRestoredRouteAttribute",
                 AttributeDisplayName   = "ChannelRestoredRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -341,7 +341,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelSharedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelSharedRouteAttribute",
                 AttributeDisplayName   = "ChannelSharedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -349,7 +349,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelUnSharedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelUnSharedRouteAttribute",
                 AttributeDisplayName   = "ChannelUnSharedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -357,7 +357,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsChannels.ChannelUpdateRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsChannels.ChannelUpdateRouteAttribute",
                 AttributeDisplayName   = "ChannelUpdateRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -366,7 +366,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // TeamsTeams — all return plain Task with (ITurnContext, ITurnState, Team, CancellationToken)
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamArchivedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamArchivedRouteAttribute",
                 AttributeDisplayName   = "TeamArchivedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -374,7 +374,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamUnarchivedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamUnarchivedRouteAttribute",
                 AttributeDisplayName   = "TeamUnarchivedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -382,7 +382,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamDeletedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamDeletedRouteAttribute",
                 AttributeDisplayName   = "TeamDeletedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -390,7 +390,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamHardDeletedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamHardDeletedRouteAttribute",
                 AttributeDisplayName   = "TeamHardDeletedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -398,7 +398,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamRenamedRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamRenamedRouteAttribute",
                 AttributeDisplayName   = "TeamRenamedRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -406,7 +406,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamRestoredRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamRestoredRouteAttribute",
                 AttributeDisplayName   = "TeamRestoredRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TeamsTeams.TeamUpdateRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.TeamsTeams.TeamUpdateRouteAttribute",
                 AttributeDisplayName   = "TeamUpdateRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -458,7 +458,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                     .GetTypeByMetadataName("Microsoft.Teams.Api.Activities.Activity");
 
                 var teamsExtensionAttrType = compilationCtx.Compilation
-                    .GetTypeByMetadataName("Microsoft.Agents.Extensions.Teams.App.TeamsExtensionAttribute");
+                    .GetTypeByMetadataName("Microsoft.Agents.Extensions.Teams.TeamsExtensionAttribute");
 
                 compilationCtx.RegisterSymbolAction(
                     ctx => AnalyzeMethod(ctx, attrToRule, attrToDisplayName, teamsActivityBaseType,

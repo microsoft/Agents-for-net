@@ -5,7 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
+using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests

@@ -3,9 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Moq;
 using System.Net.Http;
@@ -68,14 +66,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var second = app.Teams;
 
             Assert.Same(first, second);
-        }
-
-        [Fact]
-        public void Teams_Property_ExtensionHasCorrectAgentApplication()
-        {
-            var app = new TestTeamsExtensionAgent(CreateOptions());
-
-            Assert.Same(app, app.Teams.AgentApplication);
         }
     }
 

@@ -5,9 +5,8 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.App.TaskModules;
+using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.TaskModules;
 using Microsoft.Teams.Cards;
 
 namespace TaskModules;
@@ -97,8 +96,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskSubmitRoute("simple_form")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
+        var name = request.GetDataString("name", "Unknown");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
         return Response.WithMessage("Form was submitted");
     }
@@ -121,9 +119,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskSubmitRoute("webpage_dialog")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
-        var email = data.GetValueOrDefault("email") ?? "No email provided";
+        var name = request.GetDataString("name", "Unknown");
+        var email = request.GetDataString("email", "No email provided");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
         return Response.WithMessage($"Form submitted successfully");
     }
@@ -167,8 +164,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskSubmitRoute("webpage_dialog_step_1")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
+        var name = request.GetDataString("name", "Unknown");
 
         var card = new AdaptiveCard([
             new TextBlock($"Email, {name}!") { Weight = TextWeight.Bolder, Size = TextSize.Large },
@@ -209,9 +205,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskSubmitRoute("webpage_dialog_step_2")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
-        var name = data.GetValueOrDefault("name") ?? "Unknown";
-        var email = data.GetValueOrDefault("email") ?? "No email provided";
+        var name = request.GetDataString("name", "Unknown");
+        var email = request.GetDataString("email", "No email provided");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
         return Response.WithMessage("Multi-step form completed successfully");
     }

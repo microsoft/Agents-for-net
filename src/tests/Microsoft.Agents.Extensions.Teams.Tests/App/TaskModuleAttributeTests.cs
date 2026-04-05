@@ -8,7 +8,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Moq;
 using System.Net.Http;
@@ -16,7 +15,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Agents.Extensions.Teams.App.TaskModules;
+using Microsoft.Agents.Extensions.Teams.TaskModules;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.App
 {
@@ -235,7 +234,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
     }
 
-    [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
+    [Microsoft.Agents.Extensions.Teams.TeamsExtension]
     partial class TestTaskModuleAttributeApp : AgentApplication
     {
         public bool FetchHandlerCalled { get; private set; }
