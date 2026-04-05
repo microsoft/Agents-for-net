@@ -16,7 +16,7 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction;
     }
 
-    public MessagePreviewSendRouteBuilder WithHandler(AgentMessagePreviewSendHandler handler)
+    public MessagePreviewSendRouteBuilder WithHandler(MessagePreviewSendHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

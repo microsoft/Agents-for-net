@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules;
 /// configuration.</typeparam>
 public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : KeyValueRouteBuilderBase<TBuilder>
 {
-    private static readonly string DEFAULT_TASK_DATA_KEY = "verb";
+    private static readonly string DEFAULT_TASK_DATA_KEY = "task";
     private Func<string, bool> _keyMatch;
     private string _keyPropertyName = DEFAULT_TASK_DATA_KEY;
 
@@ -39,12 +39,12 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// <summary>
     /// Match a specific task data value.
     /// </summary>
-    /// <remarks>The default key name is "verb" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <remarks>The default key name is "task" unless changed with <see cref="WithKey(string)"/></remarks>
     /// <param name="value">The key value to be matched.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Command has already been defined for this builder
     /// instance.</exception>
-    public TBuilder WithKeyValue(string value)
+    public TBuilder WithValue(string value)
     {
         if (_keyMatch != null)
         {
@@ -58,24 +58,24 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// <summary>
     /// Match a specific task data value pattern.
     /// </summary>
-    /// <remarks>The default key name is "verb" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <remarks>The default key name is "task" unless changed with <see cref="WithKey(string)"/></remarks>
     /// <param name="valuePattern">The key value matching the Regex pattern.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Key has already been defined for this builder
     /// instance.</exception>
-    public TBuilder WithKeyValue(Regex valuePattern)
+    public TBuilder WithValue(Regex valuePattern)
     {
         if (_keyMatch != null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithKeyValue(Regex({valuePattern}))");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"{typeof(TBuilder).Name}.WithValue(Regex({valuePattern}))");
         }
 
         _keyMatch = valuePattern != null ? (string input) => valuePattern.IsMatch(input) : null;
         return (TBuilder)this;
     }
 
-    /// <summary>
-    /// Sets the name of the key property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "verb" in the submitted data.
+    /// <summary>   
+    /// Sets the name of the key property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "task" in the submitted data.
     /// </summary>
     /// <param name="keyName">A filter string that specifies the key data to include. If the value is null or consists only of white space, a
     /// default filter is applied.</param>

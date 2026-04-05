@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Teams.Cards;
@@ -29,19 +30,19 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
         {
             Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
             Actions = [
-                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "simple_form" })
+                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "simple_form" })
                 {
                     Title = "Simple Form"
                 },
-                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "webpage_dialog" })
+                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "webpage_dialog" })
                 {
                     Title = "Webpage Dialog"
                 },
-                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "multi_step_form" })
+                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "multi_step_form" })
                 {
                     Title = "Multi-Step Form"
                 },
-                new TaskFetchAction(new Dictionary<string, object?> { ["verb"] = "mixed_example" })
+                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "mixed_example" })
                 {
                     Title = "Mixed Example"
                 }
@@ -59,7 +60,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     #region Simple Form
-    [FetchRoute("simple_form")]
+    [TaskFetchRoute("simple_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         var card = new AdaptiveCard([
@@ -80,7 +81,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                     Title = "Submit",
                     Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
                     {
-                        NonSchemaProperties = { ["verb"] = "simple_form" }
+                        NonSchemaProperties = { ["task"] = "simple_form" }
                     })
                 }
             ]
@@ -93,9 +94,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [SubmitRoute("simple_form")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [TaskSubmitRoute("simple_form")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
         var name = data.GetValueOrDefault("name") ?? "Unknown";
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
         return Response.WithMessage("Form was submitted");
@@ -103,11 +105,11 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Dialog with Webpage Content
-    [FetchRoute("webpage_dialog")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    [TaskFetchRoute("webpage_dialog")]
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         // For dev: hardcoded to localhost:3978. In production, read from configuration.
-        var url = $"{_appBaseUrl}/tabs/dialog-form";
+        var url = $"{_appBaseUrl}/dialog-form";
 
         return Task.FromResult(Response.WithUrl(
             url,
@@ -116,9 +118,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             width: 800));
     }
 
-    [SubmitRoute("webpage_dialog")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [TaskSubmitRoute("webpage_dialog")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
         var name = data.GetValueOrDefault("name") ?? "Unknown";
         var email = data.GetValueOrDefault("email") ?? "No email provided";
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
@@ -127,8 +130,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Multi-Step Form
-    [FetchRoute("multi_step_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    [TaskFetchRoute("multi_step_form")]
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var card = new AdaptiveCard([
             new TextBlock("This is a multi-step form") { Weight = TextWeight.Bolder, Size = TextSize.Large },
@@ -148,7 +151,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                     Title = "Submit",
                     Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
                     {
-                        NonSchemaProperties = { ["verb"] = "webpage_dialog_step_1" }
+                        NonSchemaProperties = { ["task"] = "webpage_dialog_step_1" }
                     })
                 }
             ]
@@ -161,9 +164,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [SubmitRoute("webpage_dialog_step_1")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [TaskSubmitRoute("webpage_dialog_step_1")]
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
         var name = data.GetValueOrDefault("name") ?? "Unknown";
 
         var card = new AdaptiveCard([
@@ -182,12 +186,12 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                 new SubmitAction
                 {
                     Title = "Submit",
-                    // Carry name forward in the hidden submit data alongside the verb
+                    // Carry name forward in the hidden submit data alongside the task
                     Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
                     {
                         NonSchemaProperties =
                         {
-                            ["verb"] = "webpage_dialog_step_2",
+                            ["task"] = "webpage_dialog_step_2",
                             ["name"] = name
                         }
                     })
@@ -202,9 +206,10 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [SubmitRoute("webpage_dialog_step_2")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string, string> data, CancellationToken cancellationToken)
+    [TaskSubmitRoute("webpage_dialog_step_2")]
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(request.Data!);
         var name = data.GetValueOrDefault("name") ?? "Unknown";
         var email = data.GetValueOrDefault("email") ?? "No email provided";
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
@@ -213,7 +218,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Mixed Example with Card and Webpage
-    [FetchRoute("mixed_example")]
+    [TaskFetchRoute("mixed_example")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(Response.WithUrl(

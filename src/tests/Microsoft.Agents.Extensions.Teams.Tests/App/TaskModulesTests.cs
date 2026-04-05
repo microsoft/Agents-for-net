@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                         {
                             type = "task/fetch",
                         },
-                        verb = "test-verb",
+                        task = "test-verb",
                     }
                 }),
                 Recipient = new() { Id = "recipientId" },
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -169,25 +169,25 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.AddRoute(app, FetchRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
+                ext.AddRoute(app, TaskFetchRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
 
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected FetchRouteBuilder triggered for activity type: invoke, name: task/fetch", exception.Message);
+            Assert.Equal("Unexpected TaskFetchRouteBuilder triggered for activity type: invoke, name: task/fetch", exception.Message);
         }
 
         [Fact]
-        public async Task Test_OnSubmit_Verb()
+        public async Task Test_OnTaskSubmit_Verb()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -208,7 +208,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                         {
                             type = "task/submit",
                         },
-                        verb = "test-verb",
+                        task = "test-verb",
                     }
                 }),
                 Recipient = new() { Id = "recipientId" },
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
 
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
@@ -334,135 +334,21 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 return Task.FromResult(true);
             };
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
                 return Task.FromResult(taskModuleResponseMock.Object);
             };
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.AddRoute(app, SubmitRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
+                ext.AddRoute(app, TaskSubmitRouteBuilder.Create().WithSelector(routeSelector).WithHandler(handler).Build());
             });
 
             // Act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
-            Assert.Equal("Unexpected SubmitRouteBuilder triggered for activity type: invoke, name: task/submit", exception.Message);
-        }
-
-        [Fact]
-        public async Task Test_OnFetch_TypedHandler_DeserializesData()
-        {
-            // Arrange
-            IActivity[] activitiesToSend = null;
-            void CaptureSend(IActivity[] arg) => activitiesToSend = arg;
-            var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "task/fetch",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
-                {
-                    data = new
-                    {
-                        msteams = new { type = "task/fetch" },
-                        verb = "test-verb",
-                        title = "test-title",
-                    }
-                }),
-                Recipient = new() { Id = "recipientId" },
-                Conversation = new() { Id = "conversationId" },
-                From = new() { Id = "fromId" },
-                ChannelId = Channels.Msteams,
-            });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
-            var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
-            {
-                StartTypingTimer = false,
-                Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
-            });
-            var extension = new TeamsAgentExtension(app);
-            FetchHandler<TaskModuleData> handler = (ctx, ts, data, ct) =>
-            {
-                Assert.NotNull(data);
-                Assert.Equal("test-verb", data.Verb);
-                Assert.Equal("test-title", data.Title);
-                return Task.FromResult(taskModuleResponseMock.Object);
-            };
-            app.RegisterExtension(extension, (ext) =>
-            {
-                ext.TaskModules.OnFetch("test-verb", handler);
-            });
-
-            // Act
-            await app.OnTurnAsync(turnContext, CancellationToken.None);
-
-            // Assert
-            Assert.NotNull(activitiesToSend);
-            Assert.Single(activitiesToSend);
-            Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
-        }
-
-        [Fact]
-        public async Task Test_OnSubmit_TypedHandler_DeserializesData()
-        {
-            // Arrange
-            IActivity[] activitiesToSend = null;
-            void CaptureSend(IActivity[] arg) => activitiesToSend = arg;
-            var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "task/submit",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
-                {
-                    data = new
-                    {
-                        msteams = new { type = "task/submit" },
-                        verb = "test-verb",
-                        title = "test-title",
-                    }
-                }),
-                Recipient = new() { Id = "recipientId" },
-                Conversation = new() { Id = "conversationId" },
-                From = new() { Id = "fromId" },
-                ChannelId = Channels.Msteams,
-            });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
-            var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new AgentApplication(new(() => turnState.Result)
-            {
-                StartTypingTimer = false,
-                Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
-            });
-            var extension = new TeamsAgentExtension(app);
-            SubmitHandler<TaskModuleData> handler = (ctx, ts, data, ct) =>
-            {
-                Assert.NotNull(data);
-                Assert.Equal("test-verb", data.Verb);
-                Assert.Equal("test-title", data.Title);
-                return Task.FromResult(taskModuleResponseMock.Object);
-            };
-            app.RegisterExtension(extension, (ext) =>
-            {
-                ext.TaskModules.OnSubmit("test-verb", handler);
-            });
-
-            // Act
-            await app.OnTurnAsync(turnContext, CancellationToken.None);
-
-            // Assert
-            Assert.NotNull(activitiesToSend);
-            Assert.Single(activitiesToSend);
-            Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equal("Unexpected TaskSubmitRouteBuilder triggered for activity type: invoke, name: task/submit", exception.Message);
         }
 
         [Fact]
@@ -498,12 +384,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnFetch("test-verb", handler, keyName: "action");
+                ext.TaskModules.OnFetch("test-verb", handler, key: "action");
             });
 
             // Act
@@ -548,12 +434,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnFetch("test-verb", handler, keyName: "action");
+                ext.TaskModules.OnFetch("test-verb", handler, key: "action");
             });
 
             // Act
@@ -596,7 +482,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
@@ -647,12 +533,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnSubmit("test-verb", handler, keyName: "action");
+                ext.TaskModules.OnSubmit("test-verb", handler, key: "action");
             });
 
             // Act
@@ -697,12 +583,12 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.TaskModules.OnSubmit("test-verb", handler, keyName: "action");
+                ext.TaskModules.OnSubmit("test-verb", handler, key: "action");
             });
 
             // Act
@@ -745,7 +631,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
+            TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
                 Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
@@ -775,7 +661,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { data = new { verb = "fetch-foo" } }),
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { data = new { task = "fetch-foo" } }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -791,7 +677,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -830,7 +716,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -852,7 +738,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/submit",
-                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { data = new { verb = "submit-bar" } }),
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { data = new { task = "submit-bar" } }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -868,7 +754,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -907,7 +793,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -945,7 +831,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -981,7 +867,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1019,7 +905,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1058,7 +944,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1094,7 +980,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            SubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1132,7 +1018,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
             var extension = new TeamsAgentExtension(app);
-            FetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1149,33 +1035,33 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         [Fact]
         public void WithKeyValue_DuplicateString_ThrowsInvalidOperationException()
         {
-            var builder = FetchRouteBuilder.Create().WithKeyValue("first");
+            var builder = TaskFetchRouteBuilder.Create().WithValue("first");
 
-            Assert.Throws<InvalidOperationException>(() => builder.WithKeyValue("second"));
+            Assert.Throws<InvalidOperationException>(() => builder.WithValue("second"));
         }
 
         [Fact]
         public void WithKeyValue_DuplicateRegex_ThrowsInvalidOperationException()
         {
-            var builder = FetchRouteBuilder.Create().WithKeyValue(new Regex("^first"));
+            var builder = TaskFetchRouteBuilder.Create().WithValue(new Regex("^first"));
 
-            Assert.Throws<InvalidOperationException>(() => builder.WithKeyValue(new Regex("^second")));
+            Assert.Throws<InvalidOperationException>(() => builder.WithValue(new Regex("^second")));
         }
 
         [Fact]
         public void WithKeyValue_StringThenRegex_ThrowsInvalidOperationException()
         {
-            var builder = FetchRouteBuilder.Create().WithKeyValue("first");
+            var builder = TaskFetchRouteBuilder.Create().WithValue("first");
 
-            Assert.Throws<InvalidOperationException>(() => builder.WithKeyValue(new Regex("^second")));
+            Assert.Throws<InvalidOperationException>(() => builder.WithValue(new Regex("^second")));
         }
 
         [Fact]
         public void WithKeyValue_RegexThenString_ThrowsInvalidOperationException()
         {
-            var builder = FetchRouteBuilder.Create().WithKeyValue(new Regex("^first"));
+            var builder = TaskFetchRouteBuilder.Create().WithValue(new Regex("^first"));
 
-            Assert.Throws<InvalidOperationException>(() => builder.WithKeyValue("second"));
+            Assert.Throws<InvalidOperationException>(() => builder.WithValue("second"));
         }
 
         private sealed class TaskModuleData

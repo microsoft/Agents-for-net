@@ -43,7 +43,22 @@ app.MapAgentRootEndpoint();
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 // Map GET "/settings" to return the HTML for the settings page, which is defined in MessageExtensionsAgent.GetSettingsHtml().
-app.MapGet("/settings", () => Results.Content(MessageExtensionsAgent.GetSettingsHtml(), "text/html"));
+app.UseStaticFiles();
+
+app.MapGet("/settings", async context =>
+{
+    var filePath = Path.Combine(app.Environment.WebRootPath, "settings.html");
+
+    if (!File.Exists(filePath))
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("Page not found.");
+        return;
+    }
+
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(filePath);
+});
 
 if (app.Environment.IsDevelopment())
 {

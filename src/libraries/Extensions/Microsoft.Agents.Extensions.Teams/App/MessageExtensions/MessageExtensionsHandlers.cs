@@ -10,17 +10,15 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
 /// <summary>
-/// Delegate for handling Message Extension submitAction events.
+/// Function for handling Message Extension <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
 /// </summary>
-/// <typeparam name="TData">The type of the <c>data</c> argument associated with the submit action.</typeparam>
 /// <param name="turnContext">The context for the current conversation turn.</param>
 /// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
-/// <param name="data">The <c>data</c> argument submitted with the action. The type and structure depend on the specific submit action being
-/// handled.</param>
-/// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-/// <returns>A task that represents the asynchronous operation. The task result contains a Response object that will be sent to
-/// the user.</returns>
-public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SubmitActionHandler<TData>(ITurnContext turnContext, ITurnState turnState, TData data, CancellationToken cancellationToken);
+/// <param name="action">The <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/> data associated with the fetch task event.</param>
+/// <param name="cancellationToken">A cancellation token that can be used by other objects
+/// or threads to receive notice of cancellation.</param>
+/// <returns>An instance of MessageExtensions.ActionResponse.</returns>
+public delegate Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> FetchActionHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken);
 
 /// <summary>
 /// Delegate for handling Message Extension submitAction events.
@@ -42,7 +40,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> SubmitActio
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>An instance of MessageExtensions.Response.</returns>
-public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> AgentMessagePreviewEditHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
+public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> MessagePreviewEditHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension message preview send events.
@@ -53,18 +51,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> AgentMessag
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task AgentMessagePreviewSendHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
-
-/// <summary>
-/// Function for handling Message Extension fetchTask events.
-/// </summary>
-/// <param name="turnContext">The context for the current conversation turn.</param>
-/// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
-/// <param name="action">The action data associated with the fetch task event.</param>
-/// <param name="cancellationToken">A cancellation token that can be used by other objects
-/// or threads to receive notice of cancellation.</param>
-/// <returns>An instance of MessageExtensions.ActionResponse.</returns>
-public delegate Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> FetchTaskHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken);
+public delegate Task MessagePreviewSendHandler(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Message Extension query events.

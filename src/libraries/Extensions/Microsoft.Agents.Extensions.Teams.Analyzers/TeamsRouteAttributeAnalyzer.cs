@@ -121,10 +121,13 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private const string Response       = "Microsoft.Teams.Api.MessageExtensions.Response";
         private const string ActionResponse = "Microsoft.Teams.Api.MessageExtensions.ActionResponse";
         private const string Query          = "Microsoft.Teams.Api.MessageExtensions.Query";
+        private const string Action         = "Microsoft.Teams.Api.MessageExtensions.Action";
         private const string MeetingDetails = "Microsoft.Teams.Api.Meetings.MeetingDetails";
         private const string ParticipantsDetails = "Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantsEventDetails";
         private const string Channel = "Microsoft.Teams.Api.Channel";
         private const string Team    = "Microsoft.Teams.Api.Team";
+        private const string TaskModulesRequest  = "Microsoft.Teams.Api.TaskModules.Request";
+        private const string TaskModulesResponse = "Microsoft.Teams.Api.TaskModules.Response";
 
         // -----------------------------------------------------------------------------------------
         // Mutual exclusivity — attributes where commandId and commandIdPattern are exclusive
@@ -133,7 +136,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private static readonly ImmutableHashSet<string> MutualExclusivityAttributeNames =
             ImmutableHashSet.Create(
                 "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",
-                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRouteAttribute",
+                "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",
                 "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute",
                 "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute",
                 "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute");
@@ -141,7 +144,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private static readonly ImmutableDictionary<string, string> MutualExclusivityDisplayNames =
             ImmutableDictionary<string, string>.Empty
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.QueryRouteAttribute",              "QueryRoute")
-                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRouteAttribute",          "FetchTaskRoute")
+                .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",        "FetchActionRoute")
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute", "MessagePreviewEditRoute")
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewSendRouteAttribute", "MessagePreviewSendRoute")
                 .Add("Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",       "SubmitActionRoute");
@@ -180,14 +183,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRouteAttribute",
-                AttributeDisplayName   = "FetchTaskRoute",
-                ReturnTypeGenericArgument = ActionResponse,
-                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, CancelToken },
-            },
-            new SignatureRule
-            {
                 AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.MessagePreviewEditRouteAttribute",
                 AttributeDisplayName   = "MessagePreviewEditRoute",
                 ReturnTypeGenericArgument = Response,
@@ -211,14 +206,21 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, Query, CancelToken },
             },
-            // SubmitActionRoute: 3rd param is generic TData — accept any type
+            new SignatureRule
+            {
+                AttributeMetadataName = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRouteAttribute",
+                AttributeDisplayName = "FetchActionRoute",
+                ReturnTypeGenericArgument = ActionResponse,
+                ReturnTypeDisplayName = "Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse>",
+                ParameterTypes = new string?[] { TurnContext, TurnState, Action, CancelToken },
+            },
             new SignatureRule
             {
                 AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRouteAttribute",
                 AttributeDisplayName   = "SubmitActionRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
+                ParameterTypes         = new string?[] { TurnContext, TurnState, Action, CancelToken },
             },
             // SelectItemRoute: 3rd param is generic TData — accept any type
             new SignatureRule
@@ -271,22 +273,22 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeDisplayName  = "Task",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, ParticipantsDetails, CancelToken },
             },
-            // TaskModules — 3rd param is either Request or a generic TData; accept any type
+            // TaskModules — TaskFetchRoute/TaskSubmitRoute require Request as 3rd param
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRouteAttribute",
-                AttributeDisplayName   = "FetchRoute",
-                ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRouteAttribute",
+                AttributeDisplayName   = "TaskFetchRoute",
+                ReturnTypeGenericArgument = TaskModulesResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
+                ParameterTypes         = new string?[] { TurnContext, TurnState, TaskModulesRequest, CancelToken },
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRouteAttribute",
-                AttributeDisplayName   = "SubmitRoute",
-                ReturnTypeGenericArgument = "Microsoft.Teams.Api.TaskModules.Response",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRouteAttribute",
+                AttributeDisplayName = "TaskSubmitRoute",
+                ReturnTypeGenericArgument = TaskModulesResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.TaskModules.Response>",
-                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
+                ParameterTypes         = new string?[] { TurnContext, TurnState, TaskModulesRequest, CancelToken },
             },
             // TeamsChannels — all return plain Task with (ITurnContext, ITurnState, Channel, CancellationToken)
             new SignatureRule

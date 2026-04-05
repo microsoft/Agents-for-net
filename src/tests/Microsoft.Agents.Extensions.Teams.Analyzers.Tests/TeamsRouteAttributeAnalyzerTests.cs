@@ -225,11 +225,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // FetchTaskRoute
+        // FetchActionRoute
         // ---------------------------------------------------------------------------
 
         [Fact]
-        public async Task FetchTaskRoute_CorrectSignature_NoDiagnostic()
+        public async Task FetchActionRoute_CorrectSignature_NoDiagnostic()
         {
             const string source = """
                 using System.Threading;
@@ -240,9 +240,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRoute("cmd")]
                     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(
-                        ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
+                        CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
                 }
                 """;
@@ -251,7 +253,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         [Fact]
-        public async Task FetchTaskRoute_WrongReturnType_EmitsMTEAMS001()
+        public async Task FetchActionRoute_WrongReturnType_EmitsMTEAMS001()
         {
             const string source = """
                 using System.Threading;
@@ -262,9 +264,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRoute("cmd")]
                     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnFetchTask(
-                        ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
+                        CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
                 }
                 """;
@@ -272,7 +276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
             Assert.Contains("OnFetchTask", d.GetMessage());
-            Assert.Contains("FetchTaskRoute", d.GetMessage());
+            Assert.Contains("FetchActionRoute", d.GetMessage());
             Assert.Contains("Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse>", d.GetMessage());
         }
 
@@ -330,7 +334,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // SubmitActionRoute (TData = any type, no type check on param 3)
+        // SubmitActionRoute (3rd param must be Action)
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -339,7 +343,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
-                using System.Collections.Generic;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
@@ -349,7 +352,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute("cmd")]
                     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmitAction(
                         ITurnContext ctx, ITurnState state,
-                        IDictionary<string, string> data,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
                         CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
                 }
@@ -364,7 +367,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
-                using System.Collections.Generic;
                 using Microsoft.Agents.Builder;
                 using Microsoft.Agents.Builder.State;
 
@@ -374,7 +376,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                     [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.SubmitActionRoute("cmd")]
                     public Task OnSubmitAction(
                         ITurnContext ctx, ITurnState state,
-                        IDictionary<string, string> data,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
                         CancellationToken ct)
                         => Task.CompletedTask;
                 }
@@ -527,7 +529,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // TaskModules — FetchRoute
+        // TaskModules — TaskFetchRoute
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -543,7 +545,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -568,7 +570,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task OnFetch(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -580,7 +582,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
             Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("TaskFetchRoute", d.GetMessage());
             Assert.Contains("Task<Microsoft.Teams.Api.TaskModules.Response>", d.GetMessage());
         }
 
@@ -597,7 +599,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         CancellationToken ct)
@@ -608,14 +610,14 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
             Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("TaskFetchRoute", d.GetMessage());
             Assert.Contains("4", d.GetMessage());
         }
 
         [Fact]
-        public async Task TaskModules_FetchRoute_TypedData_NoDiagnostic()
+        public async Task TaskModules_FetchRoute_TypedData_EmitsMTEAMS003()
         {
-            // Any type is accepted for the 3rd parameter — typed TData is valid
+            // [TaskFetchRoute] requires Request as 3rd param
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
@@ -628,7 +630,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         MyFetchData data,
@@ -637,11 +639,15 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
-            Assert.Empty(diagnostics);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("TaskFetchRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.TaskModules.Request", d.GetMessage());
         }
 
         // ---------------------------------------------------------------------------
-        // TaskModules — SubmitRoute
+        // TaskModules — TaskSubmitRoute
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -657,7 +663,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -670,9 +676,9 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         [Fact]
-        public async Task TaskModules_SubmitRoute_TypedData_NoDiagnostic()
+        public async Task TaskModules_SubmitRoute_TypedData_EmitsMTEAMS003()
         {
-            // Any type is accepted for the 3rd parameter — typed TData is valid
+            // [TaskSubmitRoute] requires Request as 3rd param
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
@@ -685,7 +691,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         MySubmitData data,
@@ -694,7 +700,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
-            Assert.Empty(diagnostics);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterTypeDiagnosticId, d.Id);
+            Assert.Contains("OnSubmit", d.GetMessage());
+            Assert.Contains("TaskSubmitRoute", d.GetMessage());
+            Assert.Contains("Microsoft.Teams.Api.TaskModules.Request", d.GetMessage());
         }
 
         [Fact]
@@ -710,7 +720,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRoute("myVerb")]
                     public Task OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -722,7 +732,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
             Assert.Contains("OnSubmit", d.GetMessage());
-            Assert.Contains("SubmitRoute", d.GetMessage());
+            Assert.Contains("TaskSubmitRoute", d.GetMessage());
             Assert.Contains("Task<Microsoft.Teams.Api.TaskModules.Response>", d.GetMessage());
         }
 
@@ -924,7 +934,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         [Fact]
-        public async Task FetchTaskRoute_BothCommandIdAndPattern_EmitsMTEAMS004()
+        public async Task FetchActionRoute_BothCommandIdAndPattern_EmitsMTEAMS004()
         {
             const string source = """
                 using System.Threading;
@@ -935,9 +945,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [Microsoft.Agents.Extensions.Teams.App.TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd", "cmd*")]
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRoute("cmd", "cmd*")]
                     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(
-                        ITurnContext ctx, ITurnState state, CancellationToken ct)
+                        ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
+                        CancellationToken ct)
                         => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
                 }
                 """;
@@ -945,7 +957,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.MutualExclusivityDiagnosticId, d.Id);
             Assert.Contains("OnFetchTask", d.GetMessage());
-            Assert.Contains("FetchTaskRoute", d.GetMessage());
+            Assert.Contains("FetchActionRoute", d.GetMessage());
         }
 
         [Fact]
@@ -1049,7 +1061,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         [Fact]
         public async Task DifferentAttributeTypes_SameCommandId_NoDuplicateDiagnostic()
         {
-            // QueryRoute("x") + FetchTaskRoute("x") should NOT trigger MTEAMS009
+            // QueryRoute("x") + FetchActionRoute("x") should NOT trigger MTEAMS009
             const string source = """
                 using System.Threading;
                 using System.Threading.Tasks;
@@ -1065,9 +1077,10 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                         Microsoft.Teams.Api.MessageExtensions.Query q,
                         CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
 
-                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchTaskRoute("cmd")]
+                    [Microsoft.Agents.Extensions.Teams.App.MessageExtensions.FetchActionRoute("cmd")]
                     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
+                        Microsoft.Teams.Api.MessageExtensions.Action action,
                         CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
                 }
                 """;
@@ -1310,7 +1323,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // MTEAMS013 — FetchRoute/SubmitRoute without [TeamsExtension]
+        // MTEAMS013 — TaskFetchRoute/TaskSubmitRoute without [TeamsExtension]
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -1330,7 +1343,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 {
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -1339,7 +1352,6 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
-            // Guard: if source has CS compile errors, DoesNotContain would be vacuously true
             Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error
                                                     && d.Id.StartsWith("CS"));
             Assert.DoesNotContain(diagnostics,
@@ -1363,7 +1375,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 {
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -1392,7 +1404,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 {
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.FetchRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskFetchRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -1404,7 +1416,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics,
                 d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
             Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("FetchRoute", d.GetMessage());
+            Assert.Contains("TaskFetchRoute", d.GetMessage());
             Assert.Contains("MyAgent", d.GetMessage());
         }
 
@@ -1422,7 +1434,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 {
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
-                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.SubmitRoute("myVerb")]
+                    [Microsoft.Agents.Extensions.Teams.App.TaskModules.TaskSubmitRoute("myVerb")]
                     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.TaskModules.Request data,
@@ -1434,7 +1446,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics,
                 d => d.Id == TeamsRouteAttributeAnalyzer.MissingTeamsExtensionDiagnosticId);
             Assert.Contains("OnSubmit", d.GetMessage());
-            Assert.Contains("SubmitRoute", d.GetMessage());
+            Assert.Contains("TaskSubmitRoute", d.GetMessage());
             Assert.Contains("MyAgent", d.GetMessage());
         }
 

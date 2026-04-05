@@ -18,4 +18,9 @@
 	<ProjectReference Include="..\..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams.Analyzers\Microsoft.Agents.Extensions.Teams.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 
+	<ItemGroup>
+		<EmbeddedResource Include="wwwroot/**" />
+		<Content Remove="wwwroot/**" />
+	</ItemGroup>
+
 </Project>

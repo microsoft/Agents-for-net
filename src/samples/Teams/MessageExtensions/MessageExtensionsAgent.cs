@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Teams.Cards;
@@ -73,8 +74,9 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     }
 
     [SubmitActionRoute("createCard")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITurnContext turnContext, ITurnState turnState, IDictionary<string, string> data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(action.Data!);
         var title = data.TryGetValue("title", out string? titleValue) ? titleValue : "Default Title";
         var description = data.TryGetValue("description", out string? descriptionValue) ? descriptionValue : "Default Description";
 
@@ -112,8 +114,9 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     }
 
     [SubmitActionRoute("getMessageDetails")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnGetMessageDetailsAsync(ITurnContext turnContext, ITurnState turnState, IDictionary<string, string> data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnGetMessageDetailsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
+        var data = ProtocolJsonSerializer.ToObject<Dictionary<string, string>>(action.Data!);
         var messageText = data.TryGetValue("messageText", out string? messageTextValue) ? messageTextValue : "No message content";
         var messageId = data.TryGetValue("messageId", out string? messageIdValue) ? messageIdValue : "Unknown";
 
@@ -239,11 +242,11 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         return Task.FromResult(Response.WithResultConfig("https://bot-devtunnel-url/settings"));
     }
 
-    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchAction(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Fetch task module requested");
+        Logger.LogInformation("Fetch MessageExtensions.Action requested");
 
-        // Updated to use actual converation members
+        // Updated to use actual conversation members
 
         // Create an adaptive card for the task module
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
@@ -274,120 +277,5 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         // Process settings data
 
         return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
-    }
-
-    public static string GetSettingsHtml()
-    {
-        return """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Message Extension Settings</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link
-       rel="stylesheet"
-       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-    />
-    <script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 500px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        select, input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .buttons {
-            margin-top: 20px;
-            text-align: right;
-        }
-        button {
-            padding: 8px 16px;
-            margin-left: 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn-primary {
-            background-color: #0078d4;
-            color: white;
-        }
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Message Extension Settings</h2>
-        <form id="settingsForm">
-            <div class="form-group">
-                <label for="defaultAction">Default Action:</label>
-                <select id="defaultAction" name="defaultAction">
-                    <option value="search">Search</option>
-                    <option value="compose">Compose</option>
-                    <option value="both">Both</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="maxResults">Max Search Results:</label>
-                <input type="number" id="maxResults" name="maxResults" value="10" min="1" max="50">
-            </div>
-            
-            <div class="buttons">
-                <button type="button" class="btn-secondary" onclick="cancelSettings()">Cancel</button>
-                <button type="button" class="btn-primary" onclick="saveSettings()">Save</button>
-            </div>
-        </form>
-    </div>
-
-    <script>
-        microsoftTeams.app.initialize().then(() => {
-            console.log("Teams SDK initialized");
-        }).catch(err => {
-            console.error("Teams SDK initialization failed:", err);
-        });        
-
-        function saveSettings() {
-            const formData = new FormData(document.getElementById('settingsForm'));
-            const settings = {};
-            for (let [key, value] of formData.entries()) {
-                settings[key] = value;
-            }
-            
-            microsoftTeams.dialog.url.submit(settings);
-        }
-        
-        function cancelSettings() {
-            microsoftTeams.dialog.url.submit();
-        }
-    </script>
-</body>
-</html>
-""";
     }
 }

@@ -21,6 +21,119 @@ public class MessageExtension
     }
 
     /// <summary>
+    /// Registers a handler to process the 'edit' action of a message that's being previewed by the
+    /// user prior to sending.
+    /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
+    /// {
+    ///     var draft = preview.Attachments?.FirstOrDefault()?.Content;
+    ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.
+    /// </remarks>
+    /// <param name="commandId">ID of the command to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnMessagePreviewEdit(string commandId, MessagePreviewEditHandler handler)
+    {
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the 'edit' action of a message that's being previewed by the
+    /// user prior to sending.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.</remarks>
+    /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnMessagePreviewEdit(Regex commandIdPattern, MessagePreviewEditHandler handler)
+    {
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the 'send' action of a message that's being previewed by the
+    /// user prior to sending.
+    /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnMessagePreviewSend("composeCmd", async (ctx, state, preview, ct) =>
+    /// {
+    ///     var content = preview.Attachments?.FirstOrDefault()?.Content;
+    ///     await _channel.PostAsync(content, ct);
+    /// });
+    /// </code>
+    /// Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.
+    /// </remarks>
+    /// <param name="commandId">ID of the command to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnMessagePreviewSend(string commandId, MessagePreviewSendHandler handler)
+    {
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the 'send' action of a message that's being previewed by the
+    /// user prior to sending.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.</remarks>
+    /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnMessagePreviewSend(Regex commandIdPattern, MessagePreviewSendHandler handler)
+    {
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the initial fetch task for an Action based message extension.
+    /// </summary>
+    /// <remarks>
+    /// <code>
+    /// Teams.MessageExtensions.OnFetchAction("myCommand", (ctx, state, ct) =>
+    ///     Task.FromResult(new ActionResponse
+    ///     {
+    ///         Task = new TaskInfo
+    ///         {
+    ///             Type = TaskInfoType.Continue,
+    ///             Value = new TaskModuleTaskInfo { Title = "My Form", Height = 300, Width = 400, Url = "https://example.com/form" }
+    ///         }
+    ///     }));
+    /// </code>
+    /// Alternatively, the <see cref="FetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.
+    /// </remarks>
+    /// <param name="commandId">ID of the commands to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnFetchAction(string commandId, FetchActionHandler handler)
+    {
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a handler to process the initial fetch task for an Action based message extension.
+    /// </summary>
+    /// <remarks>Alternatively, the <see cref="FetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.</remarks>
+    /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
+    /// <param name="handler">Function to call when the command is received.</param>
+    /// <returns>The application instance for chaining purposes.</returns>
+    public MessageExtension OnFetchAction(Regex commandIdPattern, FetchActionHandler handler)
+    {
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        return this;
+    }
+
+    /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
     /// <remarks>
@@ -35,150 +148,25 @@ public class MessageExtension
     /// </code>
     /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
     /// </remarks>
-    /// <typeparam name="TData">The type of the data object that will be deserialized from the submit action payload.</typeparam>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction<TData>(string commandId, SubmitActionHandler<TData> handler)
+    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler)
     {
         _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
         return this;
     }
 
     /// <summary>
-    /// Registers a handler that implements the submit action for an Action based Message Extension.
-    /// </summary>
-    /// <remarks>
-    /// <code>
-    /// public record CreateTaskData(string Title, string AssignedTo);
-    ///
-    /// Teams.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;(new Regex("create.*"), async (ctx, state, data, ct) =>
-    /// {
-    ///     var task = await _service.CreateAsync(data.Title, data.AssignedTo, ct);
-    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [task.ToCard()] });
-    /// });
-    /// </code>
-    /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
-    /// </remarks>
-    /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction<TData>(Regex commandIdPattern, SubmitActionHandler<TData> handler)
-    {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the 'edit' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <remarks>
-    /// <code>
-    /// Teams.MessageExtensions.OnAgentMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
-    /// {
-    ///     var draft = preview.Attachments?.FirstOrDefault()?.Content;
-    ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
-    /// });
-    /// </code>
-    /// Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewEditHandler"/> method for the same purpose.
-    /// </remarks>
-    /// <param name="commandId">ID of the command to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(string commandId, AgentMessagePreviewEditHandler handler)
-    {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the 'edit' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <remarks>Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewEditHandler"/> method for the same purpose.</remarks>
-    /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewEdit(Regex commandIdPattern, AgentMessagePreviewEditHandler handler)
-    {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the 'send' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <remarks>
-    /// <code>
-    /// Teams.MessageExtensions.OnAgentMessagePreviewSend("composeCmd", async (ctx, state, preview, ct) =>
-    /// {
-    ///     var content = preview.Attachments?.FirstOrDefault()?.Content;
-    ///     await _channel.PostAsync(content, ct);
-    /// });
-    /// </code>
-    /// Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewSendHandler"/> method for the same purpose.
-    /// </remarks>
-    /// <param name="commandId">ID of the command to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(string commandId, AgentMessagePreviewSendHandler handler)
-    {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the 'send' action of a message that's being previewed by the
-    /// user prior to sending.
-    /// </summary>
-    /// <remarks>Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="AgentMessagePreviewSendHandler"/> method for the same purpose.</remarks>
-    /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAgentMessagePreviewSend(Regex commandIdPattern, AgentMessagePreviewSendHandler handler)
-    {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
     /// Registers a handler to process the initial fetch task for an Action based message extension.
     /// </summary>
-    /// <remarks>
-    /// <code>
-    /// Teams.MessageExtensions.OnFetchTask("myCommand", (ctx, state, ct) =>
-    ///     Task.FromResult(new ActionResponse
-    ///     {
-    ///         Task = new TaskInfo
-    ///         {
-    ///             Type = TaskInfoType.Continue,
-    ///             Value = new TaskModuleTaskInfo { Title = "My Form", Height = 300, Width = 400, Url = "https://example.com/form" }
-    ///         }
-    ///     }));
-    /// </code>
-    /// Alternatively, the <see cref="FetchTaskRouteAttribute"/> can be used to decorate a <see cref="FetchTaskHandler"/> method for the same purpose.
-    /// </remarks>
-    /// <param name="commandId">ID of the commands to register the handler for.</param>
-    /// <param name="handler">Function to call when the command is received.</param>
-    /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(string commandId, FetchTaskHandler handler)
-    {
-        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
-        return this;
-    }
-
-    /// <summary>
-    /// Registers a handler to process the initial fetch task for an Action based message extension.
-    /// </summary>
-    /// <remarks>Alternatively, the <see cref="FetchTaskRouteAttribute"/> can be used to decorate a <see cref="FetchTaskHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchTask(Regex commandIdPattern, FetchTaskHandler handler)
+    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler)
     {
-        _app.AddRoute(FetchTaskRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
         return this;
     }
 

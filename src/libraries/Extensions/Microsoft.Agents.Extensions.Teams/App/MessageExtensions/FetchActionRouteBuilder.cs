@@ -6,11 +6,11 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 
 /// <summary>
-/// Provides a builder for configuring fetch task routes in an AgentApplication.
+/// Provides a builder for configuring <c>composeExtension/fetchTask</c> Invokes in an AgentApplication.
 /// </summary>
-public class FetchTaskRouteBuilder : CommandRouteBuilderBase<FetchTaskRouteBuilder>
+public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteBuilder>
 {
-    public FetchTaskRouteBuilder() : base()
+    public FetchActionRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask;
     }
@@ -21,9 +21,9 @@ public class FetchTaskRouteBuilder : CommandRouteBuilderBase<FetchTaskRouteBuild
     /// <remarks>Use this method to specify custom logic for handling fetch tasks in Teams message
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
-    /// <param name="handler">An asynchronous delegate that processes the fetch task</param>
-    /// <returns>The current instance of FetchTaskRouteBuilder, enabling method chaining.</returns>
-    public FetchTaskRouteBuilder WithHandler(FetchTaskHandler handler)
+    /// <param name="handler">An asynchronous delegate that processes the fetch action</param>
+    /// <returns>The current instance of FetchActionRouteBuilder, enabling method chaining.</returns>
+    public FetchActionRouteBuilder WithHandler(FetchActionHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

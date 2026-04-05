@@ -217,7 +217,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Name = invokeName,
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
-                    data = new { verb }
+                    data = new { task = verb }
                 }),
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // No manual RegisterExtension call needed.
         }
 
-        [FetchRoute("test-verb")]
+        [TaskFetchRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [SubmitRoute("test-verb")]
+        [TaskSubmitRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -271,7 +271,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [FetchRoute("fetch-action", keyName: "action")]
+        [TaskFetchRoute("fetch-action", key: "action")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchCustomKeyAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -281,7 +281,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [SubmitRoute("submit-action", keyName: "action")]
+        [TaskSubmitRoute("submit-action", key: "action")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitCustomKeyAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [FetchRoute]
+        [TaskFetchRoute]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAnyAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -301,7 +301,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
 
-        [SubmitRoute]
+        [TaskSubmitRoute]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAnyAsync(
             ITurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
@@ -311,4 +311,5 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
         }
     }
+
 }

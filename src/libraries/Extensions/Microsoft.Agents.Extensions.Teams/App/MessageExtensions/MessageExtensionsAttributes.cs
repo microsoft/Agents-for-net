@@ -120,14 +120,14 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 }
 
 /// <summary>
-/// Attribute to define a route that handles Teams message extension fetch task events for a specific command.
+/// Attribute to define a route that handles Teams message extension <c>composeExtension/fetchTask</c> Invokes for a specific command.
 /// </summary>
 /// <remarks>
-/// Decorate a method with this attribute to register it as a handler for message extension fetch task events in Teams.
-/// The method must match the <see cref="FetchTaskHandler"/> delegate signature.
+/// Decorate a method with this attribute to register it as a handler for message extension <c>composeExtension/fetchTask</c> Invokes in Teams.
+/// The method must match the <see cref="FetchActionHandler"/> delegate signature.
 /// <code>
-/// [FetchTaskRoute("myCommand")]
-/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// [FetchActionRoute("myCommand")]
+/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, Action action, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new ActionResponse
 ///     {
@@ -146,12 +146,12 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchTaskRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class FetchActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchTaskHandler>(app, method);
-        var builder = FetchTaskRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<FetchActionHandler>(app, method);
+        var builder = FetchActionRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
         if (!string.IsNullOrWhiteSpace(commandId))
         {
@@ -172,7 +172,7 @@ public class FetchTaskRouteAttribute(string commandId = null, string commandIdPa
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview edit events in Teams.
-/// The method must match the <see cref="AgentMessagePreviewEditHandler"/> delegate signature.
+/// The method must match the <see cref="MessagePreviewEditHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewEditRoute("composeCmd")]
 /// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -193,7 +193,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<AgentMessagePreviewEditHandler>(app, method);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<MessagePreviewEditHandler>(app, method);
         var builder = MessagePreviewEditRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
         if (!string.IsNullOrWhiteSpace(commandId))
@@ -215,7 +215,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview send events in Teams.
-/// The method must match the <see cref="AgentMessagePreviewSendHandler"/> delegate signature.
+/// The method must match the <see cref="MessagePreviewSendHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewSendRoute("composeCmd")]
 /// public async Task OnMessagePreviewSendAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -236,7 +236,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<AgentMessagePreviewSendHandler>(app, method);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<MessagePreviewSendHandler>(app, method);
         var builder = MessagePreviewSendRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
 
         if (!string.IsNullOrWhiteSpace(commandId))
@@ -290,15 +290,13 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension submit action events in Teams.
-/// The method must match the <see cref="SubmitActionHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
-/// from the method's third parameter type.
+/// The method must match the <see cref="SubmitActionHandler"/> delegate signature —
+/// the third parameter must be <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
 /// <code>
-/// public record CreateTaskData(string Title, string AssignedTo);
-///
 /// [SubmitActionRoute("createTask")]
-/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, CreateTaskData data, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, Action action, CancellationToken cancellationToken)
 /// {
-///     var task = await _taskService.CreateAsync(data.Title, data.AssignedTo, cancellationToken);
+///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
 ///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();
 ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
 /// }
@@ -325,15 +323,8 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
             builder.WithCommand(new Regex(commandIdPattern));
         }
 
-        if (method.GetParameters()[2].ParameterType == typeof(Microsoft.Teams.Api.MessageExtensions.Action))
-        {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitActionHandler>(app, method);
-            builder.WithHandler(handler);
-        }
-        else
-        {
-            RouteAttributeHelper.InvokeGenericWithHandler(app, method, typeof(SubmitActionHandler<>), 2, builder);
-        }
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<SubmitActionHandler>(app, method);
+        builder.WithHandler(handler);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

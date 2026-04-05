@@ -14,7 +14,6 @@ using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Storage;
 using Moq;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -506,7 +505,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmitActionAsync(
             ITurnContext turnContext,
             ITurnState turnState,
-            IDictionary<string, string> data,
+            Microsoft.Teams.Api.MessageExtensions.Action action,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
@@ -621,7 +620,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [FetchTaskRoute("fetchCommand")]
+        [FetchActionRoute("fetchCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTaskAsync(
             ITurnContext turnContext,
             ITurnState turnState,
