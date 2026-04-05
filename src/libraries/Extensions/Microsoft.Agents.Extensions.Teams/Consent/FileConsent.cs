@@ -21,22 +21,11 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 ///   <item>If the user declines, the registered decline handler is called.</item>
 /// </list>
 /// <example>
-/// The following example registers both handlers and demonstrates the full consent-and-upload flow.
+/// The following example demonstrates the full consent-and-upload flow using route attributes.
 /// <code>
 /// [TeamsExtension]
-/// public partial class MyAgent : AgentApplication
+/// public partial class MyAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : AgentApplication(options)
 /// {
-///     private readonly IHttpClientFactory _httpClientFactory;
-///
-///     public MyAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
-///     {
-///         _httpClientFactory = httpClientFactory;
-///
-///         Teams.FileConsent
-///             .OnAccept(OnFileConsentAcceptAsync)
-///             .OnDecline(OnFileConsentDeclineAsync);
-///     }
-///
 ///     // Send a file consent card when the user requests a file upload.
 ///     [MessageRoute]
 ///     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -59,7 +48,8 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 ///         return turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
 ///     }
 ///
-///     private async Task OnFileConsentAcceptAsync(
+///     [FileConsentAcceptRoute]
+///     public async Task OnFileConsentAcceptAsync(
 ///         ITurnContext turnContext,
 ///         ITurnState turnState,
 ///         Microsoft.Teams.Api.FileConsentCardResponse response,
@@ -67,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 ///     {
 ///         var filePath = Path.Combine("wwwroot", "report.txt");
 ///         var fileInfo = new FileInfo(filePath);
-///         var client = _httpClientFactory.CreateClient();
+///         var client = httpClientFactory.CreateClient();
 ///
 ///         using var fileStream = File.OpenRead(filePath);
 ///         var fileContent = new StreamContent(fileStream);
@@ -82,7 +72,8 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 ///             cancellationToken: cancellationToken);
 ///     }
 ///
-///     private Task OnFileConsentDeclineAsync(
+///     [FileConsentDeclineRoute]
+///     public Task OnFileConsentDeclineAsync(
 ///         ITurnContext turnContext,
 ///         ITurnState turnState,
 ///         Microsoft.Teams.Api.FileConsentCardResponse response,

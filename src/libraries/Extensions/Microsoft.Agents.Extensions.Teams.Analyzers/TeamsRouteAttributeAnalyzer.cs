@@ -129,6 +129,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
         private const string TaskModulesRequest  = "Microsoft.Teams.Api.TaskModules.Request";
         private const string TaskModulesResponse = "Microsoft.Teams.Api.TaskModules.Response";
         private const string FileConsentCardResponse = "Microsoft.Teams.Api.FileConsentCardResponse";
+        private const string ConfigResponse = "Microsoft.Teams.Api.Config.ConfigResponse";
 
         // -----------------------------------------------------------------------------------------
         // Mutual exclusivity — attributes where commandId and commandIdPattern are exclusive
@@ -437,6 +438,23 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, FileConsentCardResponse, CancelToken },
+            },
+            // Config
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRouteAttribute",
+                AttributeDisplayName   = "ConfigFetchRoute",
+                ReturnTypeGenericArgument = ConfigResponse,
+                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.Config.ConfigResponse>",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
+            },
+            new SignatureRule
+            {
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRouteAttribute",
+                AttributeDisplayName   = "ConfigSubmitRoute",
+                ReturnTypeGenericArgument = ConfigResponse,
+                ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.Config.ConfigResponse>",
+                ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
             }
         );
 

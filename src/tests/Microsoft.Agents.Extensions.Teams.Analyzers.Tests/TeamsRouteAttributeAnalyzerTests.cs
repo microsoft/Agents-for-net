@@ -1480,5 +1480,177 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             Assert.Contains("QueryRoute", d.GetMessage());
             Assert.Contains("MyAgent", d.GetMessage());
         }
+
+        // ---------------------------------------------------------------------------
+        // Config — ConfigFetchRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Config_FetchRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        object configData,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Config_FetchRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    public Task OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        object configData,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("ConfigFetchRoute", d.GetMessage());
+            Assert.Contains("Task<Microsoft.Teams.Api.Config.ConfigResponse>", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Config_FetchRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnFetch(
+                        ITurnContext ctx, ITurnState state,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnFetch", d.GetMessage());
+            Assert.Contains("ConfigFetchRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
+
+        // ---------------------------------------------------------------------------
+        // Config — ConfigSubmitRoute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task Config_SubmitRoute_CorrectSignature_NoDiagnostic()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        object configData,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public async Task Config_SubmitRoute_WrongReturnType_EmitsMTEAMS001()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    public Task OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        object configData,
+                        CancellationToken ct)
+                        => Task.CompletedTask;
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
+            Assert.Contains("OnSubmit", d.GetMessage());
+            Assert.Contains("ConfigSubmitRoute", d.GetMessage());
+            Assert.Contains("Task<Microsoft.Teams.Api.Config.ConfigResponse>", d.GetMessage());
+        }
+
+        [Fact]
+        public async Task Config_SubmitRoute_WrongParameterCount_EmitsMTEAMS002()
+        {
+            const string source = """
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.State;
+                using Microsoft.Agents.Extensions.Teams;
+
+                [TeamsExtension]
+                public class Agent
+                {
+                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnSubmit(
+                        ITurnContext ctx, ITurnState state,
+                        CancellationToken ct)
+                        => Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+                }
+                """;
+            var diagnostics = await GetDiagnosticsAsync(source);
+            var d = Assert.Single(diagnostics);
+            Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
+            Assert.Contains("OnSubmit", d.GetMessage());
+            Assert.Contains("ConfigSubmitRoute", d.GetMessage());
+            Assert.Contains("4", d.GetMessage());
+        }
     }
 }
