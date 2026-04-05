@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Teams.Cards" />
 	<PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
   </ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Include="wwwroot/**" />
 		<Content Remove="wwwroot/**" />
+		<EmbeddedResource Include="Resources\*.json" />
 	</ItemGroup>
 
 	<ItemGroup>

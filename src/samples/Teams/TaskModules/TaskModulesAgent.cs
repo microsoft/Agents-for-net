@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.TaskModules;
-using Microsoft.Teams.Cards;
 
 namespace TaskModules;
 
@@ -19,75 +18,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [MessageRoute]
     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var card = new Microsoft.Teams.Cards.AdaptiveCard([
-            new Microsoft.Teams.Cards.TextBlock("Select the examples you want to see!")
-            {
-                Size = Microsoft.Teams.Cards.TextSize.Large,
-                Weight = Microsoft.Teams.Cards.TextWeight.Bolder
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
-            Actions = [
-                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "simple_form" })
-                {
-                    Title = "Simple Form"
-                },
-                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "webpage_dialog" })
-                {
-                    Title = "Webpage Dialog"
-                },
-                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "multi_step_form" })
-                {
-                    Title = "Multi-Step Form"
-                },
-                new TaskFetchAction(new Dictionary<string, object?> { ["task"] = "mixed_example" })
-                {
-                    Title = "Mixed Example"
-                }
-            ]
-        };
-
-        // Launcher card is sent as a regular message — use Core Attachment type.
-        var attachment = new Attachment
-        {
-            ContentType = "application/vnd.microsoft.card.adaptive",
-            Content = card
-        };
-
-        return turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
+        return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment(contentType: ContentTypes.AdaptiveCard, content: JsonResourceHelpers.LoadCardJson("launcher-card.json"))), cancellationToken);
     }
 
     #region Simple Form
     [TaskFetchRoute("simple_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
-        var card = new AdaptiveCard([
-            new TextBlock("Simple Form") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextInput
-            {
-                Id = "name",
-                Label = "Your Name",
-                Placeholder = "Enter your name",
-                IsRequired = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
-            Actions = [
-                new SubmitAction
-                {
-                    Title = "Submit",
-                    Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
-                    {
-                        NonSchemaProperties = { ["task"] = "simple_form" }
-                    })
-                }
-            ]
-        };
-
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(card),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("simple-form-card.json")),
             "Simple Form",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
@@ -106,11 +45,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("webpage_dialog")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        // For dev: hardcoded to localhost:3978. In production, read from configuration.
-        var url = $"{_appBaseUrl}/dialog-form";
-
         return Task.FromResult(Response.WithUrl(
-            url,
+            $"{_appBaseUrl}/dialog-form",
             "Webpage Dialog",
             height: 500,
             width: 800));
@@ -130,32 +66,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("multi_step_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        var card = new AdaptiveCard([
-            new TextBlock("This is a multi-step form") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextInput
-            {
-                Id = "name",
-                Label = "Name",
-                Placeholder = "Enter your name",
-                IsRequired = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
-            Actions = [
-                new SubmitAction
-                {
-                    Title = "Submit",
-                    Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
-                    {
-                        NonSchemaProperties = { ["task"] = "webpage_dialog_step_1" }
-                    })
-                }
-            ]
-        };
-
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(card),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("multi-step-name-card.json")),
             "Multi-step Form Dialog",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
@@ -166,37 +78,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     {
         var name = request.GetDataString("name", "Unknown");
 
-        var card = new AdaptiveCard([
-            new TextBlock($"Email, {name}!") { Weight = TextWeight.Bolder, Size = TextSize.Large },
-            new TextInput
-            {
-                Id = "email",
-                Label = "Email",
-                Placeholder = "Enter your email",
-                IsRequired = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json",
-            Actions = [
-                new SubmitAction
-                {
-                    Title = "Submit",
-                    // Carry name forward in the hidden submit data alongside the task
-                    Data = new Microsoft.Teams.Common.Union<string, SubmitActionData>(new SubmitActionData
-                    {
-                        NonSchemaProperties =
-                        {
-                            ["task"] = "webpage_dialog_step_2",
-                            ["name"] = name
-                        }
-                    })
-                }
-            ]
-        };
-
         return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(card),
+            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, JsonResourceHelpers.LoadCardJson("multi-step-email-card.json", new Dictionary<string, string> { ["name"] = name })),
             $"Thanks {name} - Get Email",
             Microsoft.Teams.Api.TaskModules.Size.Small,
             Microsoft.Teams.Api.TaskModules.Size.Small));
