@@ -21,7 +21,7 @@
       "type": "Action.Submit",
       "title": "Submit",
       "data": {
-        "task": "webpage_dialog_step_2",
+        "task": "multi_step_form_submit_email",
         "name": "{{name}}"
       }
     }

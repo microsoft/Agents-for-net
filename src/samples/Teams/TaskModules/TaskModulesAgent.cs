@@ -73,7 +73,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [TaskSubmitRoute("webpage_dialog_step_1")]
+    [TaskSubmitRoute("multi_step_form_submit_name")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
@@ -85,7 +85,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
             Microsoft.Teams.Api.TaskModules.Size.Small));
     }
 
-    [TaskSubmitRoute("webpage_dialog_step_2")]
+    [TaskSubmitRoute("multi_step_form_submit_email")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");

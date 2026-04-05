@@ -21,7 +21,7 @@
       "type": "Action.Submit",
       "title": "Submit",
       "data": {
-        "task": "webpage_dialog_step_1"
+        "task": "multi_step_form_submit_name"
       }
     }
   ]
