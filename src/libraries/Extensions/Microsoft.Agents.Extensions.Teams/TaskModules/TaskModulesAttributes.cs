@@ -13,6 +13,7 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// the third parameter must be <see cref="Microsoft.Teams.Api.TaskModules.Request"/>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams task module fetch events.
 /// <code>
 /// [TaskFetchRoute("myKey")]
 /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
@@ -52,6 +53,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
 /// the third parameter must be <see cref="Microsoft.Teams.Api.TaskModules.Request"/>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams task module submit events.
 /// <code>
 /// [TaskSubmitRoute("myKey")]
 /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)

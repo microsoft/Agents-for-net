@@ -14,6 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 /// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams config fetch invocations.
 /// <code>
 /// [ConfigFetchRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
@@ -53,6 +54,7 @@ public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams config submit invocations.
 /// <code>
 /// [ConfigSubmitRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(

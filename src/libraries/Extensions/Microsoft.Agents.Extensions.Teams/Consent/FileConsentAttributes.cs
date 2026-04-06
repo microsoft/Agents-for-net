@@ -13,6 +13,7 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 /// the third parameter must be <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams file consent accept invocations.
 /// <code>
 /// [FileConsentAcceptRoute]
 /// public async Task OnFileConsentAcceptAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
@@ -50,6 +51,7 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
 /// the third parameter must be <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/>.
 /// </summary>
 /// <remarks>
+/// Decorate a method with this attribute to register it as a handler for Teams file consent decline invocations.
 /// <code>
 /// [FileConsentDeclineRoute]
 /// public Task OnFileConsentDeclineAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
