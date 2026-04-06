@@ -158,7 +158,7 @@ public class MessageExtension
     }
 
     /// <summary>
-    /// Registers a handler to process the initial fetch task for an Action based message extension.
+    /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
     /// <remarks>Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
@@ -289,7 +289,7 @@ public class MessageExtension
     }
 
     /// <summary>
-    /// Registers a handler that implements the logic to invoke configuring Message Extension settings.
+    /// Registers a handler that processes the configure settings event for a Message Extension.
     /// </summary>
     /// <remarks>
     /// <code>
@@ -327,7 +327,7 @@ public class MessageExtension
     /// <typeparam name="TData">The type of the <c>cardData</c> argument on the handler.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
     /// deserialized value payload of type TData, and a cancellation token. Cannot be null.</param>
-    /// <returns>The current AgentApplication instance for method chaining.</returns>
+    /// <returns>The current <see cref="MessageExtension"/> instance for method chaining.</returns>
     public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler)
     {
         _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithHandler<TData>(handler).Build());

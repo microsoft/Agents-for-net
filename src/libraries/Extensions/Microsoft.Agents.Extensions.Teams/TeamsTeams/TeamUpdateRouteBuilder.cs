@@ -102,6 +102,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
         return this;
     }
 
+    /// <inheritdoc />
     protected override void PreBuild()
     {
         _route.ChannelId ??= Channels.Msteams;

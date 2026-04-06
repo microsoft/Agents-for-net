@@ -8,8 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Extensions.Teams;
 
 /// <summary>
-/// The TeamsActivityExtensions
-/// provides helpers to make interacting with Microsoft Teams objects easier. 
+/// Provides extension methods on <see cref="Microsoft.Agents.Core.Models.IActivity"/> for interacting with Microsoft Teams-specific data.
 /// </summary>
 public static class TeamsActivityExtensions
 {
@@ -86,7 +85,7 @@ public static class TeamsActivityExtensions
     }
 
     /// <summary>
-    /// Configures the current activity to generate a notification within Teams.
+    /// Configures the current activity to generate a standard (non-meeting) notification within Teams.
     /// </summary>
     /// <param name="activity">The current activity.</param>
     public static void TeamsNotifyUser(this IActivity activity)
@@ -106,12 +105,12 @@ public static class TeamsActivityExtensions
     }
 
     /// <summary>
-    /// Adds the teams Feedback loop flag to the current ChannelData object.
-    /// Channel Data object cannot be populated when this flag is used. 
+    /// Adds the Teams feedback loop flag to the current activity's ChannelData.
+    /// The ChannelData must be null before calling this method; returns <c>false</c> if ChannelData is already set.
     /// </summary>
-    /// <param name="activity"></param>
-    /// <param name="feedbackLoopType"></param>
-    /// <returns>true if it was able to add to Channel Data, other wise false.</returns>
+    /// <param name="activity">The current activity.</param>
+    /// <param name="feedbackLoopType">The feedback loop type value. Defaults to <c>"default"</c>.</param>
+    /// <returns><c>true</c> if the feedback loop flag was added; <c>false</c> if ChannelData was already populated.</returns>
     public static bool TeamsEnableFeedbackLoop(this IActivity activity, string feedbackLoopType = "default")
     {
         if (activity.ChannelData != null)

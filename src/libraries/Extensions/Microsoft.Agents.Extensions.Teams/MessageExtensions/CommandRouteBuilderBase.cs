@@ -16,13 +16,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
 /// <summary>
-/// Provides a base builder for configuring message extension routes for MessageExtensions that handle command-based Invoke activities 
-/// in an AgentApplication. This builder allows for defining command matching logic using either exact string matches or regular expression 
-/// patterns, enabling flexible routing based on the command specified in the incoming activity. The builder ensures that the route is 
-/// properly configured for Invoke routing and validates required properties before building the route.
+/// Base builder for configuring message extension routes that handle command-based Invoke activities in an AgentApplication.
+/// Supports matching the incoming command ID by exact string or regular expression pattern.
 /// </summary>
-/// <typeparam name="TBuilder">The type of the builder that extends the functionality of the CommandRouteBuilderBase, enabling fluent
-/// configuration.</typeparam>
+/// <typeparam name="TBuilder">The concrete builder type, used to enable fluent method chaining.</typeparam>
 public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : CommandRouteBuilderBase<TBuilder>
 {
     private Func<string, bool> _commandMatch;
@@ -83,7 +80,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref=" CommandRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="CommandRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
     public override TBuilder AsInvoke(bool isInvoke = true)
     {
         return (TBuilder)this;

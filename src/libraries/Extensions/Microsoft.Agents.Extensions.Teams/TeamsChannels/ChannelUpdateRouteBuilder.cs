@@ -122,6 +122,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
         return this;
     }
 
+    /// <inheritdoc />
     protected override void PreBuild()
     {
         _route.ChannelId ??= Channels.Msteams;

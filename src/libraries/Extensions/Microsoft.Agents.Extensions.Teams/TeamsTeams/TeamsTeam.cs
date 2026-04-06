@@ -6,6 +6,10 @@ using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
 {
+    /// <summary>
+    /// Provides fluent-style registration of handlers for Microsoft Teams team lifecycle events,
+    /// such as archived, unarchived, renamed, restored, deleted, and hard-deleted.
+    /// </summary>
     public class TeamsTeam
     {
         private readonly AgentApplication _app;
@@ -18,7 +22,8 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         }
 
         /// <summary>
-        /// Handle any team update event.  Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
+        /// Registers a handler to be invoked for any team update event.
+        /// Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
         /// team update event types (e.g. archived, deleted, etc.) using:
         /// <code>
         /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;

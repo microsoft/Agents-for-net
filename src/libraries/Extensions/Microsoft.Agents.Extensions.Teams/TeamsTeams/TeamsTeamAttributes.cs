@@ -28,6 +28,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -58,6 +59,7 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -88,6 +90,7 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -118,6 +121,7 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -148,6 +152,7 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -178,6 +183,7 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
@@ -210,6 +216,7 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);

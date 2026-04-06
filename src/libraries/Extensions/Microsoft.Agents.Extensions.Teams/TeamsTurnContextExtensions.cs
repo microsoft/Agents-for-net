@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams;
 
+/// <summary>
+/// Provides extension methods on <see cref="ITurnContext"/> for sending targeted activities in Microsoft Teams conversations.
+/// </summary>
 public static class TeamsTurnContextExtensions
 {
     /// <summary>

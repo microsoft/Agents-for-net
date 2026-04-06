@@ -16,13 +16,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 
 /// <summary>
-/// Provides a base builder for configuring message extension routes for TaskModules that handle key-based Invoke activities
-/// in an AgentApplication. This builder allows for defining command matching logic using either exact string matches or regular expression
-/// patterns, enabling flexible routing based on the command specified in the incoming activity. The builder ensures that the route is
-/// properly configured for Invoke routing and validates required properties before building the route.
+/// Base builder for configuring task module routes that handle key-based Invoke activities in an AgentApplication.
+/// Supports matching the value of a named key field using either an exact string or a regular expression pattern,
+/// and ensures the route is properly configured for Invoke routing before building.
 /// </summary>
-/// <typeparam name="TBuilder">The type of the builder that extends the functionality of the KeyValueRouteBuilderBase, enabling fluent
-/// configuration.</typeparam>
+/// <typeparam name="TBuilder">The concrete builder type, used to enable fluent method chaining.</typeparam>
 public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : KeyValueRouteBuilderBase<TBuilder>
 {
     private static readonly string DEFAULT_TASK_DATA_KEY = "task";
@@ -31,6 +29,10 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
 
     protected string InvokeName { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/>,
+    /// pre-configured as an Invoke route.
+    /// </summary>
     public KeyValueRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
@@ -74,8 +76,8 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
         return (TBuilder)this;
     }
 
-    /// <summary>   
-    /// Sets the name of the key property in the incoming activity's value payload that will be used for matching the route. By default, this should be set to "task" in the submitted data.
+    /// <summary>
+    /// Sets the name of the key property in the incoming activity's value payload used for route matching. Defaults to <c>"task"</c>.
     /// </summary>
     /// <param name="keyName">A filter string that specifies the key data to include. If the value is null or consists only of white space, a
     /// default filter is applied.</param>

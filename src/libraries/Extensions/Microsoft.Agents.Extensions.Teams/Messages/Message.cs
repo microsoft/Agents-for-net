@@ -44,7 +44,7 @@ public class Message
     }
 
     /// <summary>
-    /// Handles message undo soft delete events.
+    /// Handles message undelete (undo soft-delete) events.
     /// </summary>
     /// <remarks>
     /// Alternatively, the <see cref="MessageUndeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
@@ -64,7 +64,7 @@ public class Message
     }
 
     /// <summary>
-    /// Handles message soft delete events.
+    /// Handles message soft-delete events.
     /// </summary>
     /// <remarks>
     /// Alternatively, the <see cref="MessageDeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.

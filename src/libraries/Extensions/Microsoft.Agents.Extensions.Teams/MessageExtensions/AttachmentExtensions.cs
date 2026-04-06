@@ -7,7 +7,7 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
 /// <summary>
-/// Attachment extensions.
+/// Extension methods for converting <see cref="Microsoft.Agents.Core.Models.Attachment"/> instances into Teams message extension attachments.
 /// </summary>
 public static class AttachmentExtensions
 {

@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions
         /// </summary>
         /// <param name="configUrl">The URL to open for configuration.</param>
         /// <param name="title">The title for the configuration action.</param>
-        /// <param name="text"></param>
+        /// <param name="text">Optional text to include in the configuration result. May be null.</param>
         /// <param name="cacheInfo">Optional cache directives for the response.</param>
         /// <returns>A response that initiates a configuration flow.</returns>
         public static Microsoft.Teams.Api.MessageExtensions.Response WithResultConfig(

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -10,8 +9,8 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// Provides a builder for configuring routes that handle Teams message undelete (undo soft-delete) events.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MessageUndeleteRouteBuilder"/> to create and configure routes that respond to
-/// <c>messageUpdate</c> activities with channel-data event type <c>undeleteMessage</c>.
+/// Use <see cref="MessageEditRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"undeleteMessage"</c>.
 /// <code>
 /// var route = MessageUndeleteRouteBuilder.Create()
 ///     .WithHandler(async (context, state, ct) =>
@@ -31,7 +30,7 @@ public class MessageUndeleteRouteBuilder : MessageEventRouteBuilderBase<MessageU
     /// </summary>
     public MessageUndeleteRouteBuilder() : base()
     {
-        ActivityTypeName = ActivityTypes.MessageUpdate;
+        ActivityTypeName = Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate;
         EventTypeName = "undeleteMessage";
     }
 

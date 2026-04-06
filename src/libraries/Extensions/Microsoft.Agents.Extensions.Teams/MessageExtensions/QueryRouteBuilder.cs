@@ -21,8 +21,8 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     /// <remarks>Use this method to specify custom logic for handling queries in Teams message
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the query's payload.</remarks>
-    /// <param name="handler">An asynchronous delegate that processes the query, receiving the context, timestamp, deserialized data
-    /// of type Microsoft.Teams.Api.MessageExtensions.Query, and a cancellation token.</param>
+    /// <param name="handler">An asynchronous delegate that processes the query, receiving the turn context, turn state, deserialized data
+    /// of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token.</param>
     /// <returns>The current instance of QueryRouteBuilder, enabling method chaining.</returns>
     public QueryRouteBuilder WithHandler(QueryHandler handler)
     {

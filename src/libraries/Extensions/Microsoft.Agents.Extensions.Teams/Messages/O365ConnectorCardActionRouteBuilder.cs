@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// Provides a builder for configuring routes that handle Teams O365 Connector Card Action invoke activities.
 /// </summary>
 /// <remarks>
-/// Use <see cref="O365ConnectorCardActionRouteBuilder"/> to create and configure routes that respond to
-/// <c>composeExtension/submitAction</c> invoke activities triggered by O365 Connector Card action buttons.
+/// Use <see cref="O365ConnectorCardActionRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction"/> triggered by O365 Connector Card action buttons.
 /// <code>
 /// var route = O365ConnectorCardActionRouteBuilder.Create()
 ///     .WithHandler(async (context, state, query, ct) =>

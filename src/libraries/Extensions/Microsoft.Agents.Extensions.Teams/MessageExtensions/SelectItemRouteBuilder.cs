@@ -27,8 +27,8 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
     /// <typeparam name="TData">The type of data extracted from the select item action payload and passed to the handler.</typeparam>
-    /// <param name="handler">An asynchronous delegate that processes the select item, receiving the context, timestamp, deserialized data
-    /// of type TData, and a cancellation token.</param>
+    /// <param name="handler">An asynchronous delegate that processes the select item, receiving the turn context, turn state, deserialized data
+    /// of type <typeparamref name="TData"/>, and a cancellation token.</param>
     /// <returns>The current instance of SelectItemRouteBuilder, enabling method chaining.</returns>
     public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandler<TData> handler)
     {

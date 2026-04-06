@@ -28,6 +28,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -58,6 +59,7 @@ public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort ran
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -88,6 +90,7 @@ public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort ran
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -118,6 +121,7 @@ public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -148,6 +152,7 @@ public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, usho
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -178,6 +183,7 @@ public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort ran
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -208,6 +214,7 @@ public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort ra
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -238,6 +245,7 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
@@ -270,6 +278,7 @@ public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort ra
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class ChannelUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);

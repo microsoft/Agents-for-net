@@ -22,6 +22,10 @@ public abstract class ConfigRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuild
     /// </summary>
     protected string InvokeName { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ConfigRouteBuilderBase{TBuilder}"/>,
+    /// pre-configured as an Invoke route.
+    /// </summary>
     protected ConfigRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

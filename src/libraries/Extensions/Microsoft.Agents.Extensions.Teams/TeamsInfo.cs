@@ -59,7 +59,7 @@ public static class TeamsInfo
     /// Gets the details for the given team id. This only works in teams scoped conversations. 
     /// </summary>
     /// <param name="turnContext">The context for the current conversation turn.</param>
-    /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams covnersation, the teamId will be inferred from the ChannelData.</param>
+    /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams conversation, the teamId will be inferred from the ChannelData.</param>
     /// <param name="cancellationToken"> Cancellation token. </param>
     /// <returns>Team Details.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
@@ -71,13 +71,13 @@ public static class TeamsInfo
     }
 
     /// <summary>
-    /// Returns a list of channels in a Team. 
+    /// Returns a list of channels in a Team.
     /// This only works in teams scoped conversations.
     /// </summary>
     /// <param name="turnContext">The context for the current conversation turn.</param>
-    /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams covnersation, the teamId will be inferred from the ChannelData.</param>
+    /// <param name="teamId">ID of the Teams team. If null and the turnContext is within the scope of a Teams conversation, the teamId will be inferred from the ChannelData.</param>
     /// <param name="cancellationToken"> cancellation token. </param>
-    /// <returns>Team Details.</returns>
+    /// <returns>A list of channels belonging to the specified team.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
     public static async Task<IList<Microsoft.Teams.Api.Channel>> GetTeamChannelsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
     {

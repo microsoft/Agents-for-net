@@ -16,6 +16,11 @@ public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePre
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction;
     }
 
+    /// <summary>
+    /// Configures the route to use the specified handler for processing message preview edit actions.
+    /// </summary>
+    /// <param name="handler">An asynchronous delegate that processes the message preview edit action.</param>
+    /// <returns>The current instance of <see cref="MessagePreviewEditRouteBuilder"/>, enabling method chaining.</returns>
     public MessagePreviewEditRouteBuilder WithHandler(MessagePreviewEditHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

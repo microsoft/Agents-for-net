@@ -23,6 +23,10 @@ public abstract class FileConsentRouteBuilderBase<TBuilder> : RouteBuilderBase<T
     /// </summary>
     protected string Action { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="FileConsentRouteBuilderBase{TBuilder}"/>,
+    /// pre-configured as an Invoke route.
+    /// </summary>
     protected FileConsentRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

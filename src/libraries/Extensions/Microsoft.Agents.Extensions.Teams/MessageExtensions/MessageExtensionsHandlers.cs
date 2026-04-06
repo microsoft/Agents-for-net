@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
 /// <summary>
-/// Function for handling Message Extension <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
+/// Delegate for handling Message Extension fetch task events.
 /// </summary>
 /// <param name="turnContext">The context for the current conversation turn.</param>
 /// <param name="turnState">The state object that stores arbitrary data for this turn.</param>

@@ -16,6 +16,9 @@ namespace Microsoft.Agents.Extensions.Teams;
 public static class TeamsModelExtensions
 {
     #region Cards
+    /// <summary>
+    /// Wraps a <c>ThumbnailCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
+    /// </summary>
     public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.ThumbnailCard card)
     {
         return new Microsoft.Teams.Api.Attachment()
@@ -25,6 +28,9 @@ public static class TeamsModelExtensions
         };
     }
 
+    /// <summary>
+    /// Wraps a <c>HeroCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
+    /// </summary>
     public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.HeroCard card)
     {
         return new Microsoft.Teams.Api.Attachment()
@@ -34,6 +40,9 @@ public static class TeamsModelExtensions
         };
     }
 
+    /// <summary>
+    /// Wraps an <c>AudioCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
+    /// </summary>
     public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AudioCard card)
     {
         return new Microsoft.Teams.Api.Attachment()
@@ -43,6 +52,9 @@ public static class TeamsModelExtensions
         };
     }
 
+    /// <summary>
+    /// Wraps an <c>AnimationCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
+    /// </summary>
     public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AnimationCard card)
     {
         return new Microsoft.Teams.Api.Attachment()
@@ -131,16 +143,28 @@ public static class TeamsModelExtensions
 #pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     #endregion
 
+    /// <summary>
+    /// Deserializes the <c>Data</c> payload of a task module request to the specified type.
+    /// Returns the default value of <typeparamref name="T"/> when <c>Data</c> is null.
+    /// </summary>
     public static T GetDataAs<T>(this Microsoft.Teams.Api.TaskModules.Request request)
     {
          return request?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(request.Data);
     }
 
+    /// <summary>
+    /// Deserializes the <c>Data</c> payload of a message extension action to the specified type.
+    /// Returns the default value of <typeparamref name="T"/> when <c>Data</c> is null.
+    /// </summary>
     public static T GetDataAs<T>(this Microsoft.Teams.Api.MessageExtensions.Action action)
     {
         return action?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(action.Data);
     }
 
+    /// <summary>
+    /// Retrieves a string value from the <c>Data</c> JSON object of a task module request by key.
+    /// Returns <paramref name="defaultValue"/> (or an empty string) when the key is not found or the data is not a JSON object.
+    /// </summary>
     public static string GetDataString(this Microsoft.Teams.Api.TaskModules.Request request, string key, string? defaultValue = null)
     {
         if (request?.Data is System.Text.Json.JsonElement el
