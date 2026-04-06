@@ -100,17 +100,15 @@ public class Configuration
     /// </summary>
     /// <remarks>Alternatively, the <see cref="ConfigurationFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
-    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Configuration OnConfigFetch(ConfigurationHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public Configuration OnConfigFetch(ConfigurationHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(ConfigurationFetchRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
-            .AsAgentic(isAgenticOnly)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -121,17 +119,15 @@ public class Configuration
     /// </summary>
     /// <remarks>Alternatively, the <see cref="ConfigurationSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
-    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Configuration OnConfigSubmit(ConfigurationHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public Configuration OnConfigSubmit(ConfigurationHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(ConfigurationSubmitRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
-            .AsAgentic(isAgenticOnly)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;

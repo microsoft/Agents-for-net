@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -31,15 +31,13 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamUpdateRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team update event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team update process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnTeamEventReceived(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnTeamEventReceived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -51,16 +49,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamArchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team archived event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team archived process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnArchived(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnArchived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamArchived()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -72,16 +68,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamUnarchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team unarchived event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team unarchived process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnUnarchived(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnUnarchived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamUnarchived()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -93,16 +87,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamRenamedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team renamed event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team renamed process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnRenamed(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnRenamed(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamRenamed()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -114,16 +106,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamRestoredRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team restored event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team restored process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnRestored(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnRestored(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamRestored()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -135,16 +125,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team deleted event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team deleted process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnDeleted(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnDeleted(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamDeleted()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());
@@ -156,16 +144,14 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamHardDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team hard deleted event. This handler is called with information about the team.</param>
-        /// <param name="rank">The priority rank for the route. Lower values indicate higher priority. The default is unspecified.</param>
-        /// <param name="autoSignInHandlers">An array of OAuth handler identifiers to use for automatic sign-in during the team hard deleted process.
-        /// Specify null if no automatic sign-in is required.</param>
-        /// <param name="isAgenticOnly">true to invoke the handler only for agentic channels; otherwise, false.</param>
+        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnHardDeleted(TeamUpdateHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public TeamsTeam OnHardDeleted(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamHardDeleted()
-                .WithChannelId(_channelId).WithOrderRank(rank).AsAgentic(isAgenticOnly)
+                .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build());

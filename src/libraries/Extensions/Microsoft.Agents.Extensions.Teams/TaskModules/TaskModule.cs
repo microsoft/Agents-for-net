@@ -81,10 +81,12 @@ public class TaskModule
     /// <param name="value">The value of the key to match on.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(string value, TaskFetchHandler handler, string key = null)
+    public TaskModule OnFetch(string value, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithHandler(handler).Build());
+        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -97,10 +99,12 @@ public class TaskModule
     /// <param name="valuePattern">Regular expression to match against the key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnFetch(Regex valuePattern, TaskFetchHandler handler, string key = null)
+    public TaskModule OnFetch(Regex valuePattern, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithHandler(handler).Build());
+        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -128,10 +132,12 @@ public class TaskModule
     /// <param name="value">The value of the key to match on. If null, this will match for any submit request.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(string value, TaskSubmitHandler handler, string key = null)
+    public TaskModule OnSubmit(string value, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithHandler(handler).Build());
+        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -144,10 +150,12 @@ public class TaskModule
     /// <param name="valuePattern">Regular expression to match against the task data key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public TaskModule OnSubmit(Regex valuePattern, TaskSubmitHandler handler, string key = null)
+    public TaskModule OnSubmit(Regex valuePattern, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithHandler(handler).Build());
+        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }

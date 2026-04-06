@@ -103,17 +103,15 @@ public class FileConsent
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public FileConsent OnAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public FileConsent OnAccept(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(FileConsentAcceptRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
-            .AsAgentic(isAgenticOnly)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -124,17 +122,15 @@ public class FileConsent
     /// </summary>
     /// <remarks>Alternatively, the <see cref="FileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
-    /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
-    /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
-    /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public FileConsent OnDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public FileConsent OnDecline(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(FileConsentDeclineRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
-            .AsAgentic(isAgenticOnly)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -25,10 +25,12 @@ public class Meeting
     /// </summary>
     /// <remarks>Alternatively, the <see cref="MeetingStartRouteAttribute"/> can be used to decorate a <see cref="MeetingStartHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting start event activity is received from the connector.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public Meeting OnStart(MeetingStartHandler handler)
+    public Meeting OnStart(MeetingStartHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingStartRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(MeetingStartRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -37,10 +39,12 @@ public class Meeting
     /// </summary>
     /// <remarks>Alternatively, the <see cref="MeetingEndRouteAttribute"/> can be used to decorate a <see cref="MeetingEndHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting end event activity is received from the connector.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public Meeting OnEnd(MeetingEndHandler handler)
+    public Meeting OnEnd(MeetingEndHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingEndRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(MeetingEndRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -49,10 +53,12 @@ public class Meeting
     /// </summary>
     /// <remarks>Alternatively, the <see cref="MeetingParticipantsJoinRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants join event activity is received from the connector.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler)
+    public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingParticipantsJoinRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(MeetingParticipantsJoinRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -61,10 +67,12 @@ public class Meeting
     /// </summary>
     /// <remarks>Alternatively, the <see cref="MeetingParticipantsLeaveRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants leave event activity is received from the connector.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler)
+    public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingParticipantsLeaveRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(MeetingParticipantsLeaveRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }

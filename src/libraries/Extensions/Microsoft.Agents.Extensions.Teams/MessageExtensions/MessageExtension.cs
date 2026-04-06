@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -36,10 +36,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnMessagePreviewEdit(string commandId, MessagePreviewEditHandler handler)
+    public MessageExtension OnMessagePreviewEdit(string commandId, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -50,10 +52,12 @@ public class MessageExtension
     /// <remarks>Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnMessagePreviewEdit(Regex commandIdPattern, MessagePreviewEditHandler handler)
+    public MessageExtension OnMessagePreviewEdit(Regex commandIdPattern, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -73,10 +77,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnMessagePreviewSend(string commandId, MessagePreviewSendHandler handler)
+    public MessageExtension OnMessagePreviewSend(string commandId, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -87,10 +93,12 @@ public class MessageExtension
     /// <remarks>Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnMessagePreviewSend(Regex commandIdPattern, MessagePreviewSendHandler handler)
+    public MessageExtension OnMessagePreviewSend(Regex commandIdPattern, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -113,10 +121,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchAction(string commandId, FetchActionHandler handler)
+    public MessageExtension OnFetchAction(string commandId, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -126,10 +136,12 @@ public class MessageExtension
     /// <remarks>Alternatively, the <see cref="FetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnFetchAction(Regex commandIdPattern, FetchActionHandler handler)
+    public MessageExtension OnFetchAction(Regex commandIdPattern, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -150,10 +162,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler)
+    public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -163,10 +177,12 @@ public class MessageExtension
     /// <remarks>Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler)
+    public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -187,10 +203,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(string commandId, QueryHandler handler)
+    public MessageExtension OnQuery(string commandId, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithHandler(handler).Build());
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -200,10 +218,12 @@ public class MessageExtension
     /// <remarks>Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler)
+    public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithHandler(handler).Build());
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -223,10 +243,12 @@ public class MessageExtension
     /// </remarks>
     /// <typeparam name="TData">The type of the <c>data</c> argument on the handler.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler)
+    public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -244,10 +266,12 @@ public class MessageExtension
     /// Alternatively, the <see cref="QueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryLink(QueryLinkHandler handler)
+    public MessageExtension OnQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -256,10 +280,12 @@ public class MessageExtension
     /// </summary>
     /// <remarks>Alternatively, the <see cref="AnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler)
+    public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -281,10 +307,12 @@ public class MessageExtension
     /// Alternatively, the <see cref="QueryUrlSettingRouteAttribute"/> can be used to decorate a <see cref="QueryUrlSettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandler handler)
+    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -304,10 +332,12 @@ public class MessageExtension
     /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
-    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler)
+    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithHandler(handler).Build());
+        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -327,10 +357,12 @@ public class MessageExtension
     /// <typeparam name="TData">The type of the <c>cardData</c> argument on the handler.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
     /// deserialized value payload of type TData, and a cancellation token. Cannot be null.</param>
+    /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The current <see cref="MessageExtension"/> instance for method chaining.</returns>
-    public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler)
+    public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithHandler<TData>(handler).Build());
+        _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler<TData>(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }
