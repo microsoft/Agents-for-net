@@ -117,10 +117,12 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-                  
+
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
-            
+#pragma warning restore CS0618 // Type or member is obsolete
+
             //Assert
             Assert.True(_callbackInvoked);
         }
@@ -173,7 +175,9 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _activity, ContinueCallback, default);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             //Assert
             Assert.True(_callbackInvoked);

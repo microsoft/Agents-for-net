@@ -10,7 +10,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Net;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,14 @@ namespace Microsoft.Agents.Builder
     /// <summary>
     /// An adapter that implements the Activity Protocol and can be hosted in different cloud environments both public and private.
     /// </summary>
-    /// <param name="channelServiceClientFactory">The IConnectorFactory to use.</param>
+    /// <remarks>
+    /// ChannelServiceAdapterBase is designed for interacting with a "channel service" that uses an IConnectorClient by way of
+    /// the IChannelServiceClientFactory to send and receive activities.  This is the case for Azure Bot Service, and other SDK Agents.  
+    /// If your adapter needs to interact with a channel service like this, you can inherit from ChannelServiceAdapterBase and get a 
+    /// lot of functionality for free, including handling incoming activities, sending outgoing activities, and creating conversations.
+    /// Otherwise, subclass the ChannelAdapter for more control over how activities are sent and received.
+    /// </remarks>
+    /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
@@ -111,50 +117,6 @@ namespace Microsoft.Agents.Builder
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), reference.GetContinuationActivity(), null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
-
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), continuationActivity, null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -321,25 +283,6 @@ namespace Microsoft.Agents.Builder
         {
             _ = continuationActivity ?? throw new ArgumentNullException(nameof(continuationActivity));
             _ = continuationActivity.Conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidConversationAccount, null);
-        }
-
-        private InvokeResponse ProcessTurnResults(TurnContext turnContext)
-        {
-            // Handle Invoke scenarios where the Agent will return a specific body and return code.
-            if (turnContext.Activity.Type == ActivityTypes.Invoke)
-            {
-                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
-                if (activityInvokeResponse == null)
-                {
-                    Logger.LogWarning("InvokeResponse was not set during the turn. Either a Route was not added, or the Agent is not handling the Invoke correctly. Returning 501 Not Implemented. Name = '{Name}', Value = '{Value}'", turnContext.Activity.Name, ProtocolJsonSerializer.ToJson(turnContext.Activity.Value));
-                    return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };
-                }
-
-                return (InvokeResponse)activityInvokeResponse.Value;
-            }
-
-            // No body to return.
-            return null;
         }
 
         /// <summary>
