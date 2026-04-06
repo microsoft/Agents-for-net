@@ -13,17 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Submit"/>,
 /// optionally filtered by a task data key value via <see cref="WithValue(string)"/>.
-/// <code>
-/// var route = TaskSubmitRouteBuilder.Create()
-///     .WithValue("myTask")
-///     .WithHandler(async (context, state, request, ct) =>
-///     {
-///         // Handle submitted task module data
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBuilder>
 {

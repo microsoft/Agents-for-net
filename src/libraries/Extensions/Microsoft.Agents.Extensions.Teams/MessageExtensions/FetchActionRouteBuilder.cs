@@ -13,17 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask"/>,
 /// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
-/// <code>
-/// var route = FetchActionRouteBuilder.Create()
-///     .WithCommand("actionCmd")
-///     .WithHandler(async (context, state, action, ct) =>
-///     {
-///         // Return a task module to display
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteBuilder>
 {

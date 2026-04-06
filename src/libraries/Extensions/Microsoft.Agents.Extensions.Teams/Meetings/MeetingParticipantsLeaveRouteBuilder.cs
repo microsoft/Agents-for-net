@@ -13,16 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// Use <see cref="MeetingParticipantsLeaveRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantLeave"/>.
-/// <code>
-/// var route = MeetingParticipantsLeaveRouteBuilder.Create()
-///     .WithHandler(async (context, state, participants, ct) =>
-///     {
-///         // Handle participants leaving
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MeetingParticipantsLeaveRouteBuilder : MeetingEventRouteBuilderBase<MeetingParticipantsLeaveRouteBuilder>
 {

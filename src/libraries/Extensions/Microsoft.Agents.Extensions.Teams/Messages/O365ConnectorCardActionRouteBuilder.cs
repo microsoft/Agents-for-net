@@ -15,16 +15,6 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <remarks>
 /// Use <see cref="O365ConnectorCardActionRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction"/> triggered by O365 Connector Card action buttons.
-/// <code>
-/// var route = O365ConnectorCardActionRouteBuilder.Create()
-///     .WithHandler(async (context, state, query, ct) =>
-///     {
-///         // Handle O365 connector card action
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365ConnectorCardActionRouteBuilder>
 {

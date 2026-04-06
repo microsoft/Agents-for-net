@@ -11,16 +11,6 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <remarks>
 /// Use <see cref="MessageEditRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"editMessage"</c>.
-/// <code>
-/// var route = MessageEditRouteBuilder.Create()
-///     .WithHandler(async (context, state, ct) =>
-///     {
-///         // Handle message edit
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditRouteBuilder>
 {

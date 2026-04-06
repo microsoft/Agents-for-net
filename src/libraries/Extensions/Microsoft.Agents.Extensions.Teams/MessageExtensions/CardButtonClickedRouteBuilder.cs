@@ -17,16 +17,6 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Use <see cref="CardButtonClickedRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked"/>.
-/// <code>
-/// var route = CardButtonClickedRouteBuilder.Create()
-///     .WithHandler(async (context, state, cardData, ct) =>
-///     {
-///         // Handle card button click
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedRouteBuilder>
 {

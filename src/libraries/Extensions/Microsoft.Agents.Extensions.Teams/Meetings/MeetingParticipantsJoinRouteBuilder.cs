@@ -13,16 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// Use <see cref="MeetingParticipantsJoinRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Events.Name.MeetingParticipantJoin"/>.
-/// <code>
-/// var route = MeetingParticipantsJoinRouteBuilder.Create()
-///     .WithHandler(async (context, state, participants, ct) =>
-///     {
-///         // Handle participants joining
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<MeetingParticipantsJoinRouteBuilder>
 {

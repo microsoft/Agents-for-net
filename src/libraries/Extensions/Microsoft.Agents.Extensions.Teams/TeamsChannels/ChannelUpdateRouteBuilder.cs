@@ -19,16 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 /// <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> matching channel events.
 /// This builder allows matching specific event types via <see cref="ForChannelCreated()"/>, <see cref="ForChannelDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
-/// This builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
-/// <code>
-/// var route = ChannelUpdateRouteBuilder.Create()
-///    .ForChannelCreated()
-///    .ForChannelDeleted()
-///    .WithHandler(async (context, state, channel, cancellationToken) => { /* handler logic */ })
-///    .Build();
-///    
-/// app.AddRoute(route);
-/// </code>
+/// This builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified.
 /// </remarks>
 public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateRouteBuilder>
 {

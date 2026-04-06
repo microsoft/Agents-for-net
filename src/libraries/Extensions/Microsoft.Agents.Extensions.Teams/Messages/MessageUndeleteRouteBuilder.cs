@@ -11,16 +11,6 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <remarks>
 /// Use <see cref="MessageUndeleteRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"undeleteMessage"</c>.
-/// <code>
-/// var route = MessageUndeleteRouteBuilder.Create()
-///     .WithHandler(async (context, state, ct) =>
-///     {
-///         // Handle message undelete
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MessageUndeleteRouteBuilder : MessageEventRouteBuilderBase<MessageUndeleteRouteBuilder>
 {

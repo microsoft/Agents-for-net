@@ -13,16 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent"/>
 /// and <see cref="Microsoft.Teams.Api.FileConsentCardResponse.Action"/> of <c>"decline"</c>.
-/// <code>
-/// var route = FileConsentDeclineRouteBuilder.Create()
-///     .WithHandler(async (context, state, response, ct) =>
-///     {
-///         await context.SendActivityAsync("File upload was declined.", cancellationToken: ct);
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileConsentDeclineRouteBuilder>
 {

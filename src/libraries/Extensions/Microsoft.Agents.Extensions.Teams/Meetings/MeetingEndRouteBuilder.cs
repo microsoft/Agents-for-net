@@ -12,16 +12,6 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// Use <see cref="MeetingEndRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Events.Name.MeetingEnd"/>.
-/// <code>
-/// var route = MeetingEndRouteBuilder.Create()
-///     .WithHandler(async (context, state, meeting, ct) =>
-///     {
-///         // Handle meeting end
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRouteBuilder>
 {

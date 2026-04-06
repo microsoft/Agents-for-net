@@ -14,17 +14,6 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>
 /// with <see cref="Microsoft.Teams.Api.MessageExtensions.Action.BotMessagePreviewAction"/> of <c>"edit"</c>,
 /// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
-/// <code>
-/// var route = MessagePreviewEditRouteBuilder.Create()
-///     .WithCommand("actionCmd")
-///     .WithHandler(async (context, state, activity, ct) =>
-///     {
-///         // Handle edit of the message preview
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePreviewEditRouteBuilder>
 {

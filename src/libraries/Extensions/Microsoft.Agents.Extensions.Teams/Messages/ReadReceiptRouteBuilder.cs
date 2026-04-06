@@ -15,16 +15,6 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <remarks>
 /// Use <see cref="ReadReceiptRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt"/> event activities sent when a user reads a message the agent sent in personal scope.
-/// <code>
-/// var route = ReadReceiptRouteBuilder.Create()
-///     .WithHandler(async (context, state, data, ct) =>
-///     {
-///         // Handle read receipt
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class ReadReceiptRouteBuilder : RouteBuilderBase<ReadReceiptRouteBuilder>
 {

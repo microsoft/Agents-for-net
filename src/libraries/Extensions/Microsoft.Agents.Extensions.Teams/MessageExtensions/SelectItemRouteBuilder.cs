@@ -17,16 +17,6 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Use <see cref="SelectItemRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SelectItem"/>.
-/// <code>
-/// var route = SelectItemRouteBuilder.Create()
-///     .WithHandler(async (context, state, item, ct) =>
-///     {
-///         // Handle selected item
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
 {

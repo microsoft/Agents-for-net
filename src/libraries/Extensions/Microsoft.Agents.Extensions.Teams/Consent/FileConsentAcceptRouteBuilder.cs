@@ -13,16 +13,6 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent"/>
 /// and <see cref="Microsoft.Teams.Api.FileConsentCardResponse.Action"/> of <c>"accept"</c>.
-/// <code>
-/// var route = FileConsentAcceptRouteBuilder.Create()
-///     .WithHandler(async (context, state, response, ct) =>
-///     {
-///         // Upload the file to response.UploadInfo.UploadUrl via HTTP PUT
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class FileConsentAcceptRouteBuilder : FileConsentRouteBuilderBase<FileConsentAcceptRouteBuilder>
 {

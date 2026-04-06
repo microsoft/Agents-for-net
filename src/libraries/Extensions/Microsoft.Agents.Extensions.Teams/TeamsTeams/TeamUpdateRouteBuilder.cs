@@ -19,16 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 /// <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> matching team events.
 /// This builder allows matching specific event types via <see cref="ForTeamArchived()"/>, <see cref="ForTeamDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
-/// This builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
-/// <code>
-/// var route = TeamUpdateRouteBuilder.Create()
-///    .ForTeamArchived()
-///    .ForTeamUnarchived()
-///    .WithHandler(async (context, state, team, cancellationToken) => { /* handler logic */ })
-///    .Build();
-///    
-/// app.AddRoute(route);
-/// </code>
+/// This builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified.
 /// </remarks>
 public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBuilder>
 {

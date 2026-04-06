@@ -18,16 +18,6 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Use <see cref="AnonQueryLinkRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.AnonQueryLink"/>.
-/// <code>
-/// var route = AnonQueryLinkRouteBuilder.Create()
-///     .WithHandler(async (context, state, url, ct) =>
-///     {
-///         // Handle anonymous link unfurling for the URL
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuilder>
 {

@@ -10,16 +10,6 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 /// Use <see cref="ConfigSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit"/>.
-/// <code>
-/// var route = ConfigSubmitRouteBuilder.Create()
-///     .WithHandler(async (context, state, configData, ct) =>
-///     {
-///         return new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ };
-///     })
-///     .Build();
-///
-/// app.AddRoute(route);
-/// </code>
 /// </remarks>
 public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRouteBuilder>
 {

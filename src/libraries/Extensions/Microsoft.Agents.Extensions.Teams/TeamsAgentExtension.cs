@@ -25,40 +25,15 @@ namespace Microsoft.Agents.Extensions.Teams;
 public class TeamsAgentExtension : AgentExtension
 {
     /// <summary>
-    /// Creates a new TeamsAgentExtension instance.
-    /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.
-    /// Use the callback method to register routes for handling Teams-specific events.
-    /// <code>
-    /// public class MyAgentApplication : AgentApplication
-    /// {
-    ///    public MyAgentApplication(AgentApplicationOptions options) : base(options)
-    ///    {
-    ///       RegisterExtension(new TeamsAgentExtension(this), teams =>
-    ///       {
-    ///          teams.Channels
-    ///             .OnCreated(async (turnContext, turnState, channelInfo, cancellationToken) =>
-    ///                {
-    ///                   // Handle channel created event
-    ///                })
-    ///             .OnDeleted(async (turnContext, turnState, channelInfo, cancellationToken) =>
-    ///                {
-    ///                   // Handle channel deleted event
-    ///                });
-    ///                
-    ///          teams.Meetings
-    ///             .OnStart(async (turnContext, turnState, meetingInfo, cancellationToken) =>
-    ///                {
-    ///                   // Handle meeting started event
-    ///                })
-    ///             .OnEnd(async (turnContext, turnState, meetingInfo, cancellationToken) =>
-    ///                {
-    ///                   // Handle meeting ended event
-    ///                });
-    ///       });
-    ///    }
-    /// }
-    /// </code>
+    /// Creates a new <see cref="TeamsAgentExtension"/> instance.
     /// </summary>
+    /// <remarks>
+    /// The preferred way to enable the Teams extension is via the <see cref="TeamsExtensionAttribute"/> on a
+    /// <c>partial</c> <see cref="AgentApplication"/> subclass, which causes a source generator to expose a
+    /// <c>Teams</c> property of this type automatically.
+    /// Use this constructor directly only when manually calling
+    /// <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/>.
+    /// </remarks>
     /// <param name="agentApplication">The AgentApplication for this extension.</param>
     public TeamsAgentExtension(AgentApplication agentApplication)
     {
