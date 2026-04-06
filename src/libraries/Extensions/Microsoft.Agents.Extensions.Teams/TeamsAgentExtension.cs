@@ -102,11 +102,11 @@ public class TeamsAgentExtension : AgentExtension
     /// </summary>
     public Configuration Configuration { get; }
 
-    internal static Task SetResponse(ITurnContext context, object result = null)
+    internal static Task SetResponse(ITurnContext context, object result = null, int status = 200)
     {
         if (!context.StackState.Has(ChannelAdapter.InvokeResponseKey))
         {
-            var activity = Activity.CreateInvokeResponseActivity(result);
+            var activity = Activity.CreateInvokeResponseActivity(result, status);
             return context.SendActivityAsync(activity, CancellationToken.None);
         }
 

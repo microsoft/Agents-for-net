@@ -8,6 +8,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using Microsoft.Teams.Cards;
+using System.Text.Json;
 
 namespace MessageExtensions;
 
@@ -52,7 +53,10 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             var previewCard = new ThumbnailCard()
             {
                 Title = $"Result {i}",
-                Text = $"This is a preview of result {i} for query '{searchQuery}'."
+                Text = $"This is a preview of result {i} for query '{searchQuery}'.",
+
+                // This Value is sent to the SelectItemRoute below
+                Tap = new CardAction { Type = "invoke", Value = $"{{\"index\": \"{i}\", \"query\":\"{searchQuery}\" }}" }
             };
 
             var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
@@ -70,6 +74,41 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         }
 
         return Task.FromResult(Response.WithResultAttachments(attachments));
+    }
+
+    [SelectItemRoute]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
+    {
+        var index = item.GetProperty("index").GetString() ?? "No Index";
+        var query = item.GetProperty("query").GetString() ?? "No Query";
+
+        Logger.LogInformation("Item selected: {Item}", item);
+
+        var card = new Microsoft.Teams.Cards.AdaptiveCard([
+            new TextBlock("Item Selected")
+            {
+                Weight = TextWeight.Bolder,
+                Size = TextSize.Large,
+                Color = TextColor.Good
+            },
+            new TextBlock($"You selected item: {index} for query: '{query}'")
+            {
+                Wrap = true,
+                FontType = FontType.Monospace,
+                Separator = true
+            }
+        ])
+        {
+            Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
+        };
+
+        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
+        {
+            ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
+            Content = card
+        };
+
+        return Task.FromResult(Response.WithResultAttachments([attachment]));
     }
 
     [SubmitActionRoute("createCard")]
@@ -191,42 +230,6 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
                     Text = url
                 }
             }
-        };
-
-        return Task.FromResult(Response.WithResultAttachments([attachment]));
-    }
-
-    [SelectItemRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, string item, CancellationToken cancellationToken)
-    {
-        Logger.LogInformation("Item selected: {Item}", item);
-
-        var card = new Microsoft.Teams.Cards.AdaptiveCard([
-            new TextBlock("Item Selected")
-            {
-                Weight = TextWeight.Bolder,
-                Size = TextSize.Large,
-                Color = TextColor.Good
-            },
-            new TextBlock("You selected the following item:")
-            {
-                Wrap = true
-            },
-            new TextBlock(item)
-            {
-                Wrap = true,
-                FontType = FontType.Monospace,
-                Separator = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
-        };
-
-        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
-        {
-            ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
-            Content = card
         };
 
         return Task.FromResult(Response.WithResultAttachments([attachment]));

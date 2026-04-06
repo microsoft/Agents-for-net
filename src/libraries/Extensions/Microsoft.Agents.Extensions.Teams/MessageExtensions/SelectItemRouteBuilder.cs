@@ -31,7 +31,7 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     /// <remarks>Use this method to specify custom logic for handling select item actions in Teams message
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
-    /// <typeparam name="TData">The type of data extracted from the select item action payload and passed to the handler.</typeparam>
+    /// <typeparam name="TData">The type of data extracted from the select item action payload and passed to the handler. This comes from the <c>Activity.Value</c> and will be <c>JsonElement</c>.</typeparam>
     /// <param name="handler">An asynchronous delegate that processes the select item, receiving the turn context, turn state, deserialized data
     /// of type <typeparamref name="TData"/>, and a cancellation token.</param>
     /// <returns>The current instance of SelectItemRouteBuilder, enabling method chaining.</returns>
@@ -39,9 +39,23 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            try
+            {
+                var value = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
+                var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
+                await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                var result = new Microsoft.Teams.Api.MessageExtensions.Result
+                {
+                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
+                    Text = $"An error occurred while processing the select item action: {ex.Message}"
+                };
+
+                await TeamsAgentExtension.SetResponse(ctx, result, 500).ConfigureAwait(false);
+                throw;
+            }
         };
         return this;
     }

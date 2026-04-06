@@ -67,7 +67,7 @@ public delegate Task<Microsoft.Teams.Api.MessageExtensions.Response> QueryHandle
 /// <summary>
 /// Function for handling Message Extension selecting item events.
 /// </summary>
-/// <typeparam name="TData">The type of the <c>data</c> argument associated with the select item action.</typeparam>
+/// <typeparam name="TData">The type of <c>Activity.Value</c> associated with the select item action.  Use type <c>object</c> or <c>JsonElement</c> if unsure.</typeparam>
 /// <param name="turnContext">The context for the current conversation turn.</param>
 /// <param name="turnState">The state object that stores arbitrary data for this turn.</param>
 /// <param name="data">The data associated with the select item action.</param>

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System.Text.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Microsoft.Agents.Extensions.Teams;
@@ -168,6 +169,17 @@ public static class TeamsModelExtensions
     public static string GetDataString(this Microsoft.Teams.Api.TaskModules.Request request, string key, string? defaultValue = null)
     {
         if (request?.Data is System.Text.Json.JsonElement el
+            && el.ValueKind == System.Text.Json.JsonValueKind.Object
+            && el.TryGetProperty(key, out var prop))
+        {
+            return GetDataString((JsonElement)request.Data, key, defaultValue);
+        }
+        return defaultValue ?? string.Empty;
+    }
+
+    public static string GetDataString(this JsonElement data, string key, string? defaultValue = null)
+    {
+        if (data is System.Text.Json.JsonElement el
             && el.ValueKind == System.Text.Json.JsonValueKind.Object
             && el.TryGetProperty(key, out var prop))
         {
