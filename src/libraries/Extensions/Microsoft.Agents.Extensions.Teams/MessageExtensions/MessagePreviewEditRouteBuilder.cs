@@ -33,7 +33,7 @@ public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePre
         _route.Handler = async (ctx, ts, ct) =>
         {
             var messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, messagingExtensionAction.BotActivityPreview[0].ToCoreActivity(), ct).ConfigureAwait(false);
+            var response = await handler(ctx, ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;

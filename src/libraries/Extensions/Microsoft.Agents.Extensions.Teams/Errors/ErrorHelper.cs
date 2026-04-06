@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.Errors
         // Base error code for the Teams Agent Extension: -100000
 
         // RouteBuilders
-        internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-100000, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-100033");
-        internal static readonly AgentErrorDefinition RouteBuilderMissingProperty = new AgentErrorDefinition(-100001, Properties.Resources.RouteBuilderMissingProperty, "https://aka.ms/M365AgentsErrorCodes/#-100034");
+        internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-100000, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-100000");
+        internal static readonly AgentErrorDefinition RouteBuilderMissingProperty = new AgentErrorDefinition(-100001, Properties.Resources.RouteBuilderMissingProperty, "https://aka.ms/M365AgentsErrorCodes/#-100001");
     }
 }

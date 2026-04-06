@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Builder.Dialogs.Serialization
 {
     /// <summary>
-    /// This handles serializing a Dictionary&lt;string, object> with type information.
+    /// This handles serializing a PersistedState with type information.
     /// </summary>
     internal class PersistedStateConverter : JsonConverter<PersistedState>
     {

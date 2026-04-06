@@ -30,7 +30,7 @@ public class TeamsPagedMembersResult
     public TeamsPagedMembersResult(string continuationToken = default, IList<ChannelAccount> members = default)
     {
         ContinuationToken = continuationToken;
-        var teamsChannelAccounts = members.Select(channelAccount => ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(channelAccount));
+        var teamsChannelAccounts = (members ?? []).Select(channelAccount => ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(channelAccount));
         Members = [.. teamsChannelAccounts];
     }
 
