@@ -24,7 +24,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         ITurnContext ctx, ITurnState state,
         Microsoft.Teams.Api.MessageExtensions.Query query,
         CancellationToken ct)
-        => ResponseTask.WithResult(BuildResults(query));
+        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
 }
 ```
 The source generator will create a `TeamsAgentExtension` instance exposed as a "Teams" property on the AgentApplication.

@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
 ///     var items = await _catalog.SearchAsync(keyword, cancellationToken);
 ///     var attachments = items.Select(i => i.ToHeroCard().ToMessagingExtensionAttachment()).ToList();
-///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
+///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = attachments } };
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnQuery(string, QueryHandler)"/> can be used to register the handler via the fluent API.
@@ -65,7 +65,7 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
 ///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
-///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [attachment] });
+///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [attachment] } };
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnQueryLink"/> can be used to register the handler via the fluent API.
@@ -97,7 +97,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
 ///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
-///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [attachment] });
+///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [attachment] } };
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnAnonymousQueryLink"/> can be used to register the handler via the fluent API.
@@ -127,12 +127,15 @@ public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// [QueryUrlSettingRoute]
 /// public Task&lt;Response&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
-///     return ResponseTask.WithResult(new Result
+///     return Task.FromResult(new Response
 ///     {
-///         Type = ResultType.Config,
-///         SuggestedActions = new SuggestedActions
+///         ComposeExtension = new Result
 ///         {
-///             Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+///             Type = ResultType.Config,
+///             SuggestedActions = new SuggestedActions
+///             {
+///                 Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+///             }
 ///         }
 ///     });
 /// }
@@ -215,7 +218,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 /// {
 ///     // Re-open the compose form populated with the draft content
 ///     var draft = activityPreview.Attachments?.FirstOrDefault()?.Content;
-///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
+///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnMessagePreviewEdit(string, MessagePreviewEditHandler)"/> can be used to register the handler via the fluent API.
@@ -304,7 +307,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 ///     // Persist user settings and return an updated result
 ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
 ///     _settingsStore.Save(turnContext.Activity.From.Id, setting);
-///     return ResponseTask.WithResult(new Result { Type = ResultType.Config });
+///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnConfigureSettings"/> can be used to register the handler via the fluent API.
@@ -337,7 +340,7 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 /// {
 ///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
 ///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();
-///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
+///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [card] } };
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnSubmitAction(string, SubmitActionHandler)"/> can be used to register the handler via the fluent API.
@@ -386,7 +389,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 /// {
 ///     var details = await _catalog.GetDetailsAsync(item.Id, cancellationToken);
 ///     var card = details.ToHeroCard().ToMessagingExtensionAttachment();
-///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [card] });
+///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [card] } };
 /// }
 /// </code>
 /// Alternatively, <see cref="MessageExtension.OnSelectItem"/> can be used to register the handler via the fluent API.

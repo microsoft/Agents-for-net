@@ -70,11 +70,15 @@ public class TaskModule
     ///           }]
     ///         }
     ///         """;
-    ///     return Task.FromResult(Response.WithCard(
-    ///         new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, cardJson),
-    ///         "Simple Form",
-    ///         Microsoft.Teams.Api.TaskModules.Size.Small,
-    ///         Microsoft.Teams.Api.TaskModules.Size.Small));
+    ///     return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+    ///         new Microsoft.Teams.Api.TaskModules.ContinueTask(
+    ///             new Microsoft.Teams.Api.TaskModules.TaskInfo
+    ///             {
+    ///                 Card = new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, cardJson),
+    ///                 Title = "Simple Form",
+    ///                 Height = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(Microsoft.Teams.Api.TaskModules.Size.Small),
+    ///                 Width = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(Microsoft.Teams.Api.TaskModules.Size.Small)
+    ///             })));
     /// }
     /// </code>
     /// </remarks>
@@ -125,7 +129,8 @@ public class TaskModule
     /// {
     ///     var name = request.GetDataString("name", "Unknown");
     ///     await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
-    ///     return Response.WithMessage("Form was submitted");
+    ///     return new Microsoft.Teams.Api.TaskModules.Response(
+    ///         new Microsoft.Teams.Api.TaskModules.MessageTask("Form was submitted"));
     /// }
     /// </code>
     /// </remarks>

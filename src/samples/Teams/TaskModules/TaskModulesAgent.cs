@@ -25,11 +25,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("simple_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("simple-form-card.json")),
-            "Simple Form",
-            Microsoft.Teams.Api.TaskModules.Size.Small,
-            Microsoft.Teams.Api.TaskModules.Size.Small));
+        return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Card = new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("simple-form-card.json")),
+                    Title = "Simple Form",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small)
+                })));
     }
 
     [TaskSubmitRoute("simple_form")]
@@ -37,7 +41,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     {
         var name = request.GetDataString("name", "Unknown");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
-        return Response.WithMessage("Form was submitted");
+        return new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.MessageTask("Form was submitted"));
     }
     #endregion
 
@@ -45,11 +50,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("webpage_dialog")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Response.WithUrl(
-            $"{_appBaseUrl}/dialog-form",
-            "Webpage Dialog",
-            height: 500,
-            width: 800));
+        return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Url = $"{_appBaseUrl}/dialog-form",
+                    Title = "Webpage Dialog",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(500),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(800)
+                })));
     }
 
     [TaskSubmitRoute("webpage_dialog")]
@@ -58,7 +67,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
         var name = request.GetDataString("name", "Unknown");
         var email = request.GetDataString("email", "No email provided");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
-        return Response.WithMessage($"Form submitted successfully");
+        return new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.MessageTask("Form submitted successfully"));
     }
     #endregion
 
@@ -66,11 +76,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("multi_step_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-name-card.json")),
-            "Multi-step Form Dialog",
-            Microsoft.Teams.Api.TaskModules.Size.Small,
-            Microsoft.Teams.Api.TaskModules.Size.Small));
+        return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Card = new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-name-card.json")),
+                    Title = "Multi-step Form Dialog",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small)
+                })));
     }
 
     [TaskSubmitRoute("multi_step_form_submit_name")]
@@ -78,11 +92,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     {
         var name = request.GetDataString("name", "Unknown");
 
-        return Task.FromResult(Response.WithCard(
-            new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-email-card.json", new Dictionary<string, string> { ["name"] = name })),
-            $"Thanks {name} - Get Email",
-            Microsoft.Teams.Api.TaskModules.Size.Small,
-            Microsoft.Teams.Api.TaskModules.Size.Small));
+        return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Card = new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, CardLoader.LoadCardJson("multi-step-email-card.json", new Dictionary<string, string> { ["name"] = name })),
+                    Title = $"Thanks {name} - Get Email",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small)
+                })));
     }
 
     [TaskSubmitRoute("multi_step_form_submit_email")]
@@ -91,7 +109,8 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
         var name = request.GetDataString("name", "Unknown");
         var email = request.GetDataString("email", "No email provided");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form! We got that your email is {email}", cancellationToken: cancellationToken);
-        return Response.WithMessage("Multi-step form completed successfully");
+        return new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.MessageTask("Multi-step form completed successfully"));
     }
     #endregion
 
@@ -99,11 +118,15 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     [TaskFetchRoute("mixed_example")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Response.WithUrl(
-            "https://teams.microsoft.com/l/task/example-mixed",
-            "Mixed Example",
-            600,
-            800));
+        return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
+            new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Url = "https://teams.microsoft.com/l/task/example-mixed",
+                    Title = "Mixed Example",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(600),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(800)
+                })));
     }
     #endregion
 }

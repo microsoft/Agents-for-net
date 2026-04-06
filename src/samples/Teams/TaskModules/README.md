@@ -6,7 +6,7 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
 
 - **Simple form dialog** — A single-step Adaptive Card with a Name input field
 - **Webpage dialog** — A URL-based dialog loading an HTML form (Name + Email) from the bot's own endpoint
-- **Multi-step form** — A two-step dialog flow: step 1 collects Name, step 2 collects Email. Uses `Response.WithCard()` to advance steps without closing the dialog (equivalent to `ContinueTask`).
+- **Multi-step form** — A two-step dialog flow: step 1 collects Name, step 2 collects Email. Returns a new `ContinueTask` response to advance steps without closing the dialog.
 - **Mixed example** — Placeholder showing how to combine approaches in a workflow
 - **Launcher card** — Sending an Adaptive Card from a message handler with `TaskFetchAction` buttons
 
@@ -71,7 +71,7 @@ When the user sends a message, the bot responds with an Adaptive Card showing fo
 
 Form submissions inside the dialogs trigger `task/submit` invoke activities routed by `[SubmitRoute("verb")]` to their handlers.
 
-The multi-step form demonstrates the `ContinueTask` pattern: the step-1 submit handler returns a new `Response.WithCard(step2Card)` instead of closing the dialog, keeping it open with fresh content for step 2.
+The multi-step form demonstrates the `ContinueTask` pattern: the step-1 submit handler returns a new `ContinueTask` response with the step-2 card instead of closing the dialog, keeping it open with fresh content for step 2.
 
 ## Enabling JWT token validation
 1. By default, the AspNet token validation is disabled in order to support local debugging.

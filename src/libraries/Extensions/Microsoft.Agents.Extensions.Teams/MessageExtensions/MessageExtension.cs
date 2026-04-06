@@ -29,7 +29,7 @@ public class MessageExtension
     /// Teams.MessageExtensions.OnMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
     /// {
     ///     var draft = preview.Attachments?.FirstOrDefault()?.Content;
-    ///     return ResponseTask.WithResult(new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] });
+    ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
     /// });
     /// </code>
     /// Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.
@@ -155,7 +155,7 @@ public class MessageExtension
     /// Teams.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;("createTask", async (ctx, state, data, ct) =>
     /// {
     ///     var task = await _service.CreateAsync(data.Title, data.AssignedTo, ct);
-    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [task.ToCard()] });
+    ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [task.ToCard()] } };
     /// });
     /// </code>
     /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
@@ -196,7 +196,7 @@ public class MessageExtension
     ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
     ///     var items = await _catalog.SearchAsync(keyword, ct);
     ///     var attachments = items.Select(i => i.ToHeroCard().ToMessagingExtensionAttachment()).ToList();
-    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = attachments });
+    ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = attachments } };
     /// });
     /// </code>
     /// Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.
@@ -236,7 +236,7 @@ public class MessageExtension
     /// Teams.MessageExtensions.OnSelectItem&lt;ProductSummary&gt;(async (ctx, state, item, ct) =>
     /// {
     ///     var details = await _catalog.GetDetailsAsync(item.Id, ct);
-    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] });
+    ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
     /// Alternatively, the <see cref="SelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
@@ -260,7 +260,7 @@ public class MessageExtension
     /// Teams.MessageExtensions.OnQueryLink(async (ctx, state, url, ct) =>
     /// {
     ///     var preview = await _service.FetchPreviewAsync(url, ct);
-    ///     return Response.WithResult(new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] });
+    ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
     /// Alternatively, the <see cref="QueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
@@ -295,12 +295,15 @@ public class MessageExtension
     /// <remarks>
     /// <code>
     /// Teams.MessageExtensions.OnQueryUrlSetting((ctx, state, ct) =>
-    ///     ResponseTask.WithResult(new Result
+    ///     Task.FromResult(new Response
     ///     {
-    ///         Type = ResultType.Config,
-    ///         SuggestedActions = new SuggestedActions
+    ///         ComposeExtension = new Result
     ///         {
-    ///             Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+    ///             Type = ResultType.Config,
+    ///             SuggestedActions = new SuggestedActions
+    ///             {
+    ///                 Actions = [new CardAction { Type = "openUrl", Value = "https://example.com/config" }]
+    ///             }
     ///         }
     ///     }));
     /// </code>
@@ -325,7 +328,7 @@ public class MessageExtension
     /// {
     ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
     ///     _settingsStore.Save(ctx.Activity.From.Id, setting);
-    ///     return ResponseTask.WithResult(new Result { Type = ResultType.Config });
+    ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
     /// });
     /// </code>
     /// Alternatively, the <see cref="ConfigureSettingsRouteAttribute"/> can be used to decorate a <see cref="ConfigureSettingsHandler"/> method for the same purpose.

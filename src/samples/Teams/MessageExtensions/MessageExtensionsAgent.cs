@@ -25,7 +25,14 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         bool initialRun = query.Parameters?.FirstOrDefault(p => p.Name == "initialRun")?.Value?.ToString() == "true";
         if (initialRun)
         {
-            return Task.FromResult(Response.WithResultMessage("Enter search query"));
+            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+            {
+                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+                {
+                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
+                    Text = "Enter search query"
+                }
+            });
         }
 
         string? searchQuery = query.Parameters?.FirstOrDefault(p => p.Name == "searchQuery")?.Value?.ToString() ?? "";
@@ -73,16 +80,24 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             attachments.Add(attachment);
         }
 
-        return Task.FromResult(Response.WithResultAttachments(attachments));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [.. attachments]
+            }
+        });
     }
 
     [SelectItemRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, JsonElement item, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITurnContext turnContext, ITurnState turnState, Dictionary<string,string> items, CancellationToken cancellationToken)
     {
-        var index = item.GetProperty("index").GetString() ?? "No Index";
-        var query = item.GetProperty("query").GetString() ?? "No Query";
+        var index = items.TryGetValue("index", out string? value) ? value : "No Index";
+        var query = items.TryGetValue("query", out string? value1) ? value1 : "No Query";
 
-        Logger.LogInformation("Item selected: {Item}", item);
+        Logger.LogInformation("Item selected: {Item}:{Query}", index, query);
 
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
             new TextBlock("Item Selected")
@@ -108,7 +123,15 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(Response.WithResultAttachments([attachment]));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
+        });
     }
 
     [SubmitActionRoute("createCard")]
@@ -147,7 +170,15 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(Response.WithResultAttachment(attachment));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
+        });
     }
 
     [SubmitActionRoute("getMessageDetails")]
@@ -184,7 +215,15 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Content = card
         };
 
-        return Task.FromResult(Response.WithResultAttachment(attachment));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
+        });
     }
 
     [QueryLinkRoute]
@@ -193,7 +232,14 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         Logger.LogInformation("Link query received: {Url}", url);
         if (string.IsNullOrEmpty(url))
         {
-            return Task.FromResult(Response.WithResultMessage("No URL provided"));
+            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+            {
+                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+                {
+                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
+                    Text = "No URL provided"
+                }
+            });
         }
 
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
@@ -232,14 +278,39 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         };
 
-        return Task.FromResult(Response.WithResultAttachments([attachment]));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
+                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
+                Attachments = [attachment]
+            }
+        });
     }
 
     [QueryUrlSettingRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingsUrlAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
-        return Task.FromResult(Response.WithResultConfig("https://bot-devtunnel-url/settings"));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
+        {
+            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
+            {
+                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
+                SuggestedActions = new Microsoft.Teams.Api.MessageExtensions.SuggestedActions
+                {
+                    Actions =
+                    [
+                        new Microsoft.Teams.Api.Cards.Action(Microsoft.Teams.Api.Cards.ActionType.OpenUrl)
+                        {
+                            Value = "https://bot-devtunnel-url/settings",
+                            Title = "Configure"
+                        }
+                    ]
+                }
+            }
+        });
     }
 
     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchAction(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
@@ -257,11 +328,17 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         ]);
 
-        return Task.FromResult(Response.WithTaskCard(
-            new Microsoft.Teams.Api.Attachment(card),
-            "Fetch Task Dialog",
-            Microsoft.Teams.Api.TaskModules.Size.Small,
-            Microsoft.Teams.Api.TaskModules.Size.Small));
+        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse
+        {
+            Task = new Microsoft.Teams.Api.TaskModules.ContinueTask(
+                new Microsoft.Teams.Api.TaskModules.TaskInfo
+                {
+                    Title = "Fetch Task Dialog",
+                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
+                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
+                    Card = new Microsoft.Teams.Api.Attachment(card)
+                })
+        });
     }
 
     [ConfigureSettingsRoute]
