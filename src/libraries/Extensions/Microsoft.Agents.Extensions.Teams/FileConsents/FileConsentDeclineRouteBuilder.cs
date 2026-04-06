@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Core.Serialization;
 
-namespace Microsoft.Agents.Extensions.Teams.Consent;
+namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
 /// Provides a builder for configuring routes that handle Teams file consent decline invocations.

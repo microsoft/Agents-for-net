@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Extensions.Teams.Configs;
+namespace Microsoft.Agents.Extensions.Teams.Configurations;
 
 /// <summary>
 /// Provides routing for Microsoft Teams bot configuration interactions.
@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 /// [TeamsExtension]
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
-///     [ConfigFetchRoute]
+///     [ConfigurationFetchRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
 ///         ITurnContext turnContext,
 ///         ITurnState turnState,
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 ///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
 ///     }
 ///
-///     [ConfigSubmitRoute]
+///     [ConfigurationSubmitRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
 ///         ITurnContext turnContext,
 ///         ITurnState turnState,
@@ -84,12 +84,12 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 /// </code>
 /// </example>
 /// </remarks>
-public class Config
+public class Configuration
 {
     private readonly AgentApplication _app;
     private readonly ChannelId _channelId;
 
-    internal Config(AgentApplication app, ChannelId channelId)
+    internal Configuration(AgentApplication app, ChannelId channelId)
     {
         _app = app;
         _channelId = channelId;
@@ -98,15 +98,15 @@ public class Config
     /// <summary>
     /// Handles config fetch events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="ConfigurationFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Config OnConfigFetch(ConfigHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public Configuration OnConfigFetch(ConfigurationHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
-        _app.AddRoute(ConfigFetchRouteBuilder.Create()
+        _app.AddRoute(ConfigurationFetchRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
@@ -119,15 +119,15 @@ public class Config
     /// <summary>
     /// Handles config submit events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="ConfigurationSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
     /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
     /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Config OnConfigSubmit(ConfigHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+    public Configuration OnConfigSubmit(ConfigurationHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
     {
-        _app.AddRoute(ConfigSubmitRouteBuilder.Create()
+        _app.AddRoute(ConfigurationSubmitRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)

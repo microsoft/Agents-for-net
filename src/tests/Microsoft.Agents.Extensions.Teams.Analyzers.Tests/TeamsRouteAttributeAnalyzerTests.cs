@@ -1560,7 +1560,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // Config — ConfigFetchRoute
+        // Config — ConfigurationFetchRoute
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -1576,7 +1576,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationFetchRoute]
                     public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         object configData,
@@ -1601,7 +1601,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationFetchRoute]
                     public Task OnFetch(
                         ITurnContext ctx, ITurnState state,
                         object configData,
@@ -1613,7 +1613,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
             Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("ConfigFetchRoute", d.GetMessage());
+            Assert.Contains("ConfigurationFetchRoute", d.GetMessage());
             Assert.Contains("Task<Microsoft.Teams.Api.Config.ConfigResponse>", d.GetMessage());
         }
 
@@ -1630,7 +1630,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationFetchRoute]
                     public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
                         CancellationToken ct)
@@ -1641,12 +1641,12 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
             Assert.Contains("OnFetch", d.GetMessage());
-            Assert.Contains("ConfigFetchRoute", d.GetMessage());
+            Assert.Contains("ConfigurationFetchRoute", d.GetMessage());
             Assert.Contains("4", d.GetMessage());
         }
 
         // ---------------------------------------------------------------------------
-        // Config — ConfigSubmitRoute
+        // Config — ConfigurationSubmitRoute
         // ---------------------------------------------------------------------------
 
         [Fact]
@@ -1662,7 +1662,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationSubmitRoute]
                     public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         object configData,
@@ -1687,7 +1687,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationSubmitRoute]
                     public Task OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         object configData,
@@ -1699,7 +1699,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ReturnTypeDiagnosticId, d.Id);
             Assert.Contains("OnSubmit", d.GetMessage());
-            Assert.Contains("ConfigSubmitRoute", d.GetMessage());
+            Assert.Contains("ConfigurationSubmitRoute", d.GetMessage());
             Assert.Contains("Task<Microsoft.Teams.Api.Config.ConfigResponse>", d.GetMessage());
         }
 
@@ -1716,7 +1716,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRoute]
+                    [Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationSubmitRoute]
                     public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnSubmit(
                         ITurnContext ctx, ITurnState state,
                         CancellationToken ct)
@@ -1727,7 +1727,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
             var d = Assert.Single(diagnostics);
             Assert.Equal(TeamsRouteAttributeAnalyzer.ParameterCountDiagnosticId, d.Id);
             Assert.Contains("OnSubmit", d.GetMessage());
-            Assert.Contains("ConfigSubmitRoute", d.GetMessage());
+            Assert.Contains("ConfigurationSubmitRoute", d.GetMessage());
             Assert.Contains("4", d.GetMessage());
         }
 

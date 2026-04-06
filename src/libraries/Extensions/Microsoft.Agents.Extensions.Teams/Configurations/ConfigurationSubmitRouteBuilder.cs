@@ -1,23 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Extensions.Teams.Configs;
+namespace Microsoft.Agents.Extensions.Teams.Configurations;
 
 /// <summary>
 /// Provides a builder for configuring routes that handle Teams config submit invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="ConfigSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="ConfigurationSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit"/>.
 /// </remarks>
-public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRouteBuilder>
+public class ConfigurationSubmitRouteBuilder : ConfigurationRouteBuilderBase<ConfigurationSubmitRouteBuilder>
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="ConfigSubmitRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="ConfigurationSubmitRouteBuilder"/>,
     /// pre-configured to match config submit invocations.
     /// </summary>
-    public ConfigSubmitRouteBuilder() : base()
+    public ConfigurationSubmitRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit;
     }
@@ -28,8 +28,8 @@ public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRoute
     /// <param name="handler">An asynchronous delegate invoked when a config submit request is received.
     /// Receives the turn context, turn state, config data from the activity value,
     /// and a cancellation token. Must return a <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</param>
-    /// <returns>The current <see cref="ConfigSubmitRouteBuilder"/> instance for method chaining.</returns>
-    public ConfigSubmitRouteBuilder WithHandler(ConfigHandler handler)
+    /// <returns>The current <see cref="ConfigurationSubmitRouteBuilder"/> instance for method chaining.</returns>
+    public ConfigurationSubmitRouteBuilder WithHandler(ConfigurationHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

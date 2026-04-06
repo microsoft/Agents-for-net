@@ -9,7 +9,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Configs;
+using Microsoft.Agents.Extensions.Teams.Configurations;
 using Moq;
 using System.Net.Http;
 using System.Text.Json;
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
     public class ConfigAttributeTests
     {
         [Fact]
-        public async Task ConfigFetchRouteAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task ConfigurationFetchRouteAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/fetch");
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigSubmitRouteAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task ConfigurationSubmitRouteAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/submit");
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigFetchRouteAttribute_DoesNotFire_ForSubmitInvoke()
+        public async Task ConfigurationFetchRouteAttribute_DoesNotFire_ForSubmitInvoke()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/submit");
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigSubmitRouteAttribute_DoesNotFire_ForFetchInvoke()
+        public async Task ConfigurationSubmitRouteAttribute_DoesNotFire_ForFetchInvoke()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/fetch");
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigFetchRouteAttribute_DoesNotFire_ForWrongInvokeName()
+        public async Task ConfigurationFetchRouteAttribute_DoesNotFire_ForWrongInvokeName()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("task/fetch");
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigSubmitRouteAttribute_DoesNotFire_ForWrongInvokeName()
+        public async Task ConfigurationSubmitRouteAttribute_DoesNotFire_ForWrongInvokeName()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("task/submit");
@@ -102,7 +102,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigFetchRouteAttribute_HandlerReceivesConfigData()
+        public async Task ConfigurationFetchRouteAttribute_HandlerReceivesConfigData()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/fetch");
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigSubmitRouteAttribute_HandlerReceivesConfigData()
+        public async Task ConfigurationSubmitRouteAttribute_HandlerReceivesConfigData()
         {
             // Arrange
             var (app, turnContext) = CreateAppAndContext("config/submit");
@@ -130,7 +130,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigFetchRouteAttribute_DoesNotFire_ForNonInvokeActivity()
+        public async Task ConfigurationFetchRouteAttribute_DoesNotFire_ForNonInvokeActivity()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         public TestConfigAttributeApp(AgentApplicationOptions options) : base(options) { }
 
-        [ConfigFetchRoute]
+        [ConfigurationFetchRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigFetchAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -210,7 +210,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
         }
 
-        [ConfigSubmitRoute]
+        [ConfigurationSubmitRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigSubmitAsync(
             ITurnContext turnContext,
             ITurnState turnState,

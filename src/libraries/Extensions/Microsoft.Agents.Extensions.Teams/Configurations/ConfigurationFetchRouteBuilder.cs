@@ -1,23 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Extensions.Teams.Configs;
+namespace Microsoft.Agents.Extensions.Teams.Configurations;
 
 /// <summary>
 /// Provides a builder for configuring routes that handle Teams config fetch invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="ConfigFetchRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="ConfigurationFetchRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch"/>.
 /// </remarks>
-public class ConfigFetchRouteBuilder : ConfigRouteBuilderBase<ConfigFetchRouteBuilder>
+public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<ConfigurationFetchRouteBuilder>
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="ConfigFetchRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="ConfigurationFetchRouteBuilder"/>,
     /// pre-configured to match config fetch invocations.
     /// </summary>
-    public ConfigFetchRouteBuilder() : base()
+    public ConfigurationFetchRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch;
     }
@@ -28,8 +28,8 @@ public class ConfigFetchRouteBuilder : ConfigRouteBuilderBase<ConfigFetchRouteBu
     /// <param name="handler">An asynchronous delegate invoked when a config fetch request is received.
     /// Receives the turn context, turn state, config data from the activity value,
     /// and a cancellation token. Must return a <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</param>
-    /// <returns>The current <see cref="ConfigFetchRouteBuilder"/> instance for method chaining.</returns>
-    public ConfigFetchRouteBuilder WithHandler(ConfigHandler handler)
+    /// <returns>The current <see cref="ConfigurationFetchRouteBuilder"/> instance for method chaining.</returns>
+    public ConfigurationFetchRouteBuilder WithHandler(ConfigurationHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

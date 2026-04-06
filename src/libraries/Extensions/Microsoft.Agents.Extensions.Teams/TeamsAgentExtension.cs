@@ -6,8 +6,8 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Configs;
-using Microsoft.Agents.Extensions.Teams.Consent;
+using Microsoft.Agents.Extensions.Teams.Configurations;
+using Microsoft.Agents.Extensions.Teams.FileConsents;
 using Microsoft.Agents.Extensions.Teams.Meetings;
 using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.Messages;
@@ -46,7 +46,7 @@ public class TeamsAgentExtension : AgentExtension
         Teams = new TeamsTeam(agentApplication, ChannelId);
         FileConsent = new FileConsent(agentApplication, ChannelId);
         Messages = new Message(agentApplication, ChannelId);
-        Config = new Config(agentApplication, ChannelId);
+        Configuration = new Configuration(agentApplication, ChannelId);
 
         agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
@@ -98,9 +98,9 @@ public class TeamsAgentExtension : AgentExtension
     public Message Messages { get; }
 
     /// <summary>
-    /// Teams Config features.
+    /// Teams Configuration features.
     /// </summary>
-    public Config Config { get; }
+    public Configuration Configuration { get; }
 
     internal static Task SetResponse(ITurnContext context, object result = null)
     {

@@ -4,7 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Extensions.Teams.Consent;
+namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
 /// Provides routing for Microsoft Teams file consent card interactions.

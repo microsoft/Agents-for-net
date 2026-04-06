@@ -6,7 +6,7 @@ using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.Consent;
+namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
 /// Function for handling file consent card activities.

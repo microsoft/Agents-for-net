@@ -435,7 +435,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // FileConsent
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Consent.FileConsentAcceptRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.FileConsents.FileConsentAcceptRouteAttribute",
                 AttributeDisplayName   = "FileConsentAcceptRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -443,7 +443,7 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Consent.FileConsentDeclineRouteAttribute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.FileConsents.FileConsentDeclineRouteAttribute",
                 AttributeDisplayName   = "FileConsentDeclineRoute",
                 ReturnTypeGenericArgument = null,
                 ReturnTypeDisplayName  = "Task",
@@ -452,16 +452,16 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             // Config
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configs.ConfigFetchRouteAttribute",
-                AttributeDisplayName   = "ConfigFetchRoute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationFetchRouteAttribute",
+                AttributeDisplayName   = "ConfigurationFetchRoute",
                 ReturnTypeGenericArgument = ConfigResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.Config.ConfigResponse>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configs.ConfigSubmitRouteAttribute",
-                AttributeDisplayName   = "ConfigSubmitRoute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.Configurations.ConfigurationSubmitRouteAttribute",
+                AttributeDisplayName   = "ConfigurationSubmitRoute",
                 ReturnTypeGenericArgument = ConfigResponse,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.Config.ConfigResponse>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, null, CancelToken },

@@ -9,7 +9,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Consent;
+using Microsoft.Agents.Extensions.Teams.FileConsents;
 using Moq;
 using System.Net.Http;
 using System.Text.Json;

@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder.App;
 using System;
 using System.Reflection;
 
-namespace Microsoft.Agents.Extensions.Teams.Consent;
+namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
 /// Attribute to define a route that handles Teams file consent accept invocations.

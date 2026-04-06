@@ -8,7 +8,7 @@ using Microsoft.Agents.Extensions.Teams.Errors;
 using System;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.Consent;
+namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
 /// Base class for route builders that match Teams file consent invoke activities by a fixed action.
