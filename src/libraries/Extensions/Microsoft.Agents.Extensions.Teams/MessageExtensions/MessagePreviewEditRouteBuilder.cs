@@ -8,6 +8,24 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring message preview edit routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="MessagePreviewEditRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>
+/// with <see cref="Microsoft.Teams.Api.MessageExtensions.Action.BotMessagePreviewAction"/> of <c>"edit"</c>,
+/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// <code>
+/// var route = MessagePreviewEditRouteBuilder.Create()
+///     .WithCommand("actionCmd")
+///     .WithHandler(async (context, state, activity, ct) =>
+///     {
+///         // Handle edit of the message preview
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePreviewEditRouteBuilder>
 {
     public MessagePreviewEditRouteBuilder() : base()

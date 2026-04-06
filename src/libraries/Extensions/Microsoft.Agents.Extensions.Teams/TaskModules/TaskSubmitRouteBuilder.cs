@@ -8,6 +8,23 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// <summary>
 /// Provides a builder for configuring submit routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="TaskSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Submit"/>,
+/// optionally filtered by a task data key value via <see cref="WithValue(string)"/>.
+/// <code>
+/// var route = TaskSubmitRouteBuilder.Create()
+///     .WithValue("myTask")
+///     .WithHandler(async (context, state, request, ct) =>
+///     {
+///         // Handle submitted task module data
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBuilder>
 {
     public TaskSubmitRouteBuilder() : base()

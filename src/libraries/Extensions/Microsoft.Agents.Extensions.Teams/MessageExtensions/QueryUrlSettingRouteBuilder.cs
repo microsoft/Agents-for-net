@@ -12,6 +12,21 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring query URL setting routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="QueryUrlSettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QuerySettingUrl"/>.
+/// <code>
+/// var route = QueryUrlSettingRouteBuilder.Create()
+///     .WithHandler(async (context, state, ct) =>
+///     {
+///         // Return the URL for the settings page
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRouteBuilder>
 {
     public QueryUrlSettingRouteBuilder() : base()

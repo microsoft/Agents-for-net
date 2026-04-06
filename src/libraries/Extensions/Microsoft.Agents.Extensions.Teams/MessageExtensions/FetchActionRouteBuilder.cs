@@ -8,6 +8,23 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring <c>composeExtension/fetchTask</c> Invokes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="FetchActionRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask"/>,
+/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// <code>
+/// var route = FetchActionRouteBuilder.Create()
+///     .WithCommand("actionCmd")
+///     .WithHandler(async (context, state, action, ct) =>
+///     {
+///         // Return a task module to display
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteBuilder>
 {
     public FetchActionRouteBuilder() : base()

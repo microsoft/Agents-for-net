@@ -8,6 +8,23 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring submit action routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="SubmitActionRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>,
+/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// <code>
+/// var route = SubmitActionRouteBuilder.Create()
+///     .WithCommand("actionCmd")
+///     .WithHandler(async (context, state, action, ct) =>
+///     {
+///         // Handle submit action
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRouteBuilder>
 {
     public SubmitActionRouteBuilder() : base()

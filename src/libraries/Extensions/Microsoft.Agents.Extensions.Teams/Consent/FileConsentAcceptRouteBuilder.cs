@@ -9,8 +9,10 @@ namespace Microsoft.Agents.Extensions.Teams.Consent;
 /// Provides a builder for configuring routes that handle Teams file consent accept invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="FileConsentAcceptRouteBuilder"/> to create and configure routes that respond to
-/// file consent cards accepted by the user.
+/// Use <see cref="FileConsentAcceptRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent"/>
+/// and <see cref="Microsoft.Teams.Api.FileConsentCardResponse.Action"/> of <c>"accept"</c>.
 /// <code>
 /// var route = FileConsentAcceptRouteBuilder.Create()
 ///     .WithHandler(async (context, state, response, ct) =>

@@ -14,9 +14,12 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 /// <summary>
 /// RouteBuilder for routing Channel ConversationUpdate activities in an AgentApplication.
 /// </summary>
-/// <remarks>Use <see cref="ChannelUpdateRouteBuilder"/> to create and configure routes that respond to conversation
-/// update events. This builder allows matching update events, ordering, oauth, and agentic routing scenarios.  This
-/// builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
+/// <remarks>Use <see cref="ChannelUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/> with
+/// <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> matching channel events.
+/// This builder allows matching specific event types via <see cref="ForChannelCreated()"/>, <see cref="ForChannelDeleted()"/>, etc.,
+/// and supports ordering, oauth, and agentic routing scenarios.
+/// This builder defaults to the <c>Channels.MsTeams</c> channelId unless otherwise specified. Example usage:
 /// <code>
 /// var route = ChannelUpdateRouteBuilder.Create()
 ///    .ForChannelCreated()

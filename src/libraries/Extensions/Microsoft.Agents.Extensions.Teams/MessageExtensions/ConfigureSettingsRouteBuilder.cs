@@ -13,6 +13,21 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring settings routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="ConfigureSettingsRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Setting"/>.
+/// <code>
+/// var route = ConfigureSettingsRouteBuilder.Create()
+///     .WithHandler(async (context, state, query, ct) =>
+///     {
+///         // Handle settings submission
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsRouteBuilder>
 {
     public ConfigureSettingsRouteBuilder() : base()

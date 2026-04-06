@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// Provides a builder for configuring routes that handle Teams message soft-delete events.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MessageEditRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
+/// Use <see cref="MessageDeleteRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageDelete"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"softDeleteMessage"</c>.
 /// <code>
 /// var route = MessageDeleteRouteBuilder.Create()

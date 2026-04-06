@@ -8,6 +8,24 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// <summary>
 /// Provides a builder for configuring message preview send routes in an AgentApplication.
 /// </summary>
+/// <remarks>
+/// Use <see cref="MessagePreviewSendRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>
+/// with <see cref="Microsoft.Teams.Api.MessageExtensions.Action.BotMessagePreviewAction"/> of <c>"send"</c>,
+/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// <code>
+/// var route = MessagePreviewSendRouteBuilder.Create()
+///     .WithCommand("actionCmd")
+///     .WithHandler(async (context, state, activity, ct) =>
+///     {
+///         // Handle send of the message preview
+///     })
+///     .Build();
+///
+/// app.AddRoute(route);
+/// </code>
+/// </remarks>
 public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePreviewSendRouteBuilder>
 {
     public MessagePreviewSendRouteBuilder() : base()

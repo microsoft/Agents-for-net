@@ -7,8 +7,9 @@ namespace Microsoft.Agents.Extensions.Teams.Configs;
 /// Provides a builder for configuring routes that handle Teams config submit invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="ConfigSubmitRouteBuilder"/> to create and configure routes that respond to
-/// config submit requests from Microsoft Teams.
+/// Use <see cref="ConfigSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit"/>.
 /// <code>
 /// var route = ConfigSubmitRouteBuilder.Create()
 ///     .WithHandler(async (context, state, configData, ct) =>
