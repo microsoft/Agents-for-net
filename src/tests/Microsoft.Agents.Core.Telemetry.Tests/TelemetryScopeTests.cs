@@ -12,7 +12,8 @@ using Xunit;
 
 namespace Microsoft.Agents.Core.Telemetry.Tests
 {
-    public class TelemetryScopeTests : IDisposable
+    [Collection("TelemetryTests")]
+    public class TelemetryScopeTests
     {
         private readonly ActivityListener _listener;
         private readonly List<Activity> _startedActivities = new List<Activity>();
@@ -29,11 +30,6 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
                 ActivityStopped = activity => _stoppedActivities.Add(activity)
             };
             ActivitySource.AddActivityListener(_listener);
-        }
-
-        public void Dispose()
-        {
-            _listener.Dispose();
         }
 
         [Fact]

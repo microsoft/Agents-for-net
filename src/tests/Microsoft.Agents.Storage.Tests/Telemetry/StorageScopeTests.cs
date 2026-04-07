@@ -1,37 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using Microsoft.Agents.Builder.Tests.Telemetry;
 using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Agents.Storage.Telemetry.Scopes;
 using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests.Telemetry
 {
-    public class StorageScopeTests : IDisposable
+    [CollectionDefinition("TelemetryTests", DisableParallelization = true)]
+    public class StorageScopeTests : TelemetryScopeTestBase
     {
-        private readonly ActivityListener _listener;
-        private readonly List<Activity> _startedActivities = new();
-        private readonly List<Activity> _stoppedActivities = new();
-
-        public StorageScopeTests()
-        {
-            _listener = new ActivityListener
-            {
-                ShouldListenTo = source => source.Name == AgentsTelemetry.SourceName,
-                Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = activity => _startedActivities.Add(activity),
-                ActivityStopped = activity => _stoppedActivities.Add(activity)
-            };
-            ActivitySource.AddActivityListener(_listener);
-        }
-
-        public void Dispose()
-        {
-            _listener.Dispose();
-        }
 
         #region ScopeRead
 
@@ -40,7 +21,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
         {
             using var scope = new ScopeRead(3);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.storage.read", started.OperationName);
         }
 
@@ -50,7 +31,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeRead(5);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("read", stopped.GetTagItem(TagNames.StorageOperation));
         }
 
@@ -60,7 +41,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeRead(5);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(5, stopped.GetTagItem(TagNames.KeyCount));
         }
 
@@ -71,8 +52,8 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             scope.SetError(new InvalidOperationException("read failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
-            Assert.Equal(ActivityStatusCode.Error, stopped.Status);
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
             Assert.Equal("read failed", stopped.StatusDescription);
         }
 
@@ -85,7 +66,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
         {
             using var scope = new ScopeWrite(2);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.storage.write", started.OperationName);
         }
 
@@ -95,7 +76,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeWrite(2);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("write", stopped.GetTagItem(TagNames.StorageOperation));
         }
 
@@ -105,7 +86,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeWrite(2);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(2, stopped.GetTagItem(TagNames.KeyCount));
         }
 
@@ -116,8 +97,8 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             scope.SetError(new InvalidOperationException("write failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
-            Assert.Equal(ActivityStatusCode.Error, stopped.Status);
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
         #endregion
@@ -129,7 +110,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
         {
             using var scope = new ScopeDelete(1);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.storage.delete", started.OperationName);
         }
 
@@ -139,7 +120,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeDelete(4);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("delete", stopped.GetTagItem(TagNames.StorageOperation));
         }
 
@@ -149,7 +130,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeDelete(4);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(4, stopped.GetTagItem(TagNames.KeyCount));
         }
 
@@ -160,8 +141,8 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             scope.SetError(new InvalidOperationException("delete failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
-            Assert.Equal(ActivityStatusCode.Error, stopped.Status);
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
         #endregion
@@ -177,7 +158,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeRead(keyCount);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(keyCount, stopped.GetTagItem(TagNames.KeyCount));
         }
 
@@ -190,7 +171,7 @@ namespace Microsoft.Agents.Storage.Tests.Telemetry
             var scope = new ScopeWrite(keyCount);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(keyCount, stopped.GetTagItem(TagNames.KeyCount));
         }
 

@@ -1,37 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Agents.Authentication.Telemetry.Scopes;
+using Microsoft.Agents.Builder.Tests.Telemetry;
 using Microsoft.Agents.Core.Telemetry;
 using Xunit;
 
 namespace Microsoft.Agents.Authentication.Tests.Telemetry
 {
-    public class AuthenticationScopeTests : IDisposable
+
+    [Collection("TelemetryTests")]
+    public class AuthenticationScopeTests : TelemetryScopeTestBase
     {
-        private readonly ActivityListener _listener;
-        private readonly List<Activity> _startedActivities = new();
-        private readonly List<Activity> _stoppedActivities = new();
-
-        public AuthenticationScopeTests()
-        {
-            _listener = new ActivityListener
-            {
-                ShouldListenTo = source => source.Name == AgentsTelemetry.SourceName,
-                Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = activity => _startedActivities.Add(activity),
-                ActivityStopped = activity => _stoppedActivities.Add(activity)
-            };
-            ActivitySource.AddActivityListener(_listener);
-        }
-
-        public void Dispose()
-        {
-            _listener.Dispose();
-        }
 
         #region ScopeGetAccessToken
 
@@ -40,7 +23,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
         {
             using var scope = new ScopeGetAccessToken(new[] { "scope1" }, "obo");
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.auth.get_access_token", started.OperationName);
         }
 
@@ -50,7 +33,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAccessToken(new[] { "scope1" }, "obo");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("obo", stopped.GetTagItem(TagNames.AuthMethod));
         }
 
@@ -60,7 +43,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAccessToken(new[] { "https://api.botframework.com/.default", "openid" }, "obo");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("https://api.botframework.com/.default,openid", stopped.GetTagItem(TagNames.AuthScopes));
         }
 
@@ -70,7 +53,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAccessToken(Array.Empty<string>(), "obo");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
         }
 
@@ -81,7 +64,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             scope.SetError(new InvalidOperationException("token failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(ActivityStatusCode.Error, stopped.Status);
             Assert.Equal("token failed", stopped.StatusDescription);
         }
@@ -95,7 +78,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
         {
             using var scope = new ScopeAcquireTokenOnBehalfOf(new[] { "scope1" });
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.auth.acquire_token_on_behalf_of", started.OperationName);
         }
 
@@ -105,7 +88,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeAcquireTokenOnBehalfOf(new[] { "scope1" });
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("obo", stopped.GetTagItem(TagNames.AuthMethod));
         }
 
@@ -115,8 +98,18 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeAcquireTokenOnBehalfOf(new[] { "scope-a", "scope-b" });
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("scope-a,scope-b", stopped.GetTagItem(TagNames.AuthScopes));
+        }
+
+        [Fact]
+        public void ScopeAcquireTokenOnBehalfOf_Callback_SetsUnknownScopes_WhenEmpty()
+        {
+            var scope = new ScopeAcquireTokenOnBehalfOf(Array.Empty<string>());
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
         }
 
         [Fact]
@@ -126,7 +119,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             scope.SetError(new UnauthorizedAccessException("obo failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(ActivityStatusCode.Error, stopped.Status);
         }
 
@@ -139,7 +132,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
         {
             using var scope = new ScopeGetAgenticInstanceToken("instance-123");
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.auth.get_agentic_instance_token", started.OperationName);
         }
 
@@ -149,7 +142,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticInstanceToken("instance-123");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("agentic_instance", stopped.GetTagItem(TagNames.AuthMethod));
         }
 
@@ -159,7 +152,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticInstanceToken("instance-abc");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("instance-abc", stopped.GetTagItem(TagNames.AgenticInstanceId));
         }
 
@@ -170,7 +163,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             scope.SetError(new InvalidOperationException("instance token failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(ActivityStatusCode.Error, stopped.Status);
         }
 
@@ -183,7 +176,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
         {
             using var scope = new ScopeGetAgenticUserToken("instance-1", "user-1", null);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.auth.get_agentic_user_token", started.OperationName);
         }
 
@@ -193,7 +186,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticUserToken("instance-1", "user-1", null);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("agentic_user", stopped.GetTagItem(TagNames.AuthMethod));
         }
 
@@ -203,7 +196,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticUserToken("instance-42", "user-99", null);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("instance-42", stopped.GetTagItem(TagNames.AgenticInstanceId));
             Assert.Equal("user-99", stopped.GetTagItem(TagNames.AgenticUserId));
         }
@@ -214,7 +207,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticUserToken("instance-1", "user-1", new[] { "scope-x", "scope-y" });
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("scope-x,scope-y", stopped.GetTagItem(TagNames.AuthScopes));
         }
 
@@ -224,7 +217,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             var scope = new ScopeGetAgenticUserToken("instance-1", "user-1", null);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
         }
 
@@ -235,7 +228,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             scope.SetError(new InvalidOperationException("user token failed"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(ActivityStatusCode.Error, stopped.Status);
         }
 

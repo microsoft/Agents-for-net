@@ -1,4 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -11,28 +12,9 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
 {
-    public class ScopeTests : IDisposable
+    [Collection("TelemetryTests")]
+    public class ScopeTests : TelemetryScopeTestBase
     {
-        private readonly System.Diagnostics.ActivityListener _listener;
-        private readonly List<System.Diagnostics.Activity> _startedActivities = new();
-        private readonly List<System.Diagnostics.Activity> _stoppedActivities = new();
-
-        public ScopeTests()
-        {
-            _listener = new System.Diagnostics.ActivityListener
-            {
-                ShouldListenTo = source => source.Name == AgentsTelemetry.SourceName,
-                Sample = (ref System.Diagnostics.ActivityCreationOptions<System.Diagnostics.ActivityContext> options) => System.Diagnostics.ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStarted = activity => _startedActivities.Add(activity),
-                ActivityStopped = activity => _stoppedActivities.Add(activity)
-            };
-            System.Diagnostics.ActivitySource.AddActivityListener(_listener);
-        }
-
-        public void Dispose()
-        {
-            _listener.Dispose();
-        }
 
         private static IActivity CreateTestActivity(
             string type = "message",
@@ -61,7 +43,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
         {
             using var scope = new ScopeProcess();
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.adapter.process", started.OperationName);
         }
 
@@ -78,7 +60,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.Share(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("message", stopped.GetTagItem(TagNames.ActivityType));
             Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
             Assert.Equal("expectReplies", stopped.GetTagItem(TagNames.ActivityDeliveryMode));
@@ -94,7 +76,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.Share(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
@@ -107,7 +89,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.Share(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
@@ -129,7 +111,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var activities = new IActivity[] { CreateTestActivity() };
             using var scope = new ScopeSendActivities(activities);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.adapter.send_activities", started.OperationName);
         }
 
@@ -146,7 +128,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeSendActivities(activities);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             var count = stopped.GetTagItem(TagNames.ActivityCount);
             Assert.Equal(3, count);
         }
@@ -163,7 +145,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeSendActivities(activities);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             var convId = stopped.GetTagItem(TagNames.ConversationId);
             Assert.Equal("conv-123", convId);
         }
@@ -176,7 +158,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeSendActivities(activities);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             var conversationId = stopped.GetTagItem(TagNames.ConversationId);
             Assert.Null(conversationId);
 
@@ -194,7 +176,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var activity = CreateTestActivity();
             using var scope = new ScopeUpdateActivity(activity);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.adapter.update_activity", started.OperationName);
         }
 
@@ -206,7 +188,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeUpdateActivity(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("act-42", stopped.GetTagItem(TagNames.ActivityId));
             Assert.Equal("conv-99", stopped.GetTagItem(TagNames.ConversationId));
         }
@@ -221,7 +203,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var activity = CreateTestActivity();
             using var scope = new ScopeDeleteActivity(activity);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.adapter.delete_activity", started.OperationName);
         }
 
@@ -233,7 +215,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeDeleteActivity(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
             Assert.Equal("conv-del", stopped.GetTagItem(TagNames.ConversationId));
         }
@@ -248,7 +230,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var activity = CreateTestActivity();
             using var scope = new ScopeContinueConversation(activity);
 
-            var started = Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.adapter.continue_conversation", started.OperationName);
         }
 
@@ -263,7 +245,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeContinueConversation(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("app-123", stopped.GetTagItem(TagNames.AppId));
             Assert.Equal("conv-456", stopped.GetTagItem(TagNames.ConversationId));
             Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
@@ -277,7 +259,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeContinueConversation(activity);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
         }
 
@@ -290,7 +272,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
         {
             using var scope = new ScopeCreateConnectorClient("https://smba.trafficmanager.net/", new[] { "scope1" }, false);
 
-            Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.adapter.create_connector_client", started.OperationName);
         }
 
         [Fact]
@@ -301,7 +284,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeCreateConnectorClient("https://service.url/", scopes, true);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("https://service.url/", stopped.GetTagItem(TagNames.ServiceUrl));
             Assert.Equal("https://api.botframework.com/.default,openid", stopped.GetTagItem(TagNames.AuthScopes));
             Assert.Equal(true, stopped.GetTagItem(TagNames.IsAgentic));
@@ -313,9 +296,20 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeCreateConnectorClient("https://service.url/", null, false);
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
             Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));
+        }
+
+        [Fact]
+        public void ScopeCreateConnectorClient_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeCreateConnectorClient("https://service.url/", null, false);
+            scope.SetError(new InvalidOperationException("connector error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
         #endregion
@@ -327,7 +321,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
         {
             using var scope = new ScopeCreateUserTokenClient("https://token.endpoint/");
 
-            Assert.Single(_startedActivities);
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.adapter.create_user_token_client", started.OperationName);
         }
 
         [Fact]
@@ -336,13 +331,46 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             var scope = new ScopeCreateUserTokenClient("https://token.botframework.com/");
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("https://token.botframework.com/", stopped.GetTagItem(TagNames.TokenServiceEndpoint));
+        }
+
+        [Fact]
+        public void ScopeCreateUserTokenClient_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeCreateUserTokenClient("https://token.botframework.com/");
+            scope.SetError(new InvalidOperationException("token client error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
         #endregion
 
         #region Error handling across scopes
+
+        [Fact]
+        public void ScopeUpdateActivity_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeUpdateActivity(CreateTestActivity());
+            scope.SetError(new InvalidOperationException("update error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+        }
+
+        [Fact]
+        public void ScopeContinueConversation_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeContinueConversation(CreateTestActivity());
+            scope.SetError(new InvalidOperationException("continue error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+        }
 
         [Fact]
         public void ScopeProcess_SetError_SetsErrorStatus()
@@ -352,7 +380,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.SetError(new InvalidOperationException("process error"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
             Assert.Equal("process error", stopped.StatusDescription);
         }
@@ -365,7 +393,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.SetError(new InvalidOperationException("send error"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
@@ -376,7 +404,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.SetError(new InvalidOperationException("delete error"));
             scope.Dispose();
 
-            var stopped = Assert.Single(_stoppedActivities);
+            var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
