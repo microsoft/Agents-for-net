@@ -8,7 +8,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using Microsoft.Teams.Cards;
-using System.Text.Json;
 
 namespace MessageExtensions;
 
@@ -167,51 +166,6 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
         {
             ContentType = Microsoft.Teams.Api.ContentType.AdaptiveCard,
-            Content = card
-        };
-
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
-        });
-    }
-
-    [SubmitActionRoute("getMessageDetails")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnGetMessageDetailsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
-    {
-        var messageText = action.GetDataString("messageText", "No message content");
-        var messageId = action.GetDataString("messageId", "Unknown");
-
-        Logger.LogInformation("Getting details for Message ID: {MessageId} with Text: {MessageText}", messageId, messageText);
-
-        var card = new Microsoft.Teams.Cards.AdaptiveCard([
-            new TextBlock("Message Details")
-            {
-                Weight = TextWeight.Bolder,
-                Size = TextSize.Large,
-                Color = TextColor.Accent
-            },
-            new TextBlock($"Message ID: {messageId}")
-            {
-                Wrap = true
-            },
-            new TextBlock($"Content: {messageText}")
-            {
-                Wrap = true
-            }
-        ])
-        {
-            Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
-        };
-
-        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
-        {
-            ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
             Content = card
         };
 

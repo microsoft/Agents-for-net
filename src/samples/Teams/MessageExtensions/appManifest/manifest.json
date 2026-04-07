@@ -100,32 +100,6 @@
               "inputType": "text"
             }
           ]
-        },
-        {
-          "id": "getMessageDetails",
-          "type": "action",
-          "title": "Details",
-          "description": "Details",
-          "initialRun": false,
-          "fetchTask": false,
-          "context": [
-            "commandBox",
-            "compose"
-          ],
-          "parameters": [
-            {
-              "name": "messageText",
-              "title": "Text",
-              "description": "Text",
-              "inputType": "text"
-            },
-            {
-              "name": "messageId",
-              "title": "Id",
-              "description": "Id",
-              "inputType": "text"
-            }
-          ]
         }
       ],
       "messageHandlers": [

@@ -127,7 +127,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
         ITurnContext ctx, ITurnState state,
         Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
-        => ResponseTask.WithResult(BuildResults(query));
+        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
 }
 ```
 

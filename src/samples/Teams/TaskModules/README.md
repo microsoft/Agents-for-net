@@ -1,6 +1,6 @@
 # Teams Task Modules (Dialogs)
 
-This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/microsoft/agents). It demonstrates how to use Teams **task modules** (also called dialogs in TeamsJS v2.x) — modal windows that bots can open to collect structured user input.
+This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/microsoft/agents). It demonstrates how to use Teams **task modules** (also called dialogs in Teams) — modal windows that bots can open to collect structured user input.
 
 ## What This Sample Demonstrates
 
@@ -35,7 +35,10 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
          "AuthType": "ClientSecret",
          "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
          "ClientId": "{{ClientId}}",
-         "ClientSecret": "{{ClientSecret}}"
+         "ClientSecret": "{{ClientSecret}}",
+         "Scopes": [
+           "https://api.botframework.com/.default"
+         ]       
        }
      }
    }
@@ -43,27 +46,26 @@ This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/
 
    Replace `{{ClientId}}`, `{{TenantId}}`, and `{{ClientSecret}}` with your Azure Bot values.
 
-1. Start a dev tunnel on port 3978:
+1. Manually update the manifest.json
+   - Edit the `manifest.json` contained in the `/appManifest` folder
+     -  Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
+     - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
+   - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
+1. Upload the `manifest.zip` to Teams
+   - Select **Developer Portal** in the Teams left sidebar
+   - Select **Apps** (top row)
+   - Select **Import app**, and select the manifest.zip
+
+1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
+   > NOTE: Go to your project directory and open the `./Properties/launchSettings.json` file. Check the port number and use that port number in the devtunnel command (instead of 3978).
 
    ```bash
    devtunnel host -p 3978 --allow-anonymous
    ```
 
-1. For the **Webpage Dialog**, update the URL in `TaskModulesAgent.OnWebpageDialogFetchAsync`:
+1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
-   ```csharp
-   var url = "https://<your-tunnel-id>.devtunnels.ms/dialog-form";
-   ```
-
-1. Run the sample:
-
-   ```bash
-   dotnet run --project src/samples/Teams/TaskModules/TaskModules.csproj
-   ```
-
-1. Configure your Azure Bot's Messaging Endpoint to `https://<your-tunnel-id>.devtunnels.ms/api/messages`
-
-1. Install the bot in Teams and send it any message — it will respond with the dialog launcher card.
+1. Start the Agent, and select **Preview in Teams** in the upper right corner
 
 ## How It Works
 
