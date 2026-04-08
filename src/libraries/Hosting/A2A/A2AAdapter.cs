@@ -268,7 +268,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
             try
             {
-                _ = await ProcessActivityAsync(identity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                _ = await ProcessActivityWithA2AAsync(identity, activity, agent.OnTurnAsync, context, eventQueue, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -293,7 +293,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
             try
             {
-                _ = await ProcessActivityAsync(identity, eoc, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                _ = await ProcessActivityWithA2AAsync(identity, eoc, agent.OnTurnAsync, context, null, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -313,9 +313,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     public async Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
     {
         var context = new TurnContext(this, activity, claimsIdentity);
-        if (a2aContext != null && a2aEventQueue != null)
+        if (a2aContext != null)
         {
             context.Services.Set(a2aContext);
+        }
+        if (a2aEventQueue != null)
+        {
             context.Services.Set(a2aEventQueue);
         }
         await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -414,7 +417,6 @@ class AgentRequestContext : IAgentHandler
                 Message = response,
             },
         }, cancellationToken);
-        EventQueue.Complete();
     }
 
     private async Task OnStreamingResponse(ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
@@ -436,7 +438,6 @@ class AgentRequestContext : IAgentHandler
                     Message = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, activity),
                 },
             }, cancellationToken).ConfigureAwait(false);
-            EventQueue.Complete();
         }
         else
         {
@@ -508,7 +509,6 @@ class AgentRequestContext : IAgentHandler
                 Message = response,
             },
         }, cancellationToken).ConfigureAwait(false);
-        EventQueue.Complete();
     }
 }
 

@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.A2A;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ public class MyAgent : AgentApplication
         OnMessage("-stream", OnStreamAsync);
         OnMessage("-multi", OnMultiTurnAsync);
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
+        OnMessage("-a2a", OnA2AAdvancedAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
@@ -72,6 +74,34 @@ public class MyAgent : AgentApplication
             Type = ActivityTypes.EndOfConversation,
         };
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
+    }
+
+    private async Task OnA2AAdvancedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        // Send a message directly through a2a-dotnet
+        var incomingMessage = (A2A.Message)turnContext.Activity.ChannelData;
+        var eventQueue = turnContext.Services.Get<A2A.AgentEventQueue>();
+
+        var message = new A2A.Message();
+        message.Parts.Add(new Part()
+        {
+            Text = "This is an A2A message"
+        });
+
+        await eventQueue.EnqueueStatusUpdateAsync(new A2A.TaskStatusUpdateEvent
+        {
+            TaskId = incomingMessage.TaskId!,
+            ContextId = incomingMessage.ContextId!,
+            Status = new()
+            {
+                State = A2A.TaskState.Working,
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = message
+            },
+        }, cancellationToken);
+
+        // Send another via TurnContext
+        await turnContext.SendActivityAsync("This is another message sent by TurnContext", cancellationToken: cancellationToken);
     }
 
     // Received for A2A "tasks/cancel"
