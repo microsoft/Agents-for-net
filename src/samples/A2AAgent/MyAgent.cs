@@ -79,26 +79,18 @@ public class MyAgent : AgentApplication
     private async Task OnA2AAdvancedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // Send a message directly through a2a-dotnet
-        var incomingMessage = (A2A.Message)turnContext.Activity.ChannelData;
         var eventQueue = turnContext.Services.Get<A2A.AgentEventQueue>();
+        var requestContext = turnContext.Services.Get<A2A.RequestContext>();
 
-        var message = new A2A.Message();
-        message.Parts.Add(new Part()
+        var message = new A2A.Message()
         {
-            Text = "This is an A2A message"
-        });
+            Role = A2A.Role.User,
+            TaskId = requestContext.TaskId,
+            ContextId = requestContext.ContextId,
+            Parts = [new Part() { Text = "This is an A2A message" }]
+        };
 
-        await eventQueue.EnqueueStatusUpdateAsync(new A2A.TaskStatusUpdateEvent
-        {
-            TaskId = incomingMessage.TaskId!,
-            ContextId = incomingMessage.ContextId!,
-            Status = new()
-            {
-                State = A2A.TaskState.Working,
-                Timestamp = DateTimeOffset.UtcNow,
-                Message = message
-            },
-        }, cancellationToken);
+        await eventQueue.EnqueueMessageAsync(message, cancellationToken);
 
         // Send another via TurnContext
         await turnContext.SendActivityAsync("This is another message sent by TurnContext", cancellationToken: cancellationToken);
