@@ -120,20 +120,6 @@ public static class A2AServiceExtensions
     }
 
 
-    /*
-    /// <summary>
-    /// Maps A2A endpoints for IAgent.
-    /// </summary>
-    /// <param name="endpoints"></param>
-    /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-    /// <param name="path">Indicate the route patter, defaults to "/a2a"</param>
-    /// <returns>An endpoint convention builder for further configuration.</returns>
-    public static IEndpointConventionBuilder MapA2AJsonRpc(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string path = "/a2a")
-    {
-        return endpoints.MapA2AJsonRpc<IAgent>(requireAuth, pattern);
-    }
-    */
-
     /// <summary>
     /// Maps A2A endpoints for TAgent type.
     /// </summary>

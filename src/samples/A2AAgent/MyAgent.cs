@@ -84,7 +84,7 @@ public class MyAgent : AgentApplication
 
         var message = new A2A.Message()
         {
-            Role = A2A.Role.User,
+            Role = A2A.Role.Agent,
             TaskId = requestContext.TaskId,
             ContextId = requestContext.ContextId,
             Parts = [new Part() { Text = "This is an A2A message" }]

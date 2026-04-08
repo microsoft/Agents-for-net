@@ -61,24 +61,16 @@ internal static class A2AHttpProcessor
     private static async Task<IResult> WithExceptionHandlingAsync(ILogger logger, string activityName,
         Func<CancellationToken, Task<IResult>> operation, string? taskId = null, CancellationToken cancellationToken = default)
     {
-        //using var activity = A2AAspNetCoreDiagnostics.Source.StartActivity(activityName, ActivityKind.Server);
-        if (taskId is not null)
-        {
-            //activity?.SetTag("task.id", taskId);
-        }
-
         try
         {
             return await operation(cancellationToken);
         }
         catch (A2AException ex)
         {
-            //logger.A2AErrorInActivityName(ex, activityName);
             return MapA2AExceptionToHttpResult(ex);
         }
         catch (Exception)
         {
-            //logger.UnexpectedErrorInActivityName(ex, activityName);
             return Results.Problem(detail: "An internal error occurred.", statusCode: StatusCodes.Status500InternalServerError);
         }
     }
@@ -86,24 +78,16 @@ internal static class A2AHttpProcessor
     private static IResult WithExceptionHandling(ILogger logger, string activityName,
         Func<IResult> operation, string? taskId = null)
     {
-        //using var activity = A2AAspNetCoreDiagnostics.Source.StartActivity(activityName, ActivityKind.Server);
-        if (taskId is not null)
-        {
-            //activity?.SetTag("task.id", taskId);
-        }
-
         try
         {
             return operation();
         }
         catch (A2AException ex)
         {
-            //logger.A2AErrorInActivityName(ex, activityName);
             return MapA2AExceptionToHttpResult(ex);
         }
         catch (Exception)
         {
-            //logger.UnexpectedErrorInActivityName(ex, activityName);
             return Results.Problem(detail: "An internal error occurred.", statusCode: StatusCodes.Status500InternalServerError);
         }
     }
@@ -316,12 +300,13 @@ internal sealed class A2AEventStreamResult : IResult
         var bufferingFeature = httpContext.Features.GetRequiredFeature<IHttpResponseBodyFeature>();
         bufferingFeature.DisableBuffering();
 
+        var streamResponseTypeInfo = A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(StreamResponse));
+
         try
         {
             await foreach (var taskEvent in _events.WithCancellation(httpContext.RequestAborted))
             {
-                var json = JsonSerializer.Serialize(taskEvent,
-                    A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(StreamResponse)));
+                var json = JsonSerializer.Serialize(taskEvent, streamResponseTypeInfo);
                 await httpContext.Response.BodyWriter.WriteAsync(
                     Encoding.UTF8.GetBytes($"data: {json}\n\n"), httpContext.RequestAborted);
                 await httpContext.Response.BodyWriter.FlushAsync(httpContext.RequestAborted);

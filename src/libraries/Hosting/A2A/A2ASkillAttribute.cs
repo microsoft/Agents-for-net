@@ -76,16 +76,9 @@ public class A2ASkillAttribute : Attribute
         Id = id ?? Name;
         Description = description ?? Name;
 
-#if !NETSTANDARD
         Tags = tags.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
         Examples = !string.IsNullOrEmpty(examples) ? examples.Split([';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList() : null;
         InputModes = !string.IsNullOrEmpty(inputModes) ? inputModes.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList() : null;
         OutputModes = !string.IsNullOrEmpty(outputModes) ? outputModes.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList() : null;
-#else
-        Tags = tags.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries);
-        Examples = !string.IsNullOrEmpty(examples) ? examples.Split([';'], StringSplitOptions.RemoveEmptyEntries).ToList() : null;
-        InputModes = !string.IsNullOrEmpty(inputModes) ? inputModes.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries).ToList() : null;
-        OutputModes = !string.IsNullOrEmpty(outputModes) ? outputModes.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries).ToList() : null;
-#endif
     }
 };

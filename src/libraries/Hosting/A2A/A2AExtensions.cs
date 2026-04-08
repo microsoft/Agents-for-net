@@ -15,22 +15,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 internal static class A2AExtensions
 {
     private static readonly ConcurrentDictionary<string, JsonNode> _schemas = new();
+    private static readonly JsonSchemaExporterOptions _exporterOptions = new() { TreatNullObliviousAsNonNullable = true };
+    private static readonly JsonSerializerOptions _reflectionOptions = new()
+    {
+        TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver())
+    };
 
     public static Dictionary<string, JsonElement> ToA2AMetadata(this object data, string contentType)
     {
         if (!_schemas.TryGetValue(data.GetType().FullName, out JsonNode schema))
         {
-            JsonSchemaExporterOptions exporterOptions = new()
-            {
-                TreatNullObliviousAsNonNullable = true,
-            };
-
-            JsonSerializerOptions DefaultReflectionOptions = new()
-            {
-                TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver())
-            };
-
-            schema = DefaultReflectionOptions.GetJsonSchemaAsNode(data.GetType(), exporterOptions);
+            schema = _reflectionOptions.GetJsonSchemaAsNode(data.GetType(), _exporterOptions);
             _schemas[data.GetType().FullName] = schema;
         }
 

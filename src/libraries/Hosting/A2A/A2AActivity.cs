@@ -63,7 +63,7 @@ internal static class A2AActivity
             ArtifactId = artifactId ?? Guid.NewGuid().ToString("N")
         };
 
-        if (activity?.Text != null)
+        if (activity.Text != null)
         {
             artifact.Parts.Add(new Part()
             {
@@ -71,7 +71,7 @@ internal static class A2AActivity
             });
         }
 
-        if (activity?.Value != null)
+        if (activity.Value != null)
         {
             artifact.Parts.Add(new Part()
             {
@@ -79,7 +79,7 @@ internal static class A2AActivity
             });
         }
 
-        foreach (var attachment in activity?.Attachments ?? Enumerable.Empty<Attachment>())
+        foreach (var attachment in activity.Attachments ?? Enumerable.Empty<Attachment>())
         {
             if (attachment.ContentUrl == null && attachment.Content is not string)
             {
@@ -105,7 +105,7 @@ internal static class A2AActivity
 
         if (includeEntities)
         {
-            foreach (var entity in activity?.Entities ?? Enumerable.Empty<Entity>())
+            foreach (var entity in activity.Entities ?? Enumerable.Empty<Entity>())
             {
                 if (entity is not StreamInfo)
                 {
@@ -150,7 +150,7 @@ internal static class A2AActivity
     public static bool HasA2AMessageContent(this IActivity activity)
     {
         return !string.IsNullOrEmpty(activity.Text)
-            || (bool)activity.Attachments?.Any();
+            || activity.Attachments?.Any() == true;
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)

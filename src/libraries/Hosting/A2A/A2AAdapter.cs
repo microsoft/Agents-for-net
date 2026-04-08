@@ -40,8 +40,8 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {
     private readonly ITaskStore _taskStore;
     private readonly ChannelEventNotifier _a2aNotifier;
-    private static readonly ConcurrentDictionary<string, A2AServer> _a2aServers = new();
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
+    private static readonly A2AServerOptions _a2aServerOptions = new();
     private readonly ILoggerFactory _loggerFactory;
 
     public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new StorageTaskStore(storage), loggerFactory, a2aNotifier)
@@ -249,7 +249,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             _taskStore,
             _a2aNotifier,
             _loggerFactory.CreateLogger<A2AServer>(),
-            new A2AServerOptions());
+            _a2aServerOptions);
     }
 
     #region A2A Agent

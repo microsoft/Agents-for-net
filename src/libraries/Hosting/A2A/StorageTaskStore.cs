@@ -39,13 +39,9 @@ internal class StorageTaskStore : ITaskStore
     /// <inheritdoc />
     public async Task SaveTaskAsync(string taskId, AgentTask task, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNull(task, "Task cannot be null.");
+        AssertionHelpers.ThrowIfNull(task, nameof(task));
+        AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
         cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrWhiteSpace(taskId))
-        {
-            throw new ArgumentException("Invalid task ID", nameof(taskId));
-        }
 
         task.Id ??= taskId;
 
