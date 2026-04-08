@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using static System.Net.WebRequestMethods;
 
 namespace Microsoft.Agents.Authentication
 {
@@ -27,6 +28,11 @@ namespace Microsoft.Agents.Authentication
         public const string GovBotFrameworkAudience = "https://api.botframework.us";
 
         /// <summary>
+        /// Bot Framework China audience to request.
+        /// </summary>
+        public const string ChinaBotFrameworkAudience = "https://api.botframework.azure.cn";
+
+        /// <summary>
         /// Bot Framework OAuth scope to request.
         /// </summary>
         public const string BotFrameworkDefaultScope = "https://api.botframework.com/.default";
@@ -35,6 +41,11 @@ namespace Microsoft.Agents.Authentication
         /// Bot Framework Gov OAuth scope to request.
         /// </summary>
         public const string GovBotFrameworkDefaultScope = "https://api.botframework.us/.default";
+
+        /// <summary>
+        /// Bot Framework China (Gallatin/Mooncake) OAuth scope to request.
+        /// </summary>
+        public const string ChinaBotFrameworkDefaultScope = "https://api.botframework.azure.cn/.default";
 
         /// <summary>
         /// Token issuer for ABS tokens.
@@ -47,6 +58,26 @@ namespace Microsoft.Agents.Authentication
         public const string GovBotFrameworkTokenIssuer = "https://api.botframework.us";
 
         /// <summary>
+        /// Token issuer for China (Gallatin/Mooncake) ABS tokens.
+        /// </summary>
+        public const string ChinaBotFrameworkTokenIssuer = "https://api.botframework.azure.cn";
+
+        /// <summary>
+        /// Gets the URL template for the Bot Framework login authority, which includes a placeholder for the tenant ID.
+        /// </summary>
+        public const string BotFrameworkLoginUrlTemplate = "https://login.microsoftonline.com/{0}";
+
+        /// <summary>
+        /// Gets the URL template for the Gov Bot Framework login authority, which includes a placeholder for the tenant ID.
+        /// </summary>
+        public const string GovBotFrameworkLoginUrlTemplate = "https://login.microsoftonline.us/{0}";
+
+        /// <summary>
+        /// Gets the URL template for the China (Gallatin/Mooncake) Bot Framework login authority, which includes a placeholder for the tenant ID.
+        /// </summary>
+        public const string ChinaBotFrameworkLoginUrlTemplate = "https://login.partner.microsoftonline.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/{0}";
+
+        /// <summary>
         /// Default Url for the Azure Bot Token Service.
         /// </summary>
         public const string BotFrameworkOAuthUrl = "https://api.botframework.com";
@@ -55,6 +86,11 @@ namespace Microsoft.Agents.Authentication
         /// Default Url for the Gov Azure Bot Token Service.
         /// </summary>
         public const string GovBotFrameworkOAuthUrl = "https://api.botframework.azure.us";
+
+        /// <summary>
+        /// Default Url for the China (Gallatin/Mooncake) Azure Bot Token Service.
+        /// </summary>
+        public const string ChinaBotFrameworkOAuthUrl = "https://token.botframework.azure.cn/";
 
         /// <summary>
         /// The OpenID metadata URL for the public Azure Bot Service.
@@ -82,6 +118,16 @@ namespace Microsoft.Agents.Authentication
         public const string GovOpenIdMetadataUrl = "https://login.microsoftonline.us/cab8a31a-1906-4287-a0d8-4eef66b95f6e/v2.0/.well-known/openid-configuration";
 
         /// <summary>
+        /// The OpenID metadata URL for the China (Gallatin/Mooncake) Azure Bot Service.
+        /// </summary>
+        public const string ChinaAzureBotServiceOpenIdMetadataUrl = "https://login.botframework.azure.cn/v1/.well-known/openidconfiguration";
+
+        /// <summary>
+        /// The OpenID metadata URL for China (Gallatin/Mooncake)
+        /// </summary>
+        public const string ChinaOpenIdMetadataUrl = "https://login.partner.microsoftonline.cn/a55a4d5b-9241-49b1-b4ff-befa8db00269/.well-known/openid-configuration";
+
+        /// <summary>
         /// The V1 Azure AD token issuer URL template that will contain the tenant id where the token was issued from.
         /// </summary>
         public const string ValidTokenIssuerUrlTemplateV1 = "https://sts.windows.net/{0}/";
@@ -95,6 +141,11 @@ namespace Microsoft.Agents.Authentication
         /// The Government V2 Azure AD token issuer URL template that will contain the tenant id where the token was issued from.
         /// </summary>
         public const string ValidGovernmentTokenIssuerUrlTemplateV2 = "https://login.microsoftonline.us/{0}/v2.0";
+
+        /// <summary>
+        /// The China (Gallatin/Mooncake) V2 Azure AD token issuer URL template that will contain the tenant id where the token was issued from.
+        /// </summary>
+        public const string ValidChinaTokenIssuerUrlTemplateV2 = "https://login.partner.microsoftonline.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/{0}/v2.0";
 
         /// <summary>
         /// "azp" Claim.

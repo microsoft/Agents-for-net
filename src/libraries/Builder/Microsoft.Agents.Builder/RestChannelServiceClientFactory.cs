@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Builder
     {
         private readonly string _tokenServiceEndpoint;
         private readonly string _tokenServiceAudience;
+        private readonly string _botServiceAudience;
         private readonly int? _iMaxApxConversationIdLength;
         private readonly ILogger _logger;
         private readonly IConnections _connections;
@@ -41,6 +42,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="connections"></param>
         /// <param name="tokenServiceEndpoint"></param>
         /// <param name="tokenServiceAudience"></param>
+        /// <param name="botServiceAudience"></param>
         /// <param name="logger"></param>
         /// <param name="customClient">For testing purposes only.</param>
         public RestChannelServiceClientFactory(
@@ -49,6 +51,7 @@ namespace Microsoft.Agents.Builder
             IConnections connections,
             string tokenServiceEndpoint = AuthenticationConstants.BotFrameworkOAuthUrl,
             string tokenServiceAudience = AuthenticationConstants.BotFrameworkAudience,
+            string botServiceAudience = AuthenticationConstants.BotFrameworkAudience,
             ILogger logger = null)
         {
             AssertionHelpers.ThrowIfNull(configuration, nameof(configuration));
@@ -66,6 +69,11 @@ namespace Microsoft.Agents.Builder
             _tokenServiceAudience = string.IsNullOrWhiteSpace(tokenAudience)
                 ? tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience))
                 : tokenAudience;
+
+            var botAudience = configuration?.GetValue<string>($"{nameof(RestChannelServiceClientFactory)}:BotServiceAudience");
+            _botServiceAudience = string.IsNullOrWhiteSpace(botAudience)
+                ? botServiceAudience ?? throw new ArgumentNullException(nameof(botServiceAudience))
+                : botAudience;
 
             _iMaxApxConversationIdLength = configuration?.GetValue<int?>($"{nameof(RestChannelServiceClientFactory)}:MaxApxConversationIdLength");
         }
@@ -137,7 +145,7 @@ namespace Microsoft.Agents.Builder
                 {
                     try
                     {
-                        audience ??= claimsIdentity.GetOutgoingAudience();
+                        audience ??= claimsIdentity.IsAgent() ? claimsIdentity.GetOutgoingAudience() : _botServiceAudience;
                         scopes ??= claimsIdentity.GetOutgoingScopes(defaultABSScopes: false); // Do not default ABS scopes because we want to use the value from config
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl);
                         return tokenAccess.GetAccessTokenAsync(audience, scopes);
