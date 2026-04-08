@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-                            activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
+                            activityWithClaims.ProactiveAudience ?? activityWithClaims.ClaimsIdentity.GetOutgoingAudience(),
                             ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }

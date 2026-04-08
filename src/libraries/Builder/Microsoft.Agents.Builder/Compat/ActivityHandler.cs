@@ -786,9 +786,9 @@ namespace Microsoft.Agents.Builder.Compat
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);
             }
 
-            if (activity.Value == null)
+            if (activity.Value is string value && string.IsNullOrWhiteSpace(value))
             {
-                var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "BadRequest", "Value property is not properly formed for search");
+                var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "BadRequest", "Value property is not valid for search");
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);
             }
 
@@ -845,7 +845,7 @@ namespace Microsoft.Agents.Builder.Compat
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);
             }
 
-            if (activity.Value == null)
+            if (activity.Value is string value && string.IsNullOrWhiteSpace(value))
             {
                 var response = CreateAdaptiveCardInvokeErrorResponse(HttpStatusCode.BadRequest, "BadRequest", "Value property is not properly formed");
                 throw new InvokeResponseException(HttpStatusCode.BadRequest, response);

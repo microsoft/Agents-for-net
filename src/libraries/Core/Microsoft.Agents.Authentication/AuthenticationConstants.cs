@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Authentication
 {
     /// <summary>
@@ -11,7 +13,28 @@ namespace Microsoft.Agents.Authentication
         /// <summary>
         /// Bot Framework OAuth scope to request.
         /// </summary>
+        [Obsolete("This constant is deprecated. Please use BotFrameworkAudience or BotFrameworkDefaultScope instead.")]
         public const string BotFrameworkScope = "https://api.botframework.com";
+
+        /// <summary>
+        /// Bot Framework audience to request.
+        /// </summary>
+        public const string BotFrameworkAudience = "https://api.botframework.com";
+
+        /// <summary>
+        /// Bot Framework Gov audience to request.
+        /// </summary>
+        public const string GovBotFrameworkAudience = "https://api.botframework.us";
+
+        /// <summary>
+        /// Bot Framework OAuth scope to request.
+        /// </summary>
+        public const string BotFrameworkDefaultScope = "https://api.botframework.com/.default";
+
+        /// <summary>
+        /// Bot Framework Gov OAuth scope to request.
+        /// </summary>
+        public const string GovBotFrameworkDefaultScope = "https://api.botframework.us/.default";
 
         /// <summary>
         /// Token issuer for ABS tokens.
@@ -19,9 +42,19 @@ namespace Microsoft.Agents.Authentication
         public const string BotFrameworkTokenIssuer = "https://api.botframework.com";
 
         /// <summary>
-        /// Default OAuth Url used to get a token from IUserTokenClient.
+        /// Token issuer for Gov ABS tokens.
+        /// </summary>
+        public const string GovBotFrameworkTokenIssuer = "https://api.botframework.us";
+
+        /// <summary>
+        /// Default Url for the Azure Bot Token Service.
         /// </summary>
         public const string BotFrameworkOAuthUrl = "https://api.botframework.com";
+
+        /// <summary>
+        /// Default Url for the Gov Azure Bot Token Service.
+        /// </summary>
+        public const string GovBotFrameworkOAuthUrl = "https://api.botframework.azure.us";
 
         /// <summary>
         /// The OpenID metadata URL for the public Azure Bot Service.
@@ -57,6 +90,11 @@ namespace Microsoft.Agents.Authentication
         /// The V2 Azure AD token issuer URL template that will contain the tenant id where the token was issued from.
         /// </summary>
         public const string ValidTokenIssuerUrlTemplateV2 = "https://login.microsoftonline.com/{0}/v2.0";
+
+        /// <summary>
+        /// The Government V2 Azure AD token issuer URL template that will contain the tenant id where the token was issued from.
+        /// </summary>
+        public const string ValidGovernmentTokenIssuerUrlTemplateV2 = "https://login.microsoftonline.us/{0}/v2.0";
 
         /// <summary>
         /// "azp" Claim.

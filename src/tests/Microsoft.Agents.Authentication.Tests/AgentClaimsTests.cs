@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetAppId_ThrowIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetAppId((ClaimsIdentity)null));
+            Assert.Throws<ArgumentNullException>(() => ((ClaimsIdentity)null).GetIncomingAudience());
         }
 
         [Fact]
         public void GetAppId_NullIfNoClaims()
         {
             ClaimsIdentity identity = new();
-            Assert.Null(AgentClaims.GetAppId(identity));
+            Assert.Null(identity.GetIncomingAudience());
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Null(AgentClaims.GetAppId(identity));
+            Assert.Null(identity.GetIncomingAudience());
         }
         [Fact]
         public void GetAppId_ThrowIf2AudienceClaims()
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Throws<InvalidOperationException>(() => AgentClaims.GetAppId(identity));
+            Assert.Throws<InvalidOperationException>(() => identity.GetIncomingAudience());
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Throws<InvalidOperationException>(() => AgentClaims.GetAppId(identity));
+            Assert.Throws<InvalidOperationException>(() => identity.GetIncomingAudience());
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Equal("claim1", AgentClaims.GetAppId(identity));
+            Assert.Equal("claim1", identity.GetIncomingAudience());
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Equal("claim1", AgentClaims.GetAppId(identity));
+            Assert.Equal("claim1", identity.GetIncomingAudience());
         }
 
         [Fact]
@@ -112,13 +112,13 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset with both claims returns the Audiance claim.
-            Assert.Equal("claim2", AgentClaims.GetAppId(identity));
+            Assert.Equal("claim2", identity.GetIncomingAudience());
         }
 
         [Fact]
         public void GetOutgoingAppId_ThrowIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetOutgoingAppId(null));
+            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetOutgoingAppIdClaim(null));
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(ClaimTypes.Name, "Name1")
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppIdClaim(claims));
         }
 
         [Fact]
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, "claim2")
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppIdClaim(claims));
         }
 
         [Fact]
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, "3.0"),                
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppIdClaim(claims));
         }
 
         [Fact]
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, string.Empty),
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppIdClaim(claims));
         }
         [Fact]
         public void GetOutgoingAppId_ValidVersionClaimNullVersionAppId()
@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId")                
             ]);
 
-            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppIdClaim(claims));
         }
         
         [Fact]
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId")
             ]);
 
-            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppIdClaim(claims));
         }
 
         [Fact]
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId") // not a valid claim on a v2 token
             ]);
 
-            Assert.Null(AgentClaims.GetOutgoingAppId(claims));            
+            Assert.Null(AgentClaims.GetOutgoingAppIdClaim(claims));            
         }
 
 
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AuthorizedParty, "appId")
             ]);
 
-            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppIdClaim(claims));
         }
 
         [Fact]
@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AudienceClaim, "aud")
             ]);
 
-            var audience = AgentClaims.GetTokenAudience(claims);
+            var audience = claims.GetOutgoingAudience();
 
             Assert.Equal("api://appId", audience);
         }
@@ -319,9 +319,78 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AuthorizedParty, "appId"),
             ]);
 
-            var audience = AgentClaims.GetTokenAudience(claims);
+            var audience = claims.GetOutgoingAudience();
 
-            Assert.Equal(AuthenticationConstants.BotFrameworkScope, audience);
+            Assert.Equal(AuthenticationConstants.BotFrameworkAudience, audience);
+        }
+
+        [Fact]
+        public void GetOutgoingTokenScopes_AgentClaim_ReturnsAppIdDefaultScope()
+        {
+            // Agent claim: version + azp + audience (different from azp)
+            var claims = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.VersionClaim, "2.0"),
+                new(AuthenticationConstants.AuthorizedParty, "myAppId"),
+                new(AuthenticationConstants.AudienceClaim, "audience")
+            ]);
+
+            var scopes = claims.GetOutgoingTokenScopes();
+
+            Assert.NotNull(scopes);
+            Assert.Single(scopes);
+            Assert.Equal("myAppId/.default", scopes[0]);
+        }
+
+        [Fact]
+        public void GetOutgoingTokenScopes_NonAgentClaim_DefaultABSScopesFalse_ReturnsNull()
+        {
+            // ABS claim: no audience that qualifies as agent claim
+            var claims = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.VersionClaim, "2.0"),
+                new(AuthenticationConstants.AuthorizedParty, "appId"),
+            ]);
+
+            var scopes = claims.GetOutgoingTokenScopes(defaultABSScopes: false);
+
+            Assert.Null(scopes);
+        }
+
+        [Fact]
+        public void GetOutgoingTokenScopes_NonAgentClaim_DefaultABSScopesTrue_ReturnsPublicABSScope()
+        {
+            // Public ABS claim: audience is BotFrameworkTokenIssuer
+            var claims = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.VersionClaim, "2.0"),
+                new(AuthenticationConstants.AuthorizedParty, "appId"),
+                new(AuthenticationConstants.AudienceClaim, AuthenticationConstants.BotFrameworkTokenIssuer)
+            ]);
+
+            var scopes = claims.GetOutgoingTokenScopes(defaultABSScopes: true);
+
+            Assert.NotNull(scopes);
+            Assert.Single(scopes);
+            Assert.Equal(AuthenticationConstants.BotFrameworkDefaultScope, scopes[0]);
+        }
+
+        [Fact]
+        public void GetOutgoingTokenScopes_NonAgentClaim_DefaultABSScopesTrue_ReturnsGovABSScope()
+        {
+            // Gov ABS claim: audience is GovBotFrameworkTokenIssuer
+            var claims = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.VersionClaim, "2.0"),
+                new(AuthenticationConstants.AuthorizedParty, "appId"),
+                new(AuthenticationConstants.AudienceClaim, AuthenticationConstants.GovBotFrameworkTokenIssuer)
+            ]);
+
+            var scopes = claims.GetOutgoingTokenScopes(defaultABSScopes: true);
+
+            Assert.NotNull(scopes);
+            Assert.Single(scopes);
+            Assert.Equal(AuthenticationConstants.GovBotFrameworkDefaultScope, scopes[0]);
         }
     }
 }

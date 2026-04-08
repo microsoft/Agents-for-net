@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Authentication.Msal
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
-        private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList;
+        private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList = new();
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
 
-            _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
+            _systemServiceProvider = systemServiceProvider;
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
             _connectionSettings = settings ?? throw new ArgumentNullException(nameof(settings));
             _logger = (ILogger)systemServiceProvider.GetService(typeof(ILogger<MsalAuth>));
@@ -359,8 +359,6 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <exception cref="System.ArgumentNullException"></exception>
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
-            IList<string> _localScopesResolver = new List<string>();
-
             if (scopes != null && scopes.Count > 0)
             {
                 return scopes.ToArray();
@@ -391,13 +389,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         private ExecuteAuthenticationResults CacheGet(Uri instanceUri, bool forceRefresh = false)
         {
-            _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
             if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
             {
                 if (!forceRefresh)
                 {
                     var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
-                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
+                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Add(TimeSpan.FromSeconds(30)))
                     {
                         // flush the access token if it is about to expire.
 #if !NETSTANDARD
@@ -425,14 +422,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
         private void CacheSet(Uri instanceUri, ExecuteAuthenticationResults authResultPayload)
         {
-            if (_cacheList.ContainsKey(instanceUri))
-            {
-                _cacheList[instanceUri] = authResultPayload;
-            }
-            else
-            {
-                _cacheList.TryAdd(instanceUri, authResultPayload);
-            }
+            _cacheList[instanceUri] = authResultPayload;
         }
     }
 

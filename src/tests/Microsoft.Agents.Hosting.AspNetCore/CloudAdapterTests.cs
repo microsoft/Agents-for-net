@@ -352,17 +352,26 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "throw"
             };
             var context = CreateHttpContext(activity);
+            EventWaitHandle turnStarted = new(false, EventResetMode.ManualReset);
 
             // capture ConnectorClient sends
             var sentActivities = new List<IActivity>();
             var mockConnectorClient = new Mock<IConnectorClient>();
             mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, ct) => sentActivities.Add(response))
+                .Callback<IActivity, CancellationToken>((response, ct) =>
+                {
+                    turnStarted.Set();
+                    sentActivities.Add(response);
+                })
                 .Returns(Task.FromResult(
                     new ResourceResponse("replyResourceId")
                 ));
             mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, ct) => sentActivities.Add(response))
+                .Callback<IActivity, CancellationToken>((response, ct) =>
+                {
+                    turnStarted.Set();
+                    sentActivities.Add(response);
+                })
                 .Returns(Task.FromResult(
                         new ResourceResponse("sendResourceId")
                     ));
@@ -375,6 +384,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Test
             await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            turnStarted.WaitOne();
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
@@ -665,15 +676,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                         "appid",
                         Channels.Test,
                         serviceUrl,
-                        AgentClaims.GetTokenAudience(context.Identity),
-                        new ConversationParameters() { Agent = context.Activity.From },
+                        context.Identity.GetOutgoingAudience(),
+                        new ConversationParameters() { Agent = context.Activity.Recipient, Members = [context.Activity.From] },
                         async (innerContext, innerCt) =>
                         {
+                            Assert.Equal("appid", innerContext.Activity.Recipient.Id);
+                            Assert.Equal("userid", innerContext.Activity.From.Id);
+
                             // TurnState isn't provided in the continuation lambda.  Lets test it manually.
                             var turnState = agent.Options.TurnStateFactory();
                             await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
 
                             turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
+                            turnState.User.SetValue("lastConvoMessage", context.Activity.Text);
                             await innerContext.SendActivityAsync($"New Conversation: {context.Activity.Text}", cancellationToken: innerCt);
 
                             await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
@@ -705,9 +720,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 ));
 
             record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
-                .Returns(Task.FromResult(mockConnectorClient.Object));
-            record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(mockConnectorClient.Object));
 
@@ -719,8 +731,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: origConversationId),
                 Text = "user message",
                 ChannelId = Channels.Test,
-                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new ChannelAccount(id: "userid", role: RoleTypes.User),
+                Recipient = new(id: "appid", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -752,6 +764,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
+            
+            items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/users/{responses[1].Recipient.Id}"]);
+            var newUserState = items.First().Value;
+            Assert.True(newUserState.ContainsKey("lastConvoMessage"));
 
             await record.Service.StopAsync(CancellationToken.None);
         }

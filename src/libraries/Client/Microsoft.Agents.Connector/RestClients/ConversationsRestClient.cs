@@ -10,7 +10,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -26,98 +25,38 @@ namespace Microsoft.Agents.Connector.RestClients
 
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
-        internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
-                    .AppendQuery("continuationToken", continuationToken)
-            };
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
-        }
-
         /// <inheritdoc/>
         public async Task<ConversationsResult> GetConversationsAsync(string continuationToken = null, CancellationToken cancellationToken = default)
         {
-            using var message = CreateGetConversationsRequest(continuationToken);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(RestApiPaths.Conversations)
+                .WithQuery("continuationToken", continuationToken);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ConversationsResult>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ConversationsResult>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ConversationsResult>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateCreateConversationRequest(ConversationParameters body)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         /// <inheritdoc/>
         public async Task<ConversationResourceResponse> CreateConversationAsync(ConversationParameters body = null, CancellationToken cancellationToken = default)
         {
-            using var message = CreateCreateConversationRequest(body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Post(RestApiPaths.Conversations)
+                .WithBody(body);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ConversationResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ConversationResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ConversationResourceResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateSendToConversationRequest(string conversationId, IActivity body)
-        {
-            var convId = TruncateConversationId(conversationId, body);
-
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         public async Task<ResourceResponse> SendToConversationAsync(IActivity activity, CancellationToken cancellationToken = default)
@@ -130,49 +69,28 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateSendToConversationRequest(conversationId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var convId = TruncateConversationId(conversationId, body);
+            var path = string.Format(RestApiPaths.ConversationActivities, HttpUtility.UrlEncode(convId));
+            var request = RestRequest.Post(path).WithBody(body);
+            if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
+            {
+                request = request.WithQuery("isTargetedActivity", "true");
+            }
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        if (httpResponse.Content.ReadAsStream(cancellationToken).Length == 0)
-                        {
-                            return new ResourceResponse() { Id = string.Empty };
-                        }
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        if (httpResponse.Content.ReadAsStringAsync().Result.Length == 0)
-                        {
-                            return new ResourceResponse() { Id = string.Empty };
-                        }
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    // Teams is famous for not returning a response body for these.
+                    var content = await RestPipeline.ReadAsStringAsync(httpResponse, cancellationToken).ConfigureAwait(false);
+                    return string.IsNullOrEmpty(content)
+                        ? new ResourceResponse() { Id = string.Empty }
+                        : ProtocolJsonSerializer.ToObject<ResourceResponse>(content);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateSendConversationHistoryRequest(string conversationId, Transcript body)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         /// <inheritdoc/>
@@ -180,41 +98,19 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateSendConversationHistoryRequest(conversationId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationHistory, HttpUtility.UrlEncode(conversationId)))
+                .WithBody(body);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ResourceResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateUpdateActivityRequest(string conversationId, string activityId, IActivity body)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Put,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
@@ -228,43 +124,19 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            using var message = CreateUpdateActivityRequest(conversationId, activityId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Put(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)))
+                .WithBody(body);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ResourceResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateReplyToActivityRequest(string conversationId, string activityId, IActivity body)
-        {
-            var convId = TruncateConversationId(conversationId, body);
-
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{HttpUtility.UrlEncode(convId)}/activities/{HttpUtility.UrlEncode(activityId)}")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         public async Task<ResourceResponse> ReplyToActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
@@ -280,47 +152,28 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateReplyToActivityRequest(conversationId, activityId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var convId = TruncateConversationId(conversationId, body);
+            var path = string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(convId), HttpUtility.UrlEncode(activityId));
+            var request = RestRequest.Post(path).WithBody(body);
+            if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
+            {
+                request = request.WithQuery("isTargetedActivity", "true");
+            }
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        // Teams is famous for not returning a response body for these.
-                        if (httpResponse.Content.ReadAsStream(cancellationToken).Length == 0)
-                        {
-                            return new ResourceResponse() { Id = string.Empty };
-                        }
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        // Teams is famous for not returning a response body for these.
-                        if (httpResponse.Content.ReadAsStringAsync().Result.Length == 0)
-                        {
-                            return new ResourceResponse() { Id = string.Empty };
-                        }
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    // Teams is famous for not returning a response body for these.
+                    var content = await RestPipeline.ReadAsStringAsync(httpResponse, cancellationToken).ConfigureAwait(false);
+                    return string.IsNullOrEmpty(content)
+                        ? new ResourceResponse() { Id = string.Empty }
+                        : ProtocolJsonSerializer.ToObject<ResourceResponse>(content);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateDeleteActivityRequest(string conversationId, string activityId)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Delete,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
-            };
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -329,30 +182,17 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            using var message = CreateDeleteActivityRequest(conversationId, activityId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)));
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 202:
                     return;
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateGetConversationMembersRequest(string conversationId)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
-            };
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -360,35 +200,16 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateGetConversationMembersRequest(conversationId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMembers, HttpUtility.UrlEncode(conversationId)));
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<IReadOnlyList<ChannelAccount>>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateGetConversationMemberRequest(string conversationId, string userId)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
-            };
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -397,35 +218,16 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
-            using var message = CreateGetConversationMemberRequest(conversationId, userId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMember, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(userId)));
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ChannelAccount>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ChannelAccount>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ChannelAccount>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateDeleteConversationMemberRequest(string conversationId, string memberId)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Delete,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
-            };
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -434,67 +236,36 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(memberId, nameof(memberId));
 
-            using var message = CreateDeleteConversationMemberRequest(conversationId, memberId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationMember, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(memberId)));
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 204:
                     return;
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-        internal HttpRequestMessage CreateGetConversationPagedMembersRequest(string conversationId, int? pageSize, string continuationToken = default)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-
-            request.RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
-                .AppendQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
-                .AppendQuery("continuationToken", continuationToken);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
-        public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default(int?), string continuationToken = null, CancellationToken cancellationToken = default)
+        public async Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default, string continuationToken = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateGetConversationPagedMembersRequest(conversationId, pageSize, continuationToken);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationPagedMembers, HttpUtility.UrlEncode(conversationId)))
+                .WithQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
+                .WithQuery("continuationToken", continuationToken);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<PagedMembersResult>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<PagedMembersResult>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<PagedMembersResult>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateGetActivityMembersRequest(string conversationId, string activityId)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
-            };
-            request.Headers.Add("Accept", "application/json");
-            return request;
         }
 
         /// <inheritdoc/>
@@ -503,39 +274,16 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            using var message = CreateGetActivityMembersRequest(conversationId, activityId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(string.Format(RestApiPaths.ActivityMembers, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)));
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<IReadOnlyList<ChannelAccount>>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<IReadOnlyList<ChannelAccount>>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateUploadAttachmentRequest(string conversationId, AttachmentData body)
-        {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
-            };
-            request.Headers.Add("Accept", "application/json");
-            if (body != null)
-            {
-                request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
-            }
-            return request;
         }
 
         /// <inheritdoc/>
@@ -543,25 +291,18 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            using var message = CreateUploadAttachmentRequest(conversationId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationAttachments, HttpUtility.UrlEncode(conversationId)))
+                .WithBody(body);
+
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
                 case 201:
                 case 202:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<ResourceResponse>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<ResourceResponse>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 

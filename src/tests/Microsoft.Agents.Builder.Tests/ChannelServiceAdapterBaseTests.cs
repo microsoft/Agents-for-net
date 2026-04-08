@@ -117,10 +117,12 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-                  
+
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
-            
+#pragma warning restore CS0618 // Type or member is obsolete
+
             //Assert
             Assert.True(_callbackInvoked);
         }
@@ -173,7 +175,9 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _activity, ContinueCallback, default);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -374,10 +378,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateMockConnectorClient().Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             return mockChannelServiceClientFactory;

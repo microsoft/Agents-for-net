@@ -107,7 +107,9 @@ namespace Microsoft.Agents.Builder.Tests
                 return Task.CompletedTask;
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", cr, ContinueCallback, default);
+#pragma warning restore CS0618 // Type or member is obsolete
             Assert.True(callbackInvoked);
         }
     }

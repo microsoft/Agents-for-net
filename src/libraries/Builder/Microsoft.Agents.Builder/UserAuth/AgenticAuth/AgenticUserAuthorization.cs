@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             if (connection is not IAgenticTokenProvider agenticTokenProvider)
             {
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{turnContext.Identity.GetIncomingAudience()}:{turnContext.Activity.ServiceUrl}");
             }
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(

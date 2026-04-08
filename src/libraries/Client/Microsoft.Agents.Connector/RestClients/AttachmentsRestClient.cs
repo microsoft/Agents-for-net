@@ -5,12 +5,13 @@
 
 using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core;
 using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
@@ -26,30 +27,13 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <returns>uri.</returns>
         public string GetAttachmentUri(string attachmentId, string viewId = "original")
         {
-#if !NETSTANDARD
-            ArgumentException.ThrowIfNullOrWhiteSpace(attachmentId);
-#else
-            if (string.IsNullOrWhiteSpace(attachmentId))
-            {
-                throw new ArgumentException("AttachmentId cannot be null or empty.", nameof(attachmentId));
-            }
-#endif
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(attachmentId, nameof(attachmentId));
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(viewId, nameof(viewId));
 
-            // Construct URL
-            var baseUrl = _transport.Endpoint.ToString();
-            var url = new Uri(new Uri(baseUrl + (baseUrl.EndsWith("/", StringComparison.OrdinalIgnoreCase) ? string.Empty : "/", StringComparison.OrdinalIgnoreCase)), "v3/attachments/{attachmentId}/views/{viewId}").ToString();
-            url = url.Replace("{attachmentId}", Uri.EscapeDataString(attachmentId));
-            url = url.Replace("{viewId}", Uri.EscapeDataString(viewId));
-            return url;
-        }
-
-        internal HttpRequestMessage CreateGetAttachmentInfoRequest(string attachmentId)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}");
-            request.Headers.Add("Accept", "application/json");
-            return request;
+            return new Uri(_transport.Endpoint.EnsureTrailingSlash(),
+                string.Format(RestApiPaths.AttachmentView,
+                    Uri.EscapeDataString(attachmentId),
+                    Uri.EscapeDataString(viewId))).ToString();
         }
 
         /// <summary> GetAttachmentInfo. </summary>
@@ -59,38 +43,17 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <remarks> Get AttachmentInfo structure describing the attachment views. </remarks>
         public async Task<AttachmentInfo> GetAttachmentInfoAsync(string attachmentId, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(attachmentId))
-            {
-                throw new ArgumentNullException(nameof(attachmentId));
-            }
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(attachmentId, nameof(attachmentId));
 
-            using var message = CreateGetAttachmentInfoRequest(attachmentId);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            var request = RestRequest.Get(string.Format(RestApiPaths.AttachmentInfo, HttpUtility.UrlEncode(attachmentId)));
+            using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<AttachmentInfo>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        return ProtocolJsonSerializer.ToObject<AttachmentInfo>(httpResponse.Content.ReadAsStringAsync().Result);
-#endif
-                    }
+                    return await RestPipeline.ReadContentAsync<AttachmentInfo>(httpResponse, cancellationToken).ConfigureAwait(false);
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
-        }
-
-        internal HttpRequestMessage CreateGetAttachmentRequest(string attachmentId, string viewId)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
-            request.Headers.Add("Accept", "application/octet-stream, application/json");
-            return request;
         }
 
         /// <summary> GetAttachment. </summary>
@@ -110,7 +73,12 @@ namespace Microsoft.Agents.Connector.RestClients
                 throw new ArgumentNullException(nameof(viewId));
             }
 
-            using var message = CreateGetAttachmentRequest(attachmentId, viewId);
+            // Special case: requires Accept: application/octet-stream (not the default application/json)
+            // and returns binary content, not a JSON-deserializable object.
+            var requestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), string.Format(RestApiPaths.AttachmentView, HttpUtility.UrlEncode(attachmentId), HttpUtility.UrlEncode(viewId)));
+            using var message = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            message.Headers.Add("Accept", "application/octet-stream, application/json");
+
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -124,16 +92,13 @@ namespace Microsoft.Agents.Connector.RestClients
                         (await httpResponse.Content.ReadAsStreamAsync()).CopyTo(memoryStream);
 #endif
                         memoryStream.Seek(0, SeekOrigin.Begin);
-
                         return memoryStream;
                     }
                 case 301:
                 case 302:
                     return null;
                 default:
-                    {
-                        throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
-                    }
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
     }

@@ -421,7 +421,7 @@ namespace Microsoft.Agents.Builder.Testing
                 }
 
                 var tcs = new TaskCompletionSource<IActivity>();
-                cancellationToken.Register(() => tcs.SetCanceled());
+                cancellationToken.Register(() => tcs.TrySetCanceled());
                 this._queuedRequests.Enqueue(tcs);
                 return tcs.Task;
             }
