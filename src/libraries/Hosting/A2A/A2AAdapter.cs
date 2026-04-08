@@ -253,7 +253,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     }
 
     #region A2A Agent
-    internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, CancellationToken cancellationToken)
+    internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         using (Logger.BeginScope("ExecuteAgentTurnAsync: Agent={AgentType}, RequestId={RequestId}, TaskId={TaskId}", agent.GetType().Name, requestId, context.TaskId))
         {
@@ -305,9 +305,19 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     #region ChannelAdapter
     /// <inheritdoc/>
-    public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+    public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+    {
+        return ProcessActivityWithA2AAsync(claimsIdentity, activity, callback, null, null, cancellationToken);
+    }
+
+    public async Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
     {
         var context = new TurnContext(this, activity, claimsIdentity);
+        if (a2aContext != null && a2aEventQueue != null)
+        {
+            context.Services.Set(a2aContext);
+            context.Services.Set(a2aEventQueue);
+        }
         await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
         return null;
     }
@@ -351,7 +361,7 @@ class AgentRequestContext : IAgentHandler
             await taskUpdater.SubmitAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await Adapter.ExecuteAgentTurnAsync(RequestId, Identity, Agent, context, cancellationToken);
+        await Adapter.ExecuteAgentTurnAsync(RequestId, Identity, Agent, context, eventQueue, cancellationToken);
     }
 
     public async Task CancelAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
