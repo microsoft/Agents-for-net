@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using static System.Net.WebRequestMethods;
 
 namespace Microsoft.Agents.Authentication
 {

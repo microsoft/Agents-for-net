@@ -207,9 +207,9 @@ public static class AspNetExtensions
                     string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value!;
 
                     if (validationOptions.AzureBotServiceTokenHandling 
-                        && (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer) 
-                        || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(issuer)
-                        || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer)))
+                        && (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase) 
+                        || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
+                        || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)))
                     {
                         // Use the Azure Bot authority for this configuration manager
                         context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(validationOptions.AzureBotServiceOpenIdMetadataUrl, key =>
