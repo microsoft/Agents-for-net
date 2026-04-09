@@ -48,6 +48,7 @@ namespace Microsoft.Agents.Core.Models
         /// <remarks>With this, properties not represented in the defined type are not dropped when
         /// the JSON object is deserialized, but are instead stored in this property. Such properties
         /// will be written to a JSON object when the instance is serialized.</remarks>
+        [JsonExtensionData]
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
 
         /// <summary>

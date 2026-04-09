@@ -142,5 +142,10 @@ namespace Microsoft.Agents.Builder.App
         {
             return this;
         }
+
+        protected override void PreBuild()
+        {
+            _route.Selector ??= (context, ct) => Task.FromResult(IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message));
+        }
     }
 }

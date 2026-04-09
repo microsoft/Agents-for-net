@@ -764,7 +764,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
-            
+
             items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/users/{responses[1].Recipient.Id}"]);
             var newUserState = items.First().Value;
             Assert.True(newUserState.ContainsKey("lastConvoMessage"));
@@ -1030,7 +1030,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
             record.VerifyMocks();
         }
-        
+
         [Fact]
         public async Task ProcessAsync_CancellationDuringStream_ShouldNotThrow()
         {

@@ -1,0 +1,188 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Microsoft.Agents.Core.Analyzers
+{
+    /// <summary>
+    /// Generates partial class companions for types decorated with attributes that derive from
+    /// <c>AgentExtensionAttribute&lt;TExtension&gt;</c>. Each matching attribute produces a
+    /// lazily-initialized property of type <c>TExtension</c> named after the extension type
+    /// (e.g. <c>TeamsAgentExtension</c> → <c>Teams</c>).
+    /// </summary>
+    [Generator]
+    public class AgentExtensionSourceGenerator : IIncrementalGenerator
+    {
+        internal const string AgentExtensionAttributeMetadataName =
+            "Microsoft.Agents.Builder.App.AgentExtensionAttribute`1";
+
+        private static readonly DiagnosticDescriptor MustBePartialDescriptor = new(
+            id: "MAA001",
+            title: "Class with AgentExtension attribute must be partial",
+            messageFormat: "'{0}' must be declared as 'partial' to use an AgentExtension attribute",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "The source generator for AgentExtension attributes requires the decorated class to be declared with the 'partial' modifier.");
+
+        public void Initialize(IncrementalGeneratorInitializationContext context)
+        {
+            // Resolve the open generic base attribute type once per compilation.
+            var baseAttrTypeProvider = context.CompilationProvider.Select(
+                static (compilation, _) =>
+                    compilation.GetTypeByMetadataName(AgentExtensionAttributeMetadataName));
+
+            // Find all class declarations that have at least one attribute list.
+            var classDeclarations = context.SyntaxProvider
+                .CreateSyntaxProvider(
+                    predicate: static (node, _) =>
+                        node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0,
+                    transform: static (ctx, ct) =>
+                    {
+                        var classDecl = (ClassDeclarationSyntax)ctx.Node;
+                        var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct) as INamedTypeSymbol;
+                        return (classDecl, classSymbol);
+                    })
+                .Where(static x => x.classSymbol != null);
+
+            var combined = classDeclarations.Combine(baseAttrTypeProvider);
+
+            context.RegisterSourceOutput(combined, static (spc, item) =>
+            {
+                var ((classDecl, classSymbol), baseAttrType) = item;
+                if (classSymbol == null || baseAttrType == null) return;
+
+                // Collect all extension types contributed by applied attributes.
+                var extensions = new List<ITypeSymbol>();
+                foreach (var attr in classSymbol.GetAttributes())
+                {
+                    var extensionType = FindExtensionType(attr.AttributeClass, baseAttrType);
+                    if (extensionType != null)
+                        extensions.Add(extensionType);
+                }
+
+                if (extensions.Count == 0) return;
+
+                bool isPartial = classDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
+                if (!isPartial)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        MustBePartialDescriptor,
+                        classSymbol.Locations.IsEmpty ? Location.None : classSymbol.Locations[0],
+                        classSymbol.Name));
+                    return;
+                }
+
+                var source = GenerateSource(classSymbol, extensions);
+                spc.AddSource($"{classSymbol.Name}.AgentExtensions.g.cs", SourceText.From(source, Encoding.UTF8));
+            });
+        }
+
+        /// <summary>
+        /// Walks the base-type chain of <paramref name="attrClass"/> looking for the closed
+        /// construction of <paramref name="baseAttrType"/>. Returns the first type argument when
+        /// found, or <c>null</c> if the attribute is not related to <c>AgentExtensionAttribute&lt;T&gt;</c>.
+        /// </summary>
+        private static ITypeSymbol? FindExtensionType(INamedTypeSymbol? attrClass, INamedTypeSymbol baseAttrType)
+        {
+            var current = attrClass;
+            while (current != null)
+            {
+                if (current.IsGenericType &&
+                    SymbolEqualityComparer.Default.Equals(current.ConstructedFrom, baseAttrType))
+                {
+                    return current.TypeArguments[0];
+                }
+                current = current.BaseType;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Derives a property name from the extension type name by stripping well-known suffixes:
+        /// <c>AgentExtension</c> first, then <c>Extension</c>.
+        /// </summary>
+        private static string DerivePropertyName(ITypeSymbol extensionType)
+        {
+            var name = extensionType.Name;
+            if (name.EndsWith("AgentExtension"))
+                return name.Substring(0, name.Length - "AgentExtension".Length);
+            if (name.EndsWith("Extension"))
+                return name.Substring(0, name.Length - "Extension".Length);
+            return name;
+        }
+
+        private static string GenerateSource(INamedTypeSymbol classSymbol, List<ITypeSymbol> extensions)
+        {
+            var ns = classSymbol.ContainingNamespace?.IsGlobalNamespace == true
+                ? null
+                : classSymbol.ContainingNamespace?.ToDisplayString();
+
+            var sb = new StringBuilder();
+            sb.AppendLine("// <auto-generated />");
+            sb.AppendLine("// Copyright (c) Microsoft Corporation. All rights reserved.");
+            sb.AppendLine("// Licensed under the MIT License.");
+            sb.AppendLine();
+            sb.AppendLine("#nullable disable");
+            sb.AppendLine();
+
+            if (ns != null)
+            {
+                sb.AppendLine($"namespace {ns}");
+                sb.AppendLine("{");
+                AppendClass(sb, classSymbol, extensions, "    ");
+                sb.AppendLine("}");
+            }
+            else
+            {
+                AppendClass(sb, classSymbol, extensions, "");
+            }
+
+            return sb.ToString();
+        }
+
+        private static void AppendClass(
+            StringBuilder sb,
+            INamedTypeSymbol classSymbol,
+            List<ITypeSymbol> extensions,
+            string indent)
+        {
+            sb.AppendLine($"{indent}partial class {classSymbol.Name}");
+            sb.AppendLine($"{indent}{{");
+
+            foreach (var extensionType in extensions)
+            {
+                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var propName = DerivePropertyName(extensionType);
+                var fieldName = $"_{char.ToLowerInvariant(propName[0])}{propName.Substring(1)}";
+
+                sb.AppendLine($"{indent}    private {fullTypeName} {fieldName};");
+                sb.AppendLine();
+                sb.AppendLine($"{indent}    /// <summary>");
+                sb.AppendLine($"{indent}    /// Provides access to <see cref=\"{extensionType.ToDisplayString()}\"/> agent features.");
+                sb.AppendLine($"{indent}    /// </summary>");
+                sb.AppendLine($"{indent}    public {fullTypeName} {propName}");
+                sb.AppendLine($"{indent}    {{");
+                sb.AppendLine($"{indent}        get");
+                sb.AppendLine($"{indent}        {{");
+                sb.AppendLine($"{indent}            if ({fieldName} == null)");
+                sb.AppendLine($"{indent}            {{");
+                sb.AppendLine($"{indent}                {fieldName} = new {fullTypeName}(this);");
+                sb.AppendLine($"{indent}                RegisterExtension({fieldName}, _ => {{ }});");
+                sb.AppendLine($"{indent}            }}");
+                sb.AppendLine($"{indent}            return {fieldName};");
+                sb.AppendLine($"{indent}        }}");
+                sb.AppendLine($"{indent}    }}");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine($"{indent}}}");
+        }
+    }
+}

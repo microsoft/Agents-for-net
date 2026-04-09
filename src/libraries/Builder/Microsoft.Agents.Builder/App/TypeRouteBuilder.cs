@@ -15,18 +15,19 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing activities of a specific type in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="TypeRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithType(string)"/> or <see cref="WithType(Regex)"/> 
-    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="TypeRouteBuilder"/> to create and configure routes that respond to activities
+    /// of a particular type. This builder allows matching activities by type string or regular expression,
+    /// and supports channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/>
+    /// method and optionally configured using <see cref="WithType(string)"/>, <see cref="WithType(Regex)"/>,
+    /// or <see cref="WithSelector(RouteSelector)"/>. If neither <see cref="WithType(string)"/> nor
+    /// <see cref="WithType(Regex)"/> is called, the route will match any activity type.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = TypeRouteBuilder.Create()
-    ///    .WithName("myInvoke")
+    ///    .WithType(ActivityTypes.Invoke)
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Invoke received!", cancellationToken: ct)))
     ///    .Build();
-    ///    
+    ///
     /// app.AddRoute(route);
     /// </code>
     /// Since this builder can't determine if this is for an Invoke Activity, the method <see cref="TypeRouteBuilder.AsInvoke(bool)"/> should be called if appropriate.
@@ -145,7 +146,9 @@ namespace Microsoft.Agents.Builder.App
 
             if (_type == null && _typePattern == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type or Selector");
+                // If no type or pattern specified, match any activity
+                _route.Selector = (context, ct) => Task.FromResult(IsContextMatch(context, _route));
+                return;
             }
 
             // Just match on Activity.Type value

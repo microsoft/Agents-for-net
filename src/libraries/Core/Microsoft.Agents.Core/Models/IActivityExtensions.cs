@@ -152,14 +152,15 @@ namespace Microsoft.Agents.Core.Models
         /// adding the targeted treatment. Use this extension to indicate that an activity should be processed or
         /// interpreted as targeted in downstream workflows.</remarks>
         /// <param name="activity">The activity to be marked as targeted. Cannot be null.</param>
-        public static void MakeTargetedActivity(this IActivity activity)
+        public static IActivity MakeTargetedActivity(this IActivity activity)
         {
             if (activity.IsTargetedActivity())
             {
-                return;
+                return activity;
             }
             activity.Entities ??= [];
             activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
+            return activity;
         }
     }
 }
