@@ -1632,5 +1632,205 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Single(agenticIds);
             Assert.Equal("agentic test", agenticIds[0]);
         }
+
+        [Fact]
+        public async Task Test_AgenticRoute_BeatsNonAgenticRoute_ForAgenticRequest()
+        {
+            // Arrange - An agentic message should be handled by the agentic route,
+            // not by a competing non-agentic route registered first.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Register non-agentic route first
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Register agentic route second
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "agentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - agentic route wins due to route ordering priority
+            Assert.Equal("agentic", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_TwoAgenticRoutes_SameRank_FirstMatchingWins()
+        {
+            // Arrange - Two agentic routes with the same rank; first matching selector wins.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Both agentic, same rank, both match - first registered wins
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "first";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "second";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Equal("first", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_NonAgenticRequest_SkipsAgenticRoutes()
+        {
+            // Arrange - A regular (non-agentic) message must not match an agentic-only route
+            // and should fall through to the non-agentic handler.
+            var normalActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, normalActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Agentic route registered first (higher priority in ordering)
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "agentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Non-agentic route registered second
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - non-agentic request should skip the agentic route
+            Assert.Equal("nonAgentic", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_AgentExtension_AddRoute_PropagatesAgenticFlag()
+        {
+            // Arrange - Verify that isAgenticOnly=true flows through AgentExtension.AddRoute
+            // and results in the route being ordered above non-agentic routes.
+            // This is the pattern used by A365 Notifications and other extensions.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "testChannel",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Register non-agentic route directly on the app first
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Register agentic route through the extension model (mimics A365 Notifications pattern)
+            var extension = new TestExtension("testChannel");
+            extension.AddRoute(
+                app,
+                (context, _) => Task.FromResult(context.Activity.Type == ActivityTypes.Message),
+                (context, _, _) =>
+                {
+                    handlerCalled = "extensionAgentic";
+                    return Task.CompletedTask;
+                },
+                isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - extension's agentic route wins due to ordering priority
+            Assert.Equal("extensionAgentic", handlerCalled);
+        }
+
+        private class TestExtension : AgentExtension
+        {
+            public TestExtension(string channelId)
+            {
+                ChannelId = new ChannelId(channelId);
+            }
+        }
     }
 }
