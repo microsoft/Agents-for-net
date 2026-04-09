@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Authentication
                 return GetDefaultConnection();
             }
 
-            var audience = AgentClaims.GetAppId(claimsIdentity);
+            var audience = claimsIdentity.GetIncomingAudience();
 
             // Find a match, in document order.
             foreach (var mapItem in _map)

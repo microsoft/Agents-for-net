@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Client
             {
                 // Received a conversationId that isn't known.
                 var sanitizedConversationId = conversationId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
-                _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", sanitizedConversationId, AgentClaims.GetAppId(claimsIdentity));
+                _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", sanitizedConversationId, claimsIdentity.GetIncomingAudience());
                 throw new KeyNotFoundException(sanitizedConversationId);
             }
 

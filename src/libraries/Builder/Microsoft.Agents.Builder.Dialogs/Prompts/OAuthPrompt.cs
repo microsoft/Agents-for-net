@@ -294,7 +294,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 return new CallerInfo
                 {
                     CallerServiceUrl = turnContext.Activity.ServiceUrl,
-                    Scope = AgentClaims.GetOutgoingAppId(turnContext.Identity),
+                    Scope = AgentClaims.GetOutgoingAppIdClaim(turnContext.Identity),
                 };
             }
 

@@ -142,8 +142,8 @@ namespace Microsoft.Agents.Builder
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
-            var reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl)
-                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(AgentClaims.GetAppId(identity), role: RoleTypes.User))
+            var reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl)
+                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(identity.GetIncomingAudience(), role: RoleTypes.User))
                 .Build();
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
@@ -224,7 +224,7 @@ namespace Microsoft.Agents.Builder
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
             {
-                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppId(claimsIdentity)}";
+                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppIdClaim(claimsIdentity)}";
             }
             else
             {

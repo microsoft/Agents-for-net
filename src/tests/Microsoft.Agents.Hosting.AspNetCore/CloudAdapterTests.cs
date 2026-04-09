@@ -676,7 +676,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                         "appid",
                         Channels.Test,
                         serviceUrl,
-                        AgentClaims.GetTokenAudience(context.Identity),
+                        context.Identity.GetOutgoingAudience(),
                         new ConversationParameters() { Agent = context.Activity.Recipient, Members = [context.Activity.From] },
                         async (innerContext, innerCt) =>
                         {

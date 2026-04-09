@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), claimsIdentity.GetOutgoingAudience(), callback, cancellationToken);
         }
 
         /// <inheritdoc/>

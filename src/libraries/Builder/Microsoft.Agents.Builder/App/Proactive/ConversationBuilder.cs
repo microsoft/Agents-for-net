@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public static ConversationBuilder Create(ClaimsIdentity identity, string channelId, string serviceUrl = null)
         {
             var builder = new ConversationBuilder();
-            builder._conversation.Reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl).Build();
+            builder._conversation.Reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl).Build();
             builder.WithIdentity(identity);
             return builder;
         }
