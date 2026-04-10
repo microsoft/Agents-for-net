@@ -26,8 +26,6 @@ namespace Microsoft.Agents.Builder.App
     public class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
-        private readonly int _typingTimerDelay = 1000;
-        private TypingTimer? _typingTimer;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -674,20 +672,20 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            // Idempotent — if already started for this turn, do nothing.
+            if (turnContext.Services.Get<TypingWorker>() != null)
             {
                 return;
             }
 
-            if (_typingTimer == null)
+            var worker = TypingWorker.Create(turnContext, Options.TypingOptions);
+            if (worker == null)
             {
-                _typingTimer = new TypingTimer(_typingTimerDelay);
+                return;
             }
 
-            if (!_typingTimer.IsRunning())
-            {
-                _typingTimer.Start(turnContext);
-            }
+            turnContext.Services.Set<TypingWorker>(worker);
+            worker.Start();
         }
 
         /// <summary>
@@ -695,11 +693,12 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <remarks>
         /// If the timer isn't running nothing happens.
+        /// Per-turn workers are definitively stopped in the turn's finally block via DisposeAsync.
         /// </remarks>
+        [Obsolete("Typing is now stopped automatically at end of turn. Use StartTypingTimer(ITurnContext) to start.")]
         public void StopTypingTimer()
         {
-            _typingTimer?.Dispose();
-            _typingTimer = null;
+            // No-op: per-turn workers are stopped via DisposeAsync in the turn's finally block.
         }
 
         #endregion
@@ -847,9 +846,12 @@ namespace Microsoft.Agents.Builder.App
             }
             finally
             {
-                // Stop the timer if configured
-                StopTypingTimer();
-
+                // Stop the typing worker for this turn if one was started.
+                var typingWorker = turnContext.Services?.Get<TypingWorker>();
+                if (typingWorker != null)
+                {
+                    await typingWorker.DisposeAsync().ConfigureAwait(false);
+                }
 
                 if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
                 {
