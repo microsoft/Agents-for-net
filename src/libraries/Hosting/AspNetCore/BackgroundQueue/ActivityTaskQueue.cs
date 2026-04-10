@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly SemaphoreSlim _signal = new(0);
         private readonly EventWaitHandle _queueEmpty = new(true, EventResetMode.ManualReset);
         private readonly ConcurrentQueue<ActivityWithClaims> _activities = new();
-        private bool _stopped = false;
+        private volatile bool _stopped = false;
 
         /// <inheritdoc/>
         public bool QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null)

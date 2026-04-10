@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,33 +90,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken).ConfigureAwait(false);
                 if (activityWithClaims != null)
                 {
-                    try
+                    // The read lock will not be acquirable if the app is shutting down.
+                    // New tasks should not be starting during shutdown.
+                    if (_lock.TryEnterReadLock(500))
                     {
-                        // The read lock will not be acquirable if the app is shutting down.
-                        // New tasks should not be starting during shutdown.
-                        if (_lock.TryEnterReadLock(500))
+                        try
                         {
                             // Create the task which will execute the work item.
+                            // CancellationToken.None: cleanup must always run regardless of shutdown state.
                             var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
                                 .ContinueWith(t =>
                                 {
-                                    // After the work item completes, clear the running tasks of all completed tasks.
-                                    foreach (var kv in _activitiesProcessing.Where(tsk => tsk.Value.IsCompleted))
-                                    {
-                                        _activitiesProcessing.TryRemove(kv.Key, out Task removed);
-                                    }
-                                }, stoppingToken);
+                                    _activitiesProcessing.TryRemove(activityWithClaims, out _);
+                                }, CancellationToken.None);
 
                             _activitiesProcessing.TryAdd(activityWithClaims, task);
                         }
-                        else
+                        finally
                         {
-                            _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
+                            _lock.ExitReadLock();
                         }
                     }
-                    finally
+                    else
                     {
-                        _lock.ExitReadLock();
+                        _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
                     }
                 }
             }
