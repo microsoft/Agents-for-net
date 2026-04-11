@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -36,6 +37,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Content Url. </summary>
         public string ContentUrl { get; set; }
         /// <summary> Embedded content. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Content { get; set; }
         /// <summary> (OPTIONAL) The name of the attachment. </summary>
         public string Name { get; set; }
@@ -50,6 +52,7 @@ namespace Microsoft.Agents.Core.Models
         /// <remarks>With this, properties not represented in the defined type are not dropped when
         /// the JSON object is deserialized, but are instead stored in this property. Such properties
         /// will be written to a JSON object when the instance is serialized.</remarks>
+        [JsonExtensionData]
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
     }
 }
