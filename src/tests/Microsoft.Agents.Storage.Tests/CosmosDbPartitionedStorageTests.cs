@@ -1,6 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
+using Microsoft.Agents.Builder.Dialogs;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.CosmosDb;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Identity.Client.Extensions.Msal;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -8,13 +15,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Agents.Storage.CosmosDb;
-using Moq;
 using Xunit;
 using static Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Builder.Dialogs;
 
 namespace Microsoft.Agents.Storage.Tests
 {
@@ -24,7 +26,7 @@ namespace Microsoft.Agents.Storage.Tests
     {
         private CosmosDbPartitionedStorage _storage;
         private readonly Mock<Container> _container = new Mock<Container>();
-        
+
         [Fact]
         public void ConstructorValidation()
         {
@@ -95,7 +97,7 @@ namespace Microsoft.Agents.Storage.Tests
                 CompatibilityMode = false
             }));
         }
-        
+
         [Fact]
         public async Task ReadAsyncValidation()
         {
@@ -225,8 +227,6 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
-
             var changes = new Dictionary<string, object>
             {
                 { "key1", new CosmosDbPartitionedStorage.DocumentStoreItem() },
@@ -271,8 +271,6 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
-
             var changes = new Dictionary<string, DocumentStoreItem>
             {
                 { "key1", new DocumentStoreItem() },
@@ -291,6 +289,116 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<DocumentStoreItem>(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldThrowOnNullInputs()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, new StorageWriteOptions(), CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync(new Dictionary<string, StoreItem>(), null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldReturnStoreItems()
+        {
+            InitStorage();
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "testing" } }
+            };
+
+            var result = await _storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.Equal("etag", result["key"].ETag);
+            Assert.Equal("testing", changes["key"].ETag);
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldUseCreateItemAsync()
+        {
+            InitStorage();
+
+            ItemRequestOptions capturedOptions = null;
+
+            _container.Setup(e => e.CreateItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<DocumentStoreItem, PartitionKey?, ItemRequestOptions, CancellationToken>((item, key, options, token) =>
+                {
+                    capturedOptions = options;
+                })
+                .ReturnsAsync((DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem() }
+            };
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            await _storage.WriteAsync(changes, options, CancellationToken.None);
+
+            Assert.NotNull(capturedOptions);
+            Assert.Equal("*", capturedOptions.IfNoneMatchEtag);
+            _container.Verify(e => e.CreateItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            _container.Verify(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_IfNotExists_ShouldThrowWhenKeyExists()
+        {
+            InitStorage();
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem() }
+            };
+
+            _container.Setup(e => e.CreateItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new CosmosException("ETag Conflict error", HttpStatusCode.Conflict, 0, "", 0));
+
+            var options = new StorageWriteOptions { IfNotExists = true };
+
+            await Assert.ThrowsAsync<ItemExistsException>(() =>
+                _storage.WriteAsync(
+                    new Dictionary<string, StoreItem> { { "key", new StoreItem() } },
+                    options,
+                    CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithOptions_ShouldUseIfMatchEtagWhenProvided()
+        {
+            InitStorage();
+
+            ItemRequestOptions capturedOptions = null;
+
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<DocumentStoreItem, PartitionKey?, ItemRequestOptions, CancellationToken>((item, key, options, token) =>
+                {
+                    capturedOptions = options;
+                })
+                .ReturnsAsync((DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { "key", new StoreItem { ETag = "etag" } }
+            };
+
+            await _storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
+
+            Assert.NotNull(capturedOptions);
+            Assert.Equal("etag", capturedOptions.IfMatchEtag);
         }
 
         [Fact]
@@ -373,6 +481,20 @@ namespace Microsoft.Agents.Storage.Tests
                 .Returns(containerProperties);
             client.Setup(e => e.GetContainer(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(_container.Object);
+            _container.Setup(e => e.CreateItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    item.ETag = "etag";
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((DocumentStoreItem item, PartitionKey pk, ItemRequestOptions options, CancellationToken token) =>
+                {
+                    item.ETag = "etag";
+                    var itemResponse = new DocumentStoreItemResponseMock(item);
+                    return itemResponse;
+                });
             _container.Setup(e => e.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(containerResponse.Object);
 
@@ -403,16 +525,18 @@ namespace Microsoft.Agents.Storage.Tests
             return nested;
         }
 
-        private class DocumentStoreItemResponseMock : ItemResponse<CosmosDbPartitionedStorage.DocumentStoreItem>
+        private class DocumentStoreItemResponseMock : ItemResponse<DocumentStoreItem>
         {
-            public DocumentStoreItemResponseMock(CosmosDbPartitionedStorage.DocumentStoreItem resource)
+            public DocumentStoreItemResponseMock(DocumentStoreItem resource)
             {
                 Resource = resource;
             }
 
-            public override CosmosDbPartitionedStorage.DocumentStoreItem Resource { get; }
+            public override string ETag => Resource.ETag;
+
+            public override DocumentStoreItem Resource { get; }
         }
-        
+
         private class StoreItem : IStoreItem
         {
             public int Id { get; set; } = 0;
