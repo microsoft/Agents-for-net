@@ -165,7 +165,7 @@ namespace CompatConversationBot.Bots
                 };
 
                 await ((CloudAdapter)turnContext.Adapter).CreateConversationAsync(
-                    AgentClaims.GetAppId(turnContext.Identity),
+                    turnContext.Identity.GetIncomingAudience(),
                     channelId,
                     serviceUrl,
                     "https://api.botframework.com",
@@ -173,14 +173,16 @@ namespace CompatConversationBot.Bots
                     async (t1, c1) =>
                     {
                         conversationReference = t1.Activity.GetConversationReference();
+#pragma warning disable CS0618 // Type or member is obsolete
                         await ((CloudAdapter)turnContext.Adapter).ContinueConversationAsync(
-                            AgentClaims.GetAppId(turnContext.Identity),
+                            turnContext.Identity.GetIncomingAudience(),
                             conversationReference,
                             async (t2, c2) =>
                             {
                                 await t2.SendActivityAsync(proactiveMessage, c2);
                             },
                             cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
                     },
                     cancellationToken);
             }

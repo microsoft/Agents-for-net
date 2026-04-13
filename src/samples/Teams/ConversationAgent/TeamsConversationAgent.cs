@@ -188,7 +188,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             foreach (var teamMember in currentPage.Members)
             {
                 var createOptions = CreateConversationOptionsBuilder
-                    .Create(AgentClaims.GetAppId(turnContext.Identity), Channels.Msteams, turnContext.Activity.ServiceUrl)
+                    .Create(turnContext.Identity.GetIncomingAudience(), Channels.Msteams, turnContext.Activity.ServiceUrl)
                     .WithUser(teamMember.ToCoreChannelAccount())
                     .WithTenantId(turnContext.Activity.Conversation.Id)
                     .IsGroup(true)

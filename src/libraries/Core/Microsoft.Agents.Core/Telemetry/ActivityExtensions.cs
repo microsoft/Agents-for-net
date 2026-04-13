@@ -25,10 +25,18 @@ namespace Microsoft.Agents.Core.Telemetry
         /// preserving its logical parent-child relationship via the copied parent ID and links.
         /// The returned activity is independent of the source and has its own lifecycle.
         /// </returns>
-        public static Activity CloneActivity(this Activity source, bool start = false)
+        public static Activity? CloneActivity(this Activity source, bool start = false)
         {
-            var clone = new Activity(source.OperationName)
-                .SetIdFormat(source.IdFormat);
+            Activity? clone;
+            if (source.Parent?.Context != null)
+            {
+                clone = source.Source.CreateActivity(source.OperationName, source.Kind, source.Parent.Context);
+            }
+            else
+            {
+                clone = source.Source.CreateActivity(source.OperationName, source.Kind);
+            }
+            clone.SetIdFormat(source.IdFormat);
 
             if (source.ParentId != null)
             {
