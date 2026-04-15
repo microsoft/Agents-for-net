@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using Xunit;
 
@@ -51,5 +52,36 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(videoCard);
             Assert.IsType<VideoCard>(videoCard);
         }
+
+        [Fact]
+        public void VideoCard_Roundtrip()
+        {
+            var card = new VideoCard
+            {
+                Title = "title",
+                Subtitle = "subtitle",
+                Text = "text",
+                Image = new ThumbnailUrl("http://example.com", "example image"),
+                Media = new List<MediaUrl>() { new MediaUrl("http://example-media-url.com", "profile") },
+                Buttons = new List<CardAction>() { new CardAction() },
+                Shareable = true,
+                Autoloop = true,
+                Autostart = true,
+                Aspect = "4:3",
+                Value = new VideoCardValue { Prop1 = "value1" },
+                Duration = "1000"
+            };
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+
+            var deserializedCard = ProtocolJsonSerializer.ToObject<VideoCard>(json);
+
+            Assert.Equal(json, ProtocolJsonSerializer.ToJson(deserializedCard));
+        }
+    }
+
+    class VideoCardValue
+    {
+        public string Prop1 { get; set; }
     }
 }

@@ -36,6 +36,9 @@ namespace Microsoft.Agents.Core.Telemetry
             {
                 clone = source.Source.CreateActivity(source.OperationName, source.Kind);
             }
+
+            if (clone == null) return null;
+
             clone.SetIdFormat(source.IdFormat);
 
             if (source.ParentId != null)

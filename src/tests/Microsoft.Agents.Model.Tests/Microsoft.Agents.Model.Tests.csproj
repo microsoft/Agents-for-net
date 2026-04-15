@@ -31,4 +31,16 @@
 		</None>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="Resources\TestJson\ConversationAccount.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\TestJson\SubChannelAccount.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\TestJson\ChannelAccount.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>

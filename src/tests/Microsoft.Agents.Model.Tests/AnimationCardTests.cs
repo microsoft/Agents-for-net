@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using Xunit;
 
@@ -57,5 +58,61 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(value, animationCard.Value);
             Assert.Equal(duration, animationCard.Duration);
         }
+
+        [Fact]
+        public void AnimationCardRoundTripWithValueClass()
+        {
+            var card = new AnimationCard(
+                    "title",
+                    "subtitle",
+                    "text",
+                    new ThumbnailUrl("http://example.com", "example image"),
+                    new List<MediaUrl>() { new MediaUrl("http://fakeMediaUrl.com", "media url profile") },
+                    new List<CardAction>()
+                    {
+                        new CardAction("cardActionType", "cardActionTitle", "image", "text", "displayText"), //, new { }, new { }),
+                    },
+                    true,
+                    true,
+                    true,
+                    "aspect",
+                    new AnimationCardValue { Property1 = "prop1" },
+                    "1000");
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+                
+            var deserializedCard = ProtocolJsonSerializer.ToObject<AnimationCard>(json);
+
+            Assert.Equal(json, ProtocolJsonSerializer.ToJson(deserializedCard));
+        }
+
+        [Fact]
+        public void AnimationCardRoundTripWithValueAnon()
+        {
+            var card = new AnimationCard(
+                    "title",
+                    "subtitle",
+                    "text",
+                    null,
+                    null,
+                    null,
+                    true,
+                    true,
+                    true,
+                    "aspect",
+                    new { property1 = "prop1" },
+                    "1000");
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+
+            var deserializedCard = ProtocolJsonSerializer.ToObject<AnimationCard>(json);
+
+            Assert.Equal(json, ProtocolJsonSerializer.ToJson(deserializedCard));
+        }
+    }
+
+    class AnimationCardValue
+    {
+        public string Property1 { get; set; }
     }
 }

@@ -23,11 +23,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
     /// All differences are logged via <see cref="ITestOutputHelper"/>.
     ///
     /// ERROR condition: a Teams model has JSON properties not present in the paired Core model,
-    /// AND the Core model lacks BOTH:
-    ///   (1) a <c>Properties</c> catch-all (<see cref="IDictionary{TKey,TValue}">IDictionary&lt;string,JsonElement&gt;</see>), AND
-    ///   (2) a <see cref="JsonConverter"/> registered in <see cref="ProtocolJsonSerializer.SerializationOptions"/>.
-    /// When both are present the converter routes unknown properties into <c>Properties</c>, so no
-    /// data is lost.
+    /// AND the Core model cannot safely preserve them.  A Core model can safely preserve
+    /// Teams-only properties if it has EITHER:
+    ///   (a) a <c>Properties</c> property annotated with <see cref="JsonExtensionDataAttribute"/>
+    ///       (the JSON serializer routes unknown properties there automatically), OR
+    ///   (b) a <c>Properties</c> catch-all (<see cref="IDictionary{TKey,TValue}">IDictionary&lt;string,JsonElement&gt;</see>)
+    ///       AND a <see cref="JsonConverter"/> registered in <see cref="ProtocolJsonSerializer.SerializationOptions"/>
+    ///       (the converter routes unknown properties into <c>Properties</c>).
     /// </summary>
     public class CoreVsTeamsModelPropertyTests(ITestOutputHelper output)
     {
@@ -276,18 +278,23 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
 
             if (teamsOnly.Count > 0)
             {
+                bool hasExtensionData = HasJsonExtensionDataCatchAll(coreType);
                 bool hasDict = HasPropertiesCatchAll(coreType);
                 bool hasConv = HasRegisteredConverter(coreType);
 
-                if (hasDict && hasConv)
+                if (hasExtensionData)
+                {
+                    sb.AppendLine("          OK: Teams-only properties preserved via [JsonExtensionData] Properties catch-all.");
+                }
+                else if (hasDict && hasConv)
                 {
                     sb.AppendLine("          OK: Teams-only properties preserved via Properties catch-all + converter.");
                 }
                 else
                 {
                     var missing = new List<string>(2);
-                    if (!hasDict) missing.Add("Properties<string,JsonElement> catch-all");
-                    if (!hasConv) missing.Add("registered JsonConverter");
+                    if (!hasExtensionData && !hasDict) missing.Add("Properties<string,JsonElement> catch-all");
+                    if (!hasExtensionData && !hasConv) missing.Add("registered JsonConverter or [JsonExtensionData]");
 
                     var msg =
                         $"{teamsType.Name} -> {coreType.Name}: " +
@@ -339,6 +346,19 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
             if (attr != null) return attr.Name;
             var name = prop.Name;
             return char.ToLowerInvariant(name[0]) + name.Substring(1);
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the type has a <c>Properties</c> property of type
+        /// <c>IDictionary&lt;string, JsonElement&gt;</c> annotated with <see cref="JsonExtensionDataAttribute"/>.
+        /// This allows the JSON serializer to automatically route unknown properties into that dictionary.
+        /// </summary>
+        private static bool HasJsonExtensionDataCatchAll(Type type)
+        {
+            var prop = type.GetProperty("Properties", BindingFlags.Public | BindingFlags.Instance);
+            return prop != null &&
+                   typeof(IDictionary<string, JsonElement>).IsAssignableFrom(prop.PropertyType) &&
+                   prop.GetCustomAttribute<JsonExtensionDataAttribute>() != null;
         }
 
         private static bool HasPropertiesCatchAll(Type type)

@@ -37,6 +37,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Content Url. </summary>
         public string ContentUrl { get; set; }
         /// <summary> Embedded content. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Content { get; set; }
         /// <summary> (OPTIONAL) The name of the attachment. </summary>
         public string Name { get; set; }
