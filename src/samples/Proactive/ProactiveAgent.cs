@@ -54,7 +54,7 @@ public class ProactiveAgent : AgentApplication
         });
     }
 
-    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    [MembersAddedRoute]
     public async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
@@ -66,7 +66,7 @@ public class ProactiveAgent : AgentApplication
         }
     }
 
-    [Route(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [MessageRoute(rank: RouteRank.Last)]
     public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // This demonstrates using a Conversation instance to perform ContinueConversation with a custom 

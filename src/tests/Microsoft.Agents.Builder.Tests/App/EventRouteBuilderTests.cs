@@ -837,14 +837,46 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_Build_WithoutSelector_ThrowsInvalidOperationException()
+        public async Task EventRouteBuilder_Build_WithoutNameOrSelector_MatchesAnyEvent()
         {
             // Arrange
-            var builder = EventRouteBuilder.Create()
-                .WithHandler((context, state, token) => Task.CompletedTask);
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "anyEventName"
+            });
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.Build());
+            var route = EventRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task EventRouteBuilder_Build_WithoutNameOrSelector_DoesNotMatchNonEvent()
+        {
+            // Arrange
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message
+            });
+
+            var route = EventRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
         }
 
         [Fact]

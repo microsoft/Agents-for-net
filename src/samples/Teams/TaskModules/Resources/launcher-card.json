@@ -1,0 +1,54 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Select the examples you want to see!",
+      "size": "Large",
+      "weight": "Bolder"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Simple Form",
+      "data": {
+        "msteams": {
+          "type": "task/fetch"
+        },
+        "task": "simple_form"
+      }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Webpage Dialog",
+      "data": {
+        "msteams": {
+          "type": "task/fetch"
+        },
+        "task": "webpage_dialog"
+      }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Multi-Step Form",
+      "data": {
+        "msteams": {
+          "type": "task/fetch"
+        },
+        "task": "multi_step_form"
+      }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Mixed Example",
+      "data": {
+        "msteams": {
+          "type": "task/fetch"
+        },
+        "task": "mixed_example"
+      }
+    }
+  ]
+}

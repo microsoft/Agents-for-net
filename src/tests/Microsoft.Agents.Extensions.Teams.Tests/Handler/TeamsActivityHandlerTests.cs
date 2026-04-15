@@ -2,21 +2,23 @@
 // Licensed under the MIT License.
 
 
-using Microsoft.Agents.Core.Models;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
-using Microsoft.Agents.Extensions.Teams.Models;
-using System;
-using System.Globalization;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Testing;
-using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Tests.Model;
+using Microsoft.Teams.Api;
+using Microsoft.Teams.Api.Activities.Events;
 using Moq;
-using System.Net.Http;
-using System.Threading;
+using System;
+using System.Globalization;
 using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
@@ -46,10 +48,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     new ChannelAccount { Id = "bot" },
                 ],
                 Recipient = new ChannelAccount { Id = "bot" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamMemberAdded",
-                    Team = new TeamInfo
+                    Team = new Team
                     {
                         Id = "team-id",
                     },
@@ -120,22 +122,18 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded =
                 [
-                    new TeamsChannelAccount
+                    new ChannelAccount
                     {
                         Id = "id-1",
                         Name = "name-1",
                         AadObjectId = "aadobject-1",
-                        Email = "test@microsoft.com",
-                        GivenName = "given-1",
-                        Surname = "surname-1",
-                        UserPrincipalName = "t@microsoft.com",
                     },
                 ],
                 Recipient = new ChannelAccount { Id = "b" },
-                ChannelData = new TeamsChannelData
+                ChannelData = new ChannelData
                 {
                     EventType = "teamMemberAdded",
-                    Team = new TeamInfo
+                    Team = new Team
                     {
                         Id = "team-id",
                     },
@@ -166,7 +164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     new ChannelAccount { Id = "a" },
                 ],
                 Recipient = new ChannelAccount { Id = "b" },
-                ChannelData = new TeamsChannelData { EventType = "teamMemberRemoved" },
+                ChannelData = new ChannelData { EventType = "teamMemberRemoved" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -188,7 +186,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelCreated" },
+                ChannelData = new ChannelData { EventType = "channelCreated" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -210,7 +208,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
+                ChannelData = new ChannelData { EventType = "channelDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -232,7 +230,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
+                ChannelData = new ChannelData { EventType = "channelRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -254,7 +252,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRestored" },
+                ChannelData = new ChannelData { EventType = "channelRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -276,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamArchived" },
+                ChannelData = new ChannelData { EventType = "teamArchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -298,7 +296,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
+                ChannelData = new ChannelData { EventType = "teamDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -320,7 +318,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
+                ChannelData = new ChannelData { EventType = "teamHardDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -342,7 +340,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
+                ChannelData = new ChannelData { EventType = "teamRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -364,7 +362,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRestored" },
+                ChannelData = new ChannelData { EventType = "teamRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -386,7 +384,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
+                ChannelData = new ChannelData { EventType = "teamUnarchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -411,7 +409,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Action = "accept",
+                    Action = Microsoft.Teams.Api.Action.Accept,
                     UploadInfo = new FileUploadInfo
                     {
                         UniqueId = "uniqueId",
@@ -448,7 +446,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Action = "decline",
+                    Action = Microsoft.Teams.Api.Action.Decline,
                     UploadInfo = new FileUploadInfo
                     {
                         UniqueId = "uniqueId",
@@ -483,7 +481,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "actionableMessage/executeAction",
-                Value = JsonSerializer.SerializeToElement(new O365ConnectorCardActionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.O365.ConnectorCardActionQuery()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -510,7 +508,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/queryLink",
-                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.AppBasedQueryLink()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -537,7 +535,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/anonymousQueryLink",
-                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.AppBasedQueryLink()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -564,7 +562,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/query",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Query()),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -618,7 +616,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                }),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -646,9 +647,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    BotMessagePreviewAction = "edit",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    BotMessagePreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Edit,
                 }),
             };
 
@@ -677,9 +679,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/submitAction",
-                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
                 {
-                    BotMessagePreviewAction = "send",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                    BotMessagePreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Send,
                 }),
             };
 
@@ -708,7 +711,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             {
                 Type = ActivityTypes.Invoke,
                 Name = "composeExtension/fetchTask",
-                Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.MessageExtensions.Action
+                {
+                    CommandId = "testCommand",
+                    CommandContext = Microsoft.Teams.Api.Commands.Context.Message,
+                }),
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -1066,9 +1073,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 ChannelId = Channels.Msteams,
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingStart",
-                Value = JsonSerializer.SerializeToElement(new
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.Meetings.MeetingDetails
                 {
-                    StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
+                    Id = "meetingId",
+                    Type = "meetingStart",
+                    JoinUrl = "https://teams.microsoft.com/l/meetup-join/meetingId",
+                    Title = "Start Meeting Title",
+                    MSGraphResourceId = "msGraphResourceId",
+                    ScheduledStartTime = startTimeBase
                 }),
             };
 
@@ -1084,7 +1096,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Equal(startTimeBase, _activitiesToSend[0].Value);
         }
 
         [Fact]
@@ -1097,9 +1109,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 ChannelId = Channels.Msteams,
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingEnd",
-                Value = JsonSerializer.SerializeToElement(new
+                Value = JsonSerializer.SerializeToElement(new Microsoft.Teams.Api.Meetings.MeetingDetails
                 {
-                    EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
+                    Id = "meetingId",
+                    Type = "meetingEnd",
+                    JoinUrl = "https://teams.microsoft.com/l/meetup-join/meetingId",
+                    Title = "End Meeting Title",
+                    MSGraphResourceId = "msGraphResourceId",
+                    ScheduledEndTime = endTimeBase
                 }),
             };
 
@@ -1115,7 +1132,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Equal(endTimeBase, _activitiesToSend[0].Value);
         }
 
         [Fact]
@@ -1158,14 +1175,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingParticipantJoin",
                 Value = JsonSerializer.SerializeToElement(
-                    new MeetingParticipantsEventDetails
+                    new MeetingParticipantJoinActivityValue
                     {
                         Members =
                         [
-                            new TeamsMeetingMember(
-                                new TeamsChannelAccount { Id = "id", Name = "name"},
-                                new UserMeetingDetails { Role = "role", InMeeting = true }
-                            )
+                            new MeetingParticipantJoinActivityValue.Member
+                            {
+                                User = new Account { Id = "id", Name = "name"},
+                                Meeting = new MeetingParticipantJoinActivityValue.Meeting { Role = new("role"), InMeeting = true }
+                            }
                         ]
                     }
                 ),
@@ -1202,14 +1220,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 Type = ActivityTypes.Event,
                 Name = "application/vnd.microsoft.meetingParticipantLeave",
                 Value = JsonSerializer.SerializeToElement(
-                    new MeetingParticipantsEventDetails
+                    new MeetingParticipantLeaveActivityValue
                     {
                         Members =
                         [
-                            new TeamsMeetingMember(
-                                new TeamsChannelAccount { Id = "id", Name = "name"},
-                                new UserMeetingDetails { Role = "role", InMeeting = true }
-                            )
+                            new MeetingParticipantLeaveActivityValue.Member
+                            {
+                                User = new Account { Id = "id", Name = "name"},
+                                Meeting = new MeetingParticipantLeaveActivityValue.Meeting { Role = new("role"), InMeeting = true }
+                            }
                         ]
                     }
                 ),
@@ -1239,7 +1258,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "editMessage" },
+                ChannelData = new ChannelData { EventType = "editMessage" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1261,7 +1280,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelData = new ChannelData { EventType = "undeleteMessage" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1283,7 +1302,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageUpdate,
-                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelData = new ChannelData { EventType = "undeleteMessage" },
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -1323,7 +1342,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageDelete,
-                ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
+                ChannelData = new ChannelData { EventType = "softDeleteMessage" },
                 ChannelId = Channels.Msteams
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -1345,7 +1364,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var activity = new Activity
             {
                 Type = ActivityTypes.MessageDelete,
-                ChannelData = new TeamsChannelData { EventType = "softMessage" }
+                ChannelData = new ChannelData { EventType = "softMessage" }
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
@@ -1391,27 +1410,17 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     {
                         Members =
                         [
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-1",
                                 Name = "name-1",
-                                GivenName = "givenName-1",
-                                Surname = "surname-1",
-                                Email = "email-1",
-                                UserPrincipalName = "userPrincipalName-1",
-                                UserRole = "userRole-1",
-                                TenantId = "tenantId-1",
+                                Role = new Role("role-1")
                             },
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-2",
                                 Name = "name-2",
-                                GivenName = "givenName-2",
-                                Surname = "surname-2",
-                                Email = "email-2",
-                                UserPrincipalName = "userPrincipalName-2",
-                                UserRole = "userRole-2",
-                                TenantId = "tenantId-2",
+                                Role = new Role("role-2")
                             },
                         ]
                     };
@@ -1425,27 +1434,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                     {
                         Members =
                         [
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-3",
                                 Name = "name-3",
-                                GivenName = "givenName-3",
-                                Surname = "surname-3",
-                                Email = "email-3",
-                                UserPrincipalName = "userPrincipalName-3",
-                                UserRole = "userRole-3",
-                                TenantId = "tenantId-3",
                             },
-                            new TeamsChannelAccount
+                            new Account
                             {
                                 Id = "id-4",
                                 Name = "name-4",
-                                GivenName = "givenName-4",
-                                Surname = "surname-4",
-                                Email = "email-4",
-                                UserPrincipalName = "userPrincipalName-4",
-                                UserRole = "userRole-4",
-                                TenantId = "tenantId-4",
                             },
                         ]
                     };

@@ -791,14 +791,24 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_Build_WithoutSelector_ThrowsException()
+        public async Task TypeRouteBuilder_Build_WithoutTypeOrSelector_MatchesAnyActivity()
         {
             // Arrange
-            var builder = TypeRouteBuilder.Create()
-                .WithHandler((context, state, token) => Task.CompletedTask);
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message
+            });
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.Build());
+            var route = TypeRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
         }
 
         [Fact]

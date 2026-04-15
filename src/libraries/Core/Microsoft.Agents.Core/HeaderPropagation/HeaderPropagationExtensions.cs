@@ -13,7 +13,7 @@ public static class HeaderPropagationExtensions
     /// <param name="httpClient">The <see cref="HttpClient"/>.</param>
     public static void AddHeaderPropagation(this HttpClient httpClient)
     {
-        if (HeaderPropagationContext.HeadersFromRequest == null)
+        if (httpClient == null || HeaderPropagationContext.HeadersFromRequest == null)
         {
             return;
         }

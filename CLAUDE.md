@@ -100,13 +100,36 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 ### Extensions
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
-- Microsoft Teams-specific functionality
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
+- Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
+- Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
+- Feature areas exposed as properties on `TeamsAgentExtension`:
+  - `Teams.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
+  - `Teams.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
+  - `Teams.Meetings` — start/end, participants join/leave
+  - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `Teams.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `Teams.FileConsent` — file upload consent accept/decline
+  - `Teams.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
+  - `Teams.Config` — config fetch/submit (bot configuration UI)
+- `TeamsInfo` static helper — `GetMeetingInfoAsync()`, `GetMeetingParticipantAsync()`, `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetPagedTeamMembersAsync()`, `GetTeamMemberAsync()`, `GetMemberAsync()`
+- `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
+- `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.
+- Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
+- Legacy `TeamsActivityHandler` in `Compat/` namespace for migration from Bot Framework SDK
 
-**Microsoft.Agents.Extensions.Teams.AI** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams.AI/`)
-- Teams AI capabilities integration
-
-**Microsoft.Agents.Extensions.SharePoint** (`src/libraries/Extensions/Microsoft.Agents.Extensions.SharePoint/`)
-- SharePoint integration
+```csharp
+// Minimal Teams agent setup
+[TeamsExtension]
+public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [QueryRoute("searchCmd")]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+        ITurnContext ctx, ITurnState state,
+        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
+        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
+}
+```
 
 ### Storage
 
@@ -137,7 +160,7 @@ public class MyAgent : AgentApplication
 1. Add services: `builder.AddAgentApplicationOptions()`, `builder.AddAgent<TAgent>()`
 2. Register storage: `builder.Services.AddSingleton<IStorage, MemoryStorage>()`
 3. Add authentication: `builder.Services.AddAgentAspNetAuthentication(builder.Configuration)`
-4. Map endpoint: `app.MapPost("/api/messages", async (request, response, adapter, agent, ct) => ...)`
+4. Map endpoints: `app.MapAgentEndpoints()` (single agent) or `app.MapAgentApplicationEndpoints()` (multiple agents via `[AgentInterface]` attribute)
 
 ### Agent-to-Agent Communication
 - Parent agent uses `IAgentHost` to communicate with other agents
@@ -190,6 +213,12 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 - `CopilotStudioClient`: Client examples for Copilot Studio integration
 - `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
 - `OTelAgent`: OpenTelemetry instrumentation example
+
+**Teams Samples** (`src/samples/Teams/`):
+- `TeamsAgent`: Teams-specific agent with conversation update handling
+- `ConversationAgent`: Proactive messaging and conversation management in Teams
+- `MessageExtensions`: Search and action-based message extension examples
+- `Compat/CompatConversationBot`, `CompatMessageExtensions`, `CompatTaskModule`: Legacy Bot Framework SDK migration examples
 
 ## Important Notes
 
