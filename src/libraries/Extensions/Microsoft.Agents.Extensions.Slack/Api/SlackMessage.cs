@@ -1,10 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api
 {
@@ -24,9 +23,11 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         [JsonPropertyName("api_app_id")]
         public string ApiAppId { get; set; }
 
-        public SlackEvent Event { get; set; }
+        [JsonPropertyName("event")]
+        public SlackEvent? Event { get; set; }
 
-       public string Type { get; set; }
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
 
         [JsonPropertyName("event_id")]
         public string EventId { get; set; }

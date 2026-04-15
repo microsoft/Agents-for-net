@@ -39,8 +39,11 @@ public class SlackAdapter : CloudAdapter
 
     protected override Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)
     {
-        // make the slack ABS available to the dev during the turn
-        turnContext.Services.Set(new SlackApi(_httpClientFactory));
+        if (turnContext.Activity.ChannelId == Channels.Slack)
+        {
+            // make the slack client available to the dev during the turn
+            turnContext.Services.Set(new SlackApi(_httpClientFactory));
+        }
 
         return base.RunPipelineAsync(turnContext, callback, cancellationToken);
     }
