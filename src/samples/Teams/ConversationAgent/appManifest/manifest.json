@@ -27,7 +27,8 @@
       "botId": "<<AAD_APP_CLIENT_ID>>",
       "scopes": [
         "personal",
-        "team"
+        "team",
+        "groupChat"
       ],
       "isNotificationOnly": false,
       "supportsCalling": false,
@@ -37,7 +38,8 @@
         {
           "scopes": [
             "personal",
-            "team"
+            "team",
+            "groupChat"
           ],
           "commands": [
             {
@@ -63,7 +65,7 @@
   ],
   "webApplicationInfo": {
     "id": "<<AAD_APP_CLIENT_ID>>",
-    "resource": "https://RscBasedStoreApp"
+    "resource": "api://<<AAD_APP_CLIENT_ID>>"
   },
   "authorization": {
     "permissions": {

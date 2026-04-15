@@ -12,6 +12,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
+using Microsoft.Teams.Api.Clients;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,7 +102,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             new CardAction(type: ActionTypes.MessageBack, title: "Message all members", text: "messageall"),
             new CardAction(type: ActionTypes.MessageBack, title: "Who am I?", text: "whoami"),
             new CardAction(type: ActionTypes.MessageBack, title: "Mention Me", text: "mentionme"),
-            new CardAction(type: ActionTypes.MessageBack, title: "Delete Card", text: "delete")
+            new CardAction(type: ActionTypes.MessageBack, title: "Delete Card", text: "delete"),
+            new CardAction(type: ActionTypes.MessageBack, title: "Send Targeted", text: "targeted")
         ]
     };
 
@@ -123,6 +125,25 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         });
 
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
+    }
+
+    [MessageRoute("targeted")]
+    public static async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var api = turnContext.Services.Get<ApiClient>();
+        var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);
+
+        foreach (var member in members)
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = $"👋 {member.Name} This is a **targeted message** - only YOU can see this!",
+                Recipient = new ChannelAccount() { Id = member.Id, Name = member.Name, Role = RoleTypes.User }
+            };
+
+            await turnContext.SendTargetedActivityAsync(activity, cancellationToken);
+        }
     }
 
     [MessageRoute("update")]

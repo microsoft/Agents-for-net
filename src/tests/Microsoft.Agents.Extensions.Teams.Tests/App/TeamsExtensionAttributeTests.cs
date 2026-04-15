@@ -47,11 +47,21 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public void Teams_Extension_IsRegistered_EagerlyAtConstruction()
+        {
+            // Extension must be registered during construction — before the Teams property
+            // is ever accessed — so that its OnBeforeTurn handler runs on every turn even
+            // when the agent uses attribute-based routing and never touches Teams directly.
+            var app = new TestTeamsExtensionAgent(CreateOptions());
+
+            Assert.Single(app.RegisteredExtensions);
+            Assert.IsType<TeamsAgentExtension>(app.RegisteredExtensions[0]);
+        }
+
+        [Fact]
         public void Teams_Property_RegistersExtensionWithApplication()
         {
             var app = new TestTeamsExtensionAgent(CreateOptions());
-
-            _ = app.Teams; // trigger lazy init
 
             Assert.Single(app.RegisteredExtensions);
             Assert.IsType<TeamsAgentExtension>(app.RegisteredExtensions[0]);

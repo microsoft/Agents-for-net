@@ -156,31 +156,35 @@ namespace Microsoft.Agents.Core.Analyzers
             sb.AppendLine($"{indent}partial class {classSymbol.Name}");
             sb.AppendLine($"{indent}{{");
 
+            // Emit an auto-property with private set for each extension.
             foreach (var extensionType in extensions)
             {
                 var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
                 var propName = DerivePropertyName(extensionType);
-                var fieldName = $"_{char.ToLowerInvariant(propName[0])}{propName.Substring(1)}";
 
-                sb.AppendLine($"{indent}    private {fullTypeName} {fieldName};");
-                sb.AppendLine();
                 sb.AppendLine($"{indent}    /// <summary>");
                 sb.AppendLine($"{indent}    /// Provides access to <see cref=\"{extensionType.ToDisplayString()}\"/> agent features.");
                 sb.AppendLine($"{indent}    /// </summary>");
-                sb.AppendLine($"{indent}    public {fullTypeName} {propName}");
-                sb.AppendLine($"{indent}    {{");
-                sb.AppendLine($"{indent}        get");
-                sb.AppendLine($"{indent}        {{");
-                sb.AppendLine($"{indent}            if ({fieldName} == null)");
-                sb.AppendLine($"{indent}            {{");
-                sb.AppendLine($"{indent}                {fieldName} = new {fullTypeName}(this);");
-                sb.AppendLine($"{indent}                RegisterExtension({fieldName}, _ => {{ }});");
-                sb.AppendLine($"{indent}            }}");
-                sb.AppendLine($"{indent}            return {fieldName};");
-                sb.AppendLine($"{indent}        }}");
-                sb.AppendLine($"{indent}    }}");
+                sb.AppendLine($"{indent}    public {fullTypeName} {propName} {{ get; private set; }}");
                 sb.AppendLine();
             }
+
+            // Emit a single ConfigureExtensions override that eagerly initializes all extensions.
+            // This is called by AgentApplication's constructor so that extension OnBeforeTurn
+            // handlers and other infrastructure are registered before the first turn arrives,
+            // regardless of whether the agent accesses the extension properties directly.
+            sb.AppendLine($"{indent}    protected override void ConfigureExtensions()");
+            sb.AppendLine($"{indent}    {{");
+            sb.AppendLine($"{indent}        base.ConfigureExtensions();");
+            foreach (var extensionType in extensions)
+            {
+                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var propName = DerivePropertyName(extensionType);
+
+                sb.AppendLine($"{indent}        {propName} = new {fullTypeName}(this);");
+                sb.AppendLine($"{indent}        RegisterExtension({propName}, _ => {{ }});");
+            }
+            sb.AppendLine($"{indent}    }}");
 
             sb.AppendLine($"{indent}}}");
         }
