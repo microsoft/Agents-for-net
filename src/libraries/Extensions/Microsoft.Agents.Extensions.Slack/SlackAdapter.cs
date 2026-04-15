@@ -34,22 +34,7 @@ public class SlackAdapter : CloudAdapter
 
     protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
     {
-/*
-        if (incomingActivity.ChannelId == "slack")
-        {
-            // Send directly to slack.
-            await DirectToSlack(outActivity, cancellationToken);
-
-            // return true so the normal ConnectorABS send doesn't happen
-            return true;
-        }
-*/
-        return false;
-    }
-
-    private static async Task DirectToSlack(IActivity activity, CancellationToken cancellationToken)
-    {
-        // Post directly to Slack API
+        return await base.HostResponseAsync(incomingActivity, outActivity, cancellationToken);
     }
 
     protected override Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)

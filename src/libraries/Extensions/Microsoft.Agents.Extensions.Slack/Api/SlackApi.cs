@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api;
@@ -26,7 +27,7 @@ public class SlackApi
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<SlackResponse> CallAsync(string method, object? options = null, string token = "")
+    public async Task<SlackResponse> CallAsync(string method, object? options = null, string token = "", CancellationToken cancellationToken = default)
     {
         try
         {
@@ -40,8 +41,8 @@ public class SlackApi
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             
             using var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.SendAsync(request);
-            var text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            var text = await response.Content.ReadAsStringAsync(cancellationToken);
 
             SlackResponse data;
             try

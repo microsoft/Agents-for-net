@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using EmptyAgent;
+using SlackAgent;
 using Microsoft.Agents.Extensions.Slack;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;

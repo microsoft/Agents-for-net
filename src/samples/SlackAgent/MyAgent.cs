@@ -7,8 +7,9 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Agents.Extensions.Slack.Api;
 
-namespace EmptyAgent;
+namespace SlackAgent;
 
 [Agent(name: "MyAgent", description: "Echo user messages back", version: "1.0")]
 public class MyAgent : AgentApplication
@@ -32,6 +33,14 @@ public class MyAgent : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var slackApi = turnContext.Services.Get<SlackApi>();
+        var message = new 
+        { 
+            channel = channelData.SlackMessage.Event.Channel, 
+            text = $"You said: {turnContext.Activity.Text}" 
+        };
+
+        await slackApi.CallAsync("chat.postMessage", message, channelData.ApiToken,cancellationToken);
     }
 }
