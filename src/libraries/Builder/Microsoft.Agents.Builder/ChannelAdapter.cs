@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder
         /// initiated by a call to <see cref="ContinueConversationAsync(string, ConversationReference, AgentCallbackHandler, CancellationToken)"/>
         /// (proactive messaging), the callback method is the callback method that was provided in the call.</para>
         /// </remarks>
-        protected async Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        protected virtual async Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 

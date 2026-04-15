@@ -11,17 +11,22 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api;
 
-public static class SlackApi
+public class SlackApi
 {
     private const string SlackApiBase = "https://slack.com/api";
-    private static readonly HttpClient HttpClient = new();
+    private IHttpClientFactory _httpClientFactory;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static async Task<SlackResponse> CallAsync(string method, object? options = null, string token = "")
+    public SlackApi(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
+
+    public async Task<SlackResponse> CallAsync(string method, object? options = null, string token = "")
     {
         try
         {
@@ -33,8 +38,9 @@ public static class SlackApi
                 Content = content
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await HttpClient.SendAsync(request);
+            
+            using var httpClient = _httpClientFactory.CreateClient();
+            var response = await httpClient.SendAsync(request);
             var text = await response.Content.ReadAsStringAsync();
 
             SlackResponse data;
