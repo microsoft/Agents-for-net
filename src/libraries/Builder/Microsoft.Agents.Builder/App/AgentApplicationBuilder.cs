@@ -88,6 +88,18 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
+        /// Configures streaming responses for agentic (skill) requests.
+        /// Default state is false (streaming disabled for agentic requests).
+        /// </summary>
+        /// <param name="enableAgenticStreaming">Whether to enable streaming for agentic requests.</param>
+        /// <returns>The ApplicationBuilder instance.</returns>
+        public AgentApplicationBuilder SetEnableAgenticStreaming(bool enableAgenticStreaming)
+        {
+            Options.EnableAgenticStreaming = enableAgenticStreaming;
+            return this;
+        }
+
+        /// <summary>
         /// Configures the processing of file download requests.
         /// This allows the application to handle file downloads from user messages.
         /// The file downloaders are used to process files that are sent by users in the chat.

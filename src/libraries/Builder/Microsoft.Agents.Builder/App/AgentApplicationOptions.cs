@@ -155,6 +155,7 @@ namespace Microsoft.Agents.Builder.App
             }
 
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
+            EnableAgenticStreaming = section.GetValue<bool>(nameof(EnableAgenticStreaming), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), true);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), true);
 
@@ -233,6 +234,12 @@ namespace Microsoft.Agents.Builder.App
         /// the request. Defaults to true.
         /// </summary>
         public bool StartTypingTimer { get; set; } = false;
+
+        /// <summary>
+        /// Optional. If true, streaming responses will be enabled for agentic (skill) requests
+        /// on channels that support streaming (e.g., Teams). Defaults to false.
+        /// </summary>
+        public bool EnableAgenticStreaming { get; set; } = false;
 
         /// <summary>
         /// Optional. Options used to enable user authorization for the application.

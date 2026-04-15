@@ -555,6 +555,24 @@ namespace Microsoft.Agents.Builder
             return _timer != null;
         }
 
+        /// <summary>
+        /// Re-enables streaming for agentic requests on Teams.
+        /// Must be called before streaming has started.
+        /// </summary>
+        internal void EnableAgenticStreaming()
+        {
+            if (IsStreamStarted() || _ended)
+            {
+                return;
+            }
+
+            if (_isTeamsChannel)
+            {
+                Interval = 1000;
+                IsStreamingChannel = true;
+            }
+        }
+
         private void StartStream(int interval = 0)
         {
             if (_timer == null && IsStreamingChannel)

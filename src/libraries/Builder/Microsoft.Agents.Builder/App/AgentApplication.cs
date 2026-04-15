@@ -726,6 +726,14 @@ namespace Microsoft.Agents.Builder.App
 
             try
             {
+                // Enable streaming for agentic requests if configured
+                if (Options.EnableAgenticStreaming
+                    && AgenticAuthorization.IsAgenticRequest(turnContext)
+                    && turnContext.StreamingResponse is StreamingResponse streamingResponse)
+                {
+                    streamingResponse.EnableAgenticStreaming();
+                }
+
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {

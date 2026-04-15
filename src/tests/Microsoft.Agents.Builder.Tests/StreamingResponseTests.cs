@@ -486,6 +486,94 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public void TeamsChannel_AgenticRequest_EnableAgenticStreaming_IsStreamingChannel()
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams,
+                Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
+            };
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, activity);
+
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+
+            var streaming = (StreamingResponse)context.StreamingResponse;
+            streaming.EnableAgenticStreaming();
+
+            Assert.True(context.StreamingResponse.IsStreamingChannel);
+            Assert.Equal(1000, context.StreamingResponse.Interval);
+        }
+
+        [Fact]
+        public void TeamsChannel_NonAgenticRequest_UnchangedByEnableAgenticStreaming()
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            };
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, activity);
+
+            // Already streaming for non-agentic Teams
+            Assert.True(context.StreamingResponse.IsStreamingChannel);
+            Assert.Equal(1000, context.StreamingResponse.Interval);
+
+            var streaming = (StreamingResponse)context.StreamingResponse;
+            streaming.EnableAgenticStreaming();
+
+            // Unchanged
+            Assert.True(context.StreamingResponse.IsStreamingChannel);
+            Assert.Equal(1000, context.StreamingResponse.Interval);
+        }
+
+        [Fact]
+        public void NonTeamsChannel_AgenticRequest_EnableAgenticStreaming_NoEffect()
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Test,
+                Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
+            };
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, activity);
+
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+
+            var streaming = (StreamingResponse)context.StreamingResponse;
+            streaming.EnableAgenticStreaming();
+
+            // Non-Teams: no effect
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+        }
+
+        [Fact]
+        public async Task EnableAgenticStreaming_AfterStreamStarted_IsNoOp()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams,
+                Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
+            };
+            var context = new TurnContext(adapter.Object, activity);
+
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+
+            // Queue a chunk (non-streaming, so it buffers but doesn't start timer)
+            context.StreamingResponse.QueueTextChunk("test");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var streaming = (StreamingResponse)context.StreamingResponse;
+            streaming.EnableAgenticStreaming();
+
+            // Should remain non-streaming since stream already ended
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+        }
+
+        [Fact]
         public async Task ResetAsync_AfterStream_AllowsStreamToBeReused()
         {
             var responses = new List<IActivity>();
