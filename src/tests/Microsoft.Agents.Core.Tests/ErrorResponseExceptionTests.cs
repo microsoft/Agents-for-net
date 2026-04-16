@@ -55,11 +55,16 @@ namespace Microsoft.Agents.Core.Tests
             Assert.False(exception.Data.Contains("Cookie"), "Cookie header should be filtered");
 
             // Non-sensitive headers should be in exception data
-            // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-ID"
+            // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-Id"
             Assert.True(exception.Data.Contains("X-Correlation-Id"), "X-Correlation-Id header should be present");
             Assert.Equal("correlation-123", exception.Data["X-Correlation-Id"]);
-            Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-ID header should be present (normalized from X-Request-Id)");
-            Assert.Equal("request-456", exception.Data["X-Request-Id"]);
+#if NETFRAMEWORK
+                Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-Id header should be present (normalized from X-Request-Id)");
+                Assert.Equal("request-456", exception.Data["X-Request-Id"]);
+#else
+            Assert.True(exception.Data.Contains("X-Request-ID"), "X-Request-Id header should be present (normalized from X-Request-Id)");
+            Assert.Equal("request-456", exception.Data["X-Request-ID"]);
+#endif
             Assert.True(exception.Data.Contains("Cache-Control"), "Cache-Control header should be present");
         }
 
@@ -137,11 +142,16 @@ namespace Microsoft.Agents.Core.Tests
 
             // Assert
             // All non-sensitive headers should be present
-            // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-ID"
+            // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-Id"
             Assert.True(exception.Data.Contains("X-Correlation-Id"), "X-Correlation-Id should be present");
             Assert.Equal("correlation-789", exception.Data["X-Correlation-Id"]);
-            Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-Id should be present (normalized from X-Request-Id)");
-            Assert.Equal("request-abc", exception.Data["X-Request-Id"]);
+#if NETFRAMEWORK
+                Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-Id should be present (normalized from X-Request-Id)");
+                Assert.Equal("request-abc", exception.Data["X-Request-Id"]);
+#else
+            Assert.True(exception.Data.Contains("X-Request-ID"), "X-Request-Id should be present (normalized from X-Request-Id)");
+            Assert.Equal("request-abc", exception.Data["X-Request-ID"]);
+#endif
             Assert.True(exception.Data.Contains("User-Agent"), "User-Agent should be present");
             Assert.True(exception.Data.Contains("Accept"), "Accept should be present");
         }
