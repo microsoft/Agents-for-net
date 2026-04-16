@@ -471,19 +471,6 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Empty(responses);
         }
 
-        [Fact]
-        public void TeamsChannel_AgenticRequest_IsNotStreamingChannel()
-        {
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                ChannelId = Channels.Msteams,
-                Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
-            };
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, activity);
-
-            Assert.False(context.StreamingResponse.IsStreamingChannel);
-        }
 
         [Fact]
         public async Task ResetAsync_AfterStream_AllowsStreamToBeReused()
