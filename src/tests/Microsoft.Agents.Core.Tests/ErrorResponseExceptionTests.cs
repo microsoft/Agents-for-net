@@ -58,8 +58,8 @@ namespace Microsoft.Agents.Core.Tests
             // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-ID"
             Assert.True(exception.Data.Contains("X-Correlation-Id"), "X-Correlation-Id header should be present");
             Assert.Equal("correlation-123", exception.Data["X-Correlation-Id"]);
-            Assert.True(exception.Data.Contains("X-Request-ID"), "X-Request-ID header should be present (normalized from X-Request-Id)");
-            Assert.Equal("request-456", exception.Data["X-Request-ID"]);
+            Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-ID header should be present (normalized from X-Request-Id)");
+            Assert.Equal("request-456", exception.Data["X-Request-Id"]);
             Assert.True(exception.Data.Contains("Cache-Control"), "Cache-Control header should be present");
         }
 
@@ -140,8 +140,8 @@ namespace Microsoft.Agents.Core.Tests
             // Note: HttpHeaders normalizes "X-Request-Id" to "X-Request-ID"
             Assert.True(exception.Data.Contains("X-Correlation-Id"), "X-Correlation-Id should be present");
             Assert.Equal("correlation-789", exception.Data["X-Correlation-Id"]);
-            Assert.True(exception.Data.Contains("X-Request-ID"), "X-Request-ID should be present (normalized from X-Request-Id)");
-            Assert.Equal("request-abc", exception.Data["X-Request-ID"]);
+            Assert.True(exception.Data.Contains("X-Request-Id"), "X-Request-ID should be present (normalized from X-Request-Id)");
+            Assert.Equal("request-abc", exception.Data["X-Request-Id"]);
             Assert.True(exception.Data.Contains("User-Agent"), "User-Agent should be present");
             Assert.True(exception.Data.Contains("Accept"), "Accept should be present");
         }
