@@ -14,6 +14,8 @@ using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
 using Microsoft.Teams.Api.Clients;
 using System;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -138,7 +140,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             var activity = new Activity
             {
                 Type = ActivityTypes.Message,
-                Text = $"👋 {member.Name} This is a **targeted message** - only YOU can see this!",
+                Text = $"{member.Name}, this is a **targeted message** - only you can see this.",
                 Recipient = new ChannelAccount() { Id = member.Id, Name = member.Name, Role = RoleTypes.User }
             };
 
@@ -211,8 +213,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
                 var createOptions = CreateConversationOptionsBuilder
                     .Create(turnContext.Identity.GetIncomingAudience(), Channels.Msteams, turnContext.Activity.ServiceUrl)
                     .WithUser(teamMember.ToCoreChannelAccount())
-                    .WithTenantId(turnContext.Activity.Conversation.Id)
-                    .IsGroup(true)
+                    .WithTenantId(turnContext.Activity.Conversation.TenantId)
+                    .IsGroup(false)
                     .Build();
 
                 await Proactive.CreateConversationAsync(
