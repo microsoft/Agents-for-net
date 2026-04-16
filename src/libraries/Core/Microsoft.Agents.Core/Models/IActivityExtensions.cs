@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
@@ -152,14 +153,26 @@ namespace Microsoft.Agents.Core.Models
         /// adding the targeted treatment. Use this extension to indicate that an activity should be processed or
         /// interpreted as targeted in downstream workflows.</remarks>
         /// <param name="activity">The activity to be marked as targeted. Cannot be null.</param>
-        public static IActivity MakeTargetedActivity(this IActivity activity)
+        /// <param name="user">The user to be set as the recipient.  This replaces Activity.Recipient if provided.</param>
+        public static IActivity MakeTargetedActivity(this IActivity activity, ChannelAccount user = null)
         {
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
             if (activity.IsTargetedActivity())
             {
                 return activity;
             }
+
             activity.Entities ??= [];
             activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
+
+            if (activity.Recipient == null && user == null)
+            {
+                throw new InvalidOperationException("Cannot mark activity as targeted because both the Activity.Recipient and `user` argument are null. At least one must be provided.");
+            }
+
+            activity.Recipient = user ?? activity.Recipient;
+
             return activity;
         }
     }

@@ -21,16 +21,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivityAsync_SentActivityHasTargetedTreatment()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" };
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
 
-            // Act
             await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert
             Assert.NotNull(captured);
             var sent = Assert.Single(captured);
             var treatment = Assert.Single(sent.Entities.OfType<ActivityTreatment>());
@@ -40,36 +37,32 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivityAsync_OriginalActivityIsNotModified()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Text = "original" };
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "original", Recipient = TargetUser };
 
-            // Act
             await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert — the original's Entities should not contain any targeted treatment
-            // (Clone reads the property which may lazy-init Entities to [], so we check for no treatment)
+            // The original's Entities should not contain any targeted treatment
             Assert.DoesNotContain(activity.Entities ?? [], e => e is ActivityTreatment);
         }
 
         [Fact]
         public async Task SendTargetedActivityAsync_OriginalActivityWithEntitiesIsNotModified()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
             var originalEntity = new Entity { Type = "custom" };
             var activity = new Activity
             {
                 Type = ActivityTypes.Message,
+                Recipient = TargetUser,
                 Entities = [originalEntity]
             };
 
-            // Act
             await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert — original still has exactly one entity
+            // Original still has exactly one entity
             Assert.Single(activity.Entities);
             Assert.Same(originalEntity, activity.Entities[0]);
         }
@@ -77,20 +70,19 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivityAsync_PreservesExistingEntitiesOnClone()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
             var activity = new Activity
             {
                 Type = ActivityTypes.Message,
+                Recipient = TargetUser,
                 Entities = [new Entity { Type = "custom" }]
             };
 
-            // Act
             await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert — sent activity has the original entity plus the targeted treatment
+            // Sent activity has the original entity plus the targeted treatment
             Assert.NotNull(captured);
             var sent = Assert.Single(captured);
             Assert.Equal(2, sent.Entities.Count);
@@ -102,15 +94,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivityAsync_ReturnsResourceResponse()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Id = "msg-1" };
+            var activity = new Activity { Type = ActivityTypes.Message, Id = "msg-1", Recipient = TargetUser };
 
-            // Act
             var response = await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert — SimpleAdapter echoes the Id back
+            // SimpleAdapter echoes the Id back
             Assert.NotNull(response);
             Assert.Equal("msg-1", response.Id);
         }
@@ -118,16 +108,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivityAsync_SentActivityIsAClone()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" };
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
 
-            // Act
             await turnContext.SendTargetedActivityAsync(activity);
 
-            // Assert — sent activity is a different object instance
+            // Sent activity is a different object instance from the original
             Assert.NotNull(captured);
             Assert.NotSame(activity, captured[0]);
         }
@@ -137,21 +125,18 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_AllSentActivitiesHaveTargetedTreatment()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Text = "msg1" },
-                new Activity { Type = ActivityTypes.Message, Text = "msg2" },
-                new Activity { Type = ActivityTypes.Message, Text = "msg3" },
+                new Activity { Type = ActivityTypes.Message, Text = "msg1", Recipient = TargetUser },
+                new Activity { Type = ActivityTypes.Message, Text = "msg2", Recipient = TargetUser },
+                new Activity { Type = ActivityTypes.Message, Text = "msg3", Recipient = TargetUser },
             };
 
-            // Act
             await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert — every sent activity has the targeted treatment
             Assert.NotNull(captured);
             Assert.Equal(3, captured.Length);
             foreach (var sent in captured)
@@ -164,40 +149,35 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_OriginalActivitiesAreNotModified()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Text = "a" },
-                new Activity { Type = ActivityTypes.Message, Text = "b" },
+                new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
+                new Activity { Type = ActivityTypes.Message, Text = "b", Recipient = TargetUser },
             };
 
-            // Act
             await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert — originals should not contain any targeted treatment
-            // (Clone reads the property which may lazy-init Entities to [], so we check for no treatment)
+            // Originals should not contain any targeted treatment
             Assert.All(activities, a => Assert.DoesNotContain(a.Entities ?? [], e => e is ActivityTreatment));
         }
 
         [Fact]
         public async Task SendTargetedActivitiesAsync_SentActivitiesAreClones()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Text = "a" },
-                new Activity { Type = ActivityTypes.Message, Text = "b" },
+                new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
+                new Activity { Type = ActivityTypes.Message, Text = "b", Recipient = TargetUser },
             };
 
-            // Act
             await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert — sent activities are different object instances
+            // Sent activities are different object instances from the originals
             Assert.NotNull(captured);
             Assert.DoesNotContain(captured, sent => activities.Contains(sent));
         }
@@ -205,19 +185,17 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_ReturnsResourceResponseForEach()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Id = "id-1" },
-                new Activity { Type = ActivityTypes.Message, Id = "id-2" },
+                new Activity { Type = ActivityTypes.Message, Id = "id-1", Recipient = TargetUser },
+                new Activity { Type = ActivityTypes.Message, Id = "id-2", Recipient = TargetUser },
             };
 
-            // Act
             var responses = await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert — SimpleAdapter echoes each Id
+            // SimpleAdapter echoes each Id
             Assert.Equal(2, responses.Length);
             Assert.Contains(responses, r => r.Id == "id-1");
             Assert.Contains(responses, r => r.Id == "id-2");
@@ -226,7 +204,6 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_PreservesExistingEntitiesOnClones()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
@@ -235,14 +212,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 new Activity
                 {
                     Type = ActivityTypes.Message,
+                    Recipient = TargetUser,
                     Entities = [new Entity { Type = "existing" }]
                 },
             };
 
-            // Act
             await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert — sent activity has the pre-existing entity plus the targeted treatment
+            // Sent activity has the pre-existing entity plus the targeted treatment
             Assert.NotNull(captured);
             var sent = Assert.Single(captured);
             Assert.Equal(2, sent.Entities.Count);
@@ -254,19 +231,16 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_SingleActivity_HasTargetedTreatment()
         {
-            // Arrange
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Text = "solo" }
+                new Activity { Type = ActivityTypes.Message, Text = "solo", Recipient = TargetUser }
             };
 
-            // Act
             await turnContext.SendTargetedActivitiesAsync(activities);
 
-            // Assert
             Assert.NotNull(captured);
             var sent = Assert.Single(captured);
             Assert.Single(sent.Entities.OfType<ActivityTreatment>());
@@ -275,20 +249,49 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         [Fact]
         public async Task SendTargetedActivitiesAsync_SupportsCancellationToken()
         {
-            // Arrange
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
             var cts = new CancellationTokenSource();
             var activities = new IActivity[]
             {
-                new Activity { Type = ActivityTypes.Message, Text = "msg" }
+                new Activity { Type = ActivityTypes.Message, Text = "msg", Recipient = TargetUser }
             };
 
-            // Act & Assert — should not throw
+            // Should not throw
             await turnContext.SendTargetedActivitiesAsync(activities, cts.Token);
         }
 
+        // ── Guard: missing Recipient ──────────────────────────────────────────
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" }; // no Recipient
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                turnContext.SendTargetedActivityAsync(activity));
+        }
+
+        [Fact]
+        public async Task SendTargetedActivitiesAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+            var activities = new IActivity[]
+            {
+                new Activity { Type = ActivityTypes.Message, Text = "hello" } // no Recipient
+            };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                turnContext.SendTargetedActivitiesAsync(activities));
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        /// <summary>The user being targeted in outgoing activities.</summary>
+        private static readonly ChannelAccount TargetUser = new() { Id = "fromId", Name = "Target User", Role = RoleTypes.User };
 
         private static ITurnContext CreateTurnContext(ChannelAdapter adapter)
         {
