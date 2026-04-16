@@ -18,7 +18,7 @@ builder.AddAgentApplicationOptions();
 
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
-builder.AddAgent<MyAgent, SlackAdapter>();
+builder.AddAgent<MyAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
