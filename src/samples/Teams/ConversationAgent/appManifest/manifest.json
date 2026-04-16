@@ -43,15 +43,15 @@
           ],
           "commands": [
             {
-              "title": "MentionMe",
+              "title": "mentionme",
               "description": "Sends message with @mention of the sender"
             },
             {
-              "title": "Show Welcome",
-              "description": "Shows the welcome card"
+              "title": "whoami",
+              "description": "Who am I?"
             },
             {
-              "title": "MessageAllMembers",
+              "title": "messageall",
               "description": "Send 1 to 1 message to all members of the current conversation"
             }
           ]
