@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// </remarks>
         public void SetError(Exception ex)
         {
-            if (_telemetryActivity == null)
+            if (_telemetryActivity == null || _disposed)
             {
                 return;
             }
@@ -171,8 +171,7 @@ namespace Microsoft.Agents.Core.Telemetry
             }
             catch (Exception ex)
             {
-                if (!_disposed)
-                    SetError(ex);
+                SetError(ex);
                 throw;
             }
         }

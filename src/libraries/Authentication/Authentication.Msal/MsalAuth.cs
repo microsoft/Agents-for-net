@@ -4,6 +4,7 @@
 using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
+using Microsoft.Agents.Authentication.Telemetry.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
@@ -89,6 +90,8 @@ namespace Microsoft.Agents.Authentication.Msal
             Uri instanceUri = new(resourceUrl);
             var localScopes = ResolveScopesList(instanceUri, scopes);
 
+            using var telemetryScope = new ScopeGetAccessToken(localScopes, _connectionSettings.AuthType.ToString());
+
             // Get or create existing token. 
             var cacheEntry = CacheGet(instanceUri, forceRefresh);
             if (cacheEntry != null)
@@ -144,6 +147,7 @@ namespace Microsoft.Agents.Authentication.Msal
         #region IOBOExchange
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
+            using var telemetryScope = new ScopeAcquireTokenOnBehalfOf(scopes);
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
@@ -183,6 +187,8 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
+            using var telemetryScope = new ScopeGetAgenticInstanceToken(agentAppInstanceId);
+
             var agentTokenResult = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             var instanceApp = ConfidentialClientApplicationBuilder
@@ -206,6 +212,8 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
+
+            using var telemetryScope = new ScopeGetAgenticUserToken(agentAppInstanceId, agenticUserId, scopes);
 
             var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
