@@ -4,8 +4,10 @@
 #nullable disable
 
 using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Connector.Telemetry.Scopes;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -46,6 +48,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrWhiteSpace(attachmentId, nameof(attachmentId));
 
             var request = RestRequest.Get(string.Format(RestApiPaths.AttachmentInfo, HttpUtility.UrlEncode(attachmentId)));
+
+            using var telemetryScope = new ScopeGetAttachmentInfo(attachmentId);
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -72,6 +76,8 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 throw new ArgumentNullException(nameof(viewId));
             }
+
+            using var telemetryScope = new ScopeGetAttachment(attachmentId, viewId);
 
             // Special case: requires Accept: application/octet-stream (not the default application/json)
             // and returns binary content, not a JSON-deserializable object.

@@ -6,7 +6,7 @@ using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Builder.Tests.Telemetry
+namespace Microsoft.Agents.Builder.Testing
 {
     /// <summary>
     /// Base class for telemetry scope tests. Registers an <see cref="System.Diagnostics.ActivityListener"/>
