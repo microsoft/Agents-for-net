@@ -49,6 +49,32 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             }
             """;
 
+        // Two extensions whose type names use the "AgentExtension" suffix, so property names
+        // derive to "Teams" and "Slack" — mirrors the real [TeamsExtension] + future [SlackExtension]
+        // scenario.  Used across all multiple-attribute focused tests below.
+        private const string TwoExtensionsSource = """
+            namespace MyApp
+            {
+                public class TeamsAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                {
+                    public TeamsAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                }
+                public class SlackAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                {
+                    public SlackAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                }
+
+                public sealed class TeamsExtensionAttribute
+                    : Microsoft.Agents.Builder.App.AgentExtensionAttribute<TeamsAgentExtension> { }
+                public sealed class SlackExtensionAttribute
+                    : Microsoft.Agents.Builder.App.AgentExtensionAttribute<SlackAgentExtension> { }
+
+                [TeamsExtension]
+                [SlackExtension]
+                public partial class MyAgent : Microsoft.Agents.Builder.App.AgentApplication { }
+            }
+            """;
+
         // ---------------------------------------------------------------------------
         // Helpers
         // ---------------------------------------------------------------------------
@@ -171,6 +197,137 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             // Both extensions initialized within it.
             Assert.Contains("new global::MyApp.ExtA(this)", text);
             Assert.Contains("new global::MyApp.ExtB(this)", text);
+        }
+
+        // ---------------------------------------------------------------------------
+        // Tests — multiple attributes (high-confidence coverage)
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public void MultipleExtensions_GeneratesPropertyForEachExtension()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            Assert.Contains("public global::MyApp.TeamsAgentExtension Teams { get; private set; }", text);
+            Assert.Contains("public global::MyApp.SlackAgentExtension Slack { get; private set; }", text);
+        }
+
+        [Fact]
+        public void MultipleExtensions_ConfigureExtensions_CallsBaseExactlyOnce()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            Assert.Single(text.Split('\n'), l => l.Contains("base.ConfigureExtensions()"));
+        }
+
+        [Fact]
+        public void MultipleExtensions_ConfigureExtensions_InitializesEachExtension()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            Assert.Contains("Teams = new global::MyApp.TeamsAgentExtension(this);", text);
+            Assert.Contains("Slack = new global::MyApp.SlackAgentExtension(this);", text);
+        }
+
+        [Fact]
+        public void MultipleExtensions_ConfigureExtensions_RegistersEachExtension()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            Assert.Contains("RegisterExtension(Teams, _ => { });", text);
+            Assert.Contains("RegisterExtension(Slack, _ => { });", text);
+        }
+
+        [Fact]
+        public void MultipleExtensions_ConfigureExtensions_InitializationPrecedesRegistration()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            // For each extension the assignment must appear before its RegisterExtension call.
+            var teamsInit = text.IndexOf("Teams = new global::MyApp.TeamsAgentExtension(this);", StringComparison.Ordinal);
+            var teamsReg  = text.IndexOf("RegisterExtension(Teams,", StringComparison.Ordinal);
+            var slackInit = text.IndexOf("Slack = new global::MyApp.SlackAgentExtension(this);", StringComparison.Ordinal);
+            var slackReg  = text.IndexOf("RegisterExtension(Slack,", StringComparison.Ordinal);
+
+            Assert.True(teamsInit >= 0 && teamsReg >= 0, "Teams init/register statements missing");
+            Assert.True(slackInit >= 0 && slackReg >= 0, "Slack init/register statements missing");
+            Assert.True(teamsInit < teamsReg, "Teams must be initialized before it is registered");
+            Assert.True(slackInit < slackReg, "Slack must be initialized before it is registered");
+        }
+
+        [Fact]
+        public void MultipleExtensions_ConfigureExtensions_BaseCalledBeforeExtensionInit()
+        {
+            var text = GetSingleGeneratedSource(StubSource, TwoExtensionsSource);
+
+            var baseCall  = text.IndexOf("base.ConfigureExtensions()", StringComparison.Ordinal);
+            var teamsInit = text.IndexOf("Teams = new global::MyApp.TeamsAgentExtension(this);", StringComparison.Ordinal);
+            var slackInit = text.IndexOf("Slack = new global::MyApp.SlackAgentExtension(this);", StringComparison.Ordinal);
+
+            Assert.True(baseCall < teamsInit, "base.ConfigureExtensions() must precede Teams init");
+            Assert.True(baseCall < slackInit, "base.ConfigureExtensions() must precede Slack init");
+        }
+
+        [Fact]
+        public void MultipleExtensions_ProducesNoDiagnostics()
+        {
+            var (driver, _) = RunGenerator(StubSource, TwoExtensionsSource);
+            Assert.Empty(driver.GetRunResult().Diagnostics);
+        }
+
+        [Fact]
+        public void ThreeExtensions_GeneratesPropertyForEachAndRegistersAll()
+        {
+            var source = """
+                namespace MyApp
+                {
+                    public class TeamsAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                    {
+                        public TeamsAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                    }
+                    public class SlackAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                    {
+                        public SlackAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                    }
+                    public class SharePointAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                    {
+                        public SharePointAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                    }
+
+                    public sealed class TeamsExtensionAttribute
+                        : Microsoft.Agents.Builder.App.AgentExtensionAttribute<TeamsAgentExtension> { }
+                    public sealed class SlackExtensionAttribute
+                        : Microsoft.Agents.Builder.App.AgentExtensionAttribute<SlackAgentExtension> { }
+                    public sealed class SharePointExtensionAttribute
+                        : Microsoft.Agents.Builder.App.AgentExtensionAttribute<SharePointAgentExtension> { }
+
+                    [TeamsExtension]
+                    [SlackExtension]
+                    [SharePointExtension]
+                    public partial class MyAgent : Microsoft.Agents.Builder.App.AgentApplication { }
+                }
+                """;
+
+            var text = GetSingleGeneratedSource(StubSource, source);
+
+            // All three properties declared.
+            Assert.Contains("public global::MyApp.TeamsAgentExtension Teams { get; private set; }", text);
+            Assert.Contains("public global::MyApp.SlackAgentExtension Slack { get; private set; }", text);
+            Assert.Contains("public global::MyApp.SharePointAgentExtension SharePoint { get; private set; }", text);
+
+            // All three initialized.
+            Assert.Contains("Teams = new global::MyApp.TeamsAgentExtension(this);", text);
+            Assert.Contains("Slack = new global::MyApp.SlackAgentExtension(this);", text);
+            Assert.Contains("SharePoint = new global::MyApp.SharePointAgentExtension(this);", text);
+
+            // All three registered.
+            Assert.Contains("RegisterExtension(Teams, _ => { });", text);
+            Assert.Contains("RegisterExtension(Slack, _ => { });", text);
+            Assert.Contains("RegisterExtension(SharePoint, _ => { });", text);
+
+            // Still exactly one ConfigureExtensions override and one base call.
+            Assert.Single(text.Split('\n'), l => l.Contains("protected override void ConfigureExtensions()"));
+            Assert.Single(text.Split('\n'), l => l.Contains("base.ConfigureExtensions()"));
         }
 
         [Fact]
