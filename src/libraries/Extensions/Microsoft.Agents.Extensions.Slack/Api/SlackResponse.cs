@@ -22,5 +22,5 @@ public class SlackResponse
     public string? Ts { get; set; }
 
     [JsonExtensionData]
-    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    public Dictionary<string, JsonElement>? Properties { get; set; }
 }

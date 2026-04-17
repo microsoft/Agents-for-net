@@ -8,7 +8,28 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Extensions.Slack.Api
 {
-    // https://docs.slack.dev/apis/events-api/#callback-field
+    /// <summary>
+    /// Represents the outer envelope for a Slack Events API callback, containing metadata and the inner event payload
+    /// as received from Slack.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This class models the top-level structure of a Slack Events API request, including workspace,
+    /// application, and authorization context, as well as the event-specific content. Use the strongly-typed properties
+    /// for common envelope fields and the `event_content` property for the inner event payload. Additional or unmodeled
+    /// fields are accessible via the `Properties` dictionary. For more information on the envelope structure, see
+    /// https://docs.slack.dev/apis/events-api/#callback-field.
+    /// </para>
+    /// <para>
+    /// Use the <see cref="Get{T}"/> and <see cref="TryGet{T}"/> methods to access nested fields within the inner 
+    /// event content using dot-notation paths.  The path matches the JSON structure of the Slack event payload.  For example:
+    /// <code>
+    /// var envelope = turnContext.Activity.GetChannelData&lt;SlackChannelData&gt;().EventEnvelope;
+    /// var eventType = envelope.Get&lt;string&gt;("event.type"); // Access top-level event type
+    /// var channel = envelope.Get&lt;string&gt;("event.channel"); // Access channel field within the event payload
+    /// </code>
+    /// </para>
+    /// </remarks>
     public class EventEnvelope
     {
         /// <summary>Deprecated verification token. Slack recommends signed secrets instead.</summary>

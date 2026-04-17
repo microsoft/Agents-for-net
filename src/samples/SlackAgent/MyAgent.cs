@@ -12,6 +12,7 @@ using Microsoft.Agents.Extensions.Slack.Api;
 
 namespace SlackAgent;
 
+//[SlackExtension] // Uncomment this line once the Teams Extension changes are merged.
 [Agent(name: "MyAgent", description: "Echo user messages back on slack", version: "1.0")]
 public class MyAgent : AgentApplication
 {
@@ -19,6 +20,7 @@ public class MyAgent : AgentApplication
 
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
+        // Remove these lines and uncomment the [SlackExtension] attribute on this class once the Teams Extension changes are merged.
         Slack = new SlackAgentExtension(this);
         RegisterExtension(Slack, slack =>
         {
