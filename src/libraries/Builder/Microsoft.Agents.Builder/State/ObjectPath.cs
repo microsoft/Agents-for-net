@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder.State
     /// <summary>
     /// Helper methods for working with dynamic json objects.
     /// </summary>
-    internal static class ObjectPath
+    public static class ObjectPath
     {
         private static readonly JsonSerializerOptions _serializerOptions = new()
         {
@@ -249,6 +249,10 @@ namespace Microsoft.Agents.Builder.State
                     {
                         dict.Remove(property);
                     }
+                    else if (current is IDictionary<string, JsonElement> jeDict)
+                    {
+                        jeDict.Remove(property);
+                    }
                     else
                     {
                         current.Remove(property);
@@ -271,6 +275,13 @@ namespace Microsoft.Agents.Builder.State
             if (obj is IDictionary<string, object> dict)
             {
                 foreach (var entry in dict)
+                {
+                    action(entry.Key, entry.Value);
+                }
+            }
+            else if (obj is IDictionary<string, JsonElement> jeDict)
+            {
+                foreach (var entry in jeDict)
                 {
                     action(entry.Key, entry.Value);
                 }
@@ -316,6 +327,13 @@ namespace Microsoft.Agents.Builder.State
                     yield return entry.Key;
                 }
             }
+            else if (obj is IDictionary<string, JsonElement> jeDict)
+            {
+                foreach (var entry in jeDict)
+                {
+                    yield return entry.Key;
+                }
+            }
             else if (obj is JsonObject jobj)
             {
                 foreach (var property in jobj)
@@ -348,6 +366,11 @@ namespace Microsoft.Agents.Builder.State
             if (obj is IDictionary<string, object> dict)
             {
                 return dict.ContainsKey(name);
+            }
+
+            if (obj is IDictionary<string, JsonElement> jeDict)
+            {
+                return jeDict.ContainsKey(name);
             }
 
             if (obj is JsonObject jobj)
@@ -627,6 +650,13 @@ namespace Microsoft.Agents.Builder.State
             {
                 if (segment is int index)
                 {
+                    // Guard against out-of-range access so callers receive default rather than an exception.
+                    if (current is JsonArray ja && (index < 0 || index >= ja.Count))
+                    {
+                        current = null;
+                        return false;
+                    }
+
                     current = current[index];
                 }
                 else
@@ -684,6 +714,18 @@ namespace Microsoft.Agents.Builder.State
                 }
 
                 return null;
+            }
+
+            if (obj is IDictionary<string, JsonElement> jeDict)
+            {
+                // Convert JsonElement → JsonNode so subsequent navigation steps work uniformly.
+                if (jeDict.TryGetValue(property, out var element))
+                {
+                    return element.Deserialize<JsonNode>();
+                }
+
+                var ciKey = jeDict.Keys.FirstOrDefault(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase));
+                return ciKey != null ? jeDict[ciKey].Deserialize<JsonNode>() : null;
             }
 
             if (obj is JsonObject jobj)
@@ -784,6 +826,22 @@ namespace Microsoft.Agents.Builder.State
                 }
 
                 dict[key] = value;
+                return;
+            }
+
+            if (obj is IDictionary<string, JsonElement> jeDict)
+            {
+                var key = property;
+                if (!jeDict.ContainsKey(property))
+                {
+                    var ciKey = jeDict.Keys.FirstOrDefault(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase));
+                    if (ciKey != null)
+                    {
+                        key = ciKey;
+                    }
+                }
+
+                jeDict[key] = JsonSerializer.SerializeToElement(val, _serializerOptions);
                 return;
             }
 

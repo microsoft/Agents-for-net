@@ -464,12 +464,11 @@ public class SlackChannelDataTests
     }
 
     [Fact]
-    public void EventEnvelope_TryGet_NonEventPath_ReturnsFalse()
+    public void EventEnvelope_TryGet_TrulyMissingPath_ReturnsFalse()
     {
-        // top-level envelope fields (team_id, token, etc.) are not navigable via Get
         var envelope = Deserialize(MessageEventJson).EventEnvelope;
 
-        Assert.False(envelope.TryGet<string>("team_id", out var value));
+        Assert.False(envelope.TryGet<string>("nonexistent_field", out var value));
         Assert.Null(value);
     }
 
@@ -493,6 +492,63 @@ public class SlackChannelDataTests
         Assert.Equal("message", envelope.Get<string>("EVENT.type"));
         Assert.Equal("message", envelope.Get<string>("Event.type"));
         Assert.Equal("message", envelope.Get<string>("EVENT_CONTENT.type"));
+    }
+
+    // ── EventEnvelope.Get — root property access ─────────────────────────────
+
+    [Fact]
+    public void EventEnvelope_Get_RootProperty_TeamId()
+    {
+        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        Assert.Equal("T0AT0TZM9GD", envelope.Get<string>("team_id"));
+    }
+
+    [Fact]
+    public void EventEnvelope_Get_RootProperty_Token()
+    {
+        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        Assert.Equal("7K85CE7U1wjgFDUHafCiPB7l", envelope.Get<string>("token"));
+    }
+
+    [Fact]
+    public void EventEnvelope_Get_RootProperty_EventTime()
+    {
+        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        Assert.Equal(1776271070L, envelope.Get<long>("event_time"));
+    }
+
+    [Fact]
+    public void EventEnvelope_Get_RootProperty_Missing_ReturnsDefault()
+    {
+        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        Assert.Null(envelope.Get<string>("nonexistent_field"));
+    }
+
+    // ── EventEnvelope.Get — Properties (extension data) fallback ─────────────
+
+    [Fact]
+    public void EventEnvelope_Get_ExtensionData_Field()
+    {
+        var json = """
+            {
+              "SlackMessage": {
+                "type": "event_callback",
+                "event": { "type": "message" },
+                "custom_envelope_field": "custom_value"
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var envelope = Deserialize(json).EventEnvelope;
+        Assert.Equal("custom_value", envelope.Get<string>("custom_envelope_field"));
+    }
+
+    [Fact]
+    public void EventEnvelope_TryGet_RootProperty_ReturnsTrue()
+    {
+        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        Assert.True(envelope.TryGet<string>("team_id", out var teamId));
+        Assert.Equal("T0AT0TZM9GD", teamId);
     }
 
     // ── Serialization round-trip ──────────────────────────────────────────────

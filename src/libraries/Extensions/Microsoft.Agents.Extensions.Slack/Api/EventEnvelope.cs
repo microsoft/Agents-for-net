@@ -16,21 +16,25 @@ namespace Microsoft.Agents.Extensions.Slack.Api
     /// <para>
     /// This class models the top-level structure of a Slack Events API request, including workspace,
     /// application, and authorization context, as well as the event-specific content. Use the strongly-typed properties
-    /// for common envelope fields and the `event_content` property for the inner event payload. Additional or unmodeled
-    /// fields are accessible via the `Properties` dictionary. For more information on the envelope structure, see
-    /// https://docs.slack.dev/apis/events-api/#callback-field.
+    /// for common envelope fields and the <see cref="event_content"/> property for the inner event payload. Additional or
+    /// unmodeled fields are accessible via the <see cref="AdditionalProperties"/> dictionary. For more information on the envelope
+    /// structure, see https://docs.slack.dev/apis/events-api/#callback-field.
     /// </para>
     /// <para>
-    /// Use the <see cref="Get{T}"/> and <see cref="TryGet{T}"/> methods to access nested fields within the inner 
-    /// event content using dot-notation paths.  The path matches the JSON structure of the Slack event payload.  For example:
+    /// Use <see cref="SlackModel.Get{T}"/> and <see cref="SlackModel.TryGet{T}"/> to access any field by dot-notation
+    /// path. Top-level envelope fields (e.g. <c>"team_id"</c>), extension data fields, and nested event content fields
+    /// using either the Slack JSON prefix <c>"event."</c> or the C# property prefix <c>"event_content."</c> are all
+    /// supported.
     /// <code>
     /// var envelope = turnContext.Activity.GetChannelData&lt;SlackChannelData&gt;().EventEnvelope;
-    /// var eventType = envelope.Get&lt;string&gt;("event.type"); // Access top-level event type
-    /// var channel = envelope.Get&lt;string&gt;("event.channel"); // Access channel field within the event payload
+    /// string workspaceId = envelope.Get&lt;string&gt;("team_id");
+    /// string channel     = envelope.Get&lt;string&gt;("event.channel");
+    /// string itemType    = envelope.Get&lt;string&gt;("event.item.type");
+    /// string blockType   = envelope.Get&lt;string&gt;("event.blocks[0].type");
     /// </code>
     /// </para>
     /// </remarks>
-    public class EventEnvelope
+    public class EventEnvelope : SlackModel
     {
         /// <summary>Deprecated verification token. Slack recommends signed secrets instead.</summary>
         public string token { get; set; }
@@ -49,7 +53,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         /// <summary>
         /// The inner event content. Use named properties for common fields, or navigate
-        /// any event-specific field with <see cref="EventContent.Get{T}"/>.
+        /// any event-specific field with <see cref="SlackModel.Get{T}"/>.
         /// Serialized as <c>"event"</c> in the Slack JSON payload.
         /// </summary>
         [JsonPropertyName("event")]
@@ -81,80 +85,22 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         /// <summary>Catch-all for any envelope fields not explicitly modelled above.</summary>
         [JsonExtensionData]
-        public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
+        public IDictionary<string, JsonElement> AdditionalProperties { get; set; } = new Dictionary<string, JsonElement>();
 
-        /// <summary>
-        /// Gets a value at the given dot-notation path within this Slack event envelope.
-        /// The inner event content can be addressed with either the <c>"event."</c> prefix
-        /// (matching the Slack JSON field name) or the <c>"event_content."</c> prefix
-        /// (matching the C# property name).
-        /// <example>
-        /// <code>
-        /// // reaction_removed: access nested item fields — both forms work:
-        /// string itemType = envelope.GetValue&lt;string&gt;("event.item.type");
-        /// string itemType = envelope.GetValue&lt;string&gt;("event_content.item.type");
-        ///
-        /// // message: access first block type
-        /// string blockType = envelope.GetValue&lt;string&gt;("event.blocks[0].type");
-        /// </code>
-        /// </example>
-        /// See https://docs.slack.dev/apis/events-api/#callback-field for envelope field names
-        /// and https://docs.slack.dev/reference/events for event-specific field names.
-        /// </summary>
-        public T Get<T>(string path)
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Maps the C# property alias <c>"event_content"</c> to the JSON field name <c>"event"</c>
+        /// so both prefixes are interchangeable in path strings.
+        /// </remarks>
+        protected override string NormalizePath(string path)
         {
-            if (event_content != null && TryStripEventPrefix(path, out var innerPath))
-            {
-                return event_content.Get<T>(innerPath);
-            }
-
-            return default;
-        }
-
-        /// <summary>
-        /// Tries to get a value at the given dot-notation path within this Slack event envelope.
-        /// Returns <see langword="false"/> when the path does not exist or the value cannot
-        /// be converted to <typeparamref name="T"/>.
-        /// </summary>
-        public bool TryGet<T>(string path, out T value)
-        {
-            if (event_content != null && TryStripEventPrefix(path, out var innerPath))
-            {
-                return event_content.TryGet<T>(innerPath, out value);
-            }
-
-            value = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Checks whether <paramref name="path"/> starts with <c>"event"</c> or
-        /// <c>"event_content"</c> and, if so, returns the remainder after stripping that prefix.
-        /// An exact match (no trailing dot) returns an empty string, meaning "the whole event".
-        /// </summary>
-        private static bool TryStripEventPrefix(string path, out string innerPath)
-        {
-            if (path.Equals("event", StringComparison.OrdinalIgnoreCase) ||
-                path.Equals("event_content", StringComparison.OrdinalIgnoreCase))
-            {
-                innerPath = string.Empty;
-                return true;
-            }
-
-            if (path.StartsWith("event.", StringComparison.OrdinalIgnoreCase))
-            {
-                innerPath = path.Substring("event.".Length);
-                return true;
-            }
+            if (path.Equals("event_content", StringComparison.OrdinalIgnoreCase))
+                return "event";
 
             if (path.StartsWith("event_content.", StringComparison.OrdinalIgnoreCase))
-            {
-                innerPath = path.Substring("event_content.".Length);
-                return true;
-            }
+                return string.Concat("event", path.AsSpan("event_content".Length));
 
-            innerPath = null;
-            return false;
+            return path;
         }
     }
 }

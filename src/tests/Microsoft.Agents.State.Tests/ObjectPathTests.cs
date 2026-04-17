@@ -711,6 +711,104 @@ namespace Microsoft.Agents.State.Tests
             Assert.False(ObjectPath.HasValue(obj, null));
         }
 
+        // ── IDictionary<string, JsonElement> support ──────────────────────────────
+
+        [Fact]
+        public void GetPathValue_JsonElementDict_SimpleKey()
+        {
+            var json = JsonDocument.Parse("""{"name":"Alice","age":30}""");
+            var dict = new Dictionary<string, JsonElement>
+            {
+                ["name"] = json.RootElement.GetProperty("name"),
+                ["age"]  = json.RootElement.GetProperty("age"),
+            };
+
+            Assert.Equal("Alice", ObjectPath.GetPathValue<string>(dict, "name"));
+            Assert.Equal(30, ObjectPath.GetPathValue<int>(dict, "age"));
+        }
+
+        [Fact]
+        public void GetPathValue_JsonElementDict_CaseInsensitiveKey()
+        {
+            var json = JsonDocument.Parse("""{"TeamId":"T123"}""");
+            var dict = new Dictionary<string, JsonElement>
+            {
+                ["TeamId"] = json.RootElement.GetProperty("TeamId"),
+            };
+
+            Assert.Equal("T123", ObjectPath.GetPathValue<string>(dict, "teamid"));
+        }
+
+        [Fact]
+        public void GetPathValue_JsonElementDict_NestedObject()
+        {
+            var json = JsonDocument.Parse("""{"item":{"type":"message","ts":"123"}}""");
+            var dict = new Dictionary<string, JsonElement>
+            {
+                ["item"] = json.RootElement.GetProperty("item"),
+            };
+
+            Assert.Equal("message", ObjectPath.GetPathValue<string>(dict, "item.type"));
+            Assert.Equal("123",     ObjectPath.GetPathValue<string>(dict, "item.ts"));
+        }
+
+        [Fact]
+        public void TryGetPathValue_JsonElementDict_MissingKey_ReturnsFalse()
+        {
+            var dict = new Dictionary<string, JsonElement>();
+
+            Assert.False(ObjectPath.TryGetPathValue<string>(dict, "missing", out var value));
+            Assert.Null(value);
+        }
+
+        [Fact]
+        public void GetProperties_JsonElementDict()
+        {
+            var json = JsonDocument.Parse("""{"a":1,"b":2}""");
+            var dict = new Dictionary<string, JsonElement>
+            {
+                ["a"] = json.RootElement.GetProperty("a"),
+                ["b"] = json.RootElement.GetProperty("b"),
+            };
+
+            var keys = ObjectPath.GetProperties(dict).ToList();
+            Assert.Contains("a", keys);
+            Assert.Contains("b", keys);
+        }
+
+        [Fact]
+        public void ContainsProperty_JsonElementDict()
+        {
+            var json = JsonDocument.Parse("""{"x":1}""");
+            var dict = new Dictionary<string, JsonElement>
+            {
+                ["x"] = json.RootElement.GetProperty("x"),
+            };
+
+            Assert.True(ObjectPath.ContainsProperty(dict, "x"));
+            Assert.False(ObjectPath.ContainsProperty(dict, "y"));
+        }
+
+        // ── Array out-of-range ────────────────────────────────────────────────
+
+        [Fact]
+        public void TryGetPathValue_JsonArray_OutOfRange_ReturnsFalse()
+        {
+            var jobj = JsonNode.Parse("""{"items":["a","b"]}""") as JsonObject;
+
+            Assert.False(ObjectPath.TryGetPathValue<string>(jobj, "items[99]", out var value));
+            Assert.Null(value);
+        }
+
+        [Fact]
+        public void GetPathValue_JsonArray_OutOfRange_ReturnsDefault()
+        {
+            var jobj = JsonNode.Parse("""{"items":["a","b"]}""") as JsonObject;
+
+            var result = ObjectPath.GetPathValue<string>(jobj, "items[99]", defaultValue: null);
+            Assert.Null(result);
+        }
+
         private void AssertGetSetValueType<T>(object test, T val)
         {
             ObjectPath.SetPathValue(test, val.GetType().Name, val);

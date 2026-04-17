@@ -81,7 +81,7 @@ public class SlackApi
                 throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
             }
 
-            if (!response.IsSuccessStatusCode || !data.Ok)
+            if (!response.IsSuccessStatusCode || !data.ok)
             {
                 throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
             }
@@ -90,7 +90,7 @@ public class SlackApi
         }
         catch (Exception ex)
         {
-            return new SlackResponse { Ok = false, Error = ex.Message };
+            return new SlackResponse { ok = false, error = ex.Message };
         }
     }
 }

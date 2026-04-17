@@ -31,7 +31,7 @@ public class SlackStream
             task_display_mode = taskDisplayMode,
         }, _token);
 
-        _messageTs = result.Ts;
+        _messageTs = result.ts;
         return this;
     }
 
