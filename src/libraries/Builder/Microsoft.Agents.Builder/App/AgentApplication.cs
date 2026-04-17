@@ -27,8 +27,6 @@ namespace Microsoft.Agents.Builder.App
     public class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
-        private readonly int _typingTimerDelay = 1000;
-        private TypingTimer? _typingTimer;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -675,32 +673,52 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            // Idempotent — if already started for this turn, do nothing.
+            if (turnContext.Services.Get<TypingWorker>() != null)
             {
                 return;
             }
 
-            if (_typingTimer == null)
+            var worker = TypingWorker.Create(turnContext, Options.TypingOptions);
+            if (worker == null)
             {
-                _typingTimer = new TypingTimer(_typingTimerDelay);
+                return;
             }
 
-            if (!_typingTimer.IsRunning())
+            turnContext.Services.Set<TypingWorker>(worker);
+            worker.Start();
+        }
+
+        /// <summary>
+        /// Manually stop the typing timer for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// Stops the typing worker immediately and waits for it to finish. Subsequent calls for
+        /// the same turn are no-ops. The worker is also stopped automatically at end of turn.
+        /// </remarks>
+        /// <param name="turnContext">The turn context.</param>
+#pragma warning disable CA1822 // Method is intentionally an instance member for API symmetry with StartTypingTimer.
+        public async Task StopTypingTimer(ITurnContext turnContext)
+        {
+            var worker = turnContext.Services.Get<TypingWorker>();
+            if (worker != null)
             {
-                _typingTimer.Start(turnContext);
+                await worker.DisposeAsync().ConfigureAwait(false);
             }
         }
+#pragma warning restore CA1822
 
         /// <summary>
         /// Manually stop the typing timer.
         /// </summary>
         /// <remarks>
         /// If the timer isn't running nothing happens.
+        /// Per-turn workers are definitively stopped in the turn's finally block via DisposeAsync.
         /// </remarks>
+        [Obsolete("Use StopTypingTimer(ITurnContext) instead.")]
         public void StopTypingTimer()
         {
-            _typingTimer?.Dispose();
-            _typingTimer = null;
+            // No-op: use StopTypingTimer(ITurnContext) to stop the per-turn worker explicitly.
         }
 
         #endregion
@@ -873,9 +891,12 @@ namespace Microsoft.Agents.Builder.App
             }
             finally
             {
-                // Stop the timer if configured
-                StopTypingTimer();
-
+                // Stop the typing worker for this turn if one was started.
+                var typingWorker = turnContext.Services?.Get<TypingWorker>();
+                if (typingWorker != null)
+                {
+                    await typingWorker.DisposeAsync().ConfigureAwait(false);
+                }
 
                 if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
                 {
