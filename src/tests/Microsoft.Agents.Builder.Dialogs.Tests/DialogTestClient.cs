@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,8 +9,9 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using System.Security.Claims;
+using Microsoft.Agents.Builder.Testing;
 
-namespace Microsoft.Agents.Builder.Testing
+namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     /// <summary>
     /// A client to for testing dialogs in isolation.
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// </summary>
         /// <param name="channelId">
         /// The channelId (see <see cref="Channels"/>) to be used for the test.
-        /// Use <see cref="Channels.Emulator"/> or <see cref="Channels.Test"/> if you are uncertain of the channel you are targeting.
+        /// Use <see cref="Channels.Test"/> if you are uncertain of the channel you are targeting.
         /// Otherwise, it is recommended that you use the id for the channel(s) your bot will be using.
         /// Consider writing a test case for each channel.
         /// </param>

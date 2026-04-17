@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Diagnostics;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector.Telemetry.Scopes;
 using Microsoft.Agents.Core.Telemetry;
+using Microsoft.Agents.TestSupport;
 using Xunit;
 
 namespace Microsoft.Agents.Connector.Tests.Telemetry

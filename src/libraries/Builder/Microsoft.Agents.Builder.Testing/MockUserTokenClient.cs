@@ -9,14 +9,14 @@ using System.Threading;
 using System;
 using System.Linq;
 
-namespace Microsoft.Agents.Builder.Testing.Adapters
+namespace Microsoft.Agents.Builder.Testing
 {
     internal class MockUserTokenClient : IUserTokenClient
     {
         private const string ExceptionExpected = "ExceptionExpected";
-        private readonly IDictionary<UserTokenKey, string> _userTokens = new Dictionary<UserTokenKey, string>();
-        private readonly IDictionary<ExchangableTokenKey, string> _exchangableToken = new Dictionary<ExchangableTokenKey, string>();
-        private readonly IList<TokenMagicCode> _magicCodes = new List<TokenMagicCode>();
+        private readonly Dictionary<UserTokenKey, string> _userTokens = new Dictionary<UserTokenKey, string>();
+        private readonly Dictionary<ExchangableTokenKey, string> _exchangableToken = new Dictionary<ExchangableTokenKey, string>();
+        private readonly List<TokenMagicCode> _magicCodes = new List<TokenMagicCode>();
 
         /// <summary>
         /// Adds a fake user token so it can later be retrieved.
@@ -37,6 +37,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
 
             if (magicCode == null)
             {
+#pragma warning disable CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
                 if (_userTokens.ContainsKey(key))
                 {
                     _userTokens[key] = token;
@@ -45,6 +46,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
                 {
                     _userTokens.Add(key, token);
                 }
+#pragma warning restore CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
             }
             else
             {
@@ -75,6 +77,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
                 ExchangableItem = exchangableItem
             };
 
+#pragma warning disable CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
             if (_exchangableToken.ContainsKey(key))
             {
                 _exchangableToken[key] = token;
@@ -83,6 +86,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             {
                 _exchangableToken.Add(key, token);
             }
+#pragma warning restore CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
         }
 
         /// <summary> Adds an instruction to throw an exception during exchange requests.
@@ -101,6 +105,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
                 ExchangableItem = exchangableItem
             };
 
+#pragma warning disable CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
             if (_exchangableToken.ContainsKey(key))
             {
                 _exchangableToken[key] = ExceptionExpected;
@@ -109,6 +114,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             {
                 _exchangableToken.Add(key, ExceptionExpected);
             }
+#pragma warning restore CA1864 // Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
         }
 
         public Task<TokenResponse> GetUserTokenAsync(string userId, string connectionName, ChannelId channelId, string magicCode, CancellationToken cancellationToken)
@@ -208,7 +214,7 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
                     (includeFilter == null || filter.Contains(x.Key.ConnectionName))).
                 Select(r => new TokenStatus() { ConnectionName = r.Key.ConnectionName, HasToken = true, ServiceProviderDisplayName = r.Key.ConnectionName }).ToArray();
 
-            if (records.Any())
+            if (records.Length != 0)
             {
                 return Task.FromResult(records);
             }

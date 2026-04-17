@@ -3,9 +3,9 @@
 // Licensed under the MIT License.
 
 using System;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Agents.Storage.Telemetry.Scopes;
+using Microsoft.Agents.TestSupport;
 using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests.Telemetry
