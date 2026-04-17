@@ -4,6 +4,7 @@
 #nullable disable
 
 using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Connector.Telemetry.Scopes;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -28,6 +29,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ConversationsResult> GetConversationsAsync(string continuationToken = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeGetConversations();
             var request = RestRequest.Get(RestApiPaths.Conversations)
                 .WithQuery("continuationToken", continuationToken);
 
@@ -44,6 +46,7 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <inheritdoc/>
         public async Task<ConversationResourceResponse> CreateConversationAsync(ConversationParameters body = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeCreateConversation();
             var request = RestRequest.Post(RestApiPaths.Conversations)
                 .WithBody(body);
 
@@ -68,6 +71,8 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ResourceResponse> SendToConversationAsync(string conversationId, IActivity body = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+
+            using var telemetryScope = new ScopeSendToConversation(conversationId, body?.Id);
 
             var convId = TruncateConversationId(conversationId, body);
             var path = string.Format(RestApiPaths.ConversationActivities, HttpUtility.UrlEncode(convId));
@@ -124,6 +129,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
+            using var telemetryScope = new ScopeUpdateActivity(conversationId, activityId);
+
             var request = RestRequest.Put(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)))
                 .WithBody(body);
 
@@ -151,6 +158,8 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+
+            using var telemetryScope = new ScopeReplyToActivity(conversationId, activityId);
 
             var convId = TruncateConversationId(conversationId, body);
             var path = string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(convId), HttpUtility.UrlEncode(activityId));
@@ -182,6 +191,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
+            using var telemetryScope = new ScopeDeleteActivity(conversationId, activityId);
+
             var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
@@ -200,6 +211,8 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
+            using var telemetryScope = new ScopeGetConversationMembers(conversationId);
+
             var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMembers, HttpUtility.UrlEncode(conversationId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
@@ -217,6 +230,8 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+
+            using var telemetryScope = new ScopeGetConversationMembers(conversationId);
 
             var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMember, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(userId)));
 
@@ -290,6 +305,8 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ResourceResponse> UploadAttachmentAsync(string conversationId, AttachmentData body = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+
+            using var telemetryScope = new ScopeUploadAttachment(conversationId);
 
             var request = RestRequest.Post(string.Format(RestApiPaths.ConversationAttachments, HttpUtility.UrlEncode(conversationId)))
                 .WithBody(body);

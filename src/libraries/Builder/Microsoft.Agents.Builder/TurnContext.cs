@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.TurnContext;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -204,6 +205,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryScope = new ScopeSendActivities(this);
 
             // ConversationReference for the incoming Activity
             var conversationReference = Activity.GetConversationReference();
