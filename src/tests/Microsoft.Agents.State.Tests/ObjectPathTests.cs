@@ -4,6 +4,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Xunit;
@@ -559,6 +560,155 @@ namespace Microsoft.Agents.State.Tests
             Assert.False(ObjectPath.TryGetPathValue<string>(test, "x.a[1]", out string value2));
             Assert.True(ObjectPath.TryGetPathValue<string>(test, "x.a[0]", out value2));
             Assert.Equal("dabba", value2);
+        }
+
+        [Fact]
+        public void Assign_BothNull()
+        {
+            // Bug fix: was (Type)Activator.CreateInstance(type) which threw InvalidCastException.
+            var result = ObjectPath.Assign<Options>(null, null);
+            Assert.NotNull(result);
+            Assert.Null(result.FirstName);
+            Assert.Null(result.LastName);
+            Assert.Null(result.Age);
+        }
+
+        [Fact]
+        public void GetPathValue_FloatJsonNumberToString()
+        {
+            // Bug fix: was GetValue<int>() which threw for non-integer numbers.
+            var jobj = JsonNode.Parse("{\"value\": 3.14}");
+            var result = ObjectPath.GetPathValue<string>(jobj, "value");
+            Assert.Equal("3.14", result);
+        }
+
+        [Fact]
+        public void GetPathValue_LargeIntJsonNumberToString()
+        {
+            // Verify Int64 numbers are not truncated by int conversion.
+            var jobj = JsonNode.Parse($"{{\"value\": {long.MaxValue}}}");
+            var result = ObjectPath.GetPathValue<string>(jobj, "value");
+            Assert.Equal(long.MaxValue.ToString(), result);
+        }
+
+        [Fact]
+        public void SetPathValue_IntermediateArrayExpansion()
+        {
+            // Bug fix: JsonArray intermediate nodes were not created; caused ArgumentOutOfRangeException.
+            var test = new Dictionary<string, object>();
+
+            ObjectPath.SetPathValue(test, "items[0].name", "Alice");
+            ObjectPath.SetPathValue(test, "items[1].name", "Bob");
+
+            Assert.Equal("Alice", ObjectPath.GetPathValue<string>(test, "items[0].name"));
+            Assert.Equal("Bob", ObjectPath.GetPathValue<string>(test, "items[1].name"));
+        }
+
+        [Fact]
+        public void GetProperties_NullReturnsEmpty()
+        {
+            // Bug fix: was empty block instead of yield break.
+            var result = ObjectPath.GetProperties(null);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void GetProperties_Dictionary()
+        {
+            var dict = new Dictionary<string, object> { ["Alpha"] = 1, ["Beta"] = 2 };
+            var props = ObjectPath.GetProperties(dict).ToList();
+            Assert.Equal(2, props.Count);
+            Assert.Contains("Alpha", props);
+            Assert.Contains("Beta", props);
+        }
+
+        [Fact]
+        public void GetProperties_JsonObject()
+        {
+            var jobj = JsonNode.Parse("{\"x\": 10, \"y\": 20}");
+            var props = ObjectPath.GetProperties(jobj).ToList();
+            Assert.Equal(2, props.Count);
+            Assert.Contains("x", props);
+            Assert.Contains("y", props);
+        }
+
+        [Fact]
+        public void GetProperties_TypedObject()
+        {
+            var options = new Options { FirstName = "Fred" };
+            var props = ObjectPath.GetProperties(options).ToList();
+            Assert.Contains("FirstName", props);
+            Assert.Contains("LastName", props);
+            Assert.Contains("Age", props);
+            Assert.Contains("Bool", props);
+            Assert.Contains("Location", props);
+        }
+
+        [Fact]
+        public void ContainsProperty_Null_ReturnsFalse()
+        {
+            Assert.False(ObjectPath.ContainsProperty(null, "anything"));
+        }
+
+        [Fact]
+        public void ContainsProperty_Dictionary()
+        {
+            var dict = new Dictionary<string, object> { ["Name"] = "test" };
+            Assert.True(ObjectPath.ContainsProperty(dict, "Name"));
+            Assert.False(ObjectPath.ContainsProperty(dict, "Missing"));
+        }
+
+        [Fact]
+        public void ContainsProperty_JsonObject()
+        {
+            var jobj = JsonNode.Parse("{\"Name\": \"test\"}");
+            Assert.True(ObjectPath.ContainsProperty(jobj, "Name"));
+            Assert.False(ObjectPath.ContainsProperty(jobj, "Missing"));
+        }
+
+        [Fact]
+        public void ContainsProperty_TypedObject_CaseInsensitive()
+        {
+            var options = new Options { FirstName = "Fred" };
+            Assert.True(ObjectPath.ContainsProperty(options, "FirstName"));
+            Assert.True(ObjectPath.ContainsProperty(options, "firstname"));
+            Assert.True(ObjectPath.ContainsProperty(options, "FIRSTNAME"));
+            Assert.False(ObjectPath.ContainsProperty(options, "Missing"));
+        }
+
+        [Fact]
+        public void ForEachProperty_Dictionary()
+        {
+            var dict = new Dictionary<string, object> { ["a"] = 1, ["b"] = "two" };
+            var collected = new Dictionary<string, object>();
+            ObjectPath.ForEachProperty(dict, (k, v) => collected[k] = v);
+            Assert.Equal(2, collected.Count);
+            Assert.Equal(1, collected["a"]);
+            Assert.Equal("two", collected["b"]);
+        }
+
+        [Fact]
+        public void ForEachProperty_JsonObject()
+        {
+            var jobj = JsonNode.Parse("{\"x\": 10, \"y\": 20}") as JsonObject;
+            var keys = new List<string>();
+            ObjectPath.ForEachProperty(jobj, (k, v) => keys.Add(k));
+            Assert.Equal(2, keys.Count);
+            Assert.Contains("x", keys);
+            Assert.Contains("y", keys);
+        }
+
+        [Fact]
+        public void HasValue_NullObject_ReturnsFalse()
+        {
+            Assert.False(ObjectPath.HasValue(null, "anything"));
+        }
+
+        [Fact]
+        public void HasValue_NullPath_ReturnsFalse()
+        {
+            var obj = new Options { FirstName = "Fred" };
+            Assert.False(ObjectPath.HasValue(obj, null));
         }
 
         private void AssertGetSetValueType<T>(object test, T val)

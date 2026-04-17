@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -25,6 +26,9 @@ namespace Microsoft.Agents.Builder.State
             PropertyNameCaseInsensitive = true,
             IncludeFields = true,
         };
+
+        // Cache reflection results to avoid repeated GetProperties() calls on the same type.
+        private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();
 
         /// <summary>
         /// Does an object have a subpath.
@@ -127,7 +131,7 @@ namespace Microsoft.Agents.Builder.State
             try
             {
                 value = MapValueTo<T>(result);
-                if (convertedSet && value.GetType() != result.GetType())
+                if (convertedSet && value != null && value.GetType() != result.GetType())
                 {
                     SetPathValueInner(segments, obj, value, false);
                 }
@@ -166,19 +170,23 @@ namespace Microsoft.Agents.Builder.State
                 dynamic next;
                 if (segment is int index)
                 {
-                    next = current[index];
-                    if (next == null)
+                    // Expand JsonArray if the index is beyond the current length.
+                    if (current is JsonArray ja)
                     {
-                        if (((ICollection)current).Count <= index)
+                        while (ja.Count <= index)
                         {
-                            // Expand array to index
-                            for (var idx = ((ICollection)current).Count; idx <= index; ++idx)
-                            {
-                                ((JsonArray)current)[idx] = null;
-                            }
-
-                            next = current[index];
+                            ja.Add(null);
                         }
+                    }
+
+                    next = current[index];
+                    if (next == null && current is JsonArray currentJa)
+                    {
+                        // Create an appropriate intermediate node based on the next segment type.
+                        var nextSegment = segments[i + 1];
+                        JsonNode intermediate = nextSegment is string ? new JsonObject() : new JsonArray();
+                        current[index] = intermediate;
+                        next = intermediate;
                     }
                 }
                 else
@@ -205,7 +213,7 @@ namespace Microsoft.Agents.Builder.State
                 current = next;
             }
 
-            var lastSegment = segments.Last();
+            var lastSegment = segments[segments.Count - 1];
             SetObjectSegment(current, lastSegment, value, json);
         }
 
@@ -233,7 +241,7 @@ namespace Microsoft.Agents.Builder.State
 
             if (current != null)
             {
-                var lastSegment = segments.Last();
+                var lastSegment = segments[segments.Count - 1];
                 if (lastSegment is string property)
                 {
                     // ConcurrentDictionary doesn't implement Remove, but it does implement IDictionary
@@ -299,6 +307,7 @@ namespace Microsoft.Agents.Builder.State
         {
             if (obj == null)
             {
+                yield break;
             }
             else if (obj is IDictionary<string, object> dict)
             {
@@ -316,7 +325,7 @@ namespace Microsoft.Agents.Builder.State
             }
             else
             {
-                foreach (var property in obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public).Select(p => p.Name))
+                foreach (var property in GetCachedProperties(obj.GetType()).Select(p => p.Name))
                 {
                     yield return property;
                 }
@@ -346,7 +355,7 @@ namespace Microsoft.Agents.Builder.State
                 return jobj.ContainsKey(name);
             }
 
-            return obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public).Any(property => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return GetCachedProperties(obj.GetType()).Any(property => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -427,7 +436,7 @@ namespace Microsoft.Agents.Builder.State
                 return singleObject;
             }
 
-            return (Type)Activator.CreateInstance(type);
+            return Activator.CreateInstance(type);
         }
 
         /// <summary>
@@ -458,10 +467,10 @@ namespace Microsoft.Agents.Builder.State
 
                 if (valValue.GetValueKind() == JsonValueKind.Number && typeof(T) == typeof(string))
                 {
-                    var number = valValue.GetValue<int>();
-                    return ProtocolJsonSerializer.ToObject<T>(number.ToString());
+                    // Use the raw JSON representation to support non-integer numbers (float, double, Int64, etc.)
+                    return (T)(object)valValue.ToJsonString();
                 }
-                
+
                 if (valValue.GetValueKind() == JsonValueKind.String && typeof(T) == typeof(int))
                 {
                     var str = valValue.GetValue<string>();
@@ -496,7 +505,7 @@ namespace Microsoft.Agents.Builder.State
         }
 
         /// <summary>
-        /// Given an root object and property path, resolve to a constant if eval = true or a constant path otherwise.  
+        /// Given an root object and property path, resolve to a constant if eval = true or a constant path otherwise.
         /// conversation[user.name][user.age] => ['conversation', 'joe', 32].
         /// </summary>
         /// <param name="obj">root object.</param>
@@ -583,7 +592,7 @@ namespace Microsoft.Agents.Builder.State
                             return false;
                         }
 
-                        var result = MapValueTo<string>(indexer.First());
+                        var result = MapValueTo<string>(indexer[0]);
                         if (int.TryParse(result, out var index))
                         {
                             soFar.Add(index);
@@ -661,8 +670,15 @@ namespace Microsoft.Agents.Builder.State
 
             if (obj is IDictionary<string, object> dict)
             {
-                var key = dict.Keys.Where(key => string.Equals(key, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault() ?? property;
-                if (dict.TryGetValue(key, out var value))
+                // Fast path: exact match (O(1) for most dictionary implementations).
+                if (dict.TryGetValue(property, out var value))
+                {
+                    return value;
+                }
+
+                // Fallback: case-insensitive scan.
+                var ciKey = dict.Keys.FirstOrDefault(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase));
+                if (ciKey != null && dict.TryGetValue(ciKey, out value))
                 {
                     return value;
                 }
@@ -672,19 +688,30 @@ namespace Microsoft.Agents.Builder.State
 
             if (obj is JsonObject jobj)
             {
-                var key = jobj.AsEnumerable().Where(kvPair => string.Equals(kvPair.Key, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().Key ?? property;
-                jobj.TryGetPropertyValue(key, out var value);
-                return value;
+                // Fast path: exact match.
+                if (jobj.TryGetPropertyValue(property, out var value))
+                {
+                    return value;
+                }
+
+                // Fallback: case-insensitive scan.
+                var ciKey = jobj.FirstOrDefault(kvp => string.Equals(kvp.Key, property, StringComparison.OrdinalIgnoreCase)).Key;
+                if (ciKey != null)
+                {
+                    jobj.TryGetPropertyValue(ciKey, out value);
+                    return value;
+                }
+
+                return null;
             }
 
-            if (obj is JsonValue jval)
+            if (obj is JsonValue)
             {
-                // in order to make things like "this.value.Length" work, when "this.value" is a string.
-                //return GetObjectProperty(JsonSerializer.SerializeToNode(jval), property);
-                throw new NotImplementedException();
+                // JsonValue is a primitive (string, number, bool); property access is not supported.
+                return null;
             }
 
-            var prop = obj.GetType().GetProperties().Where(p => string.Equals(p.Name, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var prop = GetCachedProperties(obj.GetType()).FirstOrDefault(p => string.Equals(p.Name, property, StringComparison.OrdinalIgnoreCase));
             if (prop != null)
             {
                 return prop.GetValue(obj);
@@ -709,14 +736,13 @@ namespace Microsoft.Agents.Builder.State
             {
                 if (obj is JsonArray jarray)
                 {
-                    // grow array if required
-                    var jar = obj as JsonArray;
-                    for (var i = jar.Count; i <= index; i++)
+                    // Grow array if required.
+                    for (var i = jarray.Count; i <= index; i++)
                     {
-                        jar.Add(null);
+                        jarray.Add(null);
                     }
 
-                    jar[index] = JsonSerializer.SerializeToNode(val);
+                    jarray[index] = JsonSerializer.SerializeToNode(val);
                 }
                 else if (obj is Array array)
                 {
@@ -746,21 +772,39 @@ namespace Microsoft.Agents.Builder.State
             var property = segment as string;
             if (obj is IDictionary<string, object> dict)
             {
-                // For case insensitive key
-                var key = dict.Keys.Where(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault() ?? property;
+                // For case-insensitive key: prefer exact match, fall back to case-insensitive scan.
+                var key = property;
+                if (!dict.ContainsKey(property))
+                {
+                    var ciKey = dict.Keys.FirstOrDefault(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase));
+                    if (ciKey != null)
+                    {
+                        key = ciKey;
+                    }
+                }
+
                 dict[key] = value;
                 return;
             }
 
             if (obj is JsonObject jobj)
             {
-                // For case insensitive key
-                var key = jobj.Where(p => string.Equals(p.Key, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().Key ?? property;
+                // For case-insensitive key: prefer exact match, fall back to case-insensitive scan.
+                var key = property;
+                if (!jobj.ContainsKey(property))
+                {
+                    var ciKey = jobj.FirstOrDefault(p => string.Equals(p.Key, property, StringComparison.OrdinalIgnoreCase)).Key;
+                    if (ciKey != null)
+                    {
+                        key = ciKey;
+                    }
+                }
+
                 jobj[key] = val is JsonNode valNode ? valNode : JsonSerializer.SerializeToNode(val);
                 return;
             }
 
-            var prop = obj.GetType().GetProperty(property);
+            var prop = GetCachedProperties(obj.GetType()).FirstOrDefault(p => string.Equals(p.Name, property, StringComparison.OrdinalIgnoreCase));
             if (prop != null)
             {
                 if (prop.GetValue(obj) != value)
@@ -814,5 +858,8 @@ namespace Microsoft.Agents.Builder.State
 
             return val;
         }
+
+        private static PropertyInfo[] GetCachedProperties(Type type)
+            => _propertyCache.GetOrAdd(type, static t => t.GetProperties(BindingFlags.Instance | BindingFlags.Public));
     }
 }
