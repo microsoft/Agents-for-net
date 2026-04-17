@@ -47,7 +47,7 @@ public class SlackAgentExtension : AgentExtension
 #pragma warning restore CA1822 // Mark members as static
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
-        return new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.SlackMessage.Event.Channel, channelData.SlackMessage.Event.Ts, channelData.ApiToken);
+        return new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.EventEnvelope.event_content.channel, channelData.EventEnvelope.event_content.ts, channelData.ApiToken);
     }
 
     public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler)

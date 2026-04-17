@@ -9,7 +9,8 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 
 public class SlackChannelData
 {
-    public SlackMessage? SlackMessage { get; set; }
+    [JsonPropertyName("SlackMessage")]
+    public EventEnvelope EventEnvelope { get; set; }
 
     public string ApiToken { get; set; }
 

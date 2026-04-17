@@ -45,7 +45,7 @@ public class MyAgent : AgentApplication
 
         var message = new 
         { 
-            channel = channelData.SlackMessage?.Event?.Channel, 
+            channel = channelData.EventEnvelope?.Get<string>("event.channel"), 
             text = $"You said: {turnContext.Activity.Text}" 
         };
 

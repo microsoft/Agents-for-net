@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<ComponentAreaName>CplTests.Slack</ComponentAreaName>
+		<SignAssembly>true</SignAssembly>
+		<!-- Slack extension targets net8.0 only; match that here -->
+		<TargetFrameworks>net8.0</TargetFrameworks>
+	</PropertyGroup>
+	<Import Project="..\..\Build.Common.core.props" />
+
+	<ItemGroup>
+	  <Compile Remove="Properties\**" />
+	  <EmbeddedResource Remove="Properties\**" />
+	  <None Remove="Properties\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+      <PackageReference Include="Microsoft.NET.Test.Sdk" />
+      <PackageReference Include="xunit" />
+      <PackageReference Include="xunit.runner.visualstudio">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Slack\Microsoft.Agents.Extensions.Slack.csproj" />
+	</ItemGroup>
+</Project>
