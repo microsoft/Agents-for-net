@@ -3,6 +3,8 @@
 
 #nullable disable
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Defines the structure that is returned as the result of an Invoke activity with Name of 'adaptiveCard/action'. </summary>
@@ -29,6 +31,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> The Type of this response. </summary>
         public string Type { get; set; }
         /// <summary> The json response object. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
     }
 }

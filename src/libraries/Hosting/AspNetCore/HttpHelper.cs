@@ -3,7 +3,6 @@
 
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -32,12 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             try
             {
                 ArgumentNullException.ThrowIfNull(request);
-
-                using var memoryStream = new MemoryStream();
-                await request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
-                return ProtocolJsonSerializer.ToObject<T>(memoryStream);
+                return await JsonSerializer.DeserializeAsync<T>(request.Body, ProtocolJsonSerializer.SerializationOptions).ConfigureAwait(false);
             }
             catch (JsonException)
             {
@@ -67,11 +61,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 if (invokeResponse.Body != null)
                 {
-                    response.ContentType = "application/json";
+                    response.ContentType = "application/json; charset=utf-8";
 
                     var json = ProtocolJsonSerializer.ToJson(invokeResponse.Body);
-                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json));
-                    await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
+                    await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json)).ConfigureAwait(false);
                 }
             }
         }

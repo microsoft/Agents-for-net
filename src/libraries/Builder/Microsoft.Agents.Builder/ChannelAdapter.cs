@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(reference, nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), claimsIdentity.GetOutgoingAudience(), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), null, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Builder
             return ProcessTurnResults(context);
         }
 
-        public virtual Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public virtual async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(continuationActivity, nameof(continuationActivity));
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Builder
             using var context = new TurnContext(this, continuationActivity, claimsIdentity);
 
             // Run the pipeline.
-            return RunPipelineAsync(context, callback, cancellationToken);
+            await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
         }
 
         public virtual Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent agent, CancellationToken cancellationToken, string audience = null)

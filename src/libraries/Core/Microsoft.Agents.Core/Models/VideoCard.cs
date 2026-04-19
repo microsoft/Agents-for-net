@@ -4,6 +4,7 @@
 #nullable disable
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -86,7 +87,9 @@ namespace Microsoft.Agents.Core.Models
         public string Aspect { get; set; }
         /// <summary> Describes the length of the media content without requiring a receiver to open the content. Formatted as an ISO 8601 Duration field. </summary>
         public string Duration { get; set; }
+
         /// <summary> Supplementary parameter for this card. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
     }
 }

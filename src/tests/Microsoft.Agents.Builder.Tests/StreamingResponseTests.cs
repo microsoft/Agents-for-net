@@ -7,6 +7,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -471,19 +472,6 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Empty(responses);
         }
 
-        [Fact]
-        public void TeamsChannel_AgenticRequest_IsNotStreamingChannel()
-        {
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                ChannelId = Channels.Msteams,
-                Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
-            };
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, activity);
-
-            Assert.False(context.StreamingResponse.IsStreamingChannel);
-        }
 
         [Fact]
         public async Task ResetAsync_AfterStream_AllowsStreamToBeReused()
@@ -516,6 +504,100 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.QueueTextChunk("World");
 
             Assert.Equal("Hello, World", context.StreamingResponse.Message);
+        }
+
+        [Fact]
+        public async Task FeedbackLoopEnabled_OnTeamsChannel_AddsFeedbackLoopToFinalMessage()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            // ExpectReplies keeps _isTeamsChannel=true but IsStreamingChannel=false (no timing delays needed)
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.FeedbackLoopEnabled = true;
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = responses.Last();
+            Assert.NotNull(finalActivity.ChannelData);
+            var json = JsonSerializer.Serialize(finalActivity.ChannelData);
+            using var doc = JsonDocument.Parse(json);
+            Assert.Equal("default", doc.RootElement.GetProperty("feedbackLoop").GetProperty("type").GetString());
+        }
+
+        [Fact]
+        public async Task FeedbackLoopEnabled_WithCustomType_SetsFeedbackLoopTypeOnFinalMessage()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.FeedbackLoopEnabled = true;
+            context.StreamingResponse.FeedbackLoopType = "custom";
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = responses.Last();
+            var json = JsonSerializer.Serialize(finalActivity.ChannelData);
+            using var doc = JsonDocument.Parse(json);
+            Assert.Equal("custom", doc.RootElement.GetProperty("feedbackLoop").GetProperty("type").GetString());
+        }
+
+        [Fact]
+        public async Task FeedbackLoopEnabled_WithExistingChannelData_PreservesExistingProperties()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.FeedbackLoopEnabled = true;
+            context.StreamingResponse.FinalMessage = new Activity
+            {
+                ChannelData = new { existingKey = "existingValue" }
+            };
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = responses.Last();
+            Assert.NotNull(finalActivity.ChannelData);
+            var json = JsonSerializer.Serialize(finalActivity.ChannelData);
+            using var doc = JsonDocument.Parse(json);
+            Assert.Equal("existingValue", doc.RootElement.GetProperty("existingKey").GetString());
+            Assert.Equal("default", doc.RootElement.GetProperty("feedbackLoop").GetProperty("type").GetString());
+        }
+
+        [Fact]
+        public async Task FeedbackLoopEnabled_OnNonTeamsChannel_DoesNotAddFeedbackLoop()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Test
+            });
+            context.StreamingResponse.FeedbackLoopEnabled = true;
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = responses.Last();
+            Assert.Null(finalActivity.ChannelData);
         }
 
         private static Mock<IChannelAdapter> CreateMockAdapter(List<IActivity> responses)

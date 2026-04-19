@@ -40,7 +40,9 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(expected, jsonOut);
 
             // Test deserialize
-            var entityIn = ProtocolJsonSerializer.ToObject<AIEntity>(jsonOut);
+            var entityIn = ProtocolJsonSerializer.ToObject<Entity>(jsonOut);
+            Assert.IsType<AIEntity>(entityIn);
+
             var deserializeJson = ProtocolJsonSerializer.ToJson(entityIn);
             Assert.Equal(expected, deserializeJson);
         }

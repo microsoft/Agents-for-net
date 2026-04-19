@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
-using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
 
@@ -12,11 +11,6 @@ internal class SerializationInit
 {
     public static void Init()
     {
-        // Enable reflection fallback
-        ProtocolJsonSerializer.ApplyExtensionOptions(options =>
-        {
-            options.TypeInfoResolver = JsonTypeInfoResolver.Combine(AIJsonUtilities.DefaultOptions.TypeInfoResolver, new DefaultJsonTypeInfoResolver());
-            return options;
-        });
+        ProtocolJsonSerializer.AddTypeInfoResolver(AIJsonUtilities.DefaultOptions.TypeInfoResolver);
     }
 }

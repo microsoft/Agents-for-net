@@ -11,10 +11,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector.Errors;
+using Microsoft.Agents.Connector.Telemetry.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Connector.RestClients
@@ -92,6 +94,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
+            using var telemetryScope = new ScopeGetToken(connectionName, userId, channelId?.Channel ?? TelemetryUtils.Unknown);
+
             var cacheKey = CacheKey(userId, connectionName, channelId);
             if (string.IsNullOrEmpty(code))
             {
@@ -136,6 +140,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
+            using var telemetryScope = new ScopeGetAadTokens(connectionName, userId, channelId?.Channel ?? TelemetryUtils.Unknown);
+
             var request = RestRequest.Post(RestApiPaths.UserTokenAad)
                 .WithQuery("userId", userId)
                 .WithQuery("connectionName", connectionName)
@@ -156,6 +162,8 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<object> SignOutAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
+
+            using var telemetryScope = new ScopeSignOut(connectionName, userId, channelId?.Channel ?? TelemetryUtils.Unknown);
 
             _cache.Remove(CacheKey(userId, connectionName, channelId));
 
@@ -181,6 +189,8 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
+            using var telemetryScope = new ScopeGetTokenStatus(userId, channelId?.Channel ?? TelemetryUtils.Unknown);
+
             var request = RestRequest.Get(RestApiPaths.UserTokenStatus)
                 .WithQuery("userId", userId)
                 .WithQuery("channelId", channelId?.Channel)
@@ -203,6 +213,8 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
             AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
             AssertionHelpers.ThrowIfNullOrEmpty(state, nameof(state));
+
+            using var telemetryScope = new ScopeGetTokenOrSignInResource(connectionName, userId, channelId?.Channel ?? TelemetryUtils.Unknown);
 
             var cacheKey = CacheKey(userId, connectionName, channelId);
             if (string.IsNullOrEmpty(code))

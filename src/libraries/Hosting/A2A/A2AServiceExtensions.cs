@@ -225,39 +225,39 @@ public static class A2AServiceExtensions
     private static RouteGroupBuilder MapHttpMethods(this RouteGroupBuilder routeGroup, string prefixPath = "/a2a")
     {
         // /v1/card endpoint - Agent discovery
-        routeGroup.MapGet($"{prefixPath}/v1/card", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/card", async (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
             await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken));
 
         // /v1/tasks/{id} endpoint
-        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int? historyLength, [FromQuery] string? metadata, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/tasks/{{id}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int? historyLength, [FromQuery] string? metadata, CancellationToken cancellationToken) =>
             adapter.GetTaskAsync(request, response, agent, id, historyLength, metadata, cancellationToken));
 
         // /v1/tasks/{id}:cancel endpoint
-        routeGroup.MapPost($"{prefixPath}/v1/tasks/{{id}}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.CancelTaskAsync(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}:subscribe endpoint
-        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/tasks/{{id}}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.SubscribeToTask(request, response, agent, id, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - POST
-        routeGroup.MapPost($"{prefixPath}/v1/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken) =>
             adapter.SetPushNotificationAsync(request, response, agent, id, pushNotificationConfig, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
-        routeGroup.MapGet($"{prefixPath}/v1/tasks/{{id}}/pushNotificationConfigs/{{notificationConfigId?}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs/{{notificationConfigId?}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
             adapter.GetPushNotificationAsync(request, response, agent, id, notificationConfigId, cancellationToken));
 
         // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
-        routeGroup.MapGet("/v1/tasks/{id}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int ? pageSize, [FromQuery] string ? pageToken, CancellationToken cancellationToken) =>
+        routeGroup.MapGet($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int ? pageSize, [FromQuery] string ? pageToken, CancellationToken cancellationToken) =>
             adapter.ListPushNotificationConfigsAsync(request, response, agent, id, pageSize, pageToken, cancellationToken));
 
         // /v1/message:send endpoint
-        routeGroup.MapPost($"{prefixPath}/v1/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/message:send", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
             adapter.SendMessageAsync(request, response, agent, sendRequest, cancellationToken));
 
         // /v1/message:stream endpoint
-        routeGroup.MapPost($"{prefixPath}/v1/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
+        routeGroup.MapPost($"{prefixPath}/message:stream", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, [FromBody] SendMessageRequest sendRequest, CancellationToken cancellationToken) =>
             adapter.SendMessageStream(request, response, agent, sendRequest, cancellationToken));
 
         return routeGroup;

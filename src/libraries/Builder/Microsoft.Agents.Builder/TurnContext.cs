@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.TurnContext;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -151,7 +152,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public async Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = null, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
@@ -172,7 +173,7 @@ namespace Microsoft.Agents.Builder
                 activityToSend.InputHint = inputHint;
             }
 
-            return await SendActivityAsync(activityToSend, cancellationToken).ConfigureAwait(false);
+            return SendActivityAsync(activityToSend, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -204,6 +205,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryScope = new ScopeSendActivities(this);
 
             // ConversationReference for the incoming Activity
             var conversationReference = Activity.GetConversationReference();
@@ -265,57 +268,40 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(UpdateActivityAsync));
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
             var conversationReference = Activity.GetConversationReference();
             var a = activity.ApplyConversationReference(conversationReference);
-
-            async Task<ResourceResponse> ActuallyUpdateStuffAsync()
-            {
-                return await Adapter.UpdateActivityAsync(this, a, cancellationToken).ConfigureAwait(false);
-            }
-
-            return await UpdateActivityInternalAsync(a, _onUpdateActivity, ActuallyUpdateStuffAsync, cancellationToken).ConfigureAwait(false);
+            return UpdateActivityInternalAsync(a, _onUpdateActivity, () => Adapter.UpdateActivityAsync(this, a, cancellationToken), cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
+        public Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(activityId, nameof(activityId));
 
             var cr = Activity.GetConversationReference();
             cr.ActivityId = activityId;
-
-            async Task ActuallyDeleteStuffAsync()
-            {
-                await Adapter.DeleteActivityAsync(this, cr, cancellationToken).ConfigureAwait(false);
-            }
-
-            await DeleteActivityInternalAsync(cr, _onDeleteActivity, ActuallyDeleteStuffAsync, cancellationToken).ConfigureAwait(false);
+            return DeleteActivityInternalAsync(cr, _onDeleteActivity, () => Adapter.DeleteActivityAsync(this, cr, cancellationToken), cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
+        public Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(DeleteActivityAsync));
             AssertionHelpers.ThrowIfNull(conversationReference, nameof(conversationReference));
 
-            async Task ActuallyDeleteStuffAsync()
-            {
-                await Adapter.DeleteActivityAsync(this, conversationReference, cancellationToken).ConfigureAwait(false);
-            }
-
-            await DeleteActivityInternalAsync(conversationReference, _onDeleteActivity, ActuallyDeleteStuffAsync, cancellationToken).ConfigureAwait(false);
+            return DeleteActivityInternalAsync(conversationReference, _onDeleteActivity, () => Adapter.DeleteActivityAsync(this, conversationReference, cancellationToken), cancellationToken);
         }
 
         /// <inheritdoc/>
-        public async Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
         {
-            return await SendActivityAsync(MessageFactory.CreateTrace(this.Activity, name, value, valueType, label), cancellationToken);
+            return SendActivityAsync(MessageFactory.CreateTrace(this.Activity, name, value, valueType, label), cancellationToken);
         }
 
         /// <summary>

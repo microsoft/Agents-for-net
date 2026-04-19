@@ -3,6 +3,8 @@
 
 #nullable disable
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
@@ -58,8 +60,10 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> (Optional) text to display in the chat feed if the button is clicked. </summary>
         public string DisplayText { get; set; }
         /// <summary> Supplementary parameter for action. Content of this property depends on the ActionType. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
         /// <summary> Channel-specific data associated with this action. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object ChannelData { get; set; }
 
         /// <summary>
