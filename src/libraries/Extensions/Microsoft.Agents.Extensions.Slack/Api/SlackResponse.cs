@@ -39,6 +39,9 @@ public class SlackResponse : SlackModel
     /// <summary>Message timestamp, present on methods that create or update messages.</summary>
     public string? ts { get; set; }
 
+    /// <summary>Gets or sets the metadata associated with the response.</summary>
+    public string? response_metadata { get; set; }
+
     /// <summary>Catch-all for any response fields not explicitly modelled above.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? AdditionalProperties { get; set; }

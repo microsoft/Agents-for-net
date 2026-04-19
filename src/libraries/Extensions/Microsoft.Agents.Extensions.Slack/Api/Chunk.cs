@@ -8,32 +8,33 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(MarkdownTextChunk), "markdown_text")]
+[JsonDerivedType(typeof(BlocksChunk), "blocks")]
 [JsonDerivedType(typeof(TaskUpdateChunk), "task_update")]
 public abstract class Chunk { }
 
-public class MarkdownTextChunk : Chunk
+public class MarkdownTextChunk(string text) : Chunk
 {
-    [JsonPropertyName("text")]
-    public string Text { get; set; } = "";
+    public static implicit operator MarkdownTextChunk(string? text) => new(text ?? "");
+
+    public string text { get; set; } = text;
 }
 
-public class TaskUpdateChunk : Chunk
+public class BlocksChunk : Chunk
 {
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = "";
+    public IList<object> blocks { get; set; }
+}
 
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = "";
+public class TaskUpdateChunk(string id, string title, string status = SlackTaskStatus.InProgress) : Chunk
+{
+    public string id { get; set; } = id;
 
-    [JsonPropertyName("status")]
-    public string Status { get; set; } = TaskStatus.Pending;
+    public string title { get; set; } = title;
 
-    [JsonPropertyName("details")]
-    public string? Details { get; set; }
+    public string status { get; set; } = status;
 
-    [JsonPropertyName("output")]
-    public string? Output { get; set; }
+    public string? details { get; set; }
 
-    [JsonPropertyName("sources")]
-    public List<Source>? Sources { get; set; }
+    public string? output { get; set; }
+
+    public IList<Source>? sources { get; set; }
 }

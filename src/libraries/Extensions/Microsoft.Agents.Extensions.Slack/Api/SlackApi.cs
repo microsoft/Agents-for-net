@@ -55,42 +55,35 @@ public class SlackApi
         AssertionHelpers.ThrowIfNullOrWhiteSpace(method, nameof(method));
         AssertionHelpers.ThrowIfNull(options, nameof(options));
 
+        var json = JsonSerializer.Serialize(options ?? new { }, JsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{SlackApiBase}/{method}")
+        {
+            Content = content
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            
+        using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
+        var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+        SlackResponse data;
         try
         {
-            var json = JsonSerializer.Serialize(options ?? new { }, JsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{SlackApiBase}/{method}")
-            {
-                Content = content
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            
-            using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
-            var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-            SlackResponse data;
-            try
-            {
-                data = JsonSerializer.Deserialize<SlackResponse>(text)
-                    ?? throw new Exception("Null response from Slack");
-            }
-            catch
-            {
-                throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
-            }
-
-            if (!response.IsSuccessStatusCode || !data.ok)
-            {
-                throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
-            }
-
-            return data;
+            data = JsonSerializer.Deserialize<SlackResponse>(text)
+                ?? throw new Exception("Null response from Slack");
         }
-        catch (Exception ex)
+        catch
         {
-            return new SlackResponse { ok = false, error = ex.Message };
+            throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
         }
+
+        if (!response.IsSuccessStatusCode || !data.ok)
+        {
+            throw new SlackResponseException($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
+        }
+
+        return data;
     }
 }

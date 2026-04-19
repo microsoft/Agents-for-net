@@ -3,7 +3,7 @@
 
 namespace Microsoft.Agents.Extensions.Slack.Api;
 
-public static class TaskStatus
+public static class SlackTaskStatus
 {
     public const string Pending = "pending";
     public const string InProgress = "in_progress";

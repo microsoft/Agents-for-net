@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -24,6 +26,7 @@ public class SlackStream
 
     public async Task<SlackStream> StartAsync(string taskDisplayMode = TaskDisplayMode.Plan)
     {
+        // https://docs.slack.dev/reference/methods/chat.startStream
         var result = await _slackApi.CallAsync("chat.startStream", new
         {
             channel = _channel,
@@ -35,8 +38,22 @@ public class SlackStream
         return this;
     }
 
-    public async Task<SlackStream> AppendAsync(List<Chunk> chunks)
+    public Task<SlackStream> AppendAsync(string markdown_text)
     {
+        return AppendAsync(new MarkdownTextChunk(markdown_text ?? ""));
+    }
+
+    public Task<SlackStream> AppendAsync(Chunk chunk)
+    {
+        AssertionHelpers.ThrowIfNull(chunk, nameof(chunk));
+        return AppendAsync([chunk]);
+    }
+
+    public async Task<SlackStream> AppendAsync(IList<Chunk> chunks)
+    {
+        AssertionHelpers.ThrowIfNull(chunks, nameof(chunks));
+
+        // https://docs.slack.dev/reference/methods/chat.appendStream
         await _slackApi.CallAsync("chat.appendStream", new
         {
             channel = _channel,
@@ -44,17 +61,25 @@ public class SlackStream
             thread_ts = _threadTs,
             chunks,
         }, _token);
+
         return this;
     }
 
-    public async Task StopAsync(List<Chunk>? chunks = null)
+    public async Task StopAsync(IList<Chunk>? chunks = null, IList<object> blocks = null)
     {
+        if (string.IsNullOrEmpty(_messageTs))
+        {
+            return;
+        }
+
+        // https://docs.slack.dev/reference/methods/chat.stopStream
         await _slackApi.CallAsync("chat.stopStream", new
         {
             channel = _channel,
             ts = _messageTs,
             thread_ts = _threadTs,
-            chunks = chunks ?? [],
+            chunks,
+            blocks,
         }, _token);
     }
 }

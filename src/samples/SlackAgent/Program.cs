@@ -1,13 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SlackAgent;
-using Microsoft.Agents.Extensions.Slack;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SlackAgent;
+using System;
+using System.IO;
+using System.Threading;
+using System.Web;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +49,15 @@ app.MapAgentRootEndpoint();
 // Map the endpoints for all agents using the [AgentInterface] attribute.
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+
+app.MapPost("/api/actions",  async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IServiceProvider services, CancellationToken cancellationToken) =>
+{
+    var claimsIdentity = HttpHelper.GetClaimsIdentity(request);
+    string rawBody = await new StreamReader(request.Body).ReadToEndAsync(cancellationToken);
+    string jsonPayload = HttpUtility.ParseQueryString(rawBody)["payload"];
+
+    //var json = HttpUtility.ParseQueryString((await new StreamReader(request.Body).ReadToEndAsync(cancellationToken)));
+});
 
 if (app.Environment.IsDevelopment())
 {

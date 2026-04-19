@@ -35,48 +35,56 @@ public class SlackAgentExtension : AgentExtension
         });
     }
 
-#pragma warning disable CA1822 // Mark members as static
     public Task<SlackResponse> CallAsync(ITurnContext turnContext, string method, object? options = null, string token = "", CancellationToken cancellationToken = default)
-#pragma warning restore CA1822 // Mark members as static
     {
         return turnContext.Services.Get<SlackApi>().CallAsync(method, options, token, cancellationToken);
     }
 
-#pragma warning disable CA1822 // Mark members as static
-    public SlackStream CreateStream(ITurnContext turnContext)
-#pragma warning restore CA1822 // Mark members as static
+    /// <summary>
+    /// Creates and starts a new Slack stream for the specified conversation or thread.
+    /// </summary>
+    /// <param name="turnContext">The turn context containing the current activity and service references. Cannot be null.</param>
+    /// <param name="thread_ts">The thread timestamp identifying the Slack thread to join. If null, the value from "event.ts" is used.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the started Slack stream.</returns>
+    public Task<SlackStream> CreateStreamAsync(ITurnContext turnContext, string? thread_ts = null)
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
-        return new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.EventEnvelope.event_content.channel, channelData.EventEnvelope.event_content.ts, channelData.ApiToken);
+        var stream = new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.EventEnvelope.event_content.channel, thread_ts ?? channelData.EventEnvelope.event_content.ts, channelData.ApiToken);
+        return stream.StartAsync();
     }
 
-    public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler)
+    public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithSelector((context, ct) => Task.FromResult(context.Activity.IsType(ActivityTypes.Message) && context.Activity.ChannelId == ChannelId))
             .WithChannelId(ChannelId)
             .WithHandler(routeHandler)
-            .WithOrderRank(RouteRank.Last)
+            .WithOrderRank(rank)
+            .WithOAuthHandlers(autoSigninHandlers)
             .Build());
         return this;
     }
 
-    public SlackAgentExtension OnSlackMessage(string text, RouteHandler routeHandler)
+    public SlackAgentExtension OnSlackMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(text)
             .WithChannelId(ChannelId)
             .WithHandler(routeHandler)
+            .WithOrderRank(rank)
+            .WithOAuthHandlers(autoSigninHandlers)
             .Build());
         return this;
     }
 
-    public SlackAgentExtension OnSlackMessage(Regex textPattern, RouteHandler routeHandler)
+    public SlackAgentExtension OnSlackMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(textPattern)
             .WithChannelId(ChannelId)
             .WithHandler(routeHandler)
+            .WithOrderRank(rank)
+            .WithOAuthHandlers(autoSigninHandlers)
             .Build());
         return this;
     }
