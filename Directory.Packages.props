@@ -45,12 +45,12 @@
 	<PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
 	  
-	<PackageVersion Include="System.Text.Json" Version="10.0.2" />
-    <PackageVersion Include="System.Memory.Data" Version="10.0.2" />
-	<PackageVersion Include="System.Runtime.Caching" Version="10.0.2" />
-	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
+	<PackageVersion Include="System.Text.Json" Version="10.0.5" />
+    <PackageVersion Include="System.Memory.Data" Version="10.0.5" />
+	<PackageVersion Include="System.Runtime.Caching" Version="10.0.5" />
+	<PackageVersion Include="System.Configuration.ConfigurationManager" Version="10.0.5" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-    <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.2" />
+    <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.5" />
 	  
 	<!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft_AspNetCore_PkgVer)" />
@@ -81,8 +81,8 @@
     <PackageVersion Include="xunit.v3.extensibility.core"                                                  Version="$(Xunit_v3_PackageVersion)" />      
 
     <!-- SDK Core -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.4" />
-	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.4" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.5" />
+	<PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.5" />
 	<PackageVersion Include="Azure.Identity" Version="1.17.1" />
 	<PackageVersion Include="Azure.Core" Version="1.50.0" />
 	<PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
@@ -147,6 +147,9 @@
 
 	  <!-- Azure Monitor (Application Insights) Exporter -->
 	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
-  
+	  
+	  <!-- A2A -->
+	  <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview2" />
+	  <PackageVersion Include="A2A" Version="1.0.0-preview2" />
   </ItemGroup>
 </Project>
