@@ -53,6 +53,15 @@ public class SlackAgentExtension : AgentExtension
         return stream.StartAsync();
     }
 
+    /// <summary>
+    /// Registers a message route handler for any Slack message received by the agent.
+    /// </summary>
+    /// <param name="routeHandler">The delegate that processes incoming Slack message activities. This handler will be invoked when a message
+    /// activity is received on the Slack channel.</param>
+    /// <param name="autoSigninHandlers">An optional array of handler names that support automatic sign-in. If specified, these handlers will be used to
+    /// facilitate OAuth flows for the route.</param>
+    /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
     public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(TypeRouteBuilder.Create()
@@ -65,6 +74,17 @@ public class SlackAgentExtension : AgentExtension
         return this;
     }
 
+    /// <summary>
+    /// Registers a message route that triggers the specified handler when an incoming Slack message matches the given
+    /// text.
+    /// </summary>
+    /// <param name="text">The text pattern to match incoming Slack messages. The route is triggered when a message matches this text.</param>
+    /// <param name="routeHandler">The handler to invoke when the route is matched. Responsible for processing the incoming message.</param>
+    /// <param name="autoSigninHandlers">An optional array of OAuth handler names to use for automatic sign-in. If null, no auto sign-in handlers are
+    /// applied.</param>
+    /// <param name="rank">The rank that determines the order in which this route is evaluated. Use RouteRank.Unspecified for default
+    /// ordering.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
     public SlackAgentExtension OnSlackMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
@@ -77,10 +97,89 @@ public class SlackAgentExtension : AgentExtension
         return this;
     }
 
+    /// <summary>
+    /// Registers a message route that triggers the specified handler when an incoming Slack message matches the given
+    /// text pattern.
+    /// </summary>
+    /// <param name="textPattern">A regular expression used to match the text of incoming Slack messages. The route is triggered when the message
+    /// text matches this pattern.</param>
+    /// <param name="routeHandler">The handler to invoke when the route is matched. This delegate processes the incoming message.</param>
+    /// <param name="autoSigninHandlers">An optional array of OAuth handler names to use for automatic sign-in if authentication is required. May be null
+    /// if no auto sign-in is needed.</param>
+    /// <param name="rank">The rank that determines the order in which this route is evaluated relative to other routes. Lower values
+    /// indicate higher priority. The default is RouteRank.Unspecified.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
     public SlackAgentExtension OnSlackMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(textPattern)
+            .WithChannelId(ChannelId)
+            .WithHandler(routeHandler)
+            .WithOrderRank(rank)
+            .WithOAuthHandlers(autoSigninHandlers)
+            .Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a message route handler for any Slack event received by the agent.
+    /// </summary>
+    /// <param name="routeHandler">The delegate that processes incoming Slack event activities. This handler will be invoked when an event
+    /// activity is received on the Slack channel.</param>
+    /// <param name="autoSigninHandlers">An optional array of handler names that support automatic sign-in. If specified, these handlers will be used to
+    /// facilitate OAuth flows for the route.</param>
+    /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
+    public SlackAgentExtension OnSlackEvent(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    {
+        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.Event)
+            .WithChannelId(ChannelId)
+            .WithHandler(routeHandler)
+            .WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank)
+            .WithOAuthHandlers(autoSigninHandlers)
+            .Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers an event route that triggers the specified handler when an incoming Slack event matches the given
+    /// name.
+    /// </summary>
+    /// <param name="eventName">The name of the Slack event to handle. This value identifies the event type that triggers the route.</param>
+    /// <param name="routeHandler">The delegate that processes incoming Slack event activities. This handler will be invoked when an event
+    /// activity is received on the Slack channel.</param>
+    /// <param name="autoSigninHandlers">An optional array of handler names that support automatic sign-in. If specified, these handlers will be used to
+    /// facilitate OAuth flows for the route.</param>
+    /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
+    public SlackAgentExtension OnSlackEvent(string eventName, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    {
+        AgentApplication.AddRoute(EventRouteBuilder.Create()
+            .WithName(eventName)
+            .WithChannelId(ChannelId)
+            .WithHandler(routeHandler)
+            .WithOrderRank(rank)
+            .WithOAuthHandlers(autoSigninHandlers)
+            .Build());
+        return this;
+    }
+
+    /// <summary>
+    /// Registers an event route that triggers the specified handler when an incoming Slack event matches the given
+    /// name pattern.
+    /// </summary>
+    /// <param name="eventNamePattern">The regular expression pattern that matches the name of the Slack event to handle. This value identifies the event type that triggers the route.</param>
+    /// <param name="routeHandler">The delegate that processes incoming Slack event activities. This handler will be invoked when an event
+    /// activity is received on the Slack channel.</param>
+    /// <param name="autoSigninHandlers">An optional array of handler names that support automatic sign-in. If specified, these handlers will be used to
+    /// facilitate OAuth flows for the route.</param>
+    /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
+    /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
+    public SlackAgentExtension OnSlackEvent(Regex eventNamePattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    {
+        AgentApplication.AddRoute(EventRouteBuilder.Create()
+            .WithName(eventNamePattern)
             .WithChannelId(ChannelId)
             .WithHandler(routeHandler)
             .WithOrderRank(rank)
