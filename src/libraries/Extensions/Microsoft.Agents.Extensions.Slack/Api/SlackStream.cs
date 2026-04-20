@@ -4,6 +4,8 @@
 using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api;
@@ -80,6 +82,41 @@ public class SlackStream
             thread_ts = _threadTs,
             chunks,
             blocks,
+        }, _token);
+    }
+
+    public async Task StopAsync(IList<Chunk>? chunks = null, string blocks = null)
+    {
+        if (string.IsNullOrEmpty(_messageTs))
+        {
+            return;
+        }
+
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(blocks);
+        if (jsonElement.ValueKind == JsonValueKind.Object)
+        {
+            if (jsonElement.TryGetProperty("blocks", out JsonElement value))
+            {
+                jsonElement = value;
+            }
+            else
+            {
+                throw new ArgumentException("If blocks is a JSON object, it must contain a \"blocks\" property with a JSON array value.", nameof(blocks));
+            }
+        }
+        else if (jsonElement.ValueKind != JsonValueKind.Array)
+        {
+            throw new ArgumentException("Blocks must be a JSON array or an object containing a \"blocks\" property with a JSON array value.", nameof(blocks));
+        }
+
+        // https://docs.slack.dev/reference/methods/chat.stopStream
+        await _slackApi.CallAsync("chat.stopStream", new
+        {
+            channel = _channel,
+            ts = _messageTs,
+            thread_ts = _threadTs,
+            chunks,
+            blocks = jsonElement,
         }, _token);
     }
 }

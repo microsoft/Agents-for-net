@@ -55,7 +55,7 @@ public class SlackApi
         AssertionHelpers.ThrowIfNullOrWhiteSpace(method, nameof(method));
         AssertionHelpers.ThrowIfNull(options, nameof(options));
 
-        var json = JsonSerializer.Serialize(options ?? new { }, JsonOptions);
+        var json = options is string str ? str : JsonSerializer.Serialize(options ?? new { }, JsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{SlackApiBase}/{method}")

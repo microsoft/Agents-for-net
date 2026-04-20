@@ -10,7 +10,9 @@ using Microsoft.Agents.Extensions.Slack.Api;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SlackAgent;
 
@@ -48,11 +50,12 @@ public class MyAgent : AgentApplication
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
 
-        var message = new
+        var message = $$"""
         {
-            channel = channelData.EventEnvelope?.Get<string>("event.channel"),
-            text = $"You said: {turnContext.Activity.Text}"
-        };
+            "channel": "{{channelData.EventEnvelope?.Get<string>("event.channel")}}",
+            "text": "You said: {{turnContext.Activity.Text}}"
+        }
+        """;
 
         await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
@@ -88,38 +91,40 @@ public class MyAgent : AgentApplication
         }
         finally
         {
+            var feedbackButtons = """
+            {
+                "blocks": 
+                [
+                    {
+                        "type": "context_actions",
+                        "elements": [
+                            {
+                                "type": "feedback_buttons",
+                                "action_id": "feedback",
+                                "positive_button": {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "👍"
+                                    },
+                                    "value": "positive_feedback"
+                                },
+                                "negative_button": {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "👎"
+                                    },
+                                    "value": "negative_feedback"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+            """;
+
             // Legacy: https://docs.slack.dev/legacy/legacy-messaging/legacy-message-buttons/
             // New: Feedback buttons: https://docs.slack.dev/reference/block-kit/blocks/context-actions-block
-            await stream.StopAsync(blocks: [
-                new
-                {
-                    type = "context_actions",
-                    elements = new List<object>
-                    {
-                        new
-                        {
-                            type = "feedback_buttons",
-                            action_id = "feedback",
-                            positive_button = new
-                            {
-                                text = new {
-                                    type = "plain_text",
-                                    text = "👍",
-                                },
-                                value = "good-feedback"
-                            },
-                            negative_button = new
-                            {
-                                text = new {
-                                    type = "plain_text",
-                                    text = "👎",
-                                },
-                                value = "bad-feedback"
-                            }
-                        }
-                    }
-                }
-            ]);
+            await stream.StopAsync(blocks: feedbackButtons);
         }
     }
 }
