@@ -8,11 +8,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack;
 using Microsoft.Agents.Extensions.Slack.Api;
 using System;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SlackAgent;
 

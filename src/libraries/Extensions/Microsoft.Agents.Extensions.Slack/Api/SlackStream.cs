@@ -5,7 +5,6 @@ using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api;

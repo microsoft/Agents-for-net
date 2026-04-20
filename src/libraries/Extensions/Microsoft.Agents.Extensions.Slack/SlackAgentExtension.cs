@@ -16,7 +16,7 @@ public class SlackAgentExtension : AgentExtension
 #if !NETSTANDARD
     protected AgentApplication AgentApplication { get; init; }
 #else
-        protected AgentApplication AgentApplication { get; set;}
+    protected AgentApplication AgentApplication { get; set;}
 #endif
 
     public SlackAgentExtension(AgentApplication application) 
