@@ -78,6 +78,7 @@ public class SlackAgentExtension : AgentExtension
     /// Registers a message route that triggers the specified handler when an incoming Slack message matches the given
     /// text.
     /// </summary>
+    /// <remarks>This differs from AgentApplication.OnMessage in that this only matches for the slack channel.</remarks>
     /// <param name="text">The text pattern to match incoming Slack messages. The route is triggered when a message matches this text.</param>
     /// <param name="routeHandler">The handler to invoke when the route is matched. Responsible for processing the incoming message.</param>
     /// <param name="autoSigninHandlers">An optional array of OAuth handler names to use for automatic sign-in. If null, no auto sign-in handlers are
@@ -101,6 +102,7 @@ public class SlackAgentExtension : AgentExtension
     /// Registers a message route that triggers the specified handler when an incoming Slack message matches the given
     /// text pattern.
     /// </summary>
+    /// <remarks>This differs from AgentApplication.OnMessage in that this only matches for the slack channel.</remarks>
     /// <param name="textPattern">A regular expression used to match the text of incoming Slack messages. The route is triggered when the message
     /// text matches this pattern.</param>
     /// <param name="routeHandler">The handler to invoke when the route is matched. This delegate processes the incoming message.</param>
@@ -146,6 +148,7 @@ public class SlackAgentExtension : AgentExtension
     /// Registers an event route that triggers the specified handler when an incoming Slack event matches the given
     /// name.
     /// </summary>
+    /// <remarks>This differs from AgentApplication.OnEvent in that this only matches for the slack channel.</remarks>
     /// <param name="eventName">The name of the Slack event to handle. This value identifies the event type that triggers the route.</param>
     /// <param name="routeHandler">The delegate that processes incoming Slack event activities. This handler will be invoked when an event
     /// activity is received on the Slack channel.</param>
@@ -169,6 +172,7 @@ public class SlackAgentExtension : AgentExtension
     /// Registers an event route that triggers the specified handler when an incoming Slack event matches the given
     /// name pattern.
     /// </summary>
+    /// <remarks>This differs from AgentApplication.OnEvent in that this only matches for the slack channel.</remarks>
     /// <param name="eventNamePattern">The regular expression pattern that matches the name of the Slack event to handle. This value identifies the event type that triggers the route.</param>
     /// <param name="routeHandler">The delegate that processes incoming Slack event activities. This handler will be invoked when an event
     /// activity is received on the Slack channel.</param>

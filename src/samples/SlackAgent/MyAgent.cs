@@ -13,22 +13,14 @@ using System.Threading.Tasks;
 
 namespace SlackAgent;
 
-//[SlackExtension] // Uncomment this line once the Teams Extension changes are merged.
 [Agent(name: "MyAgent", description: "Echo user messages back on slack", version: "1.0")]
-public class MyAgent : AgentApplication
+[SlackExtension]
+public partial class MyAgent : AgentApplication
 {
-    public SlackAgentExtension SlackExtension { get; private set; }
-
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        // Remove these lines and uncomment the [SlackExtension] attribute on this class once the Teams Extension changes are merged.
-        SlackExtension = new SlackAgentExtension(this);
-        RegisterExtension(SlackExtension, slack =>
-        {
-            slack.OnSlackMessage("-stream", OnSlackStreamMessageAsync);
-            slack.OnSlackMessage(OnSlackMessageAsync, rank: RouteRank.Last);
-        });
-
+        SlackExtension.OnSlackMessage("-stream", OnSlackStreamMessageAsync);
+        SlackExtension.OnSlackMessage(OnSlackMessageAsync, rank: RouteRank.Last);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
     }
 
