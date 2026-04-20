@@ -55,11 +55,11 @@ public class SlackAgentExtension : AgentExtension
 
     public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(MessageRouteBuilder.Create()
-            .WithSelector((context, ct) => Task.FromResult(context.Activity.IsType(ActivityTypes.Message) && context.Activity.ChannelId == ChannelId))
+        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+            .WithType(ActivityTypes.Message)
             .WithChannelId(ChannelId)
             .WithHandler(routeHandler)
-            .WithOrderRank(rank)
+            .WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
         return this;
