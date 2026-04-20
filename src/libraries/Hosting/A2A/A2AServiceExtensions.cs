@@ -244,11 +244,11 @@ public static class A2AServiceExtensions
         routeGroup.MapPost($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] PushNotificationConfig pushNotificationConfig, CancellationToken cancellationToken) =>
             adapter.SetPushNotificationAsync(request, response, agent, id, pushNotificationConfig, cancellationToken));
 
-        // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
+        // /v1/tasks/{id}/pushNotificationConfigs/{id} endpoint - GET
         routeGroup.MapGet($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs/{{notificationConfigId?}}", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, string? notificationConfigId, CancellationToken cancellationToken) =>
             adapter.GetPushNotificationAsync(request, response, agent, id, notificationConfigId, cancellationToken));
 
-        // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET
+        // /v1/tasks/{id}/pushNotificationConfigs endpoint - GET (list)
         routeGroup.MapGet($"{prefixPath}/tasks/{{id}}/pushNotificationConfigs", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromQuery] int ? pageSize, [FromQuery] string ? pageToken, CancellationToken cancellationToken) =>
             adapter.ListPushNotificationConfigsAsync(request, response, agent, id, pageSize, pageToken, cancellationToken));
 

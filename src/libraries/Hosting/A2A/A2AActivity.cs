@@ -8,7 +8,6 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
@@ -79,7 +78,7 @@ internal static class A2AActivity
             });
         }
 
-        foreach (var attachment in activity.Attachments ?? Enumerable.Empty<Attachment>())
+        foreach (var attachment in activity.Attachments)
         {
             if (attachment.ContentUrl == null && attachment.Content is not string)
             {
@@ -105,7 +104,7 @@ internal static class A2AActivity
 
         if (includeEntities)
         {
-            foreach (var entity in activity.Entities ?? Enumerable.Empty<Entity>())
+            foreach (var entity in activity.Entities)
             {
                 if (entity is not StreamInfo)
                 {
@@ -150,19 +149,16 @@ internal static class A2AActivity
     public static bool HasA2AMessageContent(this IActivity activity)
     {
         return !string.IsNullOrEmpty(activity.Text)
-            || activity.Attachments?.Any() == true;
+            || activity.Attachments.Count > 0;
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)
     {
-        TaskState taskState = activity.InputHint switch
+        return activity.InputHint switch
         {
             InputHints.ExpectingInput => TaskState.InputRequired,
-            InputHints.AcceptingInput => TaskState.Working,
             _ => TaskState.Working,
         };
-
-        return taskState;
     }
 
     private static Activity CreateActivity(

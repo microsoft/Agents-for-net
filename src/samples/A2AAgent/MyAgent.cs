@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.A2A;
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,8 +22,13 @@ namespace A2AAgent;
 [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
 public class MyAgent : AgentApplication
 {
+    public A2AAgentExtension A2AExtension { get; init; }
+
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
+        A2AExtension = new A2AAgentExtension(this);
+        RegisterExtension(A2AExtension);
+
         OnMessage("-stream", OnStreamAsync);
         OnMessage("-multi", OnMultiTurnAsync);
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
@@ -78,19 +82,17 @@ public class MyAgent : AgentApplication
 
     private async Task OnA2AAdvancedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // Send a message directly through a2a-dotnet
-        var eventQueue = turnContext.Services.Get<A2A.AgentEventQueue>();
-        var requestContext = turnContext.Services.Get<A2A.RequestContext>();
-
-        var message = new A2A.Message()
+        await A2AExtension.A2ADirect(turnContext, async (eventQueue, requestContext) =>
         {
-            Role = A2A.Role.Agent,
-            TaskId = requestContext.TaskId,
-            ContextId = requestContext.ContextId,
-            Parts = [new Part() { Text = "This is an A2A message" }]
-        };
-
-        await eventQueue.EnqueueMessageAsync(message, cancellationToken);
+            var message = new A2A.Message()
+            {
+                Role = Role.Agent,
+                TaskId = requestContext.TaskId,
+                ContextId = requestContext.ContextId,
+                Parts = [new Part() { Text = "This is an A2A message" }]
+            };
+            await eventQueue.EnqueueMessageAsync(message, cancellationToken);
+        });
 
         // Send another via TurnContext
         await turnContext.SendActivityAsync("This is another message sent by TurnContext", cancellationToken: cancellationToken);

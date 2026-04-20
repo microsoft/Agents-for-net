@@ -42,7 +42,9 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private readonly ChannelEventNotifier _a2aNotifier;
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
     private static readonly A2AServerOptions _a2aServerOptions = new();
+    private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<A2AServer> _a2aServerLogger;
 
     public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new StorageTaskStore(storage), loggerFactory, a2aNotifier)
     {
@@ -55,6 +57,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         _loggerFactory = loggerFactory;
         _taskStore = taskStore;
         _a2aNotifier = a2aNotifier ?? new ChannelEventNotifier();
+        _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
 
         OnTurnError = (turnContext, exception) =>
         {
@@ -86,7 +89,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             Name = nameof(A2AAdapter),
             Description = "Agents SDK A2A",
-            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+            Version = _assemblyVersion,
             SecuritySchemes = new Dictionary<string, SecurityScheme>
                     {
                         {
@@ -188,6 +191,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         await httpResponse.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    #region HTTP Endpoints
     /// <inheritdoc/>
     public Task<IResult> GetTaskAsync(HttpRequest httpRequest, HttpResponse response, IAgent agent, string id, int? historyLength, string? metadata, CancellationToken cancellationToken)
     {
@@ -235,7 +239,9 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     {
         return A2AHttpProcessor.ListPushNotificationConfigRestAsync(GetA2AServerForAgent(CreateAgentRequestContext(httpRequest, agent, false)), Logger, id, pageSize, pageToken, cancellationToken);
     }
+    #endregion
 
+    #region Agent Turn Processing
     private AgentRequestContext CreateAgentRequestContext(HttpRequest httpRequest, IAgent agent, bool cache = true)
     {
         var agentContext = new AgentRequestContext(httpRequest, this, agent);
@@ -244,15 +250,9 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     private A2AServer GetA2AServerForAgent(AgentRequestContext agentContext)
     {
-        return new A2AServer(
-            agentContext,
-            _taskStore,
-            _a2aNotifier,
-            _loggerFactory.CreateLogger<A2AServer>(),
-            _a2aServerOptions);
+        return new A2AServer(agentContext, _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
     }
 
-    #region A2A Agent
     internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         using (Logger.BeginScope("ExecuteAgentTurnAsync: Agent={AgentType}, RequestId={RequestId}, TaskId={TaskId}", agent.GetType().Name, requestId, context.TaskId))
@@ -400,9 +400,11 @@ class AgentRequestContext : IAgentHandler
         return [];
     }
 
+    private static Message GetIncomingMessage(ITurnContext turnContext) => (Message)turnContext.Activity.ChannelData;
+
     private async Task OnMessageResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = (Message)turnContext.Activity.ChannelData;
+        var incomingMessage = GetIncomingMessage(turnContext);
         var state = activity.GetA2ATaskState();
         var response = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, activity);
 
@@ -421,7 +423,7 @@ class AgentRequestContext : IAgentHandler
 
     private async Task OnStreamingResponse(ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = (Message)turnContext.Activity.ChannelData;
+        var incomingMessage = GetIncomingMessage(turnContext);
         var isInformative = entity.StreamType == StreamTypes.Informative;
 
         if (isInformative)
@@ -457,7 +459,7 @@ class AgentRequestContext : IAgentHandler
 
     private async Task OnEndOfConversationResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = (Message)turnContext.Activity.ChannelData;
+        var incomingMessage = GetIncomingMessage(turnContext);
 
         // Set optional EOC Value as an Artifact.
         if (activity.Value != null)
