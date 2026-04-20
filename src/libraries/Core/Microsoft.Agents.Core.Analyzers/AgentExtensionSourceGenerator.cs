@@ -112,10 +112,10 @@ namespace Microsoft.Agents.Core.Analyzers
         {
             var name = extensionType.Name;
             if (name.EndsWith("AgentExtension"))
-                return name.Substring(0, name.Length - "AgentExtension".Length);
+                name = name.Substring(0, name.Length - "AgentExtension".Length);
             if (name.EndsWith("Extension"))
-                return name.Substring(0, name.Length - "Extension".Length);
-            return name;
+                name = name.Substring(0, name.Length - "Extension".Length);
+            return name + "Extension";
         }
 
         private static string GenerateSource(INamedTypeSymbol classSymbol, List<ITypeSymbol> extensions)

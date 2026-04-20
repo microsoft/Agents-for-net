@@ -102,16 +102,16 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
-- Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
+- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
 - Feature areas exposed as properties on `TeamsAgentExtension`:
-  - `Teams.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
-  - `Teams.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
-  - `Teams.Meetings` — start/end, participants join/leave
-  - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
-  - `Teams.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
-  - `Teams.FileConsent` — file upload consent accept/decline
-  - `Teams.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
-  - `Teams.Config` — config fetch/submit (bot configuration UI)
+  - `TeamsExtension.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
+  - `TeamsExtension.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
+  - `TeamsExtension.Meetings` — start/end, participants join/leave
+  - `TeamsExtension.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `TeamsExtension.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `TeamsExtension.FileConsent` — file upload consent accept/decline
+  - `TeamsExtension.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
+  - `TeamsExtension.Config` — config fetch/submit (bot configuration UI)
 - `TeamsInfo` static helper — `GetMeetingInfoAsync()`, `GetMeetingParticipantAsync()`, `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetPagedTeamMembersAsync()`, `GetTeamMemberAsync()`, `GetMemberAsync()`
 - `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
 - `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.

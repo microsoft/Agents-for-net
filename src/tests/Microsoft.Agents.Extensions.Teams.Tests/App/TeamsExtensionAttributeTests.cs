@@ -42,8 +42,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             var app = new TestTeamsExtensionAgent(CreateOptions());
 
-            Assert.NotNull(app.Teams);
-            Assert.IsType<TeamsAgentExtension>(app.Teams);
+            Assert.NotNull(app.TeamsExtension);
+            Assert.IsType<TeamsAgentExtension>(app.TeamsExtension);
         }
 
         [Fact]
@@ -72,8 +72,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             var app = new TestTeamsExtensionAgent(CreateOptions());
 
-            var first = app.Teams;
-            var second = app.Teams;
+            var first = app.TeamsExtension;
+            var second = app.TeamsExtension;
 
             Assert.Same(first, second);
         }

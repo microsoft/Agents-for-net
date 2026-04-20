@@ -26,7 +26,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
+    /// TeamsExtension.MessageExtensions.OnMessagePreviewEdit("composeCmd", (ctx, state, preview, ct) =>
     /// {
     ///     var draft = preview.Attachments?.FirstOrDefault()?.Content;
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
@@ -67,7 +67,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnMessagePreviewSend("composeCmd", async (ctx, state, preview, ct) =>
+    /// TeamsExtension.MessageExtensions.OnMessagePreviewSend("composeCmd", async (ctx, state, preview, ct) =>
     /// {
     ///     var content = preview.Attachments?.FirstOrDefault()?.Content;
     ///     await _channel.PostAsync(content, ct);
@@ -107,7 +107,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnFetchAction("myCommand", (ctx, state, ct) =>
+    /// TeamsExtension.MessageExtensions.OnFetchAction("myCommand", (ctx, state, ct) =>
     ///     Task.FromResult(new ActionResponse
     ///     {
     ///         Task = new TaskInfo
@@ -152,7 +152,7 @@ public class MessageExtension
     /// <code>
     /// public record CreateTaskData(string Title, string AssignedTo);
     ///
-    /// Teams.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;("createTask", async (ctx, state, data, ct) =>
+    /// TeamsExtension.MessageExtensions.OnSubmitAction&lt;CreateTaskData&gt;("createTask", async (ctx, state, data, ct) =>
     /// {
     ///     var task = await _service.CreateAsync(data.Title, data.AssignedTo, ct);
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [task.ToCard()] } };
@@ -191,7 +191,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnQuery("searchProducts", async (ctx, state, query, ct) =>
+    /// TeamsExtension.MessageExtensions.OnQuery("searchProducts", async (ctx, state, query, ct) =>
     /// {
     ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
     ///     var items = await _catalog.SearchAsync(keyword, ct);
@@ -233,7 +233,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnSelectItem&lt;ProductSummary&gt;(async (ctx, state, item, ct) =>
+    /// TeamsExtension.MessageExtensions.OnSelectItem&lt;ProductSummary&gt;(async (ctx, state, item, ct) =>
     /// {
     ///     var details = await _catalog.GetDetailsAsync(item.Id, ct);
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] } };
@@ -257,7 +257,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnQueryLink(async (ctx, state, url, ct) =>
+    /// TeamsExtension.MessageExtensions.OnQueryLink(async (ctx, state, url, ct) =>
     /// {
     ///     var preview = await _service.FetchPreviewAsync(url, ct);
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] } };
@@ -294,7 +294,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnQueryUrlSetting((ctx, state, ct) =>
+    /// TeamsExtension.MessageExtensions.OnQueryUrlSetting((ctx, state, ct) =>
     ///     Task.FromResult(new Response
     ///     {
     ///         ComposeExtension = new Result
@@ -324,7 +324,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnConfigureSettings((ctx, state, query, ct) =>
+    /// TeamsExtension.MessageExtensions.OnConfigureSettings((ctx, state, query, ct) =>
     /// {
     ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
     ///     _settingsStore.Save(ctx.Activity.From.Id, setting);
@@ -349,7 +349,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// Teams.MessageExtensions.OnCardButtonClicked&lt;ApprovalAction&gt;(async (ctx, state, cardData, ct) =>
+    /// TeamsExtension.MessageExtensions.OnCardButtonClicked&lt;ApprovalAction&gt;(async (ctx, state, cardData, ct) =>
     /// {
     ///     await _approvalService.RecordAsync(cardData.ItemId, cardData.Decision, ct);
     ///     await ctx.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: ct);
