@@ -18,13 +18,13 @@ namespace SlackAgent;
 [Agent(name: "MyAgent", description: "Echo user messages back on slack", version: "1.0")]
 public class MyAgent : AgentApplication
 {
-    public SlackAgentExtension Slack { get; private set; }
+    public SlackAgentExtension SlackExtension { get; private set; }
 
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // Remove these lines and uncomment the [SlackExtension] attribute on this class once the Teams Extension changes are merged.
-        Slack = new SlackAgentExtension(this);
-        RegisterExtension(Slack, slack =>
+        SlackExtension = new SlackAgentExtension(this);
+        RegisterExtension(SlackExtension, slack =>
         {
             slack.OnSlackMessage("-stream", OnSlackStreamMessageAsync);
             slack.OnSlackMessage(OnSlackMessageAsync, rank: RouteRank.Last);
@@ -54,12 +54,12 @@ public class MyAgent : AgentApplication
             text = $"You said: {turnContext.Activity.Text}"
         };
 
-        await Slack.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+        await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
 
     private async Task OnSlackStreamMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var stream = await Slack.CreateStreamAsync(turnContext);
+        var stream = await SlackExtension.CreateStreamAsync(turnContext);
 
         try
         {
