@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// A2A to/from Activity

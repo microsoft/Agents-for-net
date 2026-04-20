@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 using A2A;
-using Azure;
-using Azure.Core;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.AspNetCore.Builder;
@@ -19,7 +17,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 public static class A2AServiceExtensions
 {

@@ -6,7 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Hosting.AspNetCore.A2A;
+using Microsoft.Agents.Extensions.A2A;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

@@ -4,7 +4,7 @@
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 [SerializationInit]
 internal class SerializationInit

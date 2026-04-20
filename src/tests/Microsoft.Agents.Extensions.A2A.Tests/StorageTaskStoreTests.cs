@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests
+namespace Microsoft.Agents.Extensions.A2A.Tests
 {
     public class StorageTaskStoreTests
     {
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests
         public async Task UpdateStatusAsync_WithNullTaskId_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _taskStore.SaveTaskAsync(null, new AgentTask()));
         }
 
@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests
             var task = new AgentTask { Id = null };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _taskStore.SaveTaskAsync(null, task));
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => _taskStore.SaveTaskAsync(null, task));
         }
 
         [Fact]

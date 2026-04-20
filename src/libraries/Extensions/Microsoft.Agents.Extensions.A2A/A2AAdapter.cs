@@ -8,6 +8,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// Adapter for handling A2A requests.

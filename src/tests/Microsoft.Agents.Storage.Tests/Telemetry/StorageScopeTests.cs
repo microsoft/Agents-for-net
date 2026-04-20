@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests.Telemetry
 {
-    [CollectionDefinition("TelemetryTests", DisableParallelization = true)]
+    [Collection("TelemetryTests")]
     public class StorageScopeTests : TelemetryScopeTestBase
     {
 

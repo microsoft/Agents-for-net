@@ -4,7 +4,7 @@
 using A2A;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// Implement to handle setting agent specific <see cref="AgentCard"/> properties.

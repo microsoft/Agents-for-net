@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplTests.AspNetCore.A2A</ComponentAreaName>
+		<ComponentAreaName>CplTests.A2A</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\libraries\Hosting\A2A\Microsoft.Agents.Hosting.AspNetCore.A2A.csproj" />
+      <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj" />
       <ProjectReference Include="..\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
       <ProjectReference Include="..\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj" />
 	</ItemGroup>

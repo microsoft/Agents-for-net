@@ -19,7 +19,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests;
+namespace Microsoft.Agents.Extensions.A2A.Tests;
 
 public class A2AAdapterTests
 {
@@ -330,12 +330,9 @@ public class A2AAdapterTests
 
     private static Record UseRecord(Func<Record, IAgent> createAgent)
     {
-        var loggerFactory = new Mock<ILoggerFactory>();
-
-        var sp = new Mock<IServiceProvider>();
         var storage = new MemoryStorage();
-        var adapter = new A2AAdapter(storage, loggerFactory.Object);
-        var record = new Record(storage, adapter, null, loggerFactory);
+        var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance);
+        var record = new Record(storage, adapter, null);
 
         if (createAgent != null)
         {
@@ -348,13 +345,8 @@ public class A2AAdapterTests
     private record Record(
         IStorage Storage,
         A2AAdapter Adapter,
-        IAgent Agent,
-        Mock<ILoggerFactory> LoggerFactory)
+        IAgent Agent)
     {
-        public void VerifyMocks()
-        {
-            Mock.Verify(LoggerFactory);
-        }
 
         public IAgent Agent { get; set; } = Agent;
         public IStorage Storage { get; set; } = Storage;

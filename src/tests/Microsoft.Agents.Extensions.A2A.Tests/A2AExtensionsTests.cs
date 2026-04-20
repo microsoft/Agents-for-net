@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 #nullable enable
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests;
+namespace Microsoft.Agents.Extensions.A2A.Tests;
 
 public class A2AExtensionsTests
 {

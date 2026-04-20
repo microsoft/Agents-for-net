@@ -3,7 +3,7 @@
 
 using A2AAgent;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.AspNetCore.A2A;
+using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;

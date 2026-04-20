@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Core;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 public class A2AAgentExtension(AgentApplication agentApplication) : Builder.AgentExtension
 {

@@ -5,7 +5,7 @@ using A2A.AspNetCore;
 using A2ATCKAgent;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.AspNetCore.A2A;
+using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

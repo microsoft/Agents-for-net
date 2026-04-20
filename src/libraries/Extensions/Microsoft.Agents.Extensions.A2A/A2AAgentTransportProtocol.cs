@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A
+namespace Microsoft.Agents.Extensions.A2A
 {
     public static class A2AAgentTransportProtocol
     {

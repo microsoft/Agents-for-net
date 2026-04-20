@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A;
+namespace Microsoft.Agents.Extensions.A2A;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
 public class A2ASkillAttribute : Attribute

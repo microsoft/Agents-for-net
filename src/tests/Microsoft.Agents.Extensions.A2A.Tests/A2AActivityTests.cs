@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.A2A.Tests;
+namespace Microsoft.Agents.Extensions.A2A.Tests;
 
 public class A2AActivityTests
 {
