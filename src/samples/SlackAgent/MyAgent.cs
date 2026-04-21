@@ -19,8 +19,8 @@ public partial class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        SlackExtension.OnSlackMessage("-stream", OnSlackStreamMessageAsync);
-        SlackExtension.OnSlackMessage(OnSlackMessageAsync, rank: RouteRank.Last);
+        SlackExtension.OnMessage("-stream", OnSlackStreamMessageAsync);
+        SlackExtension.OnMessage(OnSlackMessageAsync, rank: RouteRank.Last);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
     }
 

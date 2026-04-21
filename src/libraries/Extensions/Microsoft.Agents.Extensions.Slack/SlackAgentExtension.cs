@@ -62,7 +62,7 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Message)
@@ -86,7 +86,7 @@ public class SlackAgentExtension : AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated. Use RouteRank.Unspecified for default
     /// ordering.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(text)
@@ -111,7 +111,7 @@ public class SlackAgentExtension : AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated relative to other routes. Lower values
     /// indicate higher priority. The default is RouteRank.Unspecified.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(textPattern)
@@ -132,7 +132,7 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackEvent(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Event)
@@ -156,7 +156,7 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackEvent(string eventName, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(string eventName, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(EventRouteBuilder.Create()
             .WithName(eventName)
@@ -180,7 +180,7 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnSlackEvent(Regex eventNamePattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(Regex eventNamePattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         AgentApplication.AddRoute(EventRouteBuilder.Create()
             .WithName(eventNamePattern)

@@ -2,5 +2,5 @@
 
 ## About
 
-Contains the definitions for SlackAdapter and client.
+Contains the definitions for SlackAgentExtension and slack API client.
 
