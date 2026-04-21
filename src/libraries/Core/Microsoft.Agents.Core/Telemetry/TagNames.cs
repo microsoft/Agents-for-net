@@ -56,20 +56,20 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <summary>Whether the authentication attempt succeeded.</summary>
         public static readonly string AuthSuccess = "auth.success";
 
-        /// <summary>The OAuth connection name used for user token operations.</summary>
-        public static readonly string ConnectionName = "auth.connection.name";
-
         /// <summary>The conversation identifier associated with the activity.</summary>
         public static readonly string ConversationId = "activity.conversation.id";
 
+        /// <summary>The OAuth connection name used for user token operations.</summary>
+        public static readonly string ExchangeConnection = "auth.connection.name";
+
         /// <summary>The HTTP method of an outgoing or incoming request.</summary>
         public static readonly string HttpMethod = "http.method";
-
+        
         /// <summary>The HTTP status code of an outgoing or incoming response.</summary>
         public static readonly string HttpStatusCode = "http.status_code";
 
         /// <summary>Whether the current request is an agentic (agent-to-agent) request.</summary>
-        public static readonly string IsAgentic = "is_agentic_request";
+        public static readonly string IsAgentic = "activity.is_agentic_request";
 
         /// <summary>The number of keys involved in a storage operation.</summary>
         public static readonly string KeyCount = "storage.keys.count";

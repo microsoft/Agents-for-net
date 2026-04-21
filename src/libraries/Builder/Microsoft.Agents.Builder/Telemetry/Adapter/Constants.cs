@@ -11,6 +11,8 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter
         /// <summary>Span name for processing an incoming activity.</summary>
         internal static readonly string ScopeProcess = "agents.adapter.process";
 
+        internal static readonly string ScopeWriteResponse = "agents.adapter.write_response";
+
         /// <summary>Span name for sending one or more outgoing activities.</summary>
         internal static readonly string ScopeSendActivities = "agents.adapter.send_activities";
 

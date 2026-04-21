@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
     /// </summary>
     /// <remarks>
     /// Records the activity type and conversation identifier as span tags and increments
-    /// the <see cref="Metrics.ActivitiesUpdated"/> counter.
+    /// the <see cref="Metrics.ActivitiesDeleted"/> counter.
     /// </remarks>
     internal class ScopeDeleteActivity : TelemetryScope
     {

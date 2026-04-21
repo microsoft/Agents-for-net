@@ -212,7 +212,7 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 - `AgentToAgent`: Demonstrates A2A communication with streaming and normal modes
 - `CopilotStudioClient`: Client examples for Copilot Studio integration
 - `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
-- `OTelAgent`: OpenTelemetry instrumentation example
+- `TelemetryAgent`: OpenTelemetry instrumentation example
 
 **Teams Samples** (`src/samples/Teams/`):
 - `TeamsAgent`: Teams-specific agent with conversation update handling
