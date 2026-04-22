@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardViewParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardViewParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardViewParameters"/> class.
         /// </summary>
         protected CardViewParameters() 
         {

@@ -89,7 +89,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 
         /// <summary>
         /// Prv is short for Pull Request Validation.
-        /// The clusters of this category in <see cref="Test"/> is used for deploying validation instance during pull request.
+        /// The clusters of this category in <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud.Test"/> is used for deploying validation instance during pull request.
         /// </summary>
         [EnumMember(Value = "Prv")]
         Prv = 12,

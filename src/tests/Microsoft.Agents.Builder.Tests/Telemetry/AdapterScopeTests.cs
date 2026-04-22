@@ -5,9 +5,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
+using Microsoft.Agents.TestSupport;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry

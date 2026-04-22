@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Maps to an instance of <see cref="ChatTool"/>.
+        /// Maps to an instance of <see cref="OpenAI.Chat.ChatTool"/>.
         /// </summary>
         internal ChatTool ToChatTool()
         {

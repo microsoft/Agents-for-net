@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
-    /// The <see cref="CloudAdapter"/> will queue the incoming request to be 
+    /// The <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> will queue the incoming request to be
     /// processed by the configured background service if possible.
     /// </summary>
     /// <remarks>
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudAdapter"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> class.
         /// </summary>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
@@ -238,7 +238,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
-        /// as <see cref="ChannelServiceAdapterBase.ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// as <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase.ProcessActivityAsync(System.Security.Claims.ClaimsIdentity, Microsoft.Agents.Core.Models.IActivity, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/> using
         /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
@@ -263,8 +263,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Processes an outgoing activity in response to an incoming activity, handling delivery modes that require
         /// immediate response from the host.
         /// </summary>
-        /// <remarks>This method handles activities with delivery modes <see cref="DeliveryModes.Stream"/>
-        /// and <see cref="DeliveryModes.ExpectReplies"/> by sending the response activity through the response queue.
+        /// <remarks>This method handles activities with delivery modes <see cref="Microsoft.Agents.Core.Models.DeliveryModes.Stream"/>
+        /// and <see cref="Microsoft.Agents.Core.Models.DeliveryModes.ExpectReplies"/> by sending the response activity through the response queue.
         /// For other delivery modes, the method returns <see langword="false"/> and does not process the
         /// response.</remarks>
         /// <param name="incomingActivity">The incoming activity that triggered the response. The delivery mode of this activity determines how the

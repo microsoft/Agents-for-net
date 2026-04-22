@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class CardViewResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardViewResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardViewResponse"/> class.
         /// </summary>
         public CardViewResponse()
         {
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets AceData for the card view of type <see cref="AceData"/>.
+        /// Gets or Sets AceData for the card view of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.AceData"/>.
         /// </summary>
         /// <value>This value is the ace data of the card view response.</value>
         public AceData AceData { get; set; }
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         public IOnCardSelectionAction OnCardSelection { get; set; }
 
         /// <summary>
-        /// Gets or Sets the view Id of type <see cref="string"/>.
+        /// Gets or Sets the view Id of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the view id of the card view.</value>
         public string ViewId { get; set; }

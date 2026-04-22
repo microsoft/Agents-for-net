@@ -12,7 +12,7 @@ using System.Text;
 namespace Microsoft.Agents.Connector.RestClients
 {
     /// <summary>
-    /// Fluent builder for <see cref="HttpRequestMessage"/>.
+    /// Fluent builder for <see cref="System.Net.Http.HttpRequestMessage"/>.
     /// Replaces the Create*Request() helper methods scattered across REST clients.
     /// </summary>
     internal sealed class RestRequest
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <summary>
-        /// Builds the <see cref="HttpRequestMessage"/>.
+        /// Builds the <see cref="System.Net.Http.HttpRequestMessage"/>.
         /// The caller is responsible for disposing the returned message.
         /// - URI is resolved relative to <paramref name="baseUri"/> (trailing slash is ensured).
         /// - Accept: application/json is added.

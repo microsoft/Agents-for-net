@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public readonly string Value;
 
         /// <summary>
-        /// Initializes a new instance of <see cref="ChatRole"/>.
+        /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ChatRole"/>.
         /// </summary>
         /// <param name="value">value</param>
         /// <exception cref="System.ArgumentNullException"><paramref name="value"/> is null.</exception>
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public static ChatRole Tool { get; } = new(ToolValue);
 
         /// <summary>
-        /// Determines if two <see cref="ChatRole"/> values are the same.
+        /// Determines if two <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ChatRole"/> values are the same.
         /// </summary>
         /// <param name="left">left</param>
         /// <param name="right">right</param>
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Determines if two <see cref="ChatRole"/> values are not the same.
+        /// Determines if two <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ChatRole"/> values are not the same.
         /// </summary>
         /// <param name="left">left</param>
         /// <param name="right">right</param>
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Converts a string to a <see cref="ChatRole"/>.
+        /// Converts a string to a <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ChatRole"/>.
         /// </summary>
         /// <param name="value">value</param>
         public static implicit operator ChatRole(string value)

@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Connector.RestClients
     internal static class RestPipeline
     {
         /// <summary>
-        /// Sends <paramref name="request"/> and returns the raw <see cref="HttpResponseMessage"/>.
+        /// Sends <paramref name="request"/> and returns the raw <see cref="System.Net.Http.HttpResponseMessage"/>.
         /// The caller is responsible for disposing the response.
         /// Use this for methods that need to branch on specific status codes.
         /// </summary>

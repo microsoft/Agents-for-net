@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Core.Models
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="ConversationReference"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ConversationReference"/> class.</summary>
         /// <param name="activityId">(Optional) ID of the activity to refer to.</param>
         /// <param name="user">(Optional) User participating in this conversation.</param>
         /// <param name="agent">Agent participating in this conversation.</param>
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Core.Models
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="ConversationReference"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ConversationReference"/> class.</summary>
         /// <param name="locale">
         /// A locale name for the contents of the text field.
         /// The locale name is a combination of an ISO 639 two- or three-letter culture code associated with a language
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates <see cref="Activity"/> from conversation reference as it is posted to an Agent.
+        /// Creates <see cref="Microsoft.Agents.Core.Models.Activity"/> from conversation reference as it is posted to an Agent.
         /// </summary>
         /// <returns>Continuation activity.</returns>
         public Activity GetContinuationActivity()

@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="customHeaders"> Headers that will be added to request. </param>
         /// <param name='cancellationToken'> The cancellation token. </param>
         /// <returns>
-        /// A <see cref="Task"/> representing the asynchronous operation.
+        /// A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.
         /// </returns>
         Task CancelOperationAsync(string operationId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default);
     }

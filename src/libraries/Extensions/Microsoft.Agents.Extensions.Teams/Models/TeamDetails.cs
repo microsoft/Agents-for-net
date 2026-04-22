@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamDetails
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamDetails"/> class.
         /// </summary>
         public TeamDetails()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamDetails"/> class.
         /// </summary>
         /// <param name="id">Unique identifier representing a team.</param>
         /// <param name="name">Name of team.</param>

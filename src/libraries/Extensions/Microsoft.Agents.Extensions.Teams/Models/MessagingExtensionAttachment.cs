@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionAttachment : Attachment
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionAttachment"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionAttachment"/> class.
         /// </summary>
         public MessagingExtensionAttachment()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionAttachment"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionAttachment"/> class.
         /// </summary>
         /// <param name="contentType">mimetype/Contenttype for the file.</param>
         /// <param name="contentUrl">Content Url.</param>

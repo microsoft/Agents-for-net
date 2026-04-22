@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AadResourceUrls"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.AadResourceUrls"/> class.
         /// </summary>
         /// <param name="resourceUrls">The URLs to the resource you want to connect to.</param>
         public AadResourceUrls(IList<string> resourceUrls = default)

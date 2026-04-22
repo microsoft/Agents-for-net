@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Telemetry.App.Scopes;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
+using Microsoft.Agents.TestSupport;
 using System;
 using System.Collections.Generic;
 using Xunit;

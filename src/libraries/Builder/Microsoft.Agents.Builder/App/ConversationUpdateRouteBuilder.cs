@@ -15,10 +15,10 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing ConversationUpdate activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="ConversationUpdateRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithUpdateEvent(string)"/> or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/> to create and configure routes that respond to event
+    /// activities. This builder allows matching event activities by name or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder.Create"/> method
+    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder.WithUpdateEvent(string)"/> or <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = ConversationUpdateRouteBuilder.Create()
@@ -32,14 +32,14 @@ namespace Microsoft.Agents.Builder.App
     public class ConversationUpdateRouteBuilder : RouteBuilderBase<ConversationUpdateRouteBuilder>
     {
         /// <summary>
-        /// Configures the route to match a specific <see cref="ConversationUpdateEvents"/>, such as members being added or removed.
+        /// Configures the route to match a specific <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/>, such as members being added or removed.
         /// </summary>
         /// <remarks>Use this method to restrict the route to trigger only for a particular conversation
         /// update event. If the specified event is not recognized, the route will match any conversation update
         /// activity.</remarks>
         /// <param name="eventName">The name of the conversation update event to match. Common values include events for members being 
         /// added or removed. Cannot be null.</param>
-        /// <returns>The current <see cref="ConversationUpdateRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/> instance for method chaining.</returns>
         public ConversationUpdateRouteBuilder WithUpdateEvent(string eventName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(eventName, nameof(eventName));
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.App
         /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "conversationUpdate" is enforced.</param>
-        /// <returns>The current instance of <see cref="ConversationUpdateRouteBuilder"/> with the specified selector applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/> with the specified selector applied.</returns>
         public override ConversationUpdateRouteBuilder WithSelector(RouteSelector selector)
         {
             if (_route.Selector != null)
@@ -121,7 +121,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Conversation updates cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="ConversationUpdateRouteBuilder"/>.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/>.</returns>
         public override ConversationUpdateRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

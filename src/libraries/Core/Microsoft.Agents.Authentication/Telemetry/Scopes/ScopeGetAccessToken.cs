@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Authentication.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeTokenRequest"/> that traces a generic access-token acquisition
+    /// A <see cref="Microsoft.Agents.Authentication.Telemetry.Scopes.ScopeTokenRequest"/> that traces a generic access-token acquisition
     /// and records the requested scopes.
     /// </summary>
     internal class ScopeGetAccessToken : ScopeTokenRequest
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         private readonly IEnumerable<string> _scopes;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeGetAccessToken"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Authentication.Telemetry.Scopes.ScopeGetAccessToken"/> class.
         /// </summary>
         /// <param name="scopes">The OAuth/OIDC scopes requested for the token.</param>
         /// <param name="authMethod">The authentication method label to record.</param>
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         /// <inheritdoc />
         /// <remarks>
         /// Calls <c>base.Callback</c> to record the auth method, then tags the activity with
-        /// <see cref="TagNames.AuthScopes"/>.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TagNames.AuthScopes"/>.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? exception)
         {

@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also call <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
         /// The Agent is registered as Transient.
         /// </remarks>
         /// <typeparam name="TAgent"></typeparam>
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Same as <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/> but allows for use of
+        /// Same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> but allows for use of
         /// any <c>CloudAdapter</c> subclass.
         /// </summary>
         /// <typeparam name="TAgent"></typeparam>
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also calls <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// This will also calls <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
         /// The Agent is registered as Transient.
         /// </remarks>
         /// <param name="builder"></param>
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// This is the same as <see cref="AddAgent(IHostApplicationBuilder, Func{IServiceProvider, IAgent})"/>, except allows the
+        /// This is the same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Func{System.IServiceProvider, Microsoft.Agents.Builder.IAgent})"/>, except allows the
         /// use of any <c>CloudAdapter</c> subclass.
         /// </summary>
         /// <typeparam name="TAdapter"></typeparam>
@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Adds a middleware that collects headers to be propagated.
         /// </summary>
-        /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        /// <param name="app">The <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder"/> to add the middleware to.</param>
         /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
         public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
         {

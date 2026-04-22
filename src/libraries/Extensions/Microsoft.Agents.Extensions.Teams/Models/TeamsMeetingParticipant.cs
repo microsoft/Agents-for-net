@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsMeetingParticipant
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsMeetingParticipant"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsMeetingParticipant"/> class.
         /// </summary>
         public TeamsMeetingParticipant()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsMeetingParticipant"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsMeetingParticipant"/> class.
         /// </summary>
         /// <param name="user">Teams Channel Account information for this meeting participant.</param>
         /// <param name="conversation">Conversation Account for the meeting.</param>

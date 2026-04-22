@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary> Initializes a new instance of CardAction. </summary>
-        /// <param name="type"> Defines action types for clickable buttons. See <see cref="ActionTypes"/>.</param>
+        /// <param name="type"> Defines action types for clickable buttons. See <see cref="Microsoft.Agents.Core.Models.ActionTypes"/>.</param>
         /// <param name="title"> Text description which appears on the button. </param>
         /// <param name="image"> Image URL which will appear on the button, next to text label. </param>
         /// <param name="imageAltText"> Alternate text to be used for the Image property. </param>
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Core.Models
             ChannelData = channelData;
         }
 
-        /// <summary> Defines action types for clickable buttons. See <see cref="ActionTypes"/>.</summary>
+        /// <summary> Defines action types for clickable buttons. See <see cref="Microsoft.Agents.Core.Models.ActionTypes"/>.</summary>
         public string Type { get; set; }
         /// <summary> Text description which appears on the button. </summary>
         public string Title { get; set; }
@@ -74,10 +74,10 @@ namespace Microsoft.Agents.Core.Models
         public static implicit operator CardAction(string input) => new(title: input, value: input);
 
         /// <summary>
-        /// Creates a <see cref="CardAction"/> from the given input.
+        /// Creates a <see cref="Microsoft.Agents.Core.Models.CardAction"/> from the given input.
         /// </summary>
-        /// <param name="input">Represents the title and value for the <see cref="CardAction"/>.</param>
-        /// <returns>A new <see cref="CardAction"/> instance.</returns>
+        /// <param name="input">Represents the title and value for the <see cref="Microsoft.Agents.Core.Models.CardAction"/>.</param>
+        /// <returns>A new <see cref="Microsoft.Agents.Core.Models.CardAction"/> instance.</returns>
         public static CardAction FromString(string input)
         {
             return new CardAction(title: input, value: input);

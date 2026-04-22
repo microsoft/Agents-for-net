@@ -10,7 +10,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeConnectorRequest"/> that traces a get-attachment-info connector request,
+    /// A <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeConnectorRequest"/> that traces a get-attachment-info connector request,
     /// recording the attachment ID as a span tag.
     /// </summary>
     internal class ScopeGetAttachmentInfo : ScopeConnectorRequest
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
         private readonly string _attachmentId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeGetAttachmentInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeGetAttachmentInfo"/> class.
         /// </summary>
         /// <param name="attachmentId">The ID of the attachment whose metadata is being retrieved.</param>
         public ScopeGetAttachmentInfo(string attachmentId) : base(Constants.ScopeGetAttachmentInfo)

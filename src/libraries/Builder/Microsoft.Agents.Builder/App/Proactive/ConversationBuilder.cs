@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="userId">The unique identifier of the user to associate with the conversation. Cannot be null, empty, or consist
         /// solely of whitespace.</param>
         /// <param name="userName">The display name of the user. If null, the user will be associated without a display name.</param>
-        /// <returns>The current instance of <see cref="ConversationBuilder"/> with the user information set.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> with the user information set.</returns>
         /// <exception cref="ArgumentException">Thrown when the userId is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithUser(string userId, string userName = null)
         {
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="conversationId">The unique identifier of the conversation to associate with the builder. Cannot be null, empty, or consist
         /// only of white-space characters.</param>
-        /// <returns>The current instance of <see cref="ConversationBuilder"/> with the conversation identifier set.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> with the conversation identifier set.</returns>
         /// <exception cref="ArgumentException">Thrown when the conversationId is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithConversation(string conversationId)
         {
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="conversation">The conversation account to associate with the builder. The <paramref name="conversation"/> parameter must
         /// not be null, and its <c>Id</c> property must not be null or whitespace.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance with the conversation context set.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> instance with the conversation context set.</returns>
         /// <exception cref="ArgumentException">Thrown when the ConversationAccount.Id is null, empty, or consists solely of whitespace.</exception>
         public ConversationBuilder WithConversation(ConversationAccount conversation)
         {
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the activity identifier for the reference being built.
         /// </summary>
         /// <param name="activityId">The unique identifier to associate with the activity. Can be null or empty if no activity ID is required.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated activity identifier.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> instance with the updated activity identifier.</returns>
         public ConversationBuilder WithActivityId(string activityId)
         {
             _conversation.Reference.ActivityId = activityId;
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="agentClientId">The client identifier to associate with the 'azp' claim. Cannot be null.</param>
         /// <param name="requestorId">An optional requestor identifier to associate with the 'appid' claim. If null or empty, the 'appid' claim is
         /// not added.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated claims.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> instance with the updated claims.</returns>
         private ConversationBuilder WithClaimsForClientId(string agentClientId, string requestorId = null)
         {        
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentClientId, nameof(agentClientId));
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the claims to associate with the record being built.
         /// </summary>
         /// <param name="claims">A dictionary containing claim types and their corresponding values to assign to the record. Cannot be null.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance with the specified claims applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> instance with the specified claims applied.</returns>
         internal ConversationBuilder WithClaims(IDictionary<string, string> claims)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(claims, nameof(claims));
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sets the identity information for the record using the specified claims identity.
         /// </summary>
         /// <param name="identity">The claims identity to associate with the record. Cannot be null.</param>
-        /// <returns>The current <see cref="ConversationBuilder"/> instance with the updated identity information.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> instance with the updated identity information.</returns>
         private ConversationBuilder WithIdentity(ClaimsIdentity identity)
         {
             _conversation = new Conversation(identity, _conversation.Reference);
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Builds and returns the configured conversation reference record.
         /// </summary>
-        /// <returns>The constructed <see cref="Conversation"/> instance representing the current state of the
+        /// <returns>The constructed <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> instance representing the current state of the
         /// builder.</returns>
         public Conversation Build()
         {

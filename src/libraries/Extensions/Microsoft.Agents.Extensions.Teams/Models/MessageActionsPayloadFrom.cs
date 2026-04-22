@@ -10,14 +10,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadFrom
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadFrom"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadFrom"/> class.
         /// </summary>
         public MessageActionsPayloadFrom()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadFrom"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadFrom"/> class.
         /// </summary>
         /// <param name="user">Represents details of the user.</param>
         /// <param name="application">Represents details of the app.</param>

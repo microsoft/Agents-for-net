@@ -6,13 +6,13 @@
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeConnectorRequest"/> that traces a send-to-conversation connector request,
+    /// A <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeConnectorRequest"/> that traces a send-to-conversation connector request,
     /// recording the conversation ID and optional activity ID as span tags.
     /// </summary>
     internal class ScopeSendToConversation : ScopeConnectorRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeSendToConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeSendToConversation"/> class.
         /// </summary>
         /// <param name="conversationId">The ID of the conversation to send the activity to.</param>
         /// <param name="activityId">The activity ID to associate with the span, or <see langword="null"/>.</param>

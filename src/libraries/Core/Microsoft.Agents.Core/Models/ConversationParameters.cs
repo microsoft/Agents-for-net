@@ -11,9 +11,9 @@ namespace Microsoft.Agents.Core.Models
     /// <summary> Parameters for creating a new conversation. </summary>
     public class ConversationParameters
     {
-        /// <summary>Initializes a new instance of the <see cref="ConversationParameters"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ConversationParameters"/> class.</summary>
         /// <param name="isGroup">IsGroup.</param>
-        /// <param name="agent">This represents "From".  Defaults to ChannelAccount with <see cref="RoleTypes.Agent"/>.</param>
+        /// <param name="agent">This represents "From".  Defaults to ChannelAccount with <see cref="Microsoft.Agents.Core.Models.RoleTypes.Agent"/>.</param>
         /// <param name="members">Members to add to the conversation.</param>
         /// <param name="topicName">(Optional) Topic of the conversation (if supported by the channel).</param>
         /// <param name="activity">(Optional) When creating a new conversation, use this activity as the initial message to the conversation.</param>

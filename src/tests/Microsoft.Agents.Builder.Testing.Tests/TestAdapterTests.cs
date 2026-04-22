@@ -216,5 +216,42 @@ namespace Microsoft.Agents.Builder.Testing
                     break;
             }
         }
+
+        [Fact]
+        public void TestAdapter_Create_DefaultConversation()
+        {
+            var adapter = TestAdapter.Create();
+
+            Assert.Equal(Channels.Test, adapter.Conversation.ChannelId);
+            Assert.Equal("user1", adapter.Conversation.User.Id);
+            Assert.Equal("User1", adapter.Conversation.User.Name);
+            Assert.Equal("bot", adapter.Conversation.Agent.Id);
+            Assert.Equal("Bot", adapter.Conversation.Agent.Name);
+            Assert.Equal("convo1", adapter.Conversation.Conversation.Id);
+            Assert.Equal("Conversation1", adapter.Conversation.Conversation.Name);
+            Assert.Equal("https://test.com", adapter.Conversation.ServiceUrl);
+            Assert.Equal("en-us", adapter.Conversation.Locale);
+        }
+
+        [Fact]
+        public void TestAdapter_Create_CustomValues()
+        {
+            var adapter = TestAdapter.Create(
+                channelId: "msteams",
+                userId: "u42",
+                userName: "Alice",
+                botId: "mybot",
+                botName: "MyBot",
+                conversationId: "conv99",
+                conversationName: "Room99");
+
+            Assert.Equal("msteams", adapter.Conversation.ChannelId);
+            Assert.Equal("u42", adapter.Conversation.User.Id);
+            Assert.Equal("Alice", adapter.Conversation.User.Name);
+            Assert.Equal("mybot", adapter.Conversation.Agent.Id);
+            Assert.Equal("MyBot", adapter.Conversation.Agent.Name);
+            Assert.Equal("conv99", adapter.Conversation.Conversation.Id);
+            Assert.Equal("Room99", adapter.Conversation.Conversation.Name);
+        }
     }
 }

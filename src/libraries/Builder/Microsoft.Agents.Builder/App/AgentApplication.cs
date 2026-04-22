@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events.
         /// </summary>
-        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.  If </param>
+        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/>.  If </param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events.
         /// </summary>
-        /// <param name="conversationUpdateEvents">Name of the conversation update events to handle, can use <see cref="ConversationUpdateEvents"/> as array item.</param>
+        /// <param name="conversationUpdateEvents">Name of the conversation update events to handle, can use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> as array item.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -708,8 +708,8 @@ namespace Microsoft.Agents.Builder.App
         #region Turn Handling
 
         /// <summary>
-        /// Called by the adapter (for example, a <see cref="CloudAdapter"/>)
-        /// at runtime in order to process an inbound <see cref="Activity"/>.
+        /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
+        /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects

@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ChannelInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ChannelInfo"/> class.
         /// </summary>
         public ChannelInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ChannelInfo"/> class.
         /// </summary>
         /// <param name="id">Unique identifier representing a channel.</param>
         /// <param name="name">Name of the channel.</param>

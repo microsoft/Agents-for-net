@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public const string ContentType = "application/vnd.microsoft.teams.card.file.consent";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileConsentCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileConsentCard"/> class.
         /// </summary>
         public FileConsentCard()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileConsentCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileConsentCard"/> class.
         /// </summary>
         /// <param name="description">File description.</param>
         /// <param name="sizeInBytes">Size of the file to be uploaded in

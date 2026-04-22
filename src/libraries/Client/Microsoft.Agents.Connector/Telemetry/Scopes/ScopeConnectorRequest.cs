@@ -10,7 +10,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces a connector REST client request and records
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces a connector REST client request and records
     /// conversation and activity identifiers as span tags together with request count and duration metrics.
     /// </summary>
     internal class ScopeConnectorRequest : TelemetryScope
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
         private readonly string? _activityId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeConnectorRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeConnectorRequest"/> class.
         /// </summary>
         /// <param name="scopeName">The name of the telemetry span.</param>
         /// <param name="conversationId">The conversation ID to associate with the span, or <see langword="null"/>.</param>

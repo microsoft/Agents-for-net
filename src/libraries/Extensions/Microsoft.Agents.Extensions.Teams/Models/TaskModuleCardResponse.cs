@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleCardResponse : TaskModuleResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleCardResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleCardResponse"/> class.
         /// </summary>
         public TaskModuleCardResponse()
             : base("continue")
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleCardResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleCardResponse"/> class.
         /// </summary>
         /// <param name="value">The JSON for the Adaptive cards to appear in the tab.</param>
         public TaskModuleCardResponse(TabResponse value)

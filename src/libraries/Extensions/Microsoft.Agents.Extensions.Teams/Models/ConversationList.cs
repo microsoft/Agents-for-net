@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ConversationList
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConversationList"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConversationList"/> class.
         /// </summary>
         public ConversationList()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConversationList"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConversationList"/> class.
         /// </summary>
         /// <param name="conversations">The IList of conversations.</param>
         public ConversationList(IList<ChannelInfo> conversations = default)

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// Interface for a class used to transfer an ActivityWithClaims to the <see cref="HostedActivityService"/>.
+    /// Interface for a class used to transfer an ActivityWithClaims to the <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/>.
     /// </summary>
     public interface IActivityTaskQueue
     {
@@ -21,15 +21,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// before enqueueing.
         /// </summary>
         /// <remarks>It is assumed these Claims have been authenticated via JwtTokenValidation.AuthenticateRequest.</remarks>
-        /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
+        /// <param name="claimsIdentity">Authenticated <see cref="System.Security.Claims.ClaimsIdentity"/> used to process the
         /// activity.</param>
         /// <param name="adapter"></param>
-        /// <param name="activity"><see cref="Activity"/> to be processed.</param>
+        /// <param name="activity"><see cref="Microsoft.Agents.Core.Models.Activity"/> to be processed.</param>
         /// <param name="proactive"></param>
         /// <param name="proactiveAudience"></param>
         /// <param name="agentType"></param>
         /// <param name="onComplete"></param>
-        /// <param name="headers">Headers used for the current <see cref="Activity"/> request.</param>
+        /// <param name="headers">Headers used for the current <see cref="Microsoft.Agents.Core.Models.Activity"/> request.</param>
         /// <returns>true if the item was queued.  false would indicate the queue has been disabled (probably shutting down).</returns>
         bool QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IChannelAdapter adapter, IActivity activity, bool proactive = false, string proactiveAudience = null, Type agentType = null, Func<InvokeResponse, Task> onComplete = null, IHeaderDictionary headers = null);
 

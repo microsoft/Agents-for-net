@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadBody
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadBody"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadBody"/> class.
         /// </summary>
         public MessageActionsPayloadBody()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadBody"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadBody"/> class.
         /// </summary>
         /// <param name="contentType">Type of the content. Possible values
         /// include: 'html', 'text'.</param>

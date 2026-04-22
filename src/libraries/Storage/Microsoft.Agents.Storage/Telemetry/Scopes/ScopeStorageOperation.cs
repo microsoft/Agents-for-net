@@ -10,14 +10,14 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Storage.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces a single storage operation and records
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces a single storage operation and records
     /// associated metrics.
     /// </summary>
     /// <remarks>
     /// Derived classes supply the <see cref="System.Diagnostics.Activity"/> name and operation
     /// type via the constructor. When disposed, the scope tags the activity with the key count
-    /// and operation name, and records values for <see cref="Metrics.OperationDuration"/> and
-    /// <see cref="Metrics.OperationTotal"/>.
+    /// and operation name, and records values for <see cref="Microsoft.Agents.Storage.Telemetry.Metrics.OperationDuration"/> and
+    /// <see cref="Microsoft.Agents.Storage.Telemetry.Metrics.OperationTotal"/>.
     /// </remarks>
     public class ScopeStorageOperation : TelemetryScope
     {
@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Storage.Telemetry.Scopes
         private readonly int _keyCount;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeStorageOperation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Telemetry.Scopes.ScopeStorageOperation"/> class.
         /// </summary>
         /// <param name="scopeName">The name for the underlying <see cref="System.Diagnostics.Activity"/>.</param>
         /// <param name="operationName">The logical storage operation name (e.g., "read", "write", "delete").</param>
@@ -38,8 +38,8 @@ namespace Microsoft.Agents.Storage.Telemetry.Scopes
 
         /// <inheritdoc />
         /// <remarks>
-        /// Tags the activity with <see cref="TagNames.KeyCount"/> and <see cref="TagNames.StorageOperation"/>,
-        /// then records <see cref="Metrics.OperationDuration"/> and increments <see cref="Metrics.OperationTotal"/>.
+        /// Tags the activity with <see cref="Microsoft.Agents.Core.Telemetry.TagNames.KeyCount"/> and <see cref="Microsoft.Agents.Core.Telemetry.TagNames.StorageOperation"/>,
+        /// then records <see cref="Microsoft.Agents.Storage.Telemetry.Metrics.OperationDuration"/> and increments <see cref="Microsoft.Agents.Storage.Telemetry.Metrics.OperationTotal"/>.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? exception)
         {

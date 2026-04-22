@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CosmosDbPartitionedStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage"/> class.
         /// using the provided CosmosDB credentials, database ID, and container ID.
         /// </summary>
         /// <param name="jsonSerializerOptions"></param>
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CosmosDbPartitionedStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage"/> class.
         /// using the provided CosmosDB credentials, database ID, and collection ID.
         /// </summary>
         /// <param name="client">The custom implementation of CosmosClient.</param>
@@ -455,7 +455,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             private readonly JsonSerializerOptions _serializerSettings;
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="CosmosJsonSerializer"/> class that uses the JSON.net serializer.
+            /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage.CosmosJsonSerializer"/> class that uses the JSON.net serializer.
             /// </summary>
             /// <param name="jsonSerializerSettings">The JSON.net serializer.</param>
             public CosmosJsonSerializer(JsonSerializerOptions jsonSerializerSettings)

@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
         private readonly CardComponentName cardComponentName;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BaseCardComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.BaseCardComponent"/> class.
         /// </summary>
         /// <param name="cardComponentName">Component name.</param>
         protected BaseCardComponent(CardComponentName cardComponentName)

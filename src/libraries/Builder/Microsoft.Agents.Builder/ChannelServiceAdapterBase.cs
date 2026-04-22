@@ -34,10 +34,10 @@ namespace Microsoft.Agents.Builder
         ILogger logger = null) : ChannelAdapter(logger)
     {
         /// <summary>
-        /// Gets the <see cref="IChannelServiceClientFactory" /> instance for this adapter.
+        /// Gets the <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </summary>
         /// <value>
-        /// The <see cref="IChannelServiceClientFactory" /> instance for this adapter.
+        /// The <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </value>
         protected IChannelServiceClientFactory ChannelServiceFactory { get; private set; } = channelServiceClientFactory ?? throw new ArgumentNullException(nameof(channelServiceClientFactory));
 

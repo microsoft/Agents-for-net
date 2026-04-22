@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabSubmit
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabSubmit"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSubmit"/> class.
         /// </summary>
         public TabSubmit()
         {
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets current tab entity request context.
         /// </summary>
         /// <value>
-        /// Tab context for this <see cref="TabSubmit"/>.
+        /// Tab context for this <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSubmit"/>.
         /// </value>
         public TabEntityContext TabEntityContext { get; set; }
 

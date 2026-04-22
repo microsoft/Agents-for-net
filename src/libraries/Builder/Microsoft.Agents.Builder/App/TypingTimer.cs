@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.App
         private bool _disposedValue = false;
 
         /// <summary>
-        /// Constructs a new instance of the <see cref="TypingTimer"/> class.
+        /// Constructs a new instance of the <see cref="Microsoft.Agents.Builder.App.TypingTimer"/> class.
         /// </summary>
         /// <param name="interval">The interval in milliseconds to send "typing" activity.</param>
         /// <param name="initialDelay">Initial delay</param>

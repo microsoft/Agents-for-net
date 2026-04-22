@@ -7,12 +7,12 @@ namespace Microsoft.Agents.Extensions.Teams.Models
 {
     /// <summary>
     /// Specifies the failed entries response.
-    /// Contains a list of <see cref="BatchFailedEntry"/>.
+    /// Contains a list of <see cref="Microsoft.Agents.Extensions.Teams.Models.BatchFailedEntry"/>.
     /// </summary>
     public class BatchFailedEntriesResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="BatchFailedEntriesResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.BatchFailedEntriesResponse"/> class.
         /// </summary>
         public BatchFailedEntriesResponse()
         {

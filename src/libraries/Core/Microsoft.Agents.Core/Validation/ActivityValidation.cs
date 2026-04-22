@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Core.Validation
         /// Valid Activity
         /// </summary>
         /// <param name="activity"></param>
-        /// <param name="context">Array of <see cref="ValidationContext"/></param>
+        /// <param name="context">Array of <see cref="Microsoft.Agents.Core.Validation.ValidationContext"/></param>
         /// <returns></returns>
         public static bool Validate(this IActivity activity, ValidationContext context)
         {

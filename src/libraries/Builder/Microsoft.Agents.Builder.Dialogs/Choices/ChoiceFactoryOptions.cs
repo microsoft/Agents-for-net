@@ -19,9 +19,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChoiceFactoryOptions"/> class.
-        /// Refer to the code in teh ConfirmPrompt for an example of usage.
+        /// Refer to the code in the ConfirmPrompt for an example of usage.
         /// </summary>
-        /// <param name="inlineSeparator">The inline seperator value.</param>
+        /// <param name="inlineSeparator">The inline separator value.</param>
         /// <param name="inlineOr">The inline or value.</param>
         /// <param name="inlineOrMore">The inline or more value.</param>
         /// <param name="includeNumbers">Flag indicating whether to include numbers as a choice.</param>
@@ -44,21 +44,21 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         public string InlineSeparator { get; set; }
 
         /// <summary>
-        /// Gets or sets the separator inserted between the choices when their are only 2 choices. The default
+        /// Gets or sets the separator inserted between the choices when there are only 2 choices. The default
         /// value is `" or "`. This is optional.
         /// </summary>
         /// <value>
-        /// The separator inserted between the choices when their are only 2 choices.
+        /// The separator inserted between the choices when there are only 2 choices.
         /// </value>
         [JsonPropertyName("inlineOr")]
         public string InlineOr { get; set; }
 
         /// <summary>
-        /// Gets or sets the separator inserted between the last 2 choices when their are more than 2 choices.
+        /// Gets or sets the separator inserted between the last 2 choices when there are more than 2 choices.
         /// The default value is `", or "`. This is optional.
         /// </summary>
         /// <value>
-        /// The separator inserted between the last 2 choices when their are more than 2 choices.
+        /// The separator inserted between the last 2 choices when there are more than 2 choices.
         /// </value>
         [JsonPropertyName("inlineOrMore")]
         public string InlineOrMore { get; set; }

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class QuickViewAction : BaseAction, IAction, IOnCardSelectionAction
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QuickViewAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.QuickViewAction"/> class.
         /// </summary>
         public QuickViewAction()
             : base("QuickView")
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
         
         /// <summary>
-        /// Gets or Sets the action parameters of type <see cref="QuickViewActionParameters"/>.
+        /// Gets or Sets the action parameters of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.QuickViewActionParameters"/>.
         /// </summary>
         /// <value>This value is the parameters of the action.</value>
         public QuickViewActionParameters Parameters { get; set; }

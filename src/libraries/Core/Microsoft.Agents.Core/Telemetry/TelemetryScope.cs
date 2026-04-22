@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Core.Telemetry
 {
     /// <summary>
-    /// Provides a disposable scope that wraps an OpenTelemetry <see cref="Activity"/> for
+    /// Provides a disposable scope that wraps an OpenTelemetry <see cref="System.Diagnostics.Activity"/> for
     /// tracing operations within the Microsoft Agents SDK.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="TelemetryScope"/> starts a new <see cref="Activity"/> from
-    /// <see cref="AgentsTelemetry.ActivitySource"/> when constructed, and stops it when
+    /// <see cref="TelemetryScope"/> starts a new <see cref="System.Diagnostics.Activity"/> from
+    /// <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.ActivitySource"/> when constructed, and stops it when
     /// disposed. Errors can be recorded via <see cref="SetError"/>, which sets the
-    /// activity status to <see cref="ActivityStatusCode.Error"/> and attaches an
+    /// activity status to <see cref="System.Diagnostics.ActivityStatusCode.Error"/> and attaches an
     /// <c>exception</c> event following OpenTelemetry semantic conventions.
     /// </para>
     /// <para>
@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Core.Telemetry
     /// </para>
     /// <para>
     /// The <see cref="Wrap(Action)"/>, <see cref="Wrap{T}(Func{T})"/>,
-    /// <see cref="WrapAsync(Func{Task})"/>, and <see cref="WrapAsync{T}(Func{Task{T}})"/>
+    /// <see cref="WrapAsync(Func{System.Threading.Tasks.Task})"/>, and <see cref="WrapAsync{T}(Func{System.Threading.Tasks.Task{T}})"/>
     /// helper methods execute a delegate within the scope and automatically call
     /// <see cref="SetError"/> if the delegate throws.
     /// </para>
@@ -44,12 +44,12 @@ namespace Microsoft.Agents.Core.Telemetry
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts
-        /// a new <see cref="Activity"/> from <see cref="AgentsTelemetry.ActivitySource"/>.
+        /// a new <see cref="System.Diagnostics.Activity"/> from <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.ActivitySource"/>.
         /// </summary>
-        /// <param name="activityName">The operation name for the new <see cref="Activity"/>.</param>
+        /// <param name="activityName">The operation name for the new <see cref="System.Diagnostics.Activity"/>.</param>
         /// <param name="activityKind">
-        /// The <see cref="ActivityKind"/> for the new activity.
-        /// Defaults to <see cref="ActivityKind.Internal"/>.
+        /// The <see cref="System.Diagnostics.ActivityKind"/> for the new activity.
+        /// Defaults to <see cref="System.Diagnostics.ActivityKind.Internal"/>.
         /// </param>
         public TelemetryScope(string activityName, ActivityKind activityKind = ActivityKind.Internal)
         {
@@ -60,11 +60,11 @@ namespace Microsoft.Agents.Core.Telemetry
         }
 
         /// <summary>
-        /// Records an error on the underlying <see cref="Activity"/>.
+        /// Records an error on the underlying <see cref="System.Diagnostics.Activity"/>.
         /// </summary>
         /// <param name="ex">The exception to record.</param>
         /// <remarks>
-        /// Sets the activity status to <see cref="ActivityStatusCode.Error"/> and adds an
+        /// Sets the activity status to <see cref="System.Diagnostics.ActivityStatusCode.Error"/> and adds an
         /// <c>exception</c> event with <c>exception.type</c>, <c>exception.message</c>,
         /// and <c>exception.stacktrace</c> tags, following OpenTelemetry semantic conventions.
         /// If no activity was created (e.g., no listener is registered), this method is a no-op.
@@ -87,9 +87,9 @@ namespace Microsoft.Agents.Core.Telemetry
         }
 
         /// <summary>
-        /// Called just before the underlying <see cref="Activity"/> is stopped during disposal.
+        /// Called just before the underlying <see cref="System.Diagnostics.Activity"/> is stopped during disposal.
         /// </summary>
-        /// <param name="activity">The <see cref="Activity"/> that is about to be stopped.</param>
+        /// <param name="activity">The <see cref="System.Diagnostics.Activity"/> that is about to be stopped.</param>
         /// <param name="duration">The duration of the activity in milliseconds.</param>
         /// <param name="exception">
         /// The last exception recorded via <see cref="SetError"/>, or <c>null</c> if no error occurred.
@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <c>true</c> to release managed resources; <c>false</c> when called from a finalizer.
         /// </param>
         /// <remarks>
-        /// When <paramref name="disposing"/> is <c>true</c> and an <see cref="Activity"/> is
+        /// When <paramref name="disposing"/> is <c>true</c> and an <see cref="System.Diagnostics.Activity"/> is
         /// active, <see cref="Callback"/> is invoked before the activity is stopped.
         /// Multiple calls are safe; only the first call performs cleanup.
         /// </remarks>
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// Executes the specified asynchronous <paramref name="action"/> within this telemetry scope.
         /// </summary>
         /// <param name="action">The asynchronous action to execute.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> that represents the asynchronous operation.</returns>
         /// <remarks>
         /// If <paramref name="action"/> throws, the exception is recorded via
         /// <see cref="SetError"/> and then re-thrown.
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <typeparam name="T">The return type of the asynchronous function.</typeparam>
         /// <param name="action">The asynchronous function to execute.</param>
         /// <returns>
-        /// A <see cref="Task{T}"/> that represents the asynchronous operation and contains
+        /// A <see cref="System.Threading.Tasks.Task{T}"/> that represents the asynchronous operation and contains
         /// the value returned by <paramref name="action"/>.
         /// </returns>
         /// <remarks>

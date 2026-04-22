@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// Parameters passed to AdaptiveCards.OnSearch() handler.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="AdaptiveCardsSearchParams"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardsSearchParams"/> class.
     /// </remarks>
     /// <param name="queryText">The query text.</param>
     /// <param name="dataset">The dataset to search.</param>
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// Individual result returned from AdaptiveCards.OnSearch() handler.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="AdaptiveCardsSearchResult"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardsSearchResult"/> class.
     /// </remarks>
     /// <param name="title">The title of the result.</param>
     /// <param name="value">The subtitle of the result.</param>
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="data">The data associated with the action.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
-    /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="AdaptiveCardInvokeResponseFactory"/>.</returns>
+    /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardInvokeResponseFactory"/>.</returns>
     public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
     /// <summary>

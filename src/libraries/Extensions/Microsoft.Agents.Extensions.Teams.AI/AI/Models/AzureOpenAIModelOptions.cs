@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public string? AzureApiVersion { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureOpenAIModelOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.AzureOpenAIModelOptions"/> class.
         /// </summary>
         /// <param name="azureApiKey">API key to use when making requests to Azure OpenAI.</param>
         /// <param name="azureDefaultDeployment">Default name of the Azure OpenAI deployment (model) to use.</param>
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureOpenAIModelOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.AzureOpenAIModelOptions"/> class.
         /// </summary>
         /// <param name="tokenCredential">token credential</param>
         /// <param name="azureDefaultDeployment">the deployment name</param>

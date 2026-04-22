@@ -16,14 +16,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public new const string Type = "MultichoiceInput";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardMultichoiceInput"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardMultichoiceInput"/> class.
         /// </summary>
         public O365ConnectorCardMultichoiceInput()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardMultichoiceInput"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardMultichoiceInput"/> class.
         /// </summary>
         /// <param name="type">Input type name. Possible values include:
         /// 'textInput', 'dateInput', 'multichoiceInput'.</param>

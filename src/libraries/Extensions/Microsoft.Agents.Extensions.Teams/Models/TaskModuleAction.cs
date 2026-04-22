@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         };
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleAction"/> class.
         /// </summary>
         /// <param name="title">Button title.</param>
         /// <param name="value">Free hidden value binding with button. The value will be sent out with "task/fetch" invoke event.</param>

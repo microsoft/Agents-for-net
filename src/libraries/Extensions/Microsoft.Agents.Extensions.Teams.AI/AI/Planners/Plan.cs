@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         public string Type { get; } = AIConstants.Plan;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="Plan"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.Plan"/> class.
         /// </summary>
         public Plan()
         {
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="Plan"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.Plan"/> class.
         /// </summary>
         /// <param name="commands">A list of model predicted commands.</param>
         [JsonConstructor]
