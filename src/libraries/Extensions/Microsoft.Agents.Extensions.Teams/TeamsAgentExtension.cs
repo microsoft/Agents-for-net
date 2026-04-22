@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Configurations;
@@ -101,6 +100,16 @@ public class TeamsAgentExtension : AgentExtension
     /// Teams Configuration features.
     /// </summary>
     public Configuration Configuration { get; }
+
+    /// <summary>
+    /// Gets the Teams API client for the specified turn context.
+    /// </summary>
+    /// <param name="turnContext">The turn context.</param>
+    /// <returns>The Teams API client.</returns>
+    public Microsoft.Teams.Api.Clients.ApiClient GetApiClient(ITurnContext turnContext)
+    {
+        return turnContext.GetTeamsApiClient();
+    }
 
     internal static Task SetResponse(ITurnContext context, object result = null, int status = 200)
     {
