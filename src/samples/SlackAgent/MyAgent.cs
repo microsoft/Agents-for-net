@@ -41,7 +41,7 @@ public partial class MyAgent : AgentApplication
 
         var message = $$"""
         {
-            "channel": "{{channelData.EventEnvelope?.Get<string>("event.channel")}}",
+            "channel": "{{channelData.Envelope?.Get<string>("event.channel")}}",
             "text": "You said: {{turnContext.Activity.Text}}"
         }
         """;

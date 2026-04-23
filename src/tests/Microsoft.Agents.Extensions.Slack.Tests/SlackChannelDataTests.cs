@@ -133,7 +133,7 @@ public class SlackChannelDataTests
     {
         var cd = Deserialize(MessageEventJson);
         Assert.NotNull(cd);
-        Assert.NotNull(cd.EventEnvelope);
+        Assert.NotNull(cd.Envelope);
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_MessageEvent_Envelope_TopLevelFields()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("7K85CE7U1wjgFDUHafCiPB7l", envelope.token);
         Assert.Equal("T0AT0TZM9GD", envelope.team_id);
@@ -183,7 +183,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_MessageEvent_Envelope_EventContentNotNull()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.NotNull(envelope.event_content);
     }
 
@@ -192,7 +192,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_MessageEvent_Authorizations_Count()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.NotNull(envelope.authorizations);
         Assert.Single(envelope.authorizations);
     }
@@ -200,7 +200,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_MessageEvent_Authorization_Fields()
     {
-        var auth = Deserialize(MessageEventJson).EventEnvelope.authorizations[0];
+        var auth = Deserialize(MessageEventJson).Envelope.authorizations[0];
 
         Assert.Null(auth.enterprise_id);
         Assert.Equal("T0AT0TZM9GD", auth.team_id);
@@ -214,7 +214,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_MessageEvent_Content_NamedProperties()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.Equal("message", content.type);
         Assert.Equal("U0ASNSMMY07", content.user);
@@ -235,7 +235,7 @@ public class SlackChannelDataTests
     [Fact]
     public void Deserialize_ReactionRemoved_Content_NamedProperties()
     {
-        var content = Deserialize(ReactionRemovedEventJson).EventEnvelope.event_content;
+        var content = Deserialize(ReactionRemovedEventJson).Envelope.event_content;
 
         Assert.Equal("reaction_removed", content.type);
         Assert.Equal("U0ASNSMMY07", content.user);
@@ -251,7 +251,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_SimpleProperty()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.Equal("message", content.Get<string>("type"));
         Assert.Equal("hi", content.Get<string>("text"));
@@ -261,7 +261,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_MissingPath_ReturnsDefault()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.Null(content.Get<string>("nonexistent_field"));
         Assert.Equal(0, content.Get<int>("nonexistent_field"));
@@ -273,7 +273,7 @@ public class SlackChannelDataTests
     public void EventContent_Get_NestedObject_ReactionRemovedItem()
     {
         // reaction_removed carries an "item" sub-object in the event JSON
-        var content = Deserialize(ReactionRemovedEventJson).EventEnvelope.event_content;
+        var content = Deserialize(ReactionRemovedEventJson).Envelope.event_content;
 
         Assert.Equal("message", content.Get<string>("item.type"));
         Assert.Equal("D0AT8AL9LA0", content.Get<string>("item.channel"));
@@ -283,7 +283,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_NestedObject_MissingSegment_ReturnsDefault()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         // "item" does not exist on a message event
         Assert.Null(content.Get<string>("item.type"));
@@ -294,7 +294,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_ArrayIndex_BlockType()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.Equal("rich_text", content.Get<string>("blocks[0].type"));
         Assert.Equal("a8bcU", content.Get<string>("blocks[0].block_id"));
@@ -303,7 +303,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_ArrayIndex_DeepNesting()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         // blocks[0].elements[0].type == "rich_text_section"
         Assert.Equal("rich_text_section", content.Get<string>("blocks[0].elements[0].type"));
@@ -315,7 +315,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_ArrayIndex_OutOfRange_ReturnsDefault()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.Null(content.Get<string>("blocks[99].type"));
     }
@@ -325,7 +325,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_TryGet_ExistingPath_ReturnsTrue()
     {
-        var content = Deserialize(ReactionRemovedEventJson).EventEnvelope.event_content;
+        var content = Deserialize(ReactionRemovedEventJson).Envelope.event_content;
 
         Assert.True(content.TryGet<string>("item.type", out var itemType));
         Assert.Equal("message", itemType);
@@ -334,7 +334,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_TryGet_MissingPath_ReturnsFalse()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.False(content.TryGet<string>("item.type", out var value));
         Assert.Null(value);
@@ -343,7 +343,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_TryGet_ArrayPath_ReturnsTrue()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         Assert.True(content.TryGet<string>("blocks[0].type", out var blockType));
         Assert.Equal("rich_text", blockType);
@@ -354,7 +354,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventDotPrefix_SimpleProperty()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("message", envelope.Get<string>("event.type"));
         Assert.Equal("hi", envelope.Get<string>("event.text"));
@@ -363,7 +363,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventDotPrefix_NestedObject()
     {
-        var envelope = Deserialize(ReactionRemovedEventJson).EventEnvelope;
+        var envelope = Deserialize(ReactionRemovedEventJson).Envelope;
 
         Assert.Equal("message", envelope.Get<string>("event.item.type"));
         Assert.Equal("D0AT8AL9LA0", envelope.Get<string>("event.item.channel"));
@@ -372,7 +372,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventDotPrefix_ArrayPath()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("rich_text", envelope.Get<string>("event.blocks[0].type"));
     }
@@ -382,7 +382,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventContentDotPrefix_SimpleProperty()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("message", envelope.Get<string>("event_content.type"));
         Assert.Equal("hi", envelope.Get<string>("event_content.text"));
@@ -391,7 +391,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventContentDotPrefix_NestedObject()
     {
-        var envelope = Deserialize(ReactionRemovedEventJson).EventEnvelope;
+        var envelope = Deserialize(ReactionRemovedEventJson).Envelope;
 
         Assert.Equal("message", envelope.Get<string>("event_content.item.type"));
         Assert.Equal("D0AT8AL9LA0", envelope.Get<string>("event_content.item.channel"));
@@ -400,7 +400,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_EventContentDotPrefix_ArrayPath()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("rich_text", envelope.Get<string>("event_content.blocks[0].type"));
     }
@@ -409,7 +409,7 @@ public class SlackChannelDataTests
     public void EventEnvelope_Get_BothPrefixes_ProduceSameResult()
     {
         // "event." and "event_content." must be interchangeable
-        var envelope = Deserialize(ReactionRemovedEventJson).EventEnvelope;
+        var envelope = Deserialize(ReactionRemovedEventJson).Envelope;
 
         Assert.Equal(
             envelope.Get<string>("event.item.type"),
@@ -425,7 +425,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_BareEventKey_ReturnsDeserializedContent()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         // Get<EventContent>("event") should round-trip back to EventContent
         var content = envelope.Get<EventContent>("event");
@@ -436,7 +436,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_BareEventContentKey_ReturnsDeserializedContent()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         var content = envelope.Get<EventContent>("event_content");
         Assert.NotNull(content);
@@ -448,7 +448,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_TryGet_ExistingPath_ReturnsTrue()
     {
-        var envelope = Deserialize(ReactionRemovedEventJson).EventEnvelope;
+        var envelope = Deserialize(ReactionRemovedEventJson).Envelope;
 
         Assert.True(envelope.TryGet<string>("event.item.type", out var itemType));
         Assert.Equal("message", itemType);
@@ -457,7 +457,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_TryGet_MissingPath_ReturnsFalse()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.False(envelope.TryGet<string>("event.item.type", out var value));
         Assert.Null(value);
@@ -466,7 +466,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_TryGet_TrulyMissingPath_ReturnsFalse()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.False(envelope.TryGet<string>("nonexistent_field", out var value));
         Assert.Null(value);
@@ -477,7 +477,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventContent_Get_PathIsCaseInsensitive()
     {
-        var content = Deserialize(MessageEventJson).EventEnvelope.event_content;
+        var content = Deserialize(MessageEventJson).Envelope.event_content;
 
         // All three casings of "type" should resolve to the same value
         Assert.Equal(content.Get<string>("type"), content.Get<string>("TYPE"));
@@ -487,7 +487,7 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_PrefixIsCaseInsensitive()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
 
         Assert.Equal("message", envelope.Get<string>("EVENT.type"));
         Assert.Equal("message", envelope.Get<string>("Event.type"));
@@ -499,28 +499,28 @@ public class SlackChannelDataTests
     [Fact]
     public void EventEnvelope_Get_RootProperty_TeamId()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.Equal("T0AT0TZM9GD", envelope.Get<string>("team_id"));
     }
 
     [Fact]
     public void EventEnvelope_Get_RootProperty_Token()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.Equal("7K85CE7U1wjgFDUHafCiPB7l", envelope.Get<string>("token"));
     }
 
     [Fact]
     public void EventEnvelope_Get_RootProperty_EventTime()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.Equal(1776271070L, envelope.Get<long>("event_time"));
     }
 
     [Fact]
     public void EventEnvelope_Get_RootProperty_Missing_ReturnsDefault()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.Null(envelope.Get<string>("nonexistent_field"));
     }
 
@@ -539,14 +539,14 @@ public class SlackChannelDataTests
               "ApiToken": "tok"
             }
             """;
-        var envelope = Deserialize(json).EventEnvelope;
+        var envelope = Deserialize(json).Envelope;
         Assert.Equal("custom_value", envelope.Get<string>("custom_envelope_field"));
     }
 
     [Fact]
     public void EventEnvelope_TryGet_RootProperty_ReturnsTrue()
     {
-        var envelope = Deserialize(MessageEventJson).EventEnvelope;
+        var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.True(envelope.TryGet<string>("team_id", out var teamId));
         Assert.Equal("T0AT0TZM9GD", teamId);
     }
@@ -561,10 +561,10 @@ public class SlackChannelDataTests
         var restored = JsonSerializer.Deserialize<SlackChannelData>(json);
 
         Assert.Equal(original.ApiToken, restored.ApiToken);
-        Assert.Equal(original.EventEnvelope.team_id, restored.EventEnvelope.team_id);
-        Assert.Equal(original.EventEnvelope.event_content.type, restored.EventEnvelope.event_content.type);
-        Assert.Equal(original.EventEnvelope.event_content.text, restored.EventEnvelope.event_content.text);
-        Assert.Equal(original.EventEnvelope.event_content.channel, restored.EventEnvelope.event_content.channel);
+        Assert.Equal(original.Envelope.team_id, restored.Envelope.team_id);
+        Assert.Equal(original.Envelope.event_content.type, restored.Envelope.event_content.type);
+        Assert.Equal(original.Envelope.event_content.text, restored.Envelope.event_content.text);
+        Assert.Equal(original.Envelope.event_content.channel, restored.Envelope.event_content.channel);
     }
 
     [Fact]
@@ -577,11 +577,11 @@ public class SlackChannelDataTests
         var restored = JsonSerializer.Deserialize<SlackChannelData>(json);
 
         Assert.Equal(
-            original.EventEnvelope.Get<string>("event.item.type"),
-            restored.EventEnvelope.Get<string>("event.item.type"));
+            original.Envelope.Get<string>("event.item.type"),
+            restored.Envelope.Get<string>("event.item.type"));
 
         Assert.Equal(
-            original.EventEnvelope.Get<string>("event.item.channel"),
-            restored.EventEnvelope.Get<string>("event.item.channel"));
+            original.Envelope.Get<string>("event.item.channel"),
+            restored.Envelope.Get<string>("event.item.channel"));
     }
 }

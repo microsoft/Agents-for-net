@@ -16,10 +16,20 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 public class SlackChannelData
 {
     /// <summary>
-    /// Gets or sets the envelope containing the slack message event data.
+    /// The event envelope from slack
     /// </summary>
+    /// <remarks>
+    /// "SlackMessage" is what ABS named this property even though it contains the entire event envelope from slack.  The message
+    /// would be in EventEnvelope.event_content.text or EventEnvelop.Get("event").
+    /// </remarks>
     [JsonPropertyName("SlackMessage")]
-    public EventEnvelope EventEnvelope { get; set; }
+    public EventEnvelope Envelope { get; set; }
+
+    /// <summary>
+    /// The Action (Interactive Message) payload from slack.
+    /// </summary>
+    [JsonPropertyName("Payload")]
+    public object Payload { get; set; }
 
     /// <summary>
     /// Gets or sets the API authentication token used to authorize response by the agent using <see cref="SlackAgentExtension.CallAsync(Builder.ITurnContext, string, object?, string, System.Threading.CancellationToken)"/> 

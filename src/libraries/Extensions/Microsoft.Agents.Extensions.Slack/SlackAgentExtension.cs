@@ -49,7 +49,7 @@ public class SlackAgentExtension : AgentExtension
     public Task<SlackStream> CreateStreamAsync(ITurnContext turnContext, string? thread_ts = null)
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
-        var stream = new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.EventEnvelope.event_content.channel, thread_ts ?? channelData.EventEnvelope.event_content.ts, channelData.ApiToken);
+        var stream = new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.Envelope.event_content.channel, thread_ts ?? channelData.Envelope.event_content.ts, channelData.ApiToken);
         return stream.StartAsync();
     }
 
