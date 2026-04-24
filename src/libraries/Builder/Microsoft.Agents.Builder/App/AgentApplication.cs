@@ -71,7 +71,16 @@ namespace Microsoft.Agents.Builder.App
             }
 
             ApplyRouteAttributes();
+            ConfigureExtensions();
         }
+
+        /// <summary>
+        /// Called during construction after route attributes are applied.
+        /// Override (via source-generated code from <c>AgentExtensionAttribute</c>) to eagerly
+        /// initialize agent extensions so their <c>OnBeforeTurn</c> handlers and other
+        /// infrastructure are registered before the first turn arrives.
+        /// </summary>
+        protected virtual void ConfigureExtensions() { }
 
         #region Application Features
 
@@ -911,17 +920,16 @@ namespace Microsoft.Agents.Builder.App
         /// <typeparam name="TExtension"></typeparam>
         /// <param name="extension"></param>
         /// <param name="extensionRegistration"></param>
-        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration = null)
             where TExtension : IAgentExtension
         {
-            AssertionHelpers.ThrowIfNull(extensionRegistration, nameof(extensionRegistration));
             if (RegisteredExtensions.Contains(extension))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ExtensionAlreadyRegistered, null, nameof(TExtension));
             }
             // TODO: add Logging event for extension registration
             RegisteredExtensions.Add(extension);
-            extensionRegistration(extension);
+            extensionRegistration?.Invoke(extension);
         }
         #endregion
     }
