@@ -91,19 +91,19 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Applies a transformation function to <see cref="SerializationOptions"/>, replacing it with
-        /// the result. This is an advanced escape hatch — prefer <see cref="ApplyExtensionConverters"/>
-        /// or <see cref="AddTypeInfoResolver"/> for typical extensions.
+        /// Applies a transformation function to <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>, replacing it with
+        /// the result. This is an advanced escape hatch — prefer <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.ApplyExtensionConverters"/>
+        /// or <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.AddTypeInfoResolver"/> for typical extensions.
         /// </summary>
         /// <param name="applyFunc">
         /// A function that receives the current options and returns the new options.
         /// </param>
         /// <remarks>
         /// <para>
-        /// <b>Important:</b> If your function replaces <see cref="JsonSerializerOptions.TypeInfoResolver"/>,
+        /// <b>Important:</b> If your function replaces <see cref="System.Text.Json.JsonSerializerOptions.TypeInfoResolver"/>,
         /// you must include <c>CoreJsonContext.Default</c> in the new resolver chain.
         /// Omitting it silently removes source-generated metadata for all core model types.
-        /// Use <see cref="JsonTypeInfoResolver.Combine(IJsonTypeInfoResolver[])"/> to chain resolvers:
+        /// Use <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver[])"/> to chain resolvers:
         /// <code>
         /// options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
         ///     YourContext.Default,
@@ -127,15 +127,15 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Prepends a <see cref="IJsonTypeInfoResolver"/> (e.g., a source-generated
+        /// Prepends a <see cref="System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver"/> (e.g., a source-generated
         /// <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>) to the resolver chain
-        /// used by <see cref="SerializationOptions"/>. The resolver is consulted before any previously
+        /// used by <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>. The resolver is consulted before any previously
         /// registered resolvers and before the reflection fallback.
-        /// Call from a <see cref="SerializationInitAttribute"/>-decorated <c>Init()</c> method.
+        /// Call from a <see cref="Microsoft.Agents.Core.Serialization.SerializationInitAssemblyAttribute"/>-decorated <c>Init()</c> method.
         /// </summary>
         /// <remarks>
         /// Each call prepends the new resolver at the front of the chain.
-        /// <see cref="JsonTypeInfoResolver.Combine(IJsonTypeInfoResolver[])"/> returns the first non-null result in order,
+        /// <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver[])"/> returns the first non-null result in order,
         /// so the most-recently-added resolver wins for any given type.
         /// </remarks>
         public static void AddTypeInfoResolver(IJsonTypeInfoResolver resolver)
@@ -179,8 +179,8 @@ namespace Microsoft.Agents.Core.Serialization
         /// <summary>
         /// Object to JsonElement conversion.
         /// </summary>
-        /// <param name="value">The object to convert to a <see cref="JsonElement"/>.</param>
-        /// <returns>A <see cref="JsonElement"/> representing the specified object.</returns>
+        /// <param name="value">The object to convert to a <see cref="System.Text.Json.JsonElement"/>.</param>
+        /// <returns>A <see cref="System.Text.Json.JsonElement"/> representing the specified object.</returns>
         public static JsonElement ToJsonElement(this object value)
         {
             return ToObject<JsonElement>(value);

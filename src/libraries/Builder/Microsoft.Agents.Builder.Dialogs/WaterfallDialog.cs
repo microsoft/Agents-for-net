@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Excutes a step of the waterfall dialog.
+        /// Executes a step of the waterfall dialog.
         /// </summary>
         /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
         /// <param name="index">The index of the current waterfall step to execute.</param>

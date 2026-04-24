@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// <see cref="BackgroundService"/> implementation used to process work items on background threads.
+    /// <see cref="Microsoft.Extensions.Hosting.BackgroundService"/> implementation used to process work items on background threads.
     /// See <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">BackgroundService</see> for more information.
     /// </summary>
     internal class HostedTaskService : BackgroundService
@@ -25,13 +25,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly int _shutdownTimeoutSeconds;
 
         /// <summary>
-        /// Create a <see cref="HostedTaskService"/> instance for processing work on a background thread.
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskService"/> instance for processing work on a background thread.
         /// </summary>
         /// <remarks>
-        /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
+        /// It is important to note that exceptions on the background thread are only logged in the <see cref="Microsoft.Extensions.Logging.ILogger"/>.
         /// </remarks>
-        /// <param name="taskQueue"><see cref="ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
-        /// <param name="logger"><see cref="ILogger"/> implementation, for logging including background thread exception information.</param>
+        /// <param name="taskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
+        /// <param name="logger"><see cref="Microsoft.Extensions.Logging.ILogger"/> implementation, for logging including background thread exception information.</param>
         /// <param name="options"></param>
         public HostedTaskService(IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger, AdapterOptions options = null)
         {
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// Called by BackgroundService when the hosting service is shutting down.
         /// </summary>
-        /// <param name="stoppingToken"><see cref="CancellationToken"/> sent from BackgroundService for shutdown.</param>
+        /// <param name="stoppingToken"><see cref="System.Threading.CancellationToken"/> sent from BackgroundService for shutdown.</param>
         /// <returns>The Task to be executed asynchronously.</returns>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {

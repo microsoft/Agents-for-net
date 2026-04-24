@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Client
         public string AgentName { get; set; }
 
         /// <summary>
-        /// This is the conversationId created with <see cref="IAgentHost.GetOrCreateConversationAsync(ITurnContext, string, System.Threading.CancellationToken)"/>.
+        /// This is the conversationId created with <see cref="Microsoft.Agents.Client.IAgentHost.GetOrCreateConversationAsync(Microsoft.Agents.Builder.ITurnContext, string, System.Threading.CancellationToken)"/>.
         /// </summary>
         public string AgentConversationId { get; set; }
     }

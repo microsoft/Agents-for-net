@@ -4,12 +4,12 @@
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeConnectorRequest"/> that traces a create-conversation connector request.
+    /// A <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeConnectorRequest"/> that traces a create-conversation connector request.
     /// </summary>
     internal class ScopeCreateConversation : ScopeConnectorRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeCreateConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeCreateConversation"/> class.
         /// </summary>
         public ScopeCreateConversation() : base(Constants.ScopeCreateConversation)
         { }

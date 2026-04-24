@@ -7,7 +7,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
 {
     /// <summary>
     /// Request body for an externally orchestrated conversation turn.
-    /// Extends <see cref="ExecuteTurnRequest"/> with orchestration metadata.
+    /// Extends <see cref="Microsoft.Agents.CopilotStudio.Client.ExecuteTurnRequest"/> with orchestration metadata.
     /// </summary>
     public class OrchestratedTurnRequest : ExecuteTurnRequest
     {

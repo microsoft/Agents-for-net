@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Serialization
     /// <summary>
     /// Source-generated <see cref="System.Text.Json.Serialization.JsonSerializerContext"/> for
     /// core model types not handled by a registered custom <see cref="System.Text.Json.Serialization.JsonConverter"/>.
-    /// Wired into <see cref="ProtocolJsonSerializer.SerializationOptions"/> as the base of the
+    /// Wired into <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/> as the base of the
     /// <see cref="System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver"/> chain.
     /// </summary>
     /// <remarks>

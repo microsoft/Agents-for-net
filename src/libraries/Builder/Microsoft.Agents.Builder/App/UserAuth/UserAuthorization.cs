@@ -23,13 +23,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// UserAuthorization supports and extensible number of OAuth flows.
     /// 
     /// Auto Sign In:
-    /// If enabled in <see cref="UserAuthorizationOptions"/>, sign in starts automatically after the first Message the user sends.  When
-    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/>
+    /// If enabled in <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/>, sign in starts automatically after the first Message the user sends.  When
+    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/>
     /// is called.
     /// 
     /// </summary>
     /// <remarks>
-    /// This is always executed in the context of a turn for the user in <see cref="ITurnContext.Activity.From"/>.
+    /// This is always executed in the context of a turn for the user in <see cref="Microsoft.Agents.Builder.ITurnContext.Activity"/>.
     /// </remarks>
     public class UserAuthorization
     {
@@ -181,12 +181,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This should be called to start or continue the user auth until true is returned, which indicates sign in is complete.
-        /// When complete, the token is cached and can be access via <see cref="GetTurnTokenAsync"/>.  
-        /// <see cref="OnUserSignInFailure"/> is called on an error completion.
+        /// When complete, the token is cached and can be access via <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.GetTurnTokenAsync"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/> is called on an error completion.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>
-        /// <param name="handlerName">The name of the handler defined in <see cref="UserAuthorizationOptions"/></param>
+        /// <param name="handlerName">The name of the handler defined in <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/></param>
         /// <param name="forceAuto"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>false indicates the sign in is not complete, or that further processing of the Activity should stop.</returns>

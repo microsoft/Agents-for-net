@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Completes channel response handling synchronously. Blocks until all reads complete.
-        /// Prefer <see cref="CompleteHandlerForRequestAsync"/> when calling from an async context.
+        /// Prefer <see cref="Microsoft.Agents.Hosting.AspNetCore.ChannelResponseQueue.CompleteHandlerForRequestAsync(string)"/> when calling from an async context.
         /// </summary>
         /// <param name="requestId"></param>
         public void CompleteHandlerForRequest(string requestId)

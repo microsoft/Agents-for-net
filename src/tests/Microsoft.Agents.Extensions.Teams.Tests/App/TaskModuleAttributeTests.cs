@@ -5,7 +5,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
@@ -16,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Agents.Extensions.Teams.TaskModules;
+using Microsoft.Agents.Builder.Tests;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.App
 {

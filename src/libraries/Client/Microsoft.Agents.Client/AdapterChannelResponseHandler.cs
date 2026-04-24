@@ -20,14 +20,14 @@ namespace Microsoft.Agents.Client
     /// Routes Channel responses to the Adapter incoming pipeline.  This is the same route an Agent normally gets incoming Activities.
     /// </summary>
     /// <remarks>
-    /// The default method a Agent responds with is Activity.DeliverMode == `normal`.  This is an asynchronous response via an 
+    /// The default method an Agent responds with is Activity.DeliverMode == `normal`.  This is an asynchronous response via an
     /// HTTP POST to the endpoints defined by ChannelApiController.
     /// 
-    /// <see cref="IChannelApiHandler"/> is all of the Connector API endpoints.  This implementation is just handling
+    /// <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/> is all of the Connector API endpoints.  This implementation is just handling
     /// the Send/Reply from the other Agent.
-    /// 
+    ///
     /// This implementation will send a custom Event to the Adapter, and the AgentApplication can add a route for
-    /// <see cref="AdapterChannelResponseHandler.ChannelReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="ChannelReply"/>.
+    /// <see cref="AdapterChannelResponseHandler.ChannelReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="Microsoft.Agents.Client.AdapterChannelResponseHandler.ChannelReply"/>.
     /// </remarks>
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.

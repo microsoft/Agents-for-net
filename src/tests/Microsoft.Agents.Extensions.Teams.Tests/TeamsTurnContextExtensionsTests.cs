@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;

@@ -3,7 +3,7 @@
 
 
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Models;

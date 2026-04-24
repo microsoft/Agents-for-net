@@ -17,9 +17,9 @@ namespace Microsoft.Agents.Builder
     /// <see cref="ITurnContext"/> and calls <see cref="IAgent.OnTurnAsync(ITurnContext, CancellationToken)"/>. 
     /// When your Agent receives an activity, response are sent to the caller via <see cref="ITurnContext.SendActivityAsync(IActivity, CancellationToken)"/>.
     /// </remarks>
-    /// <seealso cref="ITurnContext"/>
-    /// <seealso cref="IActivity"/>
-    /// <seealso cref="IAgent"/>
+    /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
+    /// <seealso cref="Microsoft.Agents.Core.Models.IActivity"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
     public interface IChannelAdapter
     {
         /// <summary>
@@ -183,7 +183,7 @@ namespace Microsoft.Agents.Builder
         /// channel assigned to the activity.
         /// <para>Before calling this, set the ID of the replacement activity to the ID
         /// of the activity to replace.</para></returns>
-        /// <seealso cref="ITurnContext.OnUpdateActivity(UpdateActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
         Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken);
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <remarks>The <see cref="ConversationReference.ActivityId"/> of the conversation
         /// reference identifies the activity to delete.</remarks>
-        /// <seealso cref="ITurnContext.OnDeleteActivity(DeleteActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
         Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken);
 
         /// <summary>
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Builder
         /// <returns>If the activities are successfully sent, the task result contains
         /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
         /// the receiving channel assigned to the activities.</returns>
-        /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
         
         /// <summary>

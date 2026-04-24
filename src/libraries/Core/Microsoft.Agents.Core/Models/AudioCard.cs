@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="shareable"> This content may be shared with others (default:true). </param>
         /// <param name="autoloop"> Should the client loop playback at end of content (default:true). </param>
         /// <param name="autostart"> Should the client automatically start playback of media in this card (default:true). </param>
-        /// <param name="aspect"> Aspect ratio of thumbnail/media placeholder. Allowed values are <see cref="AspectRatios.Standard"/> and <see cref="AspectRatios.WideScreen"/>. </param>
+        /// <param name="aspect"> Aspect ratio of thumbnail/media placeholder. Allowed values are <see cref="Microsoft.Agents.Core.Models.AspectRatios.Standard"/> and <see cref="Microsoft.Agents.Core.Models.AspectRatios.WideScreen"/>. </param>
         /// <param name="duration"> Describes the length of the media content without requiring a receiver to open the content. Formatted as an ISO 8601 Duration field. </param>
         /// <param name="value"> Supplementary parameter for this card. </param>
         public AudioCard(string title = default, string subtitle = default, string text = default, ThumbnailUrl image = default, IList<MediaUrl> media = default, IList<CardAction> buttons = default, bool? shareable = default, bool? autoloop = default, bool? autostart = default, string aspect = default, object value = default, string duration = default)
@@ -48,14 +48,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="AudioCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.
         /// </summary>
         public const string ContentType = Models.ContentTypes.AudioCard;
 
         /// <summary>
-        /// Creates a new attachment from <see cref="AudioCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="AudioCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Core.Models
         public bool? Autoloop { get; set; }
         /// <summary> Should the client automatically start playback of media in this card (default:true). </summary>
         public bool? Autostart { get; set; }
-        /// <summary> Aspect ratio of thumbnail/media placeholder. Allowed values are <see cref="AspectRatios.Standard"/> and <see cref="AspectRatios.WideScreen"/>. </summary>
+        /// <summary> Aspect ratio of thumbnail/media placeholder. Allowed values are <see cref="Microsoft.Agents.Core.Models.AspectRatios.Standard"/> and <see cref="Microsoft.Agents.Core.Models.AspectRatios.WideScreen"/>. </summary>
         public string Aspect { get; set; }
         /// <summary> Describes the length of the media content without requiring a receiver to open the content. Formatted as an ISO 8601 Duration field. </summary>
         public string Duration { get; set; }

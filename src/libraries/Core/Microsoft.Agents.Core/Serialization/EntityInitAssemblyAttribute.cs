@@ -9,7 +9,7 @@ using System.Reflection;
 namespace Microsoft.Agents.Core.Serialization
 {
     /// <summary>
-    /// Attribute containing a type with an Init method to be called when initializing <see cref="ProtocolJsonSerializer"/>.
+    /// Attribute containing a type with an Init method to be called when initializing <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer"/>.
     /// </summary>
     /// <param name="type">Declared type containing static Init method to call.</param>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]

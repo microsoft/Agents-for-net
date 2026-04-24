@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Core.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets properties that are not otherwise defined by the <see cref="MessageReaction"/> type but that
+        /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.MessageReaction"/> type but that
         /// might appear in the serialized REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

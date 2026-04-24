@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Events cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="EventRouteBuilder"/>.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder"/>.</returns>
         public override EventRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

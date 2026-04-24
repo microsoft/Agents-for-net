@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class FocusParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FocusParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.FocusParameters"/> class.
         /// </summary>
         public FocusParameters()
         {
@@ -43,13 +43,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets the focus target of type <see cref="string"/>.
+        /// Gets or Sets the focus target of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the focus target.</value>
         public string FocusTarget { get; set; }
 
         /// <summary>
-        /// Gets or Sets the aria live property of type <see cref="AriaLiveOption"/>.
+        /// Gets or Sets the aria live property of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.FocusParameters.AriaLiveOption"/>.
         /// </summary>
         /// <value>This value sets the accessibility reading of the contents within the focus target.</value>
         public AriaLiveOption AriaLive { get; set; }

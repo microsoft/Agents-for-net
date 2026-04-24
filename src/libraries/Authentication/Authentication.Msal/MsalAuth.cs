@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and an instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="msalConfigurationSection"></param>
         public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
             : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and an instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="settings">Settings for this instance.</param>
         public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
         {

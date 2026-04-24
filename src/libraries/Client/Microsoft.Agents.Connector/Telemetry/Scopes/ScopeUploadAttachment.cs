@@ -4,13 +4,13 @@
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeConnectorRequest"/> that traces an upload-attachment connector request,
+    /// A <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeConnectorRequest"/> that traces an upload-attachment connector request,
     /// recording the conversation ID as a span tag.
     /// </summary>
     internal class ScopeUploadAttachment : ScopeConnectorRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeUploadAttachment"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeUploadAttachment"/> class.
         /// </summary>
         /// <param name="conversationId">The ID of the conversation the attachment is being uploaded to.</param>
         public ScopeUploadAttachment(string conversationId) : base(Constants.ScopeUploadAttachment, conversationId)

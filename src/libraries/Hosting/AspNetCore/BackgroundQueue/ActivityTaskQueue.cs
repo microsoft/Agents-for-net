@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// Singleton queue, used to transfer an ActivityWithClaims to the <see cref="HostedActivityService"/>.
+    /// Singleton queue, used to transfer an ActivityWithClaims to the <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/>.
     /// </summary>
     internal class ActivityTaskQueue : IActivityTaskQueue
     {

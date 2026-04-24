@@ -26,10 +26,10 @@ public sealed class SendStreamingMessageResponse
     /// </summary>
     /// <code>
     /// Either:
-    /// <see cref="Message"/>
-    /// OR <see cref="Task"/>
-    /// OR <see cref="TaskStatusUpdateEvent"/>
-    /// OR <see cref="TaskArtifactUpdateEvent"/>
+    /// <see cref="Microsoft.Agents.Hosting.A2A.Protocol.Message"/>
+    /// OR <see cref="Microsoft.Agents.Hosting.A2A.Protocol.AgentTask"/>
+    /// OR <see cref="Microsoft.Agents.Hosting.A2A.Protocol.TaskStatusUpdateEvent"/>
+    /// OR <see cref="Microsoft.Agents.Hosting.A2A.Protocol.TaskArtifactUpdateEvent"/>
     /// </code>
     [JsonPropertyName("result")]
     public required object Result { get; set; }

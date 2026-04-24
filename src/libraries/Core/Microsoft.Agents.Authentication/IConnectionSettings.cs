@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Authentication
         /// Entra Authentication Endpoint to use.  If not populated, the Entra Public Cloud endpoint is assumed. 
         /// This example of Public Cloud Endpoint is https://login.microsoftonline.com
         /// </summary>
-        /// <seealso cref="Uri" href="https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud"/>
+        /// <seealso cref="System.Uri" href="https://learn.microsoft.com/entra/identity-platform/authentication-national-cloud"/>
         string Authority { get; set; }
         /// <summary>
         /// Client/Application ID to use.

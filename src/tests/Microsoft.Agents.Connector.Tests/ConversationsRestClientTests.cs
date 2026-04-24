@@ -1061,7 +1061,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var activity = new Activity
             {
-                Conversation = new ConversationAccount { Id = "conversation-id" },
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
                 ChannelId = Channels.Msteams
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
@@ -1118,7 +1118,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Id = "test-id",
-                Conversation = new ConversationAccount { Id = "conversation-id" },
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
                 ReplyToId = "reply-id",
                 ChannelId = Channels.Msteams
             };

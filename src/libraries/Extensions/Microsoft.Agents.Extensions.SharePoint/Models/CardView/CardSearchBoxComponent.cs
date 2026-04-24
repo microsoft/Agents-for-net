@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardSearchBoxComponent : BaseCardComponent
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardSearchBoxComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardSearchBoxComponent"/> class.
         /// </summary>
         public CardSearchBoxComponent()
             : base(CardComponentName.SearchBox)

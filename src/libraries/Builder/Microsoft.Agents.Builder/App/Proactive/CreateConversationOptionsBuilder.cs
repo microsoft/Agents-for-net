@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="userId">The unique identifier of the user to add to the conversation. Cannot be null.</param>
         /// <param name="userName">The display name of the user to add to the conversation. This value is optional and can be null.</param>
-        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the specified user set as a participant.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> instance with the specified user set as a participant.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public CreateConversationOptionsBuilder WithUser(string userId, string userName = null)
         {
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Specifies a user to include as a member in the conversation being created.
         /// </summary>
         /// <param name="user">The user account to add as a member of the conversation. Ignored if null.</param>
-        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> instance for method chaining.</returns>
         /// <exception cref="ArgumentException">Thrown if required parameters are missing or invalid.</exception>"
         public CreateConversationOptionsBuilder WithUser(ChannelAccount user)
         {
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <remarks>Use this method to specify a custom scope for the conversation. This does not normally need to be set for Azure Bot Channels.</remarks>
         /// <param name="scope">The scope value to associate with the conversation. If null the default Azure Bot Service scope is used.</param>
-        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the updated scope.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> instance with the updated scope.</returns>
         public CreateConversationOptionsBuilder WithScope(string scope)
         {
             _record.Scope = scope;
@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <remarks>Use this method to specify a custom audience for the conversation. This does not normally need to be set for Azure Bot Channels.</remarks>
         /// <param name="audience">The audience value to associate with the conversation. If null the default Azure Bot Service audience is used.</param>
-        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the updated audience.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> instance with the updated audience.</returns>
         public CreateConversationOptionsBuilder WithAudience(string audience)
         {
             _record.Audience = audience;
@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// this, the Activity will be ignored.
         /// </summary>
         /// <param name="message">The activity representing the message to include in the conversation. Ignored if null.</param>
-        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the specified message added.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> with the specified message added.</returns>
         public CreateConversationOptionsBuilder WithActivity(IActivity message)
         {
             _record.Parameters.Activity = message;
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="channelData">The channel-specific data to associate with the conversation. Can be any object required by the channel. May
         /// be null if no channel data is needed.</param>
-        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the specified channel data applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> with the specified channel data applied.</returns>
         public CreateConversationOptionsBuilder WithChannelData(object channelData)
         {
             SetChannelData(channelData);
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Specifies whether the conversation being created is a group conversation.
         /// </summary>
         /// <param name="isGroup">A value indicating whether the conversation should be treated as a group conversation.</param>
-        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the group setting applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> with the group setting applied.</returns>
         public CreateConversationOptionsBuilder IsGroup(bool isGroup)
         {
             _record.Parameters.IsGroup = isGroup;
@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <remarks>Use this method to specify a topic for the conversation before finalizing its
         /// creation. Calling this method multiple times will overwrite the previously set topic name.</remarks>
         /// <param name="topicName">The name of the topic to associate with the conversation. Ignored if null or empty.</param>
-        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> with the updated topic name.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> with the updated topic name.</returns>
         public CreateConversationOptionsBuilder WithTopicName(string topicName)
         {
             _record.Parameters.TopicName = topicName?.Trim();
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// chaining.
         /// </summary>
         /// <param name="tenantId">The unique identifier of the tenant to associate with the conversation. Ignored if null or empty.</param>
-        /// <returns>The current <see cref="CreateConversationOptionsBuilder"/> instance with the specified tenant identifier applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> instance with the specified tenant identifier applied.</returns>
         public CreateConversationOptionsBuilder WithTenantId(string tenantId)
         {
             _record.Parameters.TenantId = tenantId?.Trim();
@@ -244,7 +244,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <see href="https://learn.microsoft.com/en-us/MicrosoftTeams/teams-powershell-overview">Teams PowerShell Overview</see>.
         /// </remarks>
         /// <param name="teamsChannelId">The unique identifier of the Microsoft Teams channel to set for the conversation. If null or empty this has no effect.</param>
-        /// <returns>The current instance of <see cref="CreateConversationOptionsBuilder"/> to allow method chaining.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/> to allow method chaining.</returns>
         public CreateConversationOptionsBuilder WithTeamsChannelId(string teamsChannelId)
         {
             if (_record.ChannelId == Channels.Msteams && !string.IsNullOrWhiteSpace(teamsChannelId))

@@ -109,10 +109,10 @@ namespace Microsoft.Agents.Authentication
         /// Gets the outgoing AppId from an incoming identity.
         /// </summary>
         /// <remarks>
-        /// In v1 tokens the AppId is in the the <see cref="AuthenticationConstants.AppIdClaim"/> claim.
-        /// In v2 tokens the AppId is in the azp <see cref="AuthenticationConstants.AuthorizedParty"/> claim.
-        /// If the <see cref="AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
-        /// obtain the attribute from the <see cref="AuthenticationConstants.AppIdClaim"/> or if present.
+        /// In v1 tokens the AppId is in the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> claim.
+        /// In v2 tokens the AppId is in the azp <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> claim.
+        /// If the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
+        /// obtain the attribute from the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> or if present.
         /// </remarks>
         /// <param name="identity">The incoming identity</param>
         /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
@@ -148,10 +148,10 @@ namespace Microsoft.Agents.Authentication
         /// Gets the outgoing AppId from an incoming identity.
         /// </summary>
         /// <remarks>
-        /// In v1 tokens the AppId is in the the <see cref="AuthenticationConstants.AppIdClaim"/> claim.
-        /// In v2 tokens the AppId is in the azp <see cref="AuthenticationConstants.AuthorizedParty"/> claim.
-        /// If the <see cref="AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
-        /// obtain the attribute from the <see cref="AuthenticationConstants.AppIdClaim"/> or if present.
+        /// In v1 tokens the AppId is in the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> claim.
+        /// In v2 tokens the AppId is in the azp <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> claim.
+        /// If the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
+        /// obtain the attribute from the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> or if present.
         /// </remarks>
         /// <param name="identity">The incoming identity</param>
         /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
@@ -164,17 +164,17 @@ namespace Microsoft.Agents.Authentication
         /// Checks if the given incoming identity represents an Agent claim (not coming from ABS/SMBA).
         /// </summary>
         /// <remarks>
-        /// A Agent claim should contain:
-        ///     An <see cref="AuthenticationConstants.VersionClaim"/> claim.
-        ///     An <see cref="AuthenticationConstants.AudienceClaim"/> claim.
-        ///     An <see cref="AuthenticationConstants.AppIdClaim"/> claim (v1) or an a <see cref="AuthenticationConstants.AuthorizedParty"/> claim (v2).
+        /// An Agent claim should contain:
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.VersionClaim"/> claim.
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AudienceClaim"/> claim.
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> claim (v1) or a <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> claim (v2).
         /// And the appId claim should be different than the audience claim.
-        /// When a channel (webchat, teams, etc.) invokes an Agent, the <see cref="AuthenticationConstants.AudienceClaim"/>
-        /// is set to <see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/> but when an Agent calls another Agent,
+        /// When a channel (webchat, teams, etc.) invokes an Agent, the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AudienceClaim"/>
+        /// is set to <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.BotFrameworkTokenIssuer"/> but when an Agent calls another Agent,
         /// the audience claim is set to the appId of the Agent being invoked.
         /// The protocol supports v1 and v2 tokens:
-        /// For v1 tokens, the  <see cref="AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling Agent.
-        /// For v2 tokens, the  <see cref="AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling Agent.
+        /// For v1 tokens, the  <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling Agent.
+        /// For v2 tokens, the  <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling Agent.
         /// </remarks>
         /// <param name="identity">The incoming identity to evaluate.</param>
         /// <returns>True if the incoming identity represents an Agent claim, false if it does not.</returns>
@@ -214,17 +214,17 @@ namespace Microsoft.Agents.Authentication
         /// Checks if the given incoming identity represents an Agent claim (not coming from ABS/SMBA).
         /// </summary>
         /// <remarks>
-        /// A Agent claim should contain:
-        ///     An <see cref="AuthenticationConstants.VersionClaim"/> claim.
-        ///     An <see cref="AuthenticationConstants.AudienceClaim"/> claim.
-        ///     An <see cref="AuthenticationConstants.AppIdClaim"/> claim (v1) or an a <see cref="AuthenticationConstants.AuthorizedParty"/> claim (v2).
+        /// An Agent claim should contain:
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.VersionClaim"/> claim.
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AudienceClaim"/> claim.
+        ///     An <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> claim (v1) or a <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> claim (v2).
         /// And the appId claim should be different than the audience claim.
-        /// When a channel (webchat, teams, etc.) invokes an Agent, the <see cref="AuthenticationConstants.AudienceClaim"/>
-        /// is set to <see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/> but when an Agent calls another Agent,
+        /// When a channel (webchat, teams, etc.) invokes an Agent, the <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AudienceClaim"/>
+        /// is set to <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.BotFrameworkTokenIssuer"/> but when an Agent calls another Agent,
         /// the audience claim is set to the appId of the Agent being invoked.
         /// The protocol supports v1 and v2 tokens:
-        /// For v1 tokens, the  <see cref="AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling Agent.
-        /// For v2 tokens, the  <see cref="AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling Agent.
+        /// For v1 tokens, the  <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling Agent.
+        /// For v2 tokens, the  <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling Agent.
         /// </remarks>
         /// <param name="identity">The incoming identity to evaluate.</param>
         /// <returns>True if the incoming identity represents an Agent claim, false if it does not.</returns>
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
-        /// Retrieves the audience for an outgoing token from the given the incoming identity.
+        /// Retrieves the audience for an outgoing token from the given incoming identity.
         /// </summary>
         /// <param name="identity">The incoming identity containing the token information.</param>
         /// <returns>The token audience as a string.</returns>

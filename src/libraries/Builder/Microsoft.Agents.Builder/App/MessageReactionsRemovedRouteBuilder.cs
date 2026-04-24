@@ -12,10 +12,10 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing message reactions removed activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="MessageReactionsRemovedRouteBuilder"/> to create and configure routes that respond to activities of type 'messageReaction'
-    /// where reactions have been removed. Removed reactions are in <see cref="Activity.ReactionsRemoved"/> property of the activity."/>
-    /// This builder allows matching event activities by name or regular expression, and supports channelId and agentic routing scenarios. 
-    /// Instances are created via the <see cref="Create"/> method and further configured using <see cref="WithHandler(RouteHandler)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder"/> to create and configure routes that respond to activities of type 'messageReaction'
+    /// where reactions have been removed. Removed reactions are in <see cref="Microsoft.Agents.Core.Models.Activity.ReactionsRemoved"/> property of the activity."/>
+    /// This builder allows matching event activities by name or regular expression, and supports channelId and agentic routing scenarios.
+    /// Instances are created via the <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.Create"/> method and further configured using <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.WithHandler(Microsoft.Agents.Builder.App.RouteHandler)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = MessageReactionsRemovedRouteBuilder.Create()
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.App
         /// maintaining consistency with the route's initial setup.</remarks>
         /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
         /// route is always configured for Invoke routing.</param>
-        /// <returns>The current instance of <see cref="MessageReactionsRemovedRouteBuilder"/> with Invoke routing enabled.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder"/> with Invoke routing enabled.</returns>
         public override MessageReactionsRemovedRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         /// <summary>
         /// Creates a new instance of the <see cref="SourceRange"/>. All properties are recursively cloned.
         /// </summary>
-        /// <returns>A new instace of the <see cref="SourceRange"/>.</returns>
+        /// <returns>A new instance of the <see cref="SourceRange"/>.</returns>
         public SourceRange DeepClone()
             => new SourceRange()
             {
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
             };
 
         /// <summary>
-        /// Indicates wether the current <see cref="SourceRange"/> is equal to another object.
+        /// Indicates whether the current <see cref="SourceRange"/> is equal to another object.
         /// </summary>
         /// <param name="obj">An object to compare with this <see cref="SourceRange"/>.</param>
         /// <returns><c>true</c> if the current <see cref="SourceRange"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Indicates wether the current <see cref="SourceRange"/> is equal to another object of the same type.
+        /// Indicates whether the current <see cref="SourceRange"/> is equal to another object of the same type.
         /// </summary>
         /// <param name="other">An object to compare with this <see cref="SourceRange"/>.</param>
         /// <returns><c>true</c> if the current <see cref="SourceRange"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>

@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
         /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route.</param>
-        /// <returns>The current instance of <see cref="RouteBuilder"/> with the specified selector applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> with the specified selector applied.</returns>
         public virtual TBuilder WithSelector(RouteSelector selector)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.App
         /// the route. This is useful when multiple authentication schemes are available and you want to restrict the
         /// route to specific handlers.</remarks>
         /// <param name="handlers">An array of handler names to be used for OAuth authentication. If null, no handlers will be configured.</param>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the OAuth handlers configured.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the OAuth handlers configured.</returns>
         public TBuilder WithOAuthHandlers(string[] handlers)
         {
             _route.OAuthHandlers = context => handlers ?? [];
@@ -120,9 +120,9 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Use this method to specify custom OAuth authentication handlers for the route. The
         /// provided delegate will be invoked for each request to determine which handlers should be applied based on
         /// the context.</remarks>
-        /// <param name="handlers">A delegate that takes an <see cref="ITurnContext"/> and returns an array of OAuth handler names to be used
+        /// <param name="handlers">A delegate that takes an <see cref="Microsoft.Agents.Builder.ITurnContext"/> and returns an array of OAuth handler names to be used
         /// for authentication. If <paramref name="handlers"/> is null, no OAuth handlers will be configured.</param>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the OAuth handlers configured.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the OAuth handlers configured.</returns>
         public TBuilder WithOAuthHandlers(Func<ITurnContext, string[]> handlers)
         {
             _route.OAuthHandlers = handlers ?? (Func<ITurnContext, string[]>)(context => []);
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Flags the route for Invoke handling.
         /// </summary>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the invocation flag updated.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the invocation flag updated.</returns>
         public virtual TBuilder AsInvoke(bool isInvoke = true)
         {
             if (isInvoke)
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Builder.App
         /// route.</remarks>
         /// <param name="isAgentic">A value indicating whether agentic mode should be enabled. Set to <see langword="true"/> to enable agentic
         /// mode; otherwise, set to <see langword="false"/>.</param>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the agentic mode configuration applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the agentic mode configuration applied.</returns>
         public TBuilder AsAgentic(bool isAgentic = true)
         {
             if (isAgentic)
@@ -173,7 +173,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <remarks>A non-terminal route allows further route matching beyond this point. Use this method
         /// when the route should not be considered a final endpoint.</remarks>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the non-terminal flag set.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the non-terminal flag set.</returns>
         public TBuilder AsNonTerminal()
         {
             _route.Flags |= RouteFlags.NonTerminal;
@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Builder.App
         /// are evaluated. Lower rank values typically indicate higher priority.</remarks>
         /// <param name="rank">The rank value to assign to the route. Must be a non-negative number representing the route's priority in
         /// ordering.</param>
-        /// <returns>The current <see cref="RouteBuilder"/> instance with the updated order rank.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.RouteBuilder"/> instance with the updated order rank.</returns>
         public TBuilder WithOrderRank(ushort rank)
         {
             _route.Rank = rank;
@@ -198,8 +198,8 @@ namespace Microsoft.Agents.Builder.App
         /// Builds and returns the configured route instance after validating required components.
         /// </summary>
         /// <remarks>Throws an exception if the route's selector or handler is not set. Ensure that both
-        /// components are configured before calling this method. The return <c>Route</c> can be used in <see cref="AgentApplication.AddRoute(Route)"/>.</remarks>
-        /// <returns>The constructed <see cref="Route"/> instance representing the current route configuration.</returns>
+        /// components are configured before calling this method. The return <c>Route</c> can be used in <see cref="Microsoft.Agents.Builder.App.AgentApplication.AddRoute(Microsoft.Agents.Builder.App.Route)"/>.</remarks>
+        /// <returns>The constructed <see cref="Microsoft.Agents.Builder.App.Route"/> instance representing the current route configuration.</returns>
         public Route Build()
         {
             PreBuild();

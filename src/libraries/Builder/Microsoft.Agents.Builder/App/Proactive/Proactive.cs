@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="adapter">The channel adapter used to send the activity. Cannot be null.</param>
         /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be 
-        /// null or empty. The conversation must have been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/></param>
+        /// null or empty. The conversation must have been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/></param>
         /// <param name="activity">The activity to send to the conversation. Must not be null. If the activity's Type property is null or
         /// empty, it defaults to a message activity.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// Sends an activity to a conversation using the specified channel adapter and conversation reference.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send the activity. Cannot be null.</param>
-        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
+        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="activity">The activity to send to the conversation. If the activity's Type property is null or empty, it defaults to a
         /// message activity. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
@@ -126,8 +126,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
-        /// ID. The conversation must have previously been stored using <see cref="StoreConversationAsync(ITurnContext, CancellationToken)"/>.<br/><br/>
-        /// See  <see cref="ContinueConversationAsync(IChannelAdapter, Conversation, RouteHandler, IActivity, string[], CancellationToken)"/> 
+        /// ID. The conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.<br/><br/>
+        /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, string[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// for more details.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </code>
         /// </remarks>
         /// <param name="adapter">The channel adapter used to continue the conversation. Must not be null.</param>
-        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Conversation"/> constructors or <see cref="ConversationBuilder"/>.</param>
+        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
         /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// </summary>
         /// <param name="adapter">The channel adapter used to create the conversation. Cannot be null.</param>
         /// <param name="createOptions">An object containing the details required to create the conversation, including conversation identity,
-        /// reference, parameters, and scope. Cannot be null. See <see cref="CreateConversationOptionsBuilder"/>.</param>
+        /// reference, parameters, and scope. Cannot be null. See <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/>.</param>
         /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
         /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
         /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
@@ -335,7 +335,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="conversationId">The unique identifier of the conversation for which to retrieve the reference record. Cannot be null or
         /// empty.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A <see cref="Conversation"/> representing the conversation reference if found; otherwise,
+        /// <returns>A <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> representing the conversation reference if found; otherwise,
         /// <see langword="null"/>.</returns>
         public async Task<Conversation?> GetConversationAsync(string conversationId, CancellationToken cancellationToken = default)
         {

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class GetLocationAction : BaseAction, IAction, IOnCardSelectionAction
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GetLocationAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.GetLocationAction"/> class.
         /// </summary>
         public GetLocationAction()
             : base("VivaAction.GetLocation")
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
         
         /// <summary>
-        /// Gets or Sets the action parameters of type <see cref="GetLocationActionParameters"/>.
+        /// Gets or Sets the action parameters of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.GetLocationActionParameters"/>.
         /// </summary>
         /// <value>This value is the parameters of the action.</value>
         public GetLocationActionParameters Parameters { get; set; }

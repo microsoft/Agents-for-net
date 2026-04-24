@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardSearchFooterComponent : BaseCardComponent
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardSearchFooterComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardSearchFooterComponent"/> class.
         /// </summary>
         public CardSearchFooterComponent()
             : base(CardComponentName.SearchFooter)

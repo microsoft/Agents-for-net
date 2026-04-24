@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneChoiceGroupIconProperties
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneChoiceGroupIconProperties"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneChoiceGroupIconProperties"/> class.
         /// </summary>
         public PropertyPaneChoiceGroupIconProperties()
         {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the name of the icon to use from the Office Fabric icon set of type <see cref="string"/>.
+        /// Gets or Sets the name of the icon to use from the Office Fabric icon set of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the office fabric icon font name of the choice group.</value>
         public string OfficeFabricIconFontName { get; set; }

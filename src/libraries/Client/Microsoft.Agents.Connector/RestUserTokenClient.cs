@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Connector
         /// </summary>
         /// <param name="appId">The appId to include in the token exchange state.</param>
         /// <param name="connectionName">The connectionName to include in the token exchange state.</param>
-        /// <param name="activity">The <see cref="IActivity"/> from which to derive the token exchange state.</param>
+        /// <param name="activity">The <see cref="Microsoft.Agents.Core.Models.IActivity"/> from which to derive the token exchange state.</param>
         /// <returns>base64 encoded token exchange state.</returns>
         public static string CreateTokenExchangeState(string appId, string connectionName, IActivity activity)
         {

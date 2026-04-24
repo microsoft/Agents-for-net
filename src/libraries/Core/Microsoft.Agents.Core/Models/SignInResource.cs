@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Models
         public SignInResource() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SignInResource"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.SignInResource"/> class.
         /// </summary>
         /// <param name="signInLink">Sign-in link.</param>
         /// <param name="tokenExchangeResource">Token exchange resource.</param>

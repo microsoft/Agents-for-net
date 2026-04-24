@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -137,6 +138,43 @@ namespace Microsoft.Agents.Builder.Testing
                     await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
                 },
                 this);
+        }
+
+        /// <summary>
+        /// Creates a conversation update activity with explicit members added and processes it.
+        /// </summary>
+        /// <param name="membersAdded">
+        /// Members to add. Pass <c>null</c> to use the default user (<see cref="TestAdapter.Conversation"/>.User).
+        /// Must not be empty — an empty list silently prevents OnMembersAdded from firing.
+        /// </param>
+        /// <returns>A new <see cref="TestFlow"/> object.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="membersAdded"/> is an empty collection.</exception>
+        public TestFlow SendConversationUpdate(IEnumerable<ChannelAccount> membersAdded)
+        {
+            if (membersAdded != null)
+            {
+                var memberList = new List<ChannelAccount>(membersAdded);
+                if (memberList.Count == 0)
+                {
+                    throw new ArgumentException(
+                        "membersAdded must contain at least one member, or pass null to use the default user.",
+                        nameof(membersAdded));
+                }
+
+                return new TestFlow(
+                    async () =>
+                    {
+                        await _testTask.ConfigureAwait(false);
+                        var cu = Activity.CreateConversationUpdateActivity();
+                        foreach (var member in memberList)
+                            cu.MembersAdded.Add(member);
+                        await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
+                    },
+                    this);
+            }
+
+            // null → same as no-arg overload
+            return SendConversationUpdate();
         }
 
         /// <summary>
@@ -348,6 +386,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which no response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        [Obsolete("Use AssertNoMoreReplies instead. AssertNoMoreReplies has a cleaner parameter order and a shorter default timeout appropriate for 'done' assertions.")]
         public TestFlow AssertNoReply([CallerMemberName] string description = null, uint timeout = 3000)
         {
             return new TestFlow(
@@ -375,6 +414,126 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
+        /// Asserts that no further reply arrives within <paramref name="timeout"/> milliseconds.
+        /// If a reply does arrive, throws <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="description">Optional label included in the error message when a reply unexpectedly arrives.</param>
+        /// <param name="timeout">Milliseconds to wait. Defaults to 1000ms — sufficient for agents that have already finished replying.</param>
+        public TestFlow AssertNoMoreReplies(string description = null, uint timeout = 1000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    try
+                    {
+                        CancellationTokenSource cts = new CancellationTokenSource();
+                        cts.CancelAfter((int)timeout);
+                        IActivity reply = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+                        if (reply != null)
+                        {
+                            throw new InvalidOperationException(
+                                $"Unexpected reply received{(description != null ? $" [{description}]" : "")}: {reply}");
+                        }
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // timeout = no reply = pass
+                    }
+                },
+                this);
+        }
+
+        /// <summary>
+        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="ActivityTypes.Typing"/>).
+        /// Chain this before the reply assertions to match the agent's send order.
+        /// </summary>
+        /// <param name="description">Optional label included in the error message on failure.</param>
+        /// <param name="timeout">Milliseconds to wait for the activity.</param>
+        public TestFlow AssertTypingIndicator(string description = null, uint timeout = 3000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    if (System.Diagnostics.Debugger.IsAttached)
+                    {
+                        timeout = uint.MaxValue;
+                    }
+
+                    CancellationTokenSource cts = new CancellationTokenSource();
+                    cts.CancelAfter((int)timeout);
+                    IActivity activity = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+
+                    if (activity?.Type != ActivityTypes.Typing)
+                    {
+                        throw new InvalidOperationException(
+                            $"Expected typing indicator{(description != null ? $" [{description}]" : "")}, but got activity of type '{activity?.Type}'.");
+                    }
+                },
+                this);
+        }
+
+        /// <summary>
+        /// Asserts the next reply satisfies an async validation delegate.
+        /// Exceptions from the delegate propagate as-is (no wrapping).
+        /// </summary>
+        /// <param name="validateAsync">Async validation delegate. Throw to signal failure.</param>
+        /// <param name="description">Optional description (currently informational).</param>
+        /// <param name="timeout">Milliseconds to wait for a reply.</param>
+        public TestFlow AssertReplySatisfies(Func<IActivity, Task> validateAsync, string description = null, uint timeout = 3000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    if (System.Diagnostics.Debugger.IsAttached)
+                    {
+                        timeout = uint.MaxValue;
+                    }
+
+                    CancellationTokenSource cts = new CancellationTokenSource();
+                    cts.CancelAfter((int)timeout);
+
+                    IActivity reply;
+                    try
+                    {
+                        reply = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new InvalidOperationException($"No reply received within {timeout}ms");
+                    }
+
+                    if (reply == null)
+                    {
+                        throw new InvalidOperationException($"No reply received within {timeout}ms");
+                    }
+
+                    await validateAsync(reply).ConfigureAwait(false);
+                },
+                this);
+        }
+
+        /// <summary>
+        /// Asserts the next reply satisfies an <see cref="IResponseValidator"/>.
+        /// Exceptions from the validator propagate as-is (no wrapping).
+        /// </summary>
+        /// <param name="validator">The validator to run against the reply.</param>
+        /// <param name="description">Optional description (currently informational).</param>
+        /// <param name="timeout">Milliseconds to wait for a reply.</param>
+        public TestFlow AssertReplySatisfies(IResponseValidator validator, string description = null, uint timeout = 3000)
+        {
+            return AssertReplySatisfies(
+                reply => validator.ValidateAsync(reply),
+                description,
+                timeout);
+        }
+
+        /// <summary>
         /// Shortcut for calling <see cref="Send(string)"/> followed by <see cref="AssertReply(string, string, uint)"/>.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
@@ -386,10 +545,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, string expected, string description = null, uint timeout = 3000)
         {
-            if (expected == null)
-            {
-                throw new ArgumentNullException(nameof(expected));
-            }
+            AssertionHelpers.ThrowIfNull(expected, nameof(expected));
 
             return Send(userSays)
                 .AssertReply(expected, description, timeout);
@@ -407,10 +563,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Activity expected, string description = null, uint timeout = 3000)
         {
-            if (expected == null)
-            {
-                throw new ArgumentNullException(nameof(expected));
-            }
+            AssertionHelpers.ThrowIfNull(expected, nameof(expected));
 
             return Send(userSays)
                 .AssertReply(expected, description, timeout);
@@ -429,10 +582,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Action<IActivity> validateActivity, string description = null, uint timeout = 3000)
         {
-            if (validateActivity == null)
-            {
-                throw new ArgumentNullException(nameof(validateActivity));
-            }
+            AssertionHelpers.ThrowIfNull(validateActivity, nameof(validateActivity));
 
             return Send(userSays)
                 .AssertReply(validateActivity, description, timeout);
@@ -452,10 +602,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, [CallerMemberName] string description = null, uint timeout = 3000)
         {
-            if (activities == null)
-            {
-                throw new ArgumentNullException(nameof(activities));
-            }
+            AssertionHelpers.ThrowIfNull(activities, nameof(activities));
 
             // Chain all activities in a TestFlow, check if its a user message (send) or a bot reply (assert)
             return activities.Aggregate(this, (flow, activity) =>
@@ -481,10 +628,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, ValidateReply validateReply, [CallerMemberName] string description = null, uint timeout = 3000)
         {
-            if (activities == null)
-            {
-                throw new ArgumentNullException(nameof(activities));
-            }
+            AssertionHelpers.ThrowIfNull(activities, nameof(activities));
+            AssertionHelpers.ThrowIfNull(validateReply, nameof(validateReply));
 
             // Chain all activities in a TestFlow, check if its a user message (send) or a bot reply (assert)
             return activities.Aggregate(this, (flow, activity) =>
@@ -511,10 +656,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyOneOf(string[] candidates, string description = null, uint timeout = 3000)
         {
-            if (candidates == null)
-            {
-                throw new ArgumentNullException(nameof(candidates));
-            }
+            AssertionHelpers.ThrowIfNull(candidates, nameof(candidates));
 
             return AssertReply(
                 (reply) =>
