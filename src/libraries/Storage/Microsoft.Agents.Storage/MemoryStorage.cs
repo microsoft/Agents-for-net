@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Storage
     /// A storage layer that uses an in-memory dictionary.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="MemoryStorage"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.MemoryStorage"/> class.
     /// </remarks>
     /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
     /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
@@ -32,12 +32,12 @@ namespace Microsoft.Agents.Storage
         /// <summary>
         /// Deletes storage items from storage.
         /// </summary>
-        /// <param name="keys">Keys for the <see cref="IStoreItem"/> objects to delete.</param>
+        /// <param name="keys">Keys for the <see cref="Microsoft.Agents.Storage.IStoreItem"/> objects to delete.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
         public Task DeleteAsync(string[] keys, CancellationToken cancellationToken)
         {
 
@@ -57,14 +57,14 @@ namespace Microsoft.Agents.Storage
         /// <summary>
         /// Reads storage items from storage.
         /// </summary>
-        /// <param name="keys">Keys of the <see cref="IStoreItem"/> objects to read.</param>
+        /// <param name="keys">Keys of the <see cref="Microsoft.Agents.Storage.IStoreItem"/> objects to read.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
         /// the items read, indexed by key.</remarks>
-        /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
-        /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
@@ -114,8 +114,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute. Throws ArgumentException for an ETag conflict.</returns>
-        /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
-        /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));

@@ -82,14 +82,14 @@ namespace Microsoft.Agents.Core.Models
         public ClientCitationAppearance? Appearance { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClientCitation"/> class with default values.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ClientCitation"/> class with default values.
         /// </summary>
         public ClientCitation()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClientCitation"/> class with the specified citation details.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ClientCitation"/> class with the specified citation details.
         /// </summary>
         /// <param name="title">The title/name of the citation document. Will be trimmed to 80 characters if longer. Can be automatically wrapped in an Adaptive Card format.</param>
         /// <param name="position">The position number of the citation, used for referencing in text (e.g., [1], [2]).</param>
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="text">The detailed citation appearance text content.</param>
         /// <param name="keywords">Optional keywords associated with the citation for categorization and search.</param>
         /// <param name="citationLink">The URL of the source document. This will make the citation clickable and direct users to the specified URL. Invalid URLs will be ignored.</param>
-        /// <param name="imageName">Optional icon name to display with the citation. Will create an <see cref="AppearanceImage"/> if provided.</param>
+        /// <param name="imageName">Optional icon name to display with the citation. Will create an <see cref="Microsoft.Agents.Core.Models.AppearanceImage"/> if provided.</param>
         /// <param name="useDefaultAdaptiveCard">If true and title is provided, wraps the title in a default Adaptive Card JSON format. Default is true.</param>
         /// <remarks>
         /// This constructor creates a complete citation with appearance information. It performs several validations and transformations:
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Core.Models
         /// <item><description>Abstract text is trimmed to 160 characters maximum for proper display sizing</description></item>
         /// <item><description>Warning traces are logged when content is trimmed or URLs are invalid</description></item>
         /// <item><description>The Position property is automatically set from the position parameter</description></item>
-        /// <item><description>A <see cref="ClientCitationAppearance"/> object is automatically created and populated</description></item>
+        /// <item><description>A <see cref="Microsoft.Agents.Core.Models.ClientCitationAppearance"/> object is automatically created and populated</description></item>
         /// </list>
         /// The resulting citation can be referenced in activity text using the format [position] (e.g., [1], [2]).
         /// </remarks>
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// Optional. Encoding format of the `citation.appearance.text` field. 
-        /// It should be one of <see cref="ContentTypes.Html"/> or <see cref="ContentTypes.AdaptiveCard"/>.
+        /// It should be one of <see cref="Microsoft.Agents.Core.Models.ContentTypes.Html"/> or <see cref="Microsoft.Agents.Core.Models.ContentTypes.AdaptiveCard"/>.
         /// </summary>
         public string? EncodingFormat { get; set; } 
 
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Core.Models
         public string Type { get; set; } = "ImageObject";
 
         /// <summary>
-        /// The image/icon name. It should be one of <see cref="ClientCitationIconName"/>
+        /// The image/icon name. It should be one of <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/>
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumMemberConverter))]
         public ClientCitationsIconNameEnum Name { get; set; }

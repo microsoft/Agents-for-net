@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingStageSurface<T> : Surface
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingStageSurface{T}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStageSurface{T}"/> class.
         /// </summary>
         public MeetingStageSurface()
             : base(SurfaceType.MeetingStage)
@@ -18,18 +18,18 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Gets or sets the content type of this <see cref="MeetingStageSurface{T}"/>.
+        /// Gets or sets the content type of this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStageSurface{T}"/>.
         /// </summary>
         /// <value>
-        /// The content type of this <see cref="MeetingStageSurface{T}"/>.
+        /// The content type of this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStageSurface{T}"/>.
         /// </value>
         public ContentType ContentType { get; set; } = ContentType.Task;
 
         /// <summary>
-        /// Gets or sets the content for this <see cref="MeetingStageSurface{T}"/>.
+        /// Gets or sets the content for this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStageSurface{T}"/>.
         /// </summary>
         /// <value>
-        /// The content of this <see cref="MeetingStageSurface{T}"/>.
+        /// The content of this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStageSurface{T}"/>.
         /// </value>
         public T Content { get; set; }
     }

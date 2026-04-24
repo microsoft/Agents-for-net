@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardInputBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardInputBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardInputBase"/> class.
         /// </summary>
         public O365ConnectorCardInputBase()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardInputBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardInputBase"/> class.
         /// </summary>
         /// <param name="type">Input type name. Possible values include:
         /// 'textInput', 'dateInput', 'multichoiceInput'.</param>

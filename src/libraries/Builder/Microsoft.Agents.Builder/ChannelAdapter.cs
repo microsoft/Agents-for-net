@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// This is the base implementation of an <see cref="IChannelAdapter"/>.
+    /// This is the base implementation of an <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>.
     /// </summary>
     /// <remarks>This would not normally be used by the creator of an Agent except
     /// in cases where a custom Adapter is being implemented.</remarks>
@@ -181,12 +181,12 @@ namespace Microsoft.Agents.Builder
         /// in the pipeline. Once control reaches the end of the pipeline, the adapter calls
         /// the <paramref name="callback"/> method. If a middleware component doesn't call
         /// the next delegate, the adapter does not call  any of the subsequent middleware’s
-        /// <see cref="IMiddleware.OnTurnAsync(ITurnContext, NextDelegate, CancellationToken)"/>
+        /// <see cref="Microsoft.Agents.Builder.IMiddleware.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.NextDelegate, System.Threading.CancellationToken)"/>
         /// methods or the callback method, and the pipeline short circuits.
         /// <para>When the turn is initiated by a user activity (reactive messaging), the
         /// callback method will be a reference to the Agent's
-        /// <see cref="IAgent.OnTurnAsync(ITurnContext, CancellationToken)"/> method. When the turn is
-        /// initiated by a call to <see cref="ContinueConversationAsync(string, ConversationReference, AgentCallbackHandler, CancellationToken)"/>
+        /// <see cref="Microsoft.Agents.Builder.IAgent.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> method. When the turn is
+        /// initiated by a call to <see cref="Microsoft.Agents.Builder.ChannelAdapter.ContinueConversationAsync(string, Microsoft.Agents.Core.Models.ConversationReference, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/>
         /// (proactive messaging), the callback method is the callback method that was provided in the call.</para>
         /// </remarks>
         protected virtual async Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)

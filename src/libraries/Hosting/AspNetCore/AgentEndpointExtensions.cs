@@ -47,8 +47,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Represents an asynchronous method that processes an HTTP request using the specified adapter and agent.
         /// </summary>
-        /// <typeparam name="TAdapter">The type of the HTTP adapter used to handle the request. Must implement <see cref="IAgentHttpAdapter"/>.</typeparam>
-        /// <typeparam name="TAgent">The type of the agent that processes the request. Must implement <see cref="IAgent"/>.</typeparam>
+        /// <typeparam name="TAdapter">The type of the HTTP adapter used to handle the request. Must implement <see cref="Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter"/>.</typeparam>
+        /// <typeparam name="TAgent">The type of the agent that processes the request. Must implement <see cref="Microsoft.Agents.Builder.IAgent"/>.</typeparam>
         /// <param name="request">The HTTP request to be processed.</param>
         /// <param name="response">The HTTP response to be sent.</param>
         /// <param name="adapter">The adapter instance used to facilitate communication between the HTTP layer and the agent.</param>
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TAdapter : IAgentHttpAdapter;
 
         /// <summary>
-        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="ServiceCollectionExtensions.AddAgent{TAgent}(Extensions.Hosting.IHostApplicationBuilder)"/>.
+        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>

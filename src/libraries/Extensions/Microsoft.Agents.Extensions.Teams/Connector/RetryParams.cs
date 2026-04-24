@@ -15,14 +15,14 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         private static readonly TimeSpan DefaultBackOffTime = TimeSpan.FromMilliseconds(50);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RetryParams"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Connector.RetryParams"/> class.
         /// </summary>
         public RetryParams()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RetryParams"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Connector.RetryParams"/> class.
         /// </summary>
         /// <param name="retryAfter">Timespan to wait between retries.</param>
         /// <param name="shouldRetry">Bool that indicates if a retry is required. The default is true.</param>
@@ -66,10 +66,10 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
         /// <summary>
         /// Evaluates if the current retry count is less than the maximum number of retries allowed, and returns a new
-        /// <see cref="RetryParams" /> object if true, or sets the <see cref="RetryParams.StopRetrying"/> property to false if false.
+        /// <see cref="Microsoft.Agents.Extensions.Teams.Connector.RetryParams" /> object if true, or sets the <see cref="Microsoft.Agents.Extensions.Teams.Connector.RetryParams.StopRetrying"/> property to false if false.
         /// </summary>
         /// <param name="retryCount">The number of times to perform a retry.</param>
-        /// <returns>A <see cref="RetryParams"/> object.</returns>
+        /// <returns>A <see cref="Microsoft.Agents.Extensions.Teams.Connector.RetryParams"/> object.</returns>
         public static RetryParams DefaultBackOff(int retryCount)
         {
             if (retryCount < MaxRetries)

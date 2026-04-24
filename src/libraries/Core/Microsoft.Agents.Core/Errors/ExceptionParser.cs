@@ -12,13 +12,13 @@ namespace Microsoft.Agents.Core.Errors
     {
         /// <summary>
         /// Extracts detailed information about an exception, including its message, source, target site, help link, 
-        /// error code, and optionally its stack trace, and appends it to the provided <see cref="StringBuilder"/>.
+        /// error code, and optionally its stack trace, and appends it to the provided <see cref="System.Text.StringBuilder"/>.
         /// </summary>
-        /// <param name="ex">The <see cref="Exception"/> instance to extract details from.</param>
-        /// <param name="sw">The <see cref="StringBuilder"/> to which the formatted exception details will be appended.</param>
+        /// <param name="ex">The <see cref="System.Exception"/> instance to extract details from.</param>
+        /// <param name="sw">The <see cref="System.Text.StringBuilder"/> to which the formatted exception details will be appended.</param>
         /// <param name="level">The depth of the exception in the hierarchy (e.g., 0 for the top-level exception, 1 for the first inner exception, etc.).</param>
         /// <param name="lastErrorMsg">
-        /// An optional <see cref="StringBuilder"/> to store the concatenated error messages from the exception and its inner exceptions.
+        /// An optional <see cref="System.Text.StringBuilder"/> to store the concatenated error messages from the exception and its inner exceptions.
         /// If not provided, a new instance will be created for the top-level exception.
         /// </param>
         /// <param name="includeStackTrace">Indicates whether the stack trace should be included in the output.</param>
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Core.Errors
         }
 
         /// <summary>
-        /// Formats and appends detailed exception information to the provided <see cref="StringBuilder"/>.
+        /// Formats and appends detailed exception information to the provided <see cref="System.Text.StringBuilder"/>.
         /// </summary>
         /// <param name="source">The source of the exception, typically the name of the application or object that caused the error.</param>
         /// <param name="targetSite">The name of the method where the exception occurred.</param>
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Core.Errors
         /// <param name="errorCode">The error code associated with the exception, if available.</param>
         /// <param name="stackTrace">The stack trace of the exception, if available.</param>
         /// <param name="exData">The additional data associated with the exception.</param>
-        /// <param name="sw">The <see cref="StringBuilder"/> to which the formatted exception details will be appended.</param>
+        /// <param name="sw">The <see cref="System.Text.StringBuilder"/> to which the formatted exception details will be appended.</param>
         /// <param name="level">The depth of the exception in the hierarchy (e.g., 0 for the top-level exception, 1 for the first inner exception, etc.).</param>
         /// <param name="includeStackTrace">Indicates whether the stack trace should be included in the output.</param>
         /// <remarks>
@@ -112,16 +112,16 @@ namespace Microsoft.Agents.Core.Errors
         }
 
         /// <summary>
-        /// Decodes the error message from an <see cref="ErrorResponseException"/> instance.
+        /// Decodes the error message from an <see cref="Microsoft.Agents.Core.Errors.ErrorResponseException"/> instance.
         /// </summary>
-        /// <param name="error">The <see cref="ErrorResponseException"/> containing the error details to decode.</param>
+        /// <param name="error">The <see cref="Microsoft.Agents.Core.Errors.ErrorResponseException"/> containing the error details to decode.</param>
         /// <returns>
         /// A string representing the decoded error message. If the <paramref name="error"/> or its body is null, 
         /// the method returns the exception's message. If the body contains an error, the method returns a formatted 
         /// string containing the exception message, remote error message, and error code.
         /// </returns>
         /// <remarks>
-        /// This method handles cases where the <see cref="ErrorResponseException"/> or its body is null, ensuring 
+        /// This method handles cases where the <see cref="Microsoft.Agents.Core.Errors.ErrorResponseException"/> or its body is null, ensuring 
         /// that a meaningful error message is returned. If the body contains an error, it extracts and formats 
         /// the error details for better readability.
         /// </remarks>

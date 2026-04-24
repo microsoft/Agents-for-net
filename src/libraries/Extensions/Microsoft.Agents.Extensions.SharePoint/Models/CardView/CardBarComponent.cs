@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardBarComponent : BaseCardComponent
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardBarComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardBarComponent"/> class.
         /// </summary>
         public CardBarComponent()
             : base(CardComponentName.CardBar)

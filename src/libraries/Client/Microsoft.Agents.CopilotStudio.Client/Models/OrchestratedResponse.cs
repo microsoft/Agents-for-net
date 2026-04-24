@@ -8,8 +8,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
     /// <summary>
     /// Base type for responses from an externally orchestrated conversation turn.
     /// Use pattern matching to handle the specific response types:
-    /// <see cref="OrchestratedActivityResponse"/>, <see cref="OrchestratedStateResponse"/>,
-    /// <see cref="OrchestratedErrorResponse"/>, and <see cref="OrchestratedEndResponse"/>.
+    /// <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedActivityResponse"/>, <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedStateResponse"/>,
+    /// <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorResponse"/>, and <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedEndResponse"/>.
     /// </summary>
 #if !NETSTANDARD
     public abstract record OrchestratedResponse;
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
         public Activity Activity { get; }
 
         /// <summary>
-        /// Creates an <see cref="OrchestratedActivityResponse"/> with the specified activity.
+        /// Creates an <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedActivityResponse"/> with the specified activity.
         /// </summary>
         /// <param name="activity">The activity received from the agent.</param>
         public OrchestratedActivityResponse(Activity activity)
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
         public AgentStatePayload AgentState { get; }
 
         /// <summary>
-        /// Creates an <see cref="OrchestratedStateResponse"/> with the specified agent state.
+        /// Creates an <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedStateResponse"/> with the specified agent state.
         /// </summary>
         /// <param name="agentState">The agent state payload.</param>
         public OrchestratedStateResponse(AgentStatePayload agentState)
@@ -91,7 +91,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
         public OrchestratedErrorPayload Error { get; }
 
         /// <summary>
-        /// Creates an <see cref="OrchestratedErrorResponse"/> with the specified error.
+        /// Creates an <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorResponse"/> with the specified error.
         /// </summary>
         /// <param name="error">The error payload.</param>
         public OrchestratedErrorResponse(OrchestratedErrorPayload error)

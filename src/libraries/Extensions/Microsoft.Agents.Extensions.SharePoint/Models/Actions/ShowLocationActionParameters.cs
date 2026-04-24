@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class ShowLocationActionParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShowLocationActionParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.ShowLocationActionParameters"/> class.
         /// </summary>
         public ShowLocationActionParameters()
         {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets the location coordinates of type <see cref="Location"/>.
+        /// Gets or Sets the location coordinates of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.Location"/>.
         /// </summary>
         /// <value>This value is the location to be shown.</value>
         public Location LocationCoordinates { get; set; }

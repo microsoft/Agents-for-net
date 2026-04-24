@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class CardViewHandleActionResponse : BaseHandleActionResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardViewHandleActionResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardViewHandleActionResponse"/> class.
         /// </summary>
         public CardViewHandleActionResponse()
         : base(ViewResponseType.Card)

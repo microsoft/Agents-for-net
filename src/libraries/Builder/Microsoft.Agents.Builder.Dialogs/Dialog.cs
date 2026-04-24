@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="DialogContext.BeginDialogAsync(string, object, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
         public abstract Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// If this method is *not* overridden, the dialog automatically ends when the user replies.
         /// </remarks>
-        /// <seealso cref="DialogContext.ContinueDialogAsync(CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ContinueDialogAsync(System.Threading.CancellationToken)"/>
         public virtual async Task<DialogTurnResult> ContinueDialogAsync(DialogContext dc, CancellationToken cancellationToken = default)
         {
             // By default just end the current dialog.
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// If this method is *not* overridden, the dialog automatically ends when the user replies.
         /// </remarks>
-        /// <seealso cref="DialogContext.EndDialogAsync(object, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(object, System.Threading.CancellationToken)"/>
         public virtual async Task<DialogTurnResult> ResumeDialogAsync(DialogContext dc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
         {
             if (result is CancellationToken)
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <seealso cref="DialogContext.RepromptDialogAsync(CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.RepromptDialogAsync(System.Threading.CancellationToken)"/>
         public virtual Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             // No-op by default

@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Core.Models
         public string TenantId { get; set; }
 
         /// <summary>
-        /// Gets properties that are not otherwise defined by the <see cref="ChannelAccount"/> type but that
+        /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.ChannelAccount"/> type but that
         /// might appear in the REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadApp
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadApp"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadApp"/> class.
         /// </summary>
         public MessageActionsPayloadApp()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadApp"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadApp"/> class.
         /// </summary>
         /// <param name="applicationIdentityType">The type of application.
         /// Possible values include: 'aadApplication', 'bot', 'tenantBot',

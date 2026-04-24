@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder
     /// The context object is created by a <see cref="IChannelAdapter"/> and persists for the
     /// length of the turn.  TurnContext cannot be used after the turn is complete.
     /// </remarks>
-    /// <seealso cref="IAgent"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
     public class TurnContext : ITurnContext, IDisposable
     {
         private readonly IList<SendActivitiesHandler> _onSendActivities = [];

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class QuickViewActionParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QuickViewActionParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.QuickViewActionParameters"/> class.
         /// </summary>
         public QuickViewActionParameters()
         {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets the quick view id to be opened as part of the action of type <see cref="string"/>.
+        /// Gets or Sets the quick view id to be opened as part of the action of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is quick view id to open.</value>
         public string View { get; set; }

@@ -10,7 +10,7 @@ public static class HeaderPropagationExtensions
     /// <summary>
     /// Loads incoming request headers based on a list of headers to propagate into the HttpClient.
     /// </summary>
-    /// <param name="httpClient">The <see cref="HttpClient"/>.</param>
+    /// <param name="httpClient">The <see cref="System.Net.Http.HttpClient"/>.</param>
     public static void AddHeaderPropagation(this HttpClient httpClient)
     {
         if (HeaderPropagationContext.HeadersFromRequest == null)

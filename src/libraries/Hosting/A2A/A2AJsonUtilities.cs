@@ -17,19 +17,19 @@ namespace Microsoft.Agents.Hosting.A2A;
 internal static partial class A2AJsonUtilities
 {
     /// <summary>
-    /// Gets the <see cref="JsonSerializerOptions"/> singleton used as the default in JSON serialization operations.
+    /// Gets the <see cref="System.Text.Json.JsonSerializerOptions"/> singleton used as the default in JSON serialization operations.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// For Native AOT or applications disabling <see cref="JsonSerializer.IsReflectionEnabledByDefault"/>, this instance
+    /// For Native AOT or applications disabling <see cref="System.Text.Json.JsonSerializer.IsReflectionEnabledByDefault"/>, this instance
     /// includes source generated contracts for all common exchange types contained in the A2A library.
     /// </para>
     /// <para>
     /// It additionally turns on the following settings:
     /// <list type="number">
-    /// <item>Enables <see cref="JsonSerializerDefaults.Web"/> defaults.</item>
-    /// <item>Enables <see cref="JsonIgnoreCondition.WhenWritingNull"/> as the default ignore condition for properties.</item>
-    /// <item>Enables <see cref="JsonNumberHandling.AllowReadingFromString"/> as the default number handling for number types.</item>
+    /// <item>Enables <see cref="System.Text.Json.JsonSerializerDefaults.Web"/> defaults.</item>
+    /// <item>Enables <see cref="System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull"/> as the default ignore condition for properties.</item>
+    /// <item>Enables <see cref="System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString"/> as the default number handling for number types.</item>
     /// </list>
     /// </para>
     /// </remarks>

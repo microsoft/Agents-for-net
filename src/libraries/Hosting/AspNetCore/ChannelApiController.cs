@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// This contains the routes for the ChannelAPI.  These are the endpoints that
     /// ConnectorClient uses in the case of a Agent-to-Agent.
-    /// The implementation of this is via <see cref="IChannelApiHandler"/>.
+    /// The implementation of this is via <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/>.
     /// See the Microsoft.Agents.Builder.ProxyChannelApiHandler class for an example of this for Dialogs.SkillDialog and Agent-to-Agent.
     /// <see cref="Microsoft.Agents.Connector.IConnectorClient"/>
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="ChannelApiController"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.ChannelApiController"/> class.
     /// </remarks>
-    /// <param name="handler">A <see cref="IChannelResponseHandler"/> that will handle the incoming request.</param>
+    /// <param name="handler">A <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/> that will handle the incoming request.</param>
     // Note: this class is marked as abstract to prevent the ASP runtime from registering it as a controller.
     [ChannelServiceExceptionFilterAttribute]
     public class ChannelApiController(IChannelApiHandler handler) : Controller
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Asynchronously retrieves the activity from the current HTTP request.
         /// </summary>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the <see cref="Activity"/>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the <see cref="Microsoft.Agents.Core.Models.Activity"/>
         /// deserialized from the HTTP request body.</returns>
         protected async Task<Activity> GetActivityAsync()
         {

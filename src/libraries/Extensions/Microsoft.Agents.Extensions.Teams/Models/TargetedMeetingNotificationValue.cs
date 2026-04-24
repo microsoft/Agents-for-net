@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TargetedMeetingNotificationValue
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TargetedMeetingNotificationValue"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TargetedMeetingNotificationValue"/> class.
         /// </summary>
         public TargetedMeetingNotificationValue()
         {

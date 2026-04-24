@@ -10,7 +10,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces a user-token REST client request and records
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces a user-token REST client request and records
     /// connection name, user ID, and channel ID as span tags together with request count and duration metrics.
     /// </summary>
     internal class ScopeUserTokenRestClientRequest : TelemetryScope
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
         private readonly string? _channelId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeUserTokenRestClientRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Telemetry.Scopes.ScopeUserTokenRestClientRequest"/> class.
         /// </summary>
         /// <param name="spanName">The name of the telemetry span.</param>
         /// <param name="connectionName">The OAuth connection name, or <see langword="null"/>.</param>

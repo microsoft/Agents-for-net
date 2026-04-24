@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabResponsePayload
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabResponsePayload"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabResponsePayload"/> class.
         /// </summary>
         public TabResponsePayload()
         {
@@ -25,11 +25,11 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="TabResponseCards"/> when responding to 
+        /// Gets or sets the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabResponseCards"/> when responding to 
         /// tab/fetch activity with type of 'continue'.
         /// </summary>
         /// <value>
-        /// Cards in response to a <see cref="TabResponseCards"/>.
+        /// Cards in response to a <see cref="Microsoft.Agents.Extensions.Teams.Models.TabResponseCards"/>.
         /// </value>
         public TabResponseCards Value { get; set; }
 

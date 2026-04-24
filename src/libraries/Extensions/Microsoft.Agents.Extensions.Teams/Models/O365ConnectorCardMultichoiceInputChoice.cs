@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardMultichoiceInputChoice
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardMultichoiceInputChoice"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardMultichoiceInputChoice"/> class.
         /// </summary>
         public O365ConnectorCardMultichoiceInputChoice()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardMultichoiceInputChoice"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardMultichoiceInputChoice"/> class.
         /// </summary>
         /// <param name="display">The text rendered on ActionCard.</param>
         /// <param name="value">The value received as results.</param>

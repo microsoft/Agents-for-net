@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Authentication.Msal
     {
         /// <summary>
         /// Adds support for MsalAuth using the IConfigurationSection "MSALConfiguration".
-        /// <see cref="MsalAuthConfigurationOptions"/>
+        /// <see cref="Microsoft.Agents.Authentication.Msal.Model.MsalAuthConfigurationOptions"/>
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configuration"></param>

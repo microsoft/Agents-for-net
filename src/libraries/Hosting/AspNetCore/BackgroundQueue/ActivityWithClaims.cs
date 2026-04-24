@@ -26,12 +26,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public Type AgentType { get; set; }
 
         /// <summary>
-        /// <see cref="ClaimsIdentity"/> retrieved from a call to authentication.
+        /// <see cref="System.Security.Claims.ClaimsIdentity"/> retrieved from a call to authentication.
         /// </summary>
         public ClaimsIdentity ClaimsIdentity { get; set; }
 
         /// <summary>
-        /// <see cref="Activity"/> to be processed.
+        /// <see cref="Microsoft.Agents.Core.Models.Activity"/> to be processed.
         /// </summary>
         public IActivity Activity { get; set; }
         
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public Func<InvokeResponse, Task> OnComplete { get; set; }
 
         /// <summary>
-        /// Headers used for the current <see cref="Activity"/> request.
+        /// Headers used for the current <see cref="Microsoft.Agents.Core.Models.Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
 

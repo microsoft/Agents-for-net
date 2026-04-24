@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
-    /// <inhertdoc/>
+    /// <inheritdoc/>
     public class Activity :
         IActivity,
         IConversationUpdateActivity,
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="from">The `from` field describes which client, Agent, or channel generated an Activity.</param>
         /// <param name="conversation">The `conversation` field describes the conversation in which the activity exists. The value of the `conversation` field is a complex object of the ConversationAccount type.</param>
         /// <param name="recipient">The `recipient` field describes which client or Agent is receiving this activity. This field is only meaningful when an activity is transmitted to exactly one recipient; it is not meaningful when it is broadcast to multiple recipients (as happens when an activity is sent to a channel). The purpose of the field is to allow the recipient to identify themselves. This is helpful when a client or Agent has more than one identity within the channel. The value of the `recipient` field is a complex object of the ChannelAccount</param>
-        /// <param name="textFormat"> Format of Text field.  Valid values are <see cref="TextFormatTypes.Plain"/>, <see cref="TextFormatTypes.Markdown"/> or <see cref="TextFormatTypes.Xml"/>. Default is <see cref="TextFormatTypes.Plain"/>.</param>
+        /// <param name="textFormat"> Format of Text field.  Valid values are <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>, <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Markdown"/> or <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Xml"/>. Default is <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>.</param>
         /// <param name="attachmentLayout"> The layout hint for multiple attachments. Default: list. </param>
         /// <param name="membersAdded"> The collection of members added to the conversation. </param>
         /// <param name="membersRemoved"> The collection of members removed from the conversation. </param>
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/>.
+        /// Creates an instance of the <see cref="Microsoft.Agents.Core.Models.IActivity"/>.
         /// </summary>
         /// <returns>The new typing activity.</returns>
         public static IActivity CreateTypingActivity()
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/> class as an EndOfConversationActivity object.
+        /// Creates an instance of the <see cref="Microsoft.Agents.Core.Models.IActivity"/> class as an EndOfConversationActivity object.
         /// </summary>
         /// <returns>The new end of conversation activity.</returns>
         public static IActivity CreateEndOfConversationActivity()
@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/>.
+        /// Creates an instance of the <see cref="Microsoft.Agents.Core.Models.IActivity"/>.
         /// </summary>
         /// <returns>The new handoff activity.</returns>
         public static IActivity CreateHandoffActivity()
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/>.
+        /// Creates an instance of the <see cref="Microsoft.Agents.Core.Models.IActivity"/>.
         /// </summary>
         /// <returns>The new invoke activity.</returns>
         public static IActivity CreateInvokeActivity()
@@ -440,7 +440,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="IActivity"/>.
+        /// Creates an instance of the <see cref="Microsoft.Agents.Core.Models.IActivity"/>.
         /// </summary>
         /// <param name="name">The name of the trace operation to create.</param>
         /// <param name="valueType">Optional, identifier for the format of the <paramref name="value"/>.

@@ -7,7 +7,7 @@ using System.Diagnostics.Metrics;
 namespace Microsoft.Agents.Core.Telemetry
 {
     /// <summary>
-    /// Provides the shared <see cref="ActivitySource"/> and <see cref="Meter"/> used by the
+    /// Provides the shared <see cref="System.Diagnostics.ActivitySource"/> and <see cref="System.Diagnostics.Metrics.Meter"/> used by the
     /// Microsoft Agents SDK to emit OpenTelemetry traces and metrics.
     /// </summary>
     /// <remarks>
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Core.Telemetry
     public static class AgentsTelemetry
     {
         /// <summary>
-        /// The name used by <see cref="ActivitySource"/> and <see cref="Meter"/> to identify
+        /// The name used by <see cref="System.Diagnostics.ActivitySource"/> and <see cref="System.Diagnostics.Metrics.Meter"/> to identify
         /// telemetry originating from the Microsoft Agents SDK.
         /// </summary>
         public static readonly string SourceName = "Microsoft.Agents.Core";
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Core.Telemetry
 
         /// <summary>
         /// The <see cref="System.Diagnostics.ActivitySource"/> used to create distributed-tracing
-        /// <see cref="Activity"/> instances throughout the SDK.
+        /// <see cref="System.Diagnostics.Activity"/> instances throughout the SDK.
         /// </summary>
         public static readonly ActivitySource ActivitySource = new(SourceName, SourceVersion);
 

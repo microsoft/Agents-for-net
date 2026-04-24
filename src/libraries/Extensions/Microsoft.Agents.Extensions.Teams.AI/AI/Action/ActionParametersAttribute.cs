@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
     public sealed class ActionParametersAttribute : ActionParameterAttribute
     {
         /// <summary>
-        /// Create new <see cref="ActionParametersAttribute"/>.
+        /// Create new <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionParametersAttribute"/>.
         /// </summary>
         public ActionParametersAttribute() : base(ActionParameterType.Parameters) { }
     }

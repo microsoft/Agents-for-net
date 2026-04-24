@@ -94,7 +94,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         public string DefaultLocale { get; set; }
 
         /// <summary>
-        /// Gets or sets additional options passed to the <seealso cref="ChoiceFactory"/>
+        /// Gets or sets additional options passed to the <seealso cref="Microsoft.Agents.Builder.Dialogs.Choices.ChoiceFactory"/>
         /// and used to tweak the style of choices rendered to the user.
         /// </summary>
         /// <value>Additional options for presenting the set of choices.</value>

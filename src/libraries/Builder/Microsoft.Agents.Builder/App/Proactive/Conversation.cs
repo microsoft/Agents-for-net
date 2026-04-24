@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// between different components or services in an agent application. The claims are extracted from a provided identity
     /// and can be used for authentication or authorization scenarios. The conversation reference provides the necessary
     /// information to resume or continue a conversation thread.<br/><br/>
-    /// See <see cref="ConversationBuilder"/> to ease creation of an instance of this class.</remarks>
+    /// See <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/> to ease creation of an instance of this class.</remarks>
     public class Conversation
     {
         [JsonConstructor]

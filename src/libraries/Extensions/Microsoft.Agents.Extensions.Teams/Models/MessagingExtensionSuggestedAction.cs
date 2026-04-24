@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionSuggestedAction
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionSuggestedAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionSuggestedAction"/> class.
         /// </summary>
         public MessagingExtensionSuggestedAction()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionSuggestedAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionSuggestedAction"/> class.
         /// </summary>
         /// <param name="actions">Actions.</param>
         public MessagingExtensionSuggestedAction(IList<CardAction> actions = default(IList<CardAction>))

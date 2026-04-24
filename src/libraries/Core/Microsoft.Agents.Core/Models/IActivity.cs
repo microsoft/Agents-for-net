@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// In some cases, it's important to record where an Activity was sent. The CallerId field is a string containing 
-        /// an IRI identifying the caller of a Agent. This field is not intended to be transmitted over the wire, but is 
+        /// an IRI identifying the caller of an Agent. This field is not intended to be transmitted over the wire, but is
         /// instead populated by Agents and clients based on cryptographically verifiable 
         /// data that asserts the identity of the callers (e.g. tokens).
         /// </summary>
@@ -104,8 +104,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The importance field contains an enumerated set of values to signal to the recipient the relative importance 
         /// of the Activity. It is up to the receiver to map these importance hints to the user experience. The value of 
-        /// the importance field is of type string, with defined values of <see cref="Importance.Low"/>, 
-        /// <see cref="Importance.Normal"/>, <see cref="Importance.High"/>. The default value is <see cref="Importance.Normal"/>.
+        /// the importance field is of type string, with defined values of <see cref="Microsoft.Agents.Core.Models.Importance.Low"/>, 
+        /// <see cref="Microsoft.Agents.Core.Models.Importance.Normal"/>, <see cref="Microsoft.Agents.Core.Models.Importance.High"/>. The default value is <see cref="Microsoft.Agents.Core.Models.Importance.Normal"/>.
         /// </summary>
         string Importance { get; set; }
 
@@ -242,8 +242,8 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// The textFormat field denotes whether the text field should be interpreted as Markdown [3], plain text, or XML. The value 
-        /// of the textFormat field is of type string, with defined values of <see cref="TextFormatTypes.Plain"/>, <see cref="TextFormatTypes.Markdown"/> 
-        /// or <see cref="TextFormatTypes.Xml"/>. Default is <see cref="TextFormatTypes.Plain"/>.
+        /// of the textFormat field is of type string, with defined values of <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>, <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Markdown"/> 
+        /// or <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Xml"/>. Default is <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>.
         /// This field is not designed to be extended with arbitrary values.
         /// </summary>
         string TextFormat { get; set; }
@@ -290,13 +290,13 @@ namespace Microsoft.Agents.Core.Models
         string RequestId { get; set; }
 
         /// <summary>
-        /// Updates this Activity with the delivery information from an existing <see cref="ConversationReference"/>.
+        /// Updates this Activity with the delivery information from an existing <see cref="Microsoft.Agents.Core.Models.ConversationReference"/>.
         /// </summary>
         /// <param name="reference">The existing conversation reference.</param>
         /// <param name="isIncoming">Optional, <c>true</c> to treat the Activity as an
         /// incoming Activity, where the Agent is the recipient; otherwise, <c>false</c>.
         /// Default is <c>false</c>, and the Activity will show the Agent as the sender.</param>
-        /// <remarks>Call <see cref="GetConversationReference()"/> on an incoming
+        /// <remarks>Call <see cref="Microsoft.Agents.Core.Models.IActivity.GetConversationReference()"/> on an incoming
         /// Activity to get a conversation reference that you can then use to update an
         /// outgoing Activity with the correct delivery information.
         /// </remarks>
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Core.Models
         IActivity ApplyConversationReference(ConversationReference reference, bool isIncoming = false);
 
         /// <summary>
-        /// Creates a <see cref="ConversationReference"/> based on this Activity.
+        /// Creates a <see cref="Microsoft.Agents.Core.Models.ConversationReference"/> based on this Activity.
         /// </summary>
         /// <returns>A conversation reference for the conversation that contains this Activity.</returns>
         ConversationReference GetConversationReference();
@@ -330,7 +330,7 @@ namespace Microsoft.Agents.Core.Models
         IActivity CreateTrace(string name, object value = null, string valueType = null, [CallerMemberName] string label = null);
 
         /// <summary>
-        /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
+        /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.Activity"/> type but that
         /// might appear in the serialized REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

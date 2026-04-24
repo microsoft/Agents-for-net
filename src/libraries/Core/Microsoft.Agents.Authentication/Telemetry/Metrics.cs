@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Authentication.Telemetry
     /// scopes to record token-request statistics.
     /// </summary>
     /// <remarks>
-    /// All instruments are created from <see cref="AgentsTelemetry.Meter"/> so they share
+    /// All instruments are created from <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.Meter"/> so they share
     /// the same source name and version as the rest of the Agents SDK telemetry.
     /// </remarks>
     internal static class Metrics

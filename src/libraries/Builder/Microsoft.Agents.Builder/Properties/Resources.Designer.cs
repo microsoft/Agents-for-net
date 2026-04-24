@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An instance of this extention has allready been registred for this application. {0}.
+        ///   Looks up a localized string similar to An instance of this extension has already been registered for this application. {0}.
         /// </summary>
         internal static string ExtensionAlreadyRegistered {
             get {

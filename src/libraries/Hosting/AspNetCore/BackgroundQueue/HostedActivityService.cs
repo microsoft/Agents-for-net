@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// <see cref="BackgroundService"/> implementation used to process activities with claims.
+    /// <see cref="Microsoft.Extensions.Hosting.BackgroundService"/> implementation used to process activities with claims.
     ///  <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">More information.</see>
     /// </summary>
     internal class HostedActivityService : BackgroundService
@@ -32,15 +32,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
-        /// Create a <see cref="HostedActivityService"/> instance for processing Activities
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
         /// on background threads.
         /// </summary>
         /// <remarks>
-        /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
+        /// It is important to note that exceptions on the background thread are only logged in the <see cref="Microsoft.Extensions.Logging.ILogger"/>.
         /// </remarks>
         /// <param name="provider"></param>
-        /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
+        /// <param name="config"><see cref="Microsoft.Extensions.Configuration.IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
+        /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
         /// <param name="options"></param>
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// Called by BackgroundService when the hosting service is shutting down.
         /// </summary>
-        /// <param name="stoppingToken"><see cref="CancellationToken"/> sent from BackgroundService for shutdown.</param>
+        /// <param name="stoppingToken"><see cref="System.Threading.CancellationToken"/> sent from BackgroundService for shutdown.</param>
         /// <returns>The Task to be executed asynchronously.</returns>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {

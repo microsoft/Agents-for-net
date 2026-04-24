@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionResult"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResult"/> class.
         /// </summary>
         public MessagingExtensionResult()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionResult"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResult"/> class.
         /// </summary>
         /// <param name="attachmentLayout">Hint for how to deal with multiple
         /// attachments. Possible values include: 'list', 'grid'.</param>

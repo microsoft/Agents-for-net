@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// </summary>
         /// <param name="scopes">The scopes to format, or <c>null</c>.</param>
         /// <returns>
-        /// A comma-separated string of the provided scopes, or <see cref="Unknown"/> if
+        /// A comma-separated string of the provided scopes, or <see cref="Microsoft.Agents.Core.Telemetry.TelemetryUtils.Unknown"/> if
         /// <paramref name="scopes"/> is <c>null</c> or empty.
         /// </returns>
         public static string FormatScopes(IEnumerable<string>? scopes)

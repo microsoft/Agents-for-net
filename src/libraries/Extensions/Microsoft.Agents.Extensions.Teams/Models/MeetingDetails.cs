@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingDetails : MeetingDetailsBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingDetails"/> class.
         /// </summary>
         public MeetingDetails()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingDetails"/> class.
         /// </summary>
         /// <param name="id">The meeting's Id, encoded as a BASE64 string.</param>
         /// <param name="msGraphResourceId">The MsGraphResourceId, used specifically for MS Graph API calls.</param>

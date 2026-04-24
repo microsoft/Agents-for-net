@@ -13,19 +13,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
     /// <summary>
     /// RouteBuilder for routing Teams ConversationUpdate activities in an AgentApplication.
     /// </summary>
-    /// <remarks>Use <see cref="TeamsConversationUpdateRouteBuilder"/> to create and configure routes that respond to conversation
+    /// <remarks>Use <see cref="Microsoft.Agents.Extensions.Teams.App.Builders.TeamsConversationUpdateRouteBuilder"/> to create and configure routes that respond to conversation
     /// update activities. This builder allows matching update activities by name, and supports agentic routing scenarios.</remarks>
     public class TeamsConversationUpdateRouteBuilder : RouteBuilderBase<TeamsConversationUpdateRouteBuilder>
     {
         /// <summary>
-        /// Configures the route to match a specific <see cref="TeamsConversationUpdateEvents"/>, such as members being added or removed.
+        /// Configures the route to match a specific <see cref="Microsoft.Agents.Extensions.Teams.App.TeamsConversationUpdateEvents"/>, such as members being added or removed.
         /// </summary>
         /// <remarks>Use this method to restrict the route to trigger only for a particular conversation
         /// update event. If the specified event is not recognized, the route will match any conversation update
         /// activity.</remarks>
         /// <param name="eventName">The name of the conversation update event to match. Common values include events for members being added or
         /// removed. Cannot be null.</param>
-        /// <returns>The current <see cref="ConversationUpdateRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/> instance for method chaining.</returns>
         public TeamsConversationUpdateRouteBuilder WithUpdateEvent(string eventName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(eventName, nameof(eventName));
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
         /// <remarks>Conversation updates cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="TeamsConversationUpdateRouteBuilder"/>.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.Teams.App.Builders.TeamsConversationUpdateRouteBuilder"/>.</returns>
         public new TeamsConversationUpdateRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

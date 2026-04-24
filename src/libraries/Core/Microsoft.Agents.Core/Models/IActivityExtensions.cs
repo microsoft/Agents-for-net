@@ -8,12 +8,12 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Public Extensions for <see cref="IActivity"/>. type
+    /// Public Extensions for <see cref="Microsoft.Agents.Core.Models.IActivity"/>. type
     /// </summary>
     public static class IActivityExtensions
     {
         /// <summary>
-        /// Converts an <see cref="IActivity"/> to a JSON string.
+        /// Converts an <see cref="Microsoft.Agents.Core.Models.IActivity"/> to a JSON string.
         /// </summary>
         /// <param name="activity">Activity to convert to Json Payload</param>
         /// <returns>JSON String</returns>
@@ -26,10 +26,10 @@ namespace Microsoft.Agents.Core.Models
         /// Resolves the mentions from the entities of this activity.
         /// </summary>
         /// <returns>The array of mentions; or an empty array, if none are found.</returns>
-        /// <remarks>This method is defined on the <see cref="Activity"/> class, but is only intended
-        /// for use with a message activity, where the activity <see cref="Activity.Type"/> is set to
-        /// <see cref="ActivityTypes.Message"/>.</remarks>
-        /// <seealso cref="Mention"/>
+        /// <remarks>This method is defined on the <see cref="Microsoft.Agents.Core.Models.Activity"/> class, but is only intended
+        /// for use with a message activity, where the activity <see cref="Microsoft.Agents.Core.Models.Activity.Type"/> is set to
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/>.</remarks>
+        /// <seealso cref="Microsoft.Agents.Core.Models.Mention"/>
         public static Mention[] GetMentions(this IActivity activity)
         {
             var result = new List<Mention>();
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>
         /// <c>true</c> if the operation succeeded; otherwise, <c>false</c>.
         /// </returns>
-        /// <seealso cref="GetChannelData{T}"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.IActivityExtensions.GetChannelData{T}(Microsoft.Agents.Core.Models.IActivity)"/>
         public static bool TryGetChannelData<T>(this IActivity activity, out T instance)
         {
             instance = default;

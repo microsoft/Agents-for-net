@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadAttachment
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadAttachment"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadAttachment"/> class.
         /// </summary>
         public MessageActionsPayloadAttachment()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadAttachment"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadAttachment"/> class.
         /// </summary>
         /// <param name="id">The id of the attachment.</param>
         /// <param name="contentType">The type of the attachment.</param>

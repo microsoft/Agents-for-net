@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadMention
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadMention"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadMention"/> class.
         /// </summary>
         public MessageActionsPayloadMention()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadMention"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadMention"/> class.
         /// </summary>
         /// <param name="id">The id of the mentioned entity.</param>
         /// <param name="mentionText">The plaintext display name of the

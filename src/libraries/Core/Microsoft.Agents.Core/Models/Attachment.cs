@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Core.Models
         public string ThumbnailUrl { get; set; }
 
         /// <summary>
-        /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
+        /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.Activity"/> type but that
         /// might appear in the serialized REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

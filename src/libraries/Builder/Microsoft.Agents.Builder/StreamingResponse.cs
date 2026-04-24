@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         ///  Sets the citations for the full message.
         /// </summary>
-        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL. Citations are numbed in the order they appear on the list.</remarks>
+        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL. Citations are numbered in the order they appear on the list.</remarks>
         /// <param name="citations">Citations to be included in the message.</param>
         public void AddCitations(IList<Citation> citations)
         {

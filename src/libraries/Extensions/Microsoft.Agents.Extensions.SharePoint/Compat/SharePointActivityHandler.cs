@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Compat
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>Card view or no-op action response.</returns>
-        /// <remarks>The handler will fail with 500 status code if the response is of type <see cref="QuickViewHandleActionResponse" />.</remarks>
+        /// <remarks>The handler will fail with 500 status code if the response is of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.QuickViewHandleActionResponse" />.</remarks>
         protected virtual Task<BaseHandleActionResponse> OnSharePointTaskSetPropertyPaneConfigurationAsync(ITurnContext<IInvokeActivity> turnContext, AceRequest aceRequest, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);

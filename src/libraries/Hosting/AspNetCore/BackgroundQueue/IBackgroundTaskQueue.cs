@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// Interface for a class used to transfer a work item to the <see cref="HostedTaskService"/>.
+    /// Interface for a class used to transfer a work item to the <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskService"/>.
     /// </summary>
     public interface IBackgroundTaskQueue
     {

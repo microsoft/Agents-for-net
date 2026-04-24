@@ -16,14 +16,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public new const string Type = "OpenUri";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardOpenUri"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardOpenUri"/> class.
         /// </summary>
         public O365ConnectorCardOpenUri()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardOpenUri"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardOpenUri"/> class.
         /// </summary>
         /// <param name="type">Type of the action. Possible values include:
         /// 'ViewAction', 'OpenUri', 'HttpPOST', 'ActionCard'.</param>

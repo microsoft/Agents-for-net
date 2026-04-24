@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ConfigAuthResponse : ConfigResponse<BotConfigAuth>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigAuthResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConfigAuthResponse"/> class.
         /// </summary>
         public ConfigAuthResponse()
         {

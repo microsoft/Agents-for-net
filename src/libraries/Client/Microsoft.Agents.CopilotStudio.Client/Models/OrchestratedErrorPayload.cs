@@ -36,7 +36,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
 
         /// <summary>
         /// The parsed error code as a strongly-typed enum.
-        /// Returns <see cref="OrchestratedErrorCode.Unknown"/> if the <see cref="Code"/> is null, empty, or not recognized.
+        /// Returns <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorCode.Unknown"/> if the <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorPayload.Code"/> is null, empty, or not recognized.
         /// </summary>
         [JsonIgnore]
         public OrchestratedErrorCode ErrorCode => Code.ToOrchestratedErrorCode();

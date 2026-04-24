@@ -38,16 +38,16 @@ namespace Microsoft.Agents.Builder.App
     ///    });
     /// </code>
     /// </remarks>
-    /// <seealso cref="TurnState"/>
+    /// <seealso cref="Microsoft.Agents.Builder.State.TurnState"/>
     /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
     public delegate ITurnState TurnStateFactory();
 
     /// <summary>
-    /// Options for the <see cref="AgentApplication"/> class.  AgentApplicationOptions can be constructed
+    /// Options for the <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> class.  AgentApplicationOptions can be constructed
     /// via <c>IConfiguration</c> values or programmatically.
     /// </summary>
-    /// <seealso cref="TurnStateFactory"/>
-    /// <seealso cref="UserAuthorizationOptions"/>
+    /// <seealso cref="Microsoft.Agents.Builder.App.TurnStateFactory"/>
+    /// <seealso cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/>
     public class AgentApplicationOptions
     {
         internal static readonly ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning));
@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Factory used to create a custom turn state instance.
         /// </summary>
         /// <remarks>
-        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
+        /// Not setting the TurnStateFactory would result in an in-memory <see cref="Microsoft.Agents.Builder.State.TurnState"/> that provides just TempState.  This could
         /// be appropriate for Agents not needing persisted state.
         /// <see cref="Microsoft.Agents.Builder.App.TurnStateFactory"/>
         /// </remarks>

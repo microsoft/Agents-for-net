@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Authentication.Telemetry.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeTokenRequest"/> that traces an On-Behalf-Of token acquisition
+    /// A <see cref="Microsoft.Agents.Authentication.Telemetry.Scopes.ScopeTokenRequest"/> that traces an On-Behalf-Of token acquisition
     /// and records the requested scopes.
     /// </summary>
     internal class ScopeAcquireTokenOnBehalfOf : ScopeTokenRequest
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         private readonly IEnumerable<string> _scopes;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeAcquireTokenOnBehalfOf"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Authentication.Telemetry.Scopes.ScopeAcquireTokenOnBehalfOf"/> class.
         /// </summary>
         /// <param name="scopes">The OAuth/OIDC scopes requested for the On-Behalf-Of token.</param>
         public ScopeAcquireTokenOnBehalfOf(IEnumerable<string> scopes) : base(Constants.ScopeAcquireTokenOnBehalfOf, Constants.AuthMethodOBO)
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
         /// <inheritdoc />
         /// <remarks>
         /// Calls <c>base.Callback</c> to record the auth method, then tags the activity with
-        /// <see cref="TagNames.AuthScopes"/>.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TagNames.AuthScopes"/>.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {

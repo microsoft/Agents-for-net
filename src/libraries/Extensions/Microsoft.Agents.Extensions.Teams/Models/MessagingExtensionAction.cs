@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionAction : TaskModuleRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionAction"/> class.
         /// </summary>
         public MessagingExtensionAction()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionAction"/> class.
         /// </summary>
         /// <param name="data">User input data. Free payload with key-value
         /// pairs.</param>

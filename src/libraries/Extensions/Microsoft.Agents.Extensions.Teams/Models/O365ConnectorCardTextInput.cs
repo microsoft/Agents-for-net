@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public new const string Type = "TextInput";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardTextInput"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardTextInput"/> class.
         /// </summary>
         public O365ConnectorCardTextInput()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardTextInput"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardTextInput"/> class.
         /// </summary>
         /// <param name="type">Input type name. Possible values include:
         /// 'textInput', 'dateInput', 'multichoiceInput'.</param>

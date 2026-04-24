@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Xunit;
 
-namespace Microsoft.Agents.Builder.Testing
+namespace Microsoft.Agents.Builder.Tests
 {
     public class SimpleAdapter : ChannelAdapter
     {
