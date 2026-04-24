@@ -1,4 +1,5 @@
-## Unreleased
+; Unshipped analyzer release
+; https://github.com/dotnet/roslyn/blob/main/src/Compilers/Core/Portable/DiagnosticAnalyzer/ReleaseTrackingHelper.cs
 
 ### New Rules
 
