@@ -13,10 +13,11 @@
 
   <Import Project="..\..\..\Build.Common.core.props" />
 
-  <ItemGroup>
-    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+	
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
