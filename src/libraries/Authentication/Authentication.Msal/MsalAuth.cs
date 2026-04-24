@@ -321,6 +321,11 @@ namespace Microsoft.Agents.Authentication.Msal
                     cAppBuilder.WithTenantId(ResolveTenantId(_connectionSettings, tenantId));
                 }
 
+                if (!string.IsNullOrWhiteSpace(_connectionSettings.AzureRegion))
+                {
+                    cAppBuilder.WithAzureRegion(_connectionSettings.AzureRegion);
+                }
+
                 // If Client secret was passed in , get the secret and create it that way 
                 // if Client CertThumbprint was passed in, get the cert and create it that way.
                 // if neither was passed in, throw an exception.
