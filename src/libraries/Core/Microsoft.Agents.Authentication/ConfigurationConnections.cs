@@ -53,7 +53,8 @@ namespace Microsoft.Agents.Authentication
             AssertionHelpers.ThrowIfNullOrEmpty(mapKey, nameof(mapKey));
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
+            _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>))
+                ?? NullLogger<ConfigurationConnections>.Instance;
 
             _connections = configuration
                 .GetSection(connectionsKey)
@@ -86,6 +87,11 @@ namespace Microsoft.Agents.Authentication
             {
                 connection.Value.Constructor = assemblyLoader.GetProviderConstructor(connection.Key, connection.Value.Assembly, connection.Value.Type);
             }
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                LogConnections();
+            }
         }
 
         public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems, ILogger<ConfigurationConnections> logger = null)
@@ -115,6 +121,11 @@ namespace Microsoft.Agents.Authentication
                 {
                     _map.Add(new ConnectionMapItem() { ServiceUrl = "*", Connection = _connections.First().Key });
                 }
+            }
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                LogConnections();
             }
         }
 
