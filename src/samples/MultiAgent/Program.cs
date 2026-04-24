@@ -12,9 +12,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
 builder.AddAgent<Agent1>();
