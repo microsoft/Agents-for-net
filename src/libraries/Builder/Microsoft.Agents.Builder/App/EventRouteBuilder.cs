@@ -16,18 +16,19 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Event activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder"/> to create and configure routes that respond to event
+    /// Use <see cref="EventRouteBuilder"/> to create and configure routes that respond to event
     /// activities. This builder allows matching event activities by name or regular expression, and supports
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.Create"/> method
-    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithName(string)"/> or <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithName(System.Text.RegularExpressions.Regex)"/>
-    /// or <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method
+    /// and optionally configured using <see cref="WithName(string)"/>, <see cref="WithName(Regex)"/>,
+    /// or <see cref="WithSelector(RouteSelector)"/>. If neither <see cref="WithName(string)"/> nor
+    /// <see cref="WithName(Regex)"/> is called, the route will match any event activity regardless of name.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = EventRouteBuilder.Create()
     ///    .WithName("myEvent")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Event received!", cancellationToken: ct)))
     ///    .Build();
-    ///    
+    ///
     /// app.AddRoute(route);
     /// </code>
     /// </remarks>
@@ -158,7 +159,13 @@ namespace Microsoft.Agents.Builder.App
 
             if (_eventName == null && _eventRegex == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(EventRouteBuilder), "Name or Selector");
+                // If no name or regex specified, just match on any event
+                _route.Selector = (context, ct) => Task.FromResult
+                    (
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Event)
+                    );
+                return;
             }
 
             // Just match on Activity.Name value
