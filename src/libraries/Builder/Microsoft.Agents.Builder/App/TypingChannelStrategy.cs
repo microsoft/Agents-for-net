@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Concrete per-channel typing strategy with configurable initial delay and interval.
     /// </summary>
-    public sealed class TypingChannelStrategy(int initialDelayMs, int intervalMs, Func<ITurnContext, ConversationReference, IActivity> typingFactory = null) : ITypingChannelStrategy
+    public sealed class TypingChannelStrategy(int initialDelayMs, int intervalMs, Func<ITurnContext, ConversationReference, ITypingActivity> typingFactory = null) : ITypingChannelStrategy
     {
         /// <inheritdoc/>
         public int InitialDelayMs => initialDelayMs;
@@ -18,6 +18,6 @@ namespace Microsoft.Agents.Builder.App
         public int IntervalMs => intervalMs;
 
         /// <inheritdoc/>
-        public Func<ITurnContext, ConversationReference, IActivity> TypingFactory => typingFactory ?? ((context, reference) => new Activity(type: ActivityTypes.Typing, relatesTo: reference));
+        public Func<ITurnContext, ConversationReference, ITypingActivity> TypingFactory => typingFactory ?? ((context, reference) => new TypingActivity() { RelatesTo = reference });
     }
 }

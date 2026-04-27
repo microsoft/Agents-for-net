@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using System;
 
@@ -25,7 +26,10 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 
         protected override void Callback(System.Diagnostics.Activity activity, double duration, Exception? exception)
         {
-            activity.SetTag(TagNames.AttachmentCount, _turnContext.Activity.Attachments?.Count ?? 0);
+            if (_turnContext.Activity is IMessageActivity messageActivity)
+            {
+                activity.SetTag(TagNames.AttachmentCount, messageActivity.Attachments?.Count ?? 0);
+            }
         }
     }
 }

@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Core.Models
         /// Creates <see cref="Microsoft.Agents.Core.Models.Activity"/> from conversation reference as it is posted to an Agent.
         /// </summary>
         /// <returns>Continuation activity.</returns>
-        public Activity GetContinuationActivity()
+        public IEventActivity GetContinuationActivity()
         {
             return new EventActivity(ActivityEventNames.ContinueConversation)
             {

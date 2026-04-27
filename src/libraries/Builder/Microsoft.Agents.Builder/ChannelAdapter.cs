@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Builder
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
-                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
+                var activityInvokeResponse = turnContext.StackState.Get<IInvokeResponseActivity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };

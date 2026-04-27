@@ -27,6 +27,6 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>This factory can be used to generate typing indicators in a conversation, allowing
         /// for a more interactive user experience. The created activity can be sent to the user to indicate that the
         /// agent is 'typing'.</remarks>
-        Func<ITurnContext, ConversationReference, IActivity> TypingFactory { get; }
+        Func<ITurnContext, ConversationReference, ITypingActivity> TypingFactory { get; }
     }
 }
